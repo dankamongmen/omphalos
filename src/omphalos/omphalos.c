@@ -48,14 +48,23 @@ handle_ring_packet(int fd,void *frame){
 			return;
 		}
 	}
+	if((thdr->tp_status & TP_STATUS_COPY) || thdr->tp_snaplen != thdr->tp_len){
+		fprintf(stderr,"Partial capture (%u/%ub)\n",thdr->tp_snaplen,thdr->tp_len);
+		return;
+	}
 	len = thdr->tp_len;
 	handle_packet(thdr + 1,len);
+	thdr->tp_status = TP_STATUS_KERNEL; // return the frame
 }
 
 static void
 handle_pcap_packet(u_char *user,const struct pcap_pkthdr *h,const u_char *bytes){
 	if(user){
 		fprintf(stderr,"Unexpected parameter: %p\n",user);
+		return;
+	}
+	if(h->caplen != h->len){
+		fprintf(stderr,"Partial capture (%u/%ub)\n",h->caplen,h->len);
 		return;
 	}
 	handle_packet(bytes,h->caplen);

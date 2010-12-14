@@ -8,7 +8,7 @@
 #include <linux/if_packet.h>
 #include <omphalos/psocket.h>
 
-static const unsigned MAX_FRAME_SIZE = 1500; // FIXME get from device
+static const unsigned MAX_FRAME_SIZE = 1518; // FIXME get from device
 static const unsigned MMAP_BLOCK_COUNT = 32768; // FIXME do better
 
 // See packet(7) and Documentation/networking/packet_mmap.txt
@@ -51,6 +51,9 @@ size_mmap_psocket(struct tpacket_req *treq){
 	// Must be a multiple of TPACKET_ALIGNMENT, and the following must
 	// hold: TPACKET_HDRLEN <= tp_frame_size <= tp_block_size.
 	treq->tp_frame_size = TPACKET_HDRLEN + MAX_FRAME_SIZE;
+	if(treq->tp_frame_size % TPACKET_ALIGNMENT){
+		treq->tp_frame_size += TPACKET_ALIGNMENT - (treq->tp_frame_size % TPACKET_ALIGNMENT);
+	}
 	if(get_block_size(treq->tp_frame_size,&treq->tp_block_size) < 0){
 		return 0;
 	}
