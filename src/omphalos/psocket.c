@@ -44,13 +44,15 @@ get_block_size(unsigned fsize,unsigned *bsize){
 	return 0;
 }
 
-static int
+// Returns 0 on failure, otherwise size of the ringbuffer. On a failure,
+// contents of treq are unspecified.
+static size_t
 size_mmap_psocket(struct tpacket_req *treq){
 	// Must be a multiple of TPACKET_ALIGNMENT, and the following must
 	// hold: TPACKET_HDRLEN <= tp_frame_size <= tp_block_size.
 	treq->tp_frame_size = TPACKET_HDRLEN + MAX_FRAME_SIZE;
 	if(get_block_size(treq->tp_frame_size,&treq->tp_block_size) < 0){
-		return -1;
+		return 0;
 	}
 	// Array of pointers to blocks, allocated via slab -- cannot be
 	// larger than largest slabbable allocation.
@@ -58,7 +60,7 @@ size_mmap_psocket(struct tpacket_req *treq){
 	// tp_frame_nr is derived from the other three parameters.
 	treq->tp_frame_nr = (treq->tp_block_size / treq->tp_frame_size)
 		* treq->tp_block_nr;
-	return 0;
+	return treq->tp_block_nr * treq->tp_block_size;
 }
 
 size_t mmap_rx_psocket(int fd,void **map){
@@ -66,15 +68,14 @@ size_t mmap_rx_psocket(int fd,void **map){
 	size_t size;
 
 	*map = MAP_FAILED;
-	if(size_mmap_psocket(&treq)){
+	if((size = size_mmap_psocket(&treq)) == 0){
 		return 0;
 	}
 	if(setsockopt(fd,SOL_PACKET,PACKET_RX_RING,&treq,sizeof(treq)) < 0){
 		fprintf(stderr,"Couldn't set socket option (%s?)\n",strerror(errno));
 		return 0;
 	}
-	size = 0;
-	return size; // FIXME
+	return size;
 }
 
 size_t mmap_tx_psocket(int fd,void **map){
@@ -82,15 +83,14 @@ size_t mmap_tx_psocket(int fd,void **map){
 	size_t size;
 
 	*map = MAP_FAILED;
-	if(size_mmap_psocket(&treq)){
+	if((size = size_mmap_psocket(&treq)) == 0){
 		return 0;
 	}
 	if(setsockopt(fd,SOL_PACKET,PACKET_TX_RING,&treq,sizeof(treq)) < 0){
 		fprintf(stderr,"Couldn't set socket option (%s?)\n",strerror(errno));
 		return 0;
 	}
-	size = 0;
-	return size; // FIXME
+	return size;
 }
 
 int unmap_psocket(void *map,size_t size){

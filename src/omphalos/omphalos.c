@@ -57,7 +57,7 @@ int main(int argc,char * const *argv){
 			close(fd);
 			return EXIT_FAILURE;
 		}
-		if((ts = mmap_rx_psocket(fd,&txm)) == 0){
+		if((ts = mmap_tx_psocket(fd,&txm)) == 0){
 			unmap_psocket(rxm,rs);
 			close(fd);
 			return EXIT_FAILURE;
