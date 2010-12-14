@@ -15,7 +15,7 @@ usage(const char *arg0,int ret){
 }
 
 static void
-handle_packet(void *frame,size_t len){
+handle_packet(const void *frame,size_t len){
 	if(len <= 99999){
 		printf("[%5zub] Frame: %p\n",len,frame);
 	}else{
@@ -52,6 +52,15 @@ handle_ring_packet(int fd,void *frame){
 	handle_packet(thdr + 1,len);
 }
 
+static void
+handle_pcap_packet(u_char *user,const struct pcap_pkthdr *h,const u_char *bytes){
+	if(user){
+		fprintf(stderr,"Unexpected parameter: %p\n",user);
+		return;
+	}
+	handle_packet(bytes,h->caplen);
+}
+
 int main(int argc,char * const *argv){
 	pcap_t *pcap = NULL;
 	int opt;
@@ -86,6 +95,10 @@ int main(int argc,char * const *argv){
 	}
 	if(pcap){
 		// FIXME handle packets
+		if(pcap_loop(pcap,-1,handle_pcap_packet,NULL)){
+			pcap_close(pcap);
+			return EXIT_FAILURE;
+		}
 		pcap_close(pcap);
 	}else{
 		void *txm,*rxm;
