@@ -1,5 +1,5 @@
 .DELTE_ON_ERROR:
-.DEFAULT_GOAL:=test
+.DEFAULT_GOAL:=all
 .PHONY: all bin lib doc test clean install uninstall
 
 VERSION=0.0.1
