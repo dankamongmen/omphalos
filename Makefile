@@ -13,7 +13,7 @@ OMPHALOS:=$(OUT)/$(PROJ)/$(PROJ)
 
 BIN:=$(OMPHALOS)
 
-CFLAGS+=-pthread -D_GNU_SOURCE -fpic -I$(SRC)/lib$(PROJ) -fvisibility=hidden -O2 -Wall -W -Werror
+CFLAGS+=-I$(SRC) -pthread -D_GNU_SOURCE -fpic -I$(SRC)/lib$(PROJ) -fvisibility=hidden -O2 -Wall -W -Werror
 LFLAGS+=-Wl,-O,--default-symver,--enable-new-dtags,--as-needed,--warn-common
 LFLAGS+=-lpcap
 CTAGS?=$(shell (which ctags || echo ctags) 2> /dev/null)
@@ -43,18 +43,19 @@ lib: $(LIB)
 
 TESTPCAP:=test/testpcap
 
+CSRCDIRS:=$(wildcard $(SRC)/*)
+CSRCS:=$(shell find $(CSRCDIRS) -type f -iname \*.c -print)
+CINCS:=$(shell find $(CSRCDIRS) -type f -iname \*.h -print)
+COBJS:=$(addprefix $(OUT)/,$(CSRCS:%.c=%.o))
+
 test: all $(TESTPCAP)
 	$(OMPHALOS) -f $(TESTPCAP)
 
-$(OUT)/%: $(OUT)/%.o $(LIB)
+$(OMPHALOS): $(COBJS)
 	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -o $@ $^ $(LFLAGS)
 
-$(OUT)/$(PROJ)/%: $(OUT)/$(PROJ)/%.o
-	@mkdir -p $(@D)
-	$(CC) $(CFLAGS) -o $@ $^ $(LFLAGS)
-
-$(OUT)/%.o: $(SRC)/%.c $(wildcard $(SRC)/$(PROJ)/*.h)
+$(OUT)/%.o: %.c $(CINCS)
 	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -c -o $@ $<
 

@@ -3,15 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <arpa/inet.h>
-#include <sys/socket.h>
 #include <net/ethernet.h>
-
-// See packet(7) and Documentation/networking/packet_mmap.txt
-static int
-packet_socket(unsigned protocol){
-	return socket(AF_PACKET,SOCK_RAW,htons(protocol));
-}
+#include <omphalos/psocket.h>
 
 static void
 usage(const char *arg0,int ret){
@@ -54,8 +47,7 @@ int main(int argc,char * const *argv){
 	if(pcap){
 		pcap_close(pcap);
 	}else{
-		if((fd = packet_socket(ETH_P_ALL)) < 0){
-			fprintf(stderr,"Couldn't open packet socket (%s?)\n",strerror(errno));
+		if((fd = packet_rx_socket(ETH_P_ALL)) < 0){
 			return EXIT_FAILURE;
 		}
 		if(close(fd)){
