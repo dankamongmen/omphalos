@@ -1,5 +1,5 @@
 .DELTE_ON_ERROR:
-.DEFAULT_GOAL:=all
+.DEFAULT_GOAL:=test
 .PHONY: all bin lib doc test clean install uninstall
 
 VERSION=0.0.1
@@ -15,6 +15,7 @@ BIN:=$(OMPHALOS)
 
 CFLAGS+=-pthread -D_GNU_SOURCE -fpic -I$(SRC)/lib$(PROJ) -fvisibility=hidden -O2 -Wall -W -Werror
 LFLAGS+=-Wl,-O,--default-symver,--enable-new-dtags,--as-needed,--warn-common
+LFLAGS+=-lpcap
 CTAGS?=$(shell (which ctags || echo ctags) 2> /dev/null)
 XSLTPROC?=$(shell (which xsltproc || echo xsltproc) 2> /dev/null)
 INSTALL?=install -v
@@ -40,8 +41,10 @@ doc: $(MAN3)
 
 lib: $(LIB)
 
-test: all
-	for test in $(BIN) ; do ./$$test ; done
+TESTPCAP:=test/testpcap
+
+test: all $(TESTPCAP)
+	$(OMPHALOS) -f $(TESTPCAP)
 
 $(OUT)/%: $(OUT)/%.o $(LIB)
 	@mkdir -p $(@D)
