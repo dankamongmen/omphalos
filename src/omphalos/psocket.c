@@ -63,7 +63,7 @@ size_mmap_psocket(struct tpacket_req *treq){
 	return treq->tp_block_nr * treq->tp_block_size;
 }
 
-size_t mmap_rx_psocket(int fd,void **map){
+size_t mmap_psocket(int op,int fd,void **map){
 	struct tpacket_req treq;
 	size_t size;
 
@@ -71,7 +71,7 @@ size_t mmap_rx_psocket(int fd,void **map){
 	if((size = size_mmap_psocket(&treq)) == 0){
 		return 0;
 	}
-	if(setsockopt(fd,SOL_PACKET,PACKET_RX_RING,&treq,sizeof(treq)) < 0){
+	if(setsockopt(fd,SOL_PACKET,op,&treq,sizeof(treq)) < 0){
 		fprintf(stderr,"Couldn't set socket option (%s?)\n",strerror(errno));
 		return 0;
 	}
@@ -81,22 +81,12 @@ size_t mmap_rx_psocket(int fd,void **map){
 	return size;
 }
 
-size_t mmap_tx_psocket(int fd,void **map){
-	struct tpacket_req treq;
-	size_t size;
+size_t mmap_rx_psocket(int fd,void **map){
+	return mmap_psocket(PACKET_RX_RING,fd,map);
+}
 
-	*map = MAP_FAILED;
-	if((size = size_mmap_psocket(&treq)) == 0){
-		return 0;
-	}
-	if(setsockopt(fd,SOL_PACKET,PACKET_TX_RING,&treq,sizeof(treq)) < 0){
-		fprintf(stderr,"Couldn't set socket option (%s?)\n",strerror(errno));
-		return 0;
-	}
-	if((*map = mmap(0,size,PROT_READ|PROT_WRITE,MAP_SHARED,fd,0)) == MAP_FAILED){
-		fprintf(stderr,"Couldn't mmap %zub (%s?)\n",size,strerror(errno));
-	}
-	return size;
+size_t mmap_tx_psocket(int fd,void **map){
+	return mmap_psocket(PACKET_TX_RING,fd,map);
 }
 
 int unmap_psocket(void *map,size_t size){
