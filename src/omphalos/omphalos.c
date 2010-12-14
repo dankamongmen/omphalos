@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+//#include <sys/time.h>
 #include <sys/poll.h>
 #include <net/ethernet.h>
 #include <linux/if_packet.h>
@@ -15,17 +16,18 @@ usage(const char *arg0,int ret){
 }
 
 static void
-handle_packet(const void *frame,size_t len){
+handle_packet(const struct timeval *tv,const void *frame,size_t len){
 	if(len <= 99999){
-		printf("[%5zub] Frame: %p\n",len,frame);
+		printf("[%5zub] %lu.%06lu %p\n",len,tv->tv_sec,1000000 - tv->tv_usec,frame);
 	}else{
-		printf("[%zub] Frame: %p\n",len,frame);
+		printf("[%zub] %lu.%06lu %p\n",len,tv->tv_sec,1000000 - tv->tv_usec,frame);
 	}
 }
 
 static void
 handle_ring_packet(int fd,void *frame){
 	struct tpacket_hdr *thdr = frame;
+	struct timeval tv;
 
 	while(thdr->tp_status == 0){
 		struct pollfd pfd;
@@ -51,7 +53,9 @@ handle_ring_packet(int fd,void *frame){
 		fprintf(stderr,"Partial capture (%u/%ub)\n",thdr->tp_snaplen,thdr->tp_len);
 		return;
 	}
-	handle_packet((const char *)frame + thdr->tp_mac,thdr->tp_len);
+	tv.tv_sec = thdr->tp_sec;
+	tv.tv_usec = thdr->tp_usec;
+	handle_packet(&tv,(const char *)frame + thdr->tp_mac,thdr->tp_len);
 	thdr->tp_status = TP_STATUS_KERNEL; // return the frame
 }
 
@@ -65,7 +69,7 @@ handle_pcap_packet(u_char *user,const struct pcap_pkthdr *h,const u_char *bytes)
 		fprintf(stderr,"Partial capture (%u/%ub)\n",h->caplen,h->len);
 		return;
 	}
-	handle_packet(bytes,h->caplen);
+	handle_packet(&h->ts,bytes,h->caplen);
 }
 
 static int
