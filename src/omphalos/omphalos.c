@@ -61,25 +61,37 @@ handle_pcap_packet(u_char *user,const struct pcap_pkthdr *h,const u_char *bytes)
 	handle_packet(bytes,h->caplen);
 }
 
+static int
+handle_pcap_file(const char *pcapfn){
+	char ebuf[PCAP_ERRBUF_SIZE];
+	pcap_t *pcap;
+
+	if((pcap = pcap_open_offline(pcapfn,ebuf)) == NULL){
+		fprintf(stderr,"Couldn't open %s (%s?)\n",pcapfn,ebuf);
+		return -1;
+	}
+	if(pcap_loop(pcap,-1,handle_pcap_packet,NULL)){
+		fprintf(stderr,"Error processing pcap file %s (%s?)\n",pcapfn,pcap_geterr(pcap));
+		pcap_close(pcap);
+		return -1;
+	}
+	pcap_close(pcap);
+	return 0;
+}
+
 int main(int argc,char * const *argv){
-	pcap_t *pcap = NULL;
+	const char *pcapfn = NULL;
 	int opt;
 
 	opterr = 0; // suppress getopt() diagnostic to stderr
 	while((opt = getopt(argc,argv,":f:")) >= 0){
 		switch(opt){
 		case 'f':{
-			char ebuf[PCAP_ERRBUF_SIZE];
-			const char *fn = optarg;
-
-			if(pcap){
+			if(pcapfn){
 				fprintf(stderr,"Provided -f twice\n");
 				usage(argv[0],EXIT_FAILURE);
 			}
-			if((pcap = pcap_open_offline(fn,ebuf)) == NULL){
-				fprintf(stderr,"Couldn't open %s (%s?)\n",fn,ebuf);
-				return EXIT_FAILURE;
-			}
+			pcapfn = optarg;
 			break;
 		}case ':':{
 			fprintf(stderr,"Option requires argument: '%c'\n",optopt);
@@ -93,13 +105,10 @@ int main(int argc,char * const *argv){
 		fprintf(stderr,"Trailing argument: %s\n",argv[optind]);
 		usage(argv[0],EXIT_FAILURE);
 	}
-	if(pcap){
-		// FIXME handle packets
-		if(pcap_loop(pcap,-1,handle_pcap_packet,NULL)){
-			pcap_close(pcap);
+	if(pcapfn){
+		if(handle_pcap_file(pcapfn)){
 			return EXIT_FAILURE;
 		}
-		pcap_close(pcap);
 	}else{
 		void *txm,*rxm;
 		size_t ts,rs;
@@ -122,8 +131,7 @@ int main(int argc,char * const *argv){
 			close(tfd);
 			return EXIT_FAILURE;
 		}
-		// FIXME handle packets
-		handle_ring_packet(rfd,rxm);
+		handle_ring_packet(rfd,rxm); // FIXME
 		if(unmap_psocket(txm,ts)){
 			unmap_psocket(rxm,rs);
 			close(rfd);
