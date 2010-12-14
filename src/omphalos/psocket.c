@@ -50,10 +50,7 @@ static size_t
 size_mmap_psocket(struct tpacket_req *treq){
 	// Must be a multiple of TPACKET_ALIGNMENT, and the following must
 	// hold: TPACKET_HDRLEN <= tp_frame_size <= tp_block_size.
-	treq->tp_frame_size = TPACKET_HDRLEN + MAX_FRAME_SIZE;
-	if(treq->tp_frame_size % TPACKET_ALIGNMENT){
-		treq->tp_frame_size += TPACKET_ALIGNMENT - (treq->tp_frame_size % TPACKET_ALIGNMENT);
-	}
+	treq->tp_frame_size = TPACKET_ALIGN(TPACKET_HDRLEN + MAX_FRAME_SIZE);
 	if(get_block_size(treq->tp_frame_size,&treq->tp_block_size) < 0){
 		return 0;
 	}
