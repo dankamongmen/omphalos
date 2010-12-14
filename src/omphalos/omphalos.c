@@ -26,7 +26,6 @@ handle_packet(const void *frame,size_t len){
 static void
 handle_ring_packet(int fd,void *frame){
 	struct tpacket_hdr *thdr = frame;
-	size_t len;
 
 	while(thdr->tp_status == 0){
 		struct pollfd pfd;
@@ -52,8 +51,7 @@ handle_ring_packet(int fd,void *frame){
 		fprintf(stderr,"Partial capture (%u/%ub)\n",thdr->tp_snaplen,thdr->tp_len);
 		return;
 	}
-	len = thdr->tp_len;
-	handle_packet(thdr + 1,len);
+	handle_packet((const char *)frame + thdr->tp_mac,thdr->tp_len);
 	thdr->tp_status = TP_STATUS_KERNEL; // return the frame
 }
 
