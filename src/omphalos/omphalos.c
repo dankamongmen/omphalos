@@ -30,13 +30,21 @@ handle_ring_packet(int fd,void *frame){
 
 	while(thdr->tp_status == 0){
 		struct pollfd pfd;
+		int events;
 
 		fprintf(stderr,"Packet not ready\n");
 		pfd.fd = fd;
 		pfd.revents = 0;
 		pfd.events = POLLIN | POLLRDNORM | POLLERR;
-		if(poll(&pfd,1,-1) < 0){
+		while((events = poll(&pfd,1,-1)) == 0){
+			fprintf(stderr,"Interrupted polling packet socket %d\n",fd);
+		}
+		if(events < 0){
 			fprintf(stderr,"Error polling packet socket %d (%s?)\n",fd,strerror(errno));
+			return;
+		}
+		if(pfd.revents & POLLERR){
+			fprintf(stderr,"Error polling packet socket %d\n",fd);
 			return;
 		}
 	}
