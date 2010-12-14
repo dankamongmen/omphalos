@@ -14,7 +14,7 @@ usage(const char *arg0,int ret){
 
 int main(int argc,char * const *argv){
 	pcap_t *pcap = NULL;
-	int fd,opt;
+	int opt;
 
 	opterr = 0; // suppress getopt() diagnostic to stderr
 	while((opt = getopt(argc,argv,":f:")) >= 0){
@@ -49,30 +49,43 @@ int main(int argc,char * const *argv){
 	}else{
 		void *txm,*rxm;
 		size_t ts,rs;
+		int tfd,rfd;
 
-		if((fd = packet_socket(ETH_P_ALL)) < 0){
+		if((rfd = packet_socket(ETH_P_ALL)) < 0){
 			return EXIT_FAILURE;
 		}
-		if((rs = mmap_rx_psocket(fd,&rxm)) == 0){
-			close(fd);
+		if((tfd = packet_socket(ETH_P_ALL)) < 0){
 			return EXIT_FAILURE;
 		}
-		if((ts = mmap_tx_psocket(fd,&txm)) == 0){
+		if((rs = mmap_rx_psocket(rfd,&rxm)) == 0){
+			close(rfd);
+			close(tfd);
+			return EXIT_FAILURE;
+		}
+		if((ts = mmap_tx_psocket(tfd,&txm)) == 0){
 			unmap_psocket(rxm,rs);
-			close(fd);
+			close(rfd);
+			close(tfd);
 			return EXIT_FAILURE;
 		}
 		if(unmap_psocket(txm,ts)){
 			unmap_psocket(rxm,rs);
-			close(fd);
+			close(rfd);
+			close(tfd);
 			return EXIT_FAILURE;
 		}
 		if(unmap_psocket(rxm,rs)){
-			close(fd);
+			close(rfd);
+			close(tfd);
 			return EXIT_FAILURE;
 		}
-		if(close(fd)){
-			fprintf(stderr,"Couldn't close packet socket %d (%s?)\n",fd,strerror(errno));
+		if(close(rfd)){
+			fprintf(stderr,"Couldn't close packet socket %d (%s?)\n",rfd,strerror(errno));
+			close(tfd);
+			return EXIT_FAILURE;
+		}
+		if(close(tfd)){
+			fprintf(stderr,"Couldn't close packet socket %d (%s?)\n",tfd,strerror(errno));
 			return EXIT_FAILURE;
 		}
 	}
