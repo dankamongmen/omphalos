@@ -18,9 +18,9 @@ usage(const char *arg0,int ret){
 static void
 handle_packet(const struct timeval *tv,const void *frame,size_t len){
 	if(len <= 99999){
-		printf("[%5zub] %lu.%06lu %p\n",len,tv->tv_sec,1000000 - tv->tv_usec,frame);
+		printf("[%5zub] %lu.%06lu %p\n",len,tv->tv_sec,tv->tv_usec,frame);
 	}else{
-		printf("[%zub] %lu.%06lu %p\n",len,tv->tv_sec,1000000 - tv->tv_usec,frame);
+		printf("[%zub] %lu.%06lu %p\n",len,tv->tv_sec,tv->tv_usec,frame);
 	}
 }
 
