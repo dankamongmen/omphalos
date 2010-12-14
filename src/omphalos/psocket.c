@@ -75,6 +75,9 @@ size_t mmap_rx_psocket(int fd,void **map){
 		fprintf(stderr,"Couldn't set socket option (%s?)\n",strerror(errno));
 		return 0;
 	}
+	if((*map = mmap(0,size,PROT_READ|PROT_WRITE,MAP_SHARED,fd,0)) == MAP_FAILED){
+		fprintf(stderr,"Couldn't mmap %zub (%s?)\n",size,strerror(errno));
+	}
 	return size;
 }
 
@@ -89,6 +92,9 @@ size_t mmap_tx_psocket(int fd,void **map){
 	if(setsockopt(fd,SOL_PACKET,PACKET_TX_RING,&treq,sizeof(treq)) < 0){
 		fprintf(stderr,"Couldn't set socket option (%s?)\n",strerror(errno));
 		return 0;
+	}
+	if((*map = mmap(0,size,PROT_READ|PROT_WRITE,MAP_SHARED,fd,0)) == MAP_FAILED){
+		fprintf(stderr,"Couldn't mmap %zub (%s?)\n",size,strerror(errno));
 	}
 	return size;
 }
