@@ -47,7 +47,28 @@ int main(int argc,char * const *argv){
 	if(pcap){
 		pcap_close(pcap);
 	}else{
+		void *txm,*rxm;
+		size_t ts,rs;
+
 		if((fd = packet_socket(ETH_P_ALL)) < 0){
+			return EXIT_FAILURE;
+		}
+		if((rs = mmap_rx_psocket(fd,&rxm)) == 0){
+			close(fd);
+			return EXIT_FAILURE;
+		}
+		if((ts = mmap_rx_psocket(fd,&txm)) == 0){
+			unmap_psocket(rxm,rs);
+			close(fd);
+			return EXIT_FAILURE;
+		}
+		if(unmap_psocket(txm,ts)){
+			unmap_psocket(rxm,rs);
+			close(fd);
+			return EXIT_FAILURE;
+		}
+		if(unmap_psocket(rxm,rs)){
+			close(fd);
 			return EXIT_FAILURE;
 		}
 		if(close(fd)){

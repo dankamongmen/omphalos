@@ -5,9 +5,16 @@
 extern "C" {
 #endif
 
+// Open a packet socket. Requires superuser or network admin capabilities.
 int packet_socket(unsigned protocol);
-void *mmap_rx_psocket(int fd);
-void *mmap_tx_psocket(int fd);
+
+// Returns the size of the map, or 0 if the operation fails (in this case,
+// map will be set to MAP_FAILED).
+size_t mmap_rx_psocket(int fd,void **map);
+size_t mmap_tx_psocket(int fd,void **map);
+
+// map and size ought have been returned by mmap_*_psocket().
+int unmap_psocket(void *map,size_t size);
 
 #ifdef __cplusplus
 }

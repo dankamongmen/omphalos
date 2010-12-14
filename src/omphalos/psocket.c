@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/mman.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <linux/if_packet.h>
@@ -60,30 +61,42 @@ size_mmap_psocket(struct tpacket_req *treq){
 	return 0;
 }
 
-void *mmap_rx_psocket(int fd){
+size_t mmap_rx_psocket(int fd,void **map){
 	struct tpacket_req treq;
-	void *map;
+	size_t size;
 
+	*map = MAP_FAILED;
 	if(size_mmap_psocket(&treq)){
-		return NULL;
+		return 0;
 	}
 	if(setsockopt(fd,SOL_PACKET,PACKET_RX_RING,&treq,sizeof(treq)) < 0){
 		fprintf(stderr,"Couldn't set socket option (%s?)\n",strerror(errno));
-		return NULL;
+		return 0;
 	}
-	return map; // FIXME
+	size = 0;
+	return size; // FIXME
 }
 
-void *mmap_tx_psocket(int fd){
+size_t mmap_tx_psocket(int fd,void **map){
 	struct tpacket_req treq;
-	void *map;
+	size_t size;
 
+	*map = MAP_FAILED;
 	if(size_mmap_psocket(&treq)){
-		return NULL;
+		return 0;
 	}
 	if(setsockopt(fd,SOL_PACKET,PACKET_TX_RING,&treq,sizeof(treq)) < 0){
 		fprintf(stderr,"Couldn't set socket option (%s?)\n",strerror(errno));
-		return NULL;
+		return 0;
 	}
-	return map; // FIXME
+	size = 0;
+	return size; // FIXME
+}
+
+int unmap_psocket(void *map,size_t size){
+	if(munmap(map,size)){
+		fprintf(stderr,"Couldn't unmap %zub ring buffer (%s?)\n",size,strerror(errno));
+		return -1;
+	}
+	return 0;
 }
