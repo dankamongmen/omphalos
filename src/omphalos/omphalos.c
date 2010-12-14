@@ -3,13 +3,45 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/poll.h>
 #include <net/ethernet.h>
+#include <linux/if_packet.h>
 #include <omphalos/psocket.h>
 
 static void
 usage(const char *arg0,int ret){
 	fprintf(stderr,"usage: %s [ -f filename ]\n",arg0);
 	exit(ret);
+}
+
+static void
+handle_packet(void *frame,size_t len){
+	if(len <= 99999){
+		printf("[%5zub] Frame: %p\n",len,frame);
+	}else{
+		printf("[%zub] Frame: %p\n",len,frame);
+	}
+}
+
+static void
+handle_ring_packet(int fd,void *frame){
+	struct tpacket_hdr *thdr = frame;
+	size_t len;
+
+	while(thdr->tp_status == 0){
+		struct pollfd pfd;
+
+		fprintf(stderr,"Packet not ready\n");
+		pfd.fd = fd;
+		pfd.revents = 0;
+		pfd.events = POLLIN | POLLRDNORM | POLLERR;
+		if(poll(&pfd,1,-1) < 0){
+			fprintf(stderr,"Error polling packet socket %d (%s?)\n",fd,strerror(errno));
+			return;
+		}
+	}
+	len = thdr->tp_len;
+	handle_packet(thdr + 1,len);
 }
 
 int main(int argc,char * const *argv){
@@ -45,6 +77,7 @@ int main(int argc,char * const *argv){
 		usage(argv[0],EXIT_FAILURE);
 	}
 	if(pcap){
+		// FIXME handle packets
 		pcap_close(pcap);
 	}else{
 		void *txm,*rxm;
@@ -68,6 +101,8 @@ int main(int argc,char * const *argv){
 			close(tfd);
 			return EXIT_FAILURE;
 		}
+		// FIXME handle packets
+		handle_ring_packet(rfd,rxm);
 		if(unmap_psocket(txm,ts)){
 			unmap_psocket(rxm,rs);
 			close(rfd);
