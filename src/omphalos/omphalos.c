@@ -7,6 +7,7 @@
 #include <omphalos/ll.h>
 #include <net/ethernet.h>
 #include <linux/if_packet.h>
+#include <omphalos/netlink.h>
 #include <omphalos/psocket.h>
 
 static void
