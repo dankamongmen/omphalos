@@ -47,7 +47,7 @@ int main(int argc,char * const *argv){
 	if(pcap){
 		pcap_close(pcap);
 	}else{
-		if((fd = packet_rx_socket(ETH_P_ALL)) < 0){
+		if((fd = packet_socket(ETH_P_ALL)) < 0){
 			return EXIT_FAILURE;
 		}
 		if(close(fd)){

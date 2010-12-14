@@ -43,21 +43,30 @@ get_block_size(unsigned fsize,unsigned *bsize){
 	return 0;
 }
 
+static int
+size_mmap_psocket(struct tpacket_req *treq){
+	// Must be a multiple of TPACKET_ALIGNMENT, and the following must
+	// hold: TPACKET_HDRLEN <= tp_frame_size <= tp_block_size.
+	treq->tp_frame_size = TPACKET_HDRLEN + MAX_FRAME_SIZE;
+	if(get_block_size(treq->tp_frame_size,&treq->tp_block_size) < 0){
+		return -1;
+	}
+	// Array of pointers to blocks, allocated via slab -- cannot be
+	// larger than largest slabbable allocation.
+	treq->tp_block_nr = MMAP_BLOCK_COUNT;
+	// tp_frame_nr is derived from the other three parameters.
+	treq->tp_frame_nr = (treq->tp_block_size / treq->tp_frame_size)
+		* treq->tp_block_nr;
+	return 0;
+}
+
 void *mmap_rx_psocket(int fd){
 	struct tpacket_req treq;
 	void *map;
 
-	// Must be a multiple of TPACKET_ALIGNMENT, and the following must
-	// hold: TPACKET_HDRLEN <= tp_frame_size <= tp_block_size.
-	treq.tp_frame_size = TPACKET_HDRLEN + MAX_FRAME_SIZE;
-	if(get_block_size(treq.tp_frame_size,&treq.tp_block_size) < 0){
+	if(size_mmap_psocket(&treq)){
 		return NULL;
 	}
-	// Array of pointers to blocks, allocated via slab -- cannot be
-	// larger than largest slabbable allocation.
-	treq.tp_block_nr = MMAP_BLOCK_COUNT;
-	// tp_frame_nr is derived from the other three parameters.
-	treq.tp_frame_nr = (treq.tp_block_size / treq.tp_frame_size) * treq.tp_block_nr;
 	if(setsockopt(fd,SOL_PACKET,PACKET_RX_RING,&treq,sizeof(treq)) < 0){
 		fprintf(stderr,"Couldn't set socket option (%s?)\n",strerror(errno));
 		return NULL;
@@ -69,17 +78,9 @@ void *mmap_tx_psocket(int fd){
 	struct tpacket_req treq;
 	void *map;
 
-	// Must be a multiple of TPACKET_ALIGNMENT, and the following must
-	// hold: TPACKET_HDRLEN <= tp_frame_size <= tp_block_size.
-	treq.tp_frame_size = TPACKET_HDRLEN + MAX_FRAME_SIZE;
-	if(get_block_size(treq.tp_frame_size,&treq.tp_block_size) < 0){
+	if(size_mmap_psocket(&treq)){
 		return NULL;
 	}
-	// Array of pointers to blocks, allocated via slab -- cannot be
-	// larger than largest slabbable allocation.
-	treq.tp_block_nr = MMAP_BLOCK_COUNT;
-	// tp_frame_nr is derived from the other three parameters.
-	treq.tp_frame_nr = (treq.tp_block_size / treq.tp_frame_size) * treq.tp_block_nr;
 	if(setsockopt(fd,SOL_PACKET,PACKET_TX_RING,&treq,sizeof(treq)) < 0){
 		fprintf(stderr,"Couldn't set socket option (%s?)\n",strerror(errno));
 		return NULL;
