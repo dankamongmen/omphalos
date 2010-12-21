@@ -1,6 +1,6 @@
 .DELTE_ON_ERROR:
 .DEFAULT_GOAL:=test
-.PHONY: all bin lib doc test clean install uninstall
+.PHONY: all bin lib doc livetest test clean install uninstall
 
 VERSION=0.0.1
 
@@ -47,6 +47,10 @@ CSRCDIRS:=$(wildcard $(SRC)/*)
 CSRCS:=$(shell find $(CSRCDIRS) -type f -iname \*.c -print)
 CINCS:=$(shell find $(CSRCDIRS) -type f -iname \*.h -print)
 COBJS:=$(addprefix $(OUT)/,$(CSRCS:%.c=%.o))
+
+# Requires CAP_NET_ADMIN privileges
+livetest: all
+	$(OMPHALOS)
 
 test: all $(TESTPCAP)
 	$(OMPHALOS) -f $(TESTPCAP)
