@@ -1,5 +1,6 @@
 #include <pcap.h>
 #include <errno.h>
+#include <limits.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -12,7 +13,7 @@
 
 static void
 usage(const char *arg0,int ret){
-	fprintf(stderr,"usage: %s [ -f filename ]\n",arg0);
+	fprintf(stderr,"usage: %s [ -f filename ] [ -c count ]\n",arg0);
 	exit(ret);
 }
 
@@ -91,19 +92,60 @@ handle_pcap_file(const char *pcapfn){
 	return 0;
 }
 
+static inline
+void ring_packet_loop(unsigned count,int rfd,void *rxm,const struct tpacket_req *treq){
+	unsigned idx = 0;
+
+	if(count){
+		while(count--){
+			handle_ring_packet(rfd,rxm);
+			if(++idx == treq->tp_frame_nr){
+				idx = 0;
+			}
+		}
+	}else for( ; ; ){
+		handle_ring_packet(rfd,rxm);
+		if(++idx == treq->tp_frame_nr){
+			idx = 0;
+		}
+	}
+}
+
 int main(int argc,char * const *argv){
-	const char *pcapfn = NULL;
 	int opt;
+	struct pctx {
+		const char *pcapfn;
+		unsigned long count;
+	} pctx = {
+		.pcapfn = NULL,
+		.count = 0,
+	};
 
 	opterr = 0; // suppress getopt() diagnostic to stderr
-	while((opt = getopt(argc,argv,":f:")) >= 0){
+	while((opt = getopt(argc,argv,":c:f:")) >= 0){
 		switch(opt){
-		case 'f':{
-			if(pcapfn){
-				fprintf(stderr,"Provided -f twice\n");
+		case 'c':{
+			char *ep;
+
+			if(pctx.count){
+				fprintf(stderr,"Provided %c twice\n",opt);
 				usage(argv[0],EXIT_FAILURE);
 			}
-			pcapfn = optarg;
+			if((pctx.count = strtoul(optarg,&ep,0)) == ULONG_MAX && errno == ERANGE){
+				fprintf(stderr,"Bad value for %c: %s\n",opt,optarg);
+				usage(argv[0],EXIT_FAILURE);
+			}
+			if(ep == optarg || *ep){
+				fprintf(stderr,"Bad value for %c: %s\n",opt,optarg);
+				usage(argv[0],EXIT_FAILURE);
+			}
+			break;
+		}case 'f':{
+			if(pctx.pcapfn){
+				fprintf(stderr,"Provided %c twice\n",opt);
+				usage(argv[0],EXIT_FAILURE);
+			}
+			pctx.pcapfn = optarg;
 			break;
 		}case ':':{
 			fprintf(stderr,"Option requires argument: '%c'\n",optopt);
@@ -117,11 +159,12 @@ int main(int argc,char * const *argv){
 		fprintf(stderr,"Trailing argument: %s\n",argv[optind]);
 		usage(argv[0],EXIT_FAILURE);
 	}
-	if(pcapfn){
-		if(handle_pcap_file(pcapfn)){
+	if(pctx.pcapfn){
+		if(handle_pcap_file(pctx.pcapfn)){
 			return EXIT_FAILURE;
 		}
 	}else{
+		struct tpacket_req rtpr,ttpr;
 		void *txm,*rxm;
 		size_t ts,rs;
 		int tfd,rfd;
@@ -132,18 +175,18 @@ int main(int argc,char * const *argv){
 		if((tfd = packet_socket(ETH_P_ALL)) < 0){
 			return EXIT_FAILURE;
 		}
-		if((rs = mmap_rx_psocket(rfd,&rxm)) == 0){
+		if((rs = mmap_rx_psocket(rfd,&rxm,&rtpr)) == 0){
 			close(rfd);
 			close(tfd);
 			return EXIT_FAILURE;
 		}
-		if((ts = mmap_tx_psocket(tfd,&txm)) == 0){
+		if((ts = mmap_tx_psocket(tfd,&txm,&ttpr)) == 0){
 			unmap_psocket(rxm,rs);
 			close(rfd);
 			close(tfd);
 			return EXIT_FAILURE;
 		}
-		handle_ring_packet(rfd,rxm); // FIXME
+		ring_packet_loop(pctx.count,rfd,rxm,&rtpr);
 		if(unmap_psocket(txm,ts)){
 			unmap_psocket(rxm,rs);
 			close(rfd);
