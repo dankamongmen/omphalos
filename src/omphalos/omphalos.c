@@ -93,21 +93,34 @@ handle_pcap_file(const char *pcapfn){
 }
 
 static inline
+ssize_t inclen(unsigned *idx,const struct tpacket_req *treq){
+	ssize_t inc = treq->tp_frame_size; // advance at least this much
+	unsigned fperb = treq->tp_block_size / treq->tp_frame_size;
+
+	++*idx;
+	if(*idx == treq->tp_frame_nr){
+		inc -= (fperb - 1) * inc;
+		if(treq->tp_block_nr > 1){
+			inc -= (treq->tp_block_nr - 1) * treq->tp_block_size;
+		}
+	}else if(*idx % fperb == 0){
+		inc += treq->tp_block_size - fperb * inc;
+	}
+	return inc;
+}
+
+static inline
 void ring_packet_loop(unsigned count,int rfd,void *rxm,const struct tpacket_req *treq){
 	unsigned idx = 0;
 
 	if(count){
 		while(count--){
 			handle_ring_packet(rfd,rxm);
-			if(++idx == treq->tp_frame_nr){
-				idx = 0;
-			}
+			rxm += inclen(&idx,treq);
 		}
 	}else for( ; ; ){
 		handle_ring_packet(rfd,rxm);
-		if(++idx == treq->tp_frame_nr){
-			idx = 0;
-		}
+		rxm += inclen(&idx,treq);
 	}
 }
 
