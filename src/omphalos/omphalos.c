@@ -177,47 +177,25 @@ int main(int argc,char * const *argv){
 			return EXIT_FAILURE;
 		}
 	}else{
-		struct tpacket_req rtpr,ttpr;
-		void *txm,*rxm;
-		size_t ts,rs;
-		int tfd,rfd;
+		struct tpacket_req rtpr;
+		void *rxm;
+		size_t rs;
+		int rfd;
 
 		if((rfd = packet_socket(ETH_P_ALL)) < 0){
 			return EXIT_FAILURE;
 		}
-		if((tfd = packet_socket(ETH_P_ALL)) < 0){
-			return EXIT_FAILURE;
-		}
 		if((rs = mmap_rx_psocket(rfd,&rxm,&rtpr)) == 0){
 			close(rfd);
-			close(tfd);
-			return EXIT_FAILURE;
-		}
-		if((ts = mmap_tx_psocket(tfd,&txm,&ttpr)) == 0){
-			unmap_psocket(rxm,rs);
-			close(rfd);
-			close(tfd);
 			return EXIT_FAILURE;
 		}
 		ring_packet_loop(pctx.count,rfd,rxm,&rtpr);
-		if(unmap_psocket(txm,ts)){
-			unmap_psocket(rxm,rs);
-			close(rfd);
-			close(tfd);
-			return EXIT_FAILURE;
-		}
 		if(unmap_psocket(rxm,rs)){
 			close(rfd);
-			close(tfd);
 			return EXIT_FAILURE;
 		}
 		if(close(rfd)){
 			fprintf(stderr,"Couldn't close packet socket %d (%s?)\n",rfd,strerror(errno));
-			close(tfd);
-			return EXIT_FAILURE;
-		}
-		if(close(tfd)){
-			fprintf(stderr,"Couldn't close packet socket %d (%s?)\n",tfd,strerror(errno));
 			return EXIT_FAILURE;
 		}
 	}
