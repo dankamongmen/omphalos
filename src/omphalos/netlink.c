@@ -22,5 +22,5 @@ int netlink_socket(void){
 		close(fd);
 		return -1;
 	}
-	return 0;
+	return fd;
 }
