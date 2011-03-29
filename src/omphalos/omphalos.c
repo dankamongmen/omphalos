@@ -40,7 +40,7 @@ handle_ring_packet(int fd,void *frame){
 		struct pollfd pfd;
 		int events;
 
-		fprintf(stderr,"Packet not ready\n");
+		// fprintf(stderr,"Packet not ready\n");
 		pfd.fd = fd;
 		pfd.revents = 0;
 		pfd.events = POLLIN | POLLRDNORM | POLLERR;
