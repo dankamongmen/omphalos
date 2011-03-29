@@ -84,6 +84,7 @@ size_t mmap_rx_psocket(int fd,void **map,struct tpacket_req *treq){
 	return mmap_psocket(PACKET_RX_RING,fd,map,treq);
 }
 
+// FIXME: need always bind to an interface on tx
 size_t mmap_tx_psocket(int fd,void **map,struct tpacket_req *treq){
 	return mmap_psocket(PACKET_TX_RING,fd,map,treq);
 }
