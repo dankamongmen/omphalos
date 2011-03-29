@@ -114,56 +114,53 @@ ssize_t inclen(unsigned *idx,const struct tpacket_req *treq){
 	return inc;
 }
 
-static inline
-void ring_packet_loop(unsigned count,int rfd,void *rxm,const struct tpacket_req *treq){
+static inline int
+ring_packet_loop(unsigned count,int rfd,void *rxm,const struct tpacket_req *treq){
 	unsigned idx = 0;
+	int nfd;
 
+	if((nfd = netlink_socket()) < 0){
+		return -1;
+	}
 	if(count){
 		while(count--){
 			handle_ring_packet(rfd,rxm);
 			rxm += inclen(&idx,treq);
 		}
-	}else for( ; ; ){
+	}else for( ; ; ){ // FIXME install signal handler
 		handle_ring_packet(rfd,rxm);
 		rxm += inclen(&idx,treq);
-	}
-}
-
-static inline int
-handle_packet_socket(const omphalos_ctx *pctx){
-	struct tpacket_req rtpr;
-	void *rxm;
-	size_t rs;
-	int rfd,nfd;
-
-	if((nfd = netlink_socket()) < 0){
-		return -1;
-	}
-	if((rfd = packet_socket(ETH_P_ALL)) < 0){
-		close(nfd);
-		return -1;
-	}
-	if((rs = mmap_rx_psocket(rfd,&rxm,&rtpr)) == 0){
-		close(rfd);
-		close(nfd);
-		return -1;
-	}
-	ring_packet_loop(pctx->count,rfd,rxm,&rtpr);
-	if(unmap_psocket(rxm,rs)){
-		close(rfd);
-		close(nfd);
-		return -1;
-	}
-	if(close(rfd)){
-		fprintf(stderr,"Couldn't close packet socket %d (%s?)\n",rfd,strerror(errno));
-		close(nfd);
-		return -1;
 	}
 	if(close(nfd)){
 		fprintf(stderr,"Couldn't close netlink socket %d (%s?)\n",nfd,strerror(errno));
 		return -1;
 	}
 	return 0;
+}
+
+static inline int
+handle_packet_socket(const omphalos_ctx *pctx){
+	struct tpacket_req rtpr;
+	int rfd,ret = 0;
+	void *rxm;
+	size_t rs;
+
+	if((rfd = packet_socket(ETH_P_ALL)) < 0){
+		return -1;
+	}
+	if((rs = mmap_rx_psocket(rfd,&rxm,&rtpr)) == 0){
+		close(rfd);
+		return -1;
+	}
+	ret |= ring_packet_loop(pctx->count,rfd,rxm,&rtpr);
+	if(unmap_psocket(rxm,rs)){
+		ret = -1;
+	}
+	if(close(rfd)){
+		fprintf(stderr,"Couldn't close packet socket %d (%s?)\n",rfd,strerror(errno));
+		ret = -1;
+	}
+	return ret;
 }
 
 int main(int argc,char * const *argv){
