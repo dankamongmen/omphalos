@@ -11,6 +11,11 @@
 #include <omphalos/netlink.h>
 #include <omphalos/psocket.h>
 
+typedef struct omphalos_ctx {
+	const char *pcapfn;
+	unsigned long count;
+} omphalos_ctx;
+
 static void
 usage(const char *arg0,int ret){
 	fprintf(stderr,"usage: %s [ -f filename ] [ -c count ]\n",arg0);
@@ -75,16 +80,16 @@ handle_pcap_packet(u_char *user,const struct pcap_pkthdr *h,const u_char *bytes)
 }
 
 static int
-handle_pcap_file(const char *pcapfn){
+handle_pcap_file(const omphalos_ctx *pctx){
 	char ebuf[PCAP_ERRBUF_SIZE];
 	pcap_t *pcap;
 
-	if((pcap = pcap_open_offline(pcapfn,ebuf)) == NULL){
-		fprintf(stderr,"Couldn't open %s (%s?)\n",pcapfn,ebuf);
+	if((pcap = pcap_open_offline(pctx->pcapfn,ebuf)) == NULL){
+		fprintf(stderr,"Couldn't open %s (%s?)\n",pctx->pcapfn,ebuf);
 		return -1;
 	}
 	if(pcap_loop(pcap,-1,handle_pcap_packet,NULL)){
-		fprintf(stderr,"Error processing pcap file %s (%s?)\n",pcapfn,pcap_geterr(pcap));
+		fprintf(stderr,"Error processing pcap file %s (%s?)\n",pctx->pcapfn,pcap_geterr(pcap));
 		pcap_close(pcap);
 		return -1;
 	}
@@ -124,17 +129,40 @@ void ring_packet_loop(unsigned count,int rfd,void *rxm,const struct tpacket_req 
 	}
 }
 
+static inline int
+handle_packet_socket(const omphalos_ctx *pctx){
+	struct tpacket_req rtpr;
+	void *rxm;
+	size_t rs;
+	int rfd;
+
+	if((rfd = packet_socket(ETH_P_ALL)) < 0){
+		return -1;
+	}
+	if((rs = mmap_rx_psocket(rfd,&rxm,&rtpr)) == 0){
+		close(rfd);
+		return -1;
+	}
+	ring_packet_loop(pctx->count,rfd,rxm,&rtpr);
+	if(unmap_psocket(rxm,rs)){
+		close(rfd);
+		return -1;
+	}
+	if(close(rfd)){
+		fprintf(stderr,"Couldn't close packet socket %d (%s?)\n",rfd,strerror(errno));
+		return -1;
+	}
+	return 0;
+}
+
 int main(int argc,char * const *argv){
 	int opt;
-	struct pctx {
-		const char *pcapfn;
-		unsigned long count;
-	} pctx = {
+	omphalos_ctx pctx = {
 		.pcapfn = NULL,
 		.count = 0,
 	};
-
-	opterr = 0; // suppress getopt() diagnostic to stderr
+	
+	opterr = 0; // suppress getopt() diagnostic to stderr while((opt = getopt(argc,argv,":c:f:")) >= 0){ switch(opt){ case 'c':{
 	while((opt = getopt(argc,argv,":c:f:")) >= 0){
 		switch(opt){
 		case 'c':{
@@ -173,29 +201,11 @@ int main(int argc,char * const *argv){
 		usage(argv[0],EXIT_FAILURE);
 	}
 	if(pctx.pcapfn){
-		if(handle_pcap_file(pctx.pcapfn)){
+		if(handle_pcap_file(&pctx)){
 			return EXIT_FAILURE;
 		}
 	}else{
-		struct tpacket_req rtpr;
-		void *rxm;
-		size_t rs;
-		int rfd;
-
-		if((rfd = packet_socket(ETH_P_ALL)) < 0){
-			return EXIT_FAILURE;
-		}
-		if((rs = mmap_rx_psocket(rfd,&rxm,&rtpr)) == 0){
-			close(rfd);
-			return EXIT_FAILURE;
-		}
-		ring_packet_loop(pctx.count,rfd,rxm,&rtpr);
-		if(unmap_psocket(rxm,rs)){
-			close(rfd);
-			return EXIT_FAILURE;
-		}
-		if(close(rfd)){
-			fprintf(stderr,"Couldn't close packet socket %d (%s?)\n",rfd,strerror(errno));
+		if(handle_packet_socket(&pctx)){
 			return EXIT_FAILURE;
 		}
 	}
