@@ -4,9 +4,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/uio.h>
 #include <sys/poll.h>
+#include <sys/socket.h>
 #include <omphalos/ll.h>
 #include <net/ethernet.h>
+#include <linux/netlink.h>
 #include <linux/if_packet.h>
 #include <omphalos/netlink.h>
 #include <omphalos/psocket.h>
@@ -31,29 +34,69 @@ handle_packet(const struct timeval *tv,const void *frame,size_t len){
 	}
 }
 
+static int
+handle_netlink_event(int fd){
+	char buf[4096]; // FIXME numerous problems
+	struct iovec iov[1] = { { buf, sizeof(buf) } };
+	struct sockaddr_nl sa;
+	struct msghdr msg = {
+		&sa,	sizeof(sa),	iov,	sizeof(iov) / sizeof(*iov), NULL, 0, 0
+	};
+	struct nlmsghdr *nh;
+	int r;
+
+	printf("NETLINK EVENT\n");
+	if((r = recvmsg(fd,&msg,0)) < 0){
+		fprintf(stderr,"Error reading netlink socket %d (%s?)\n",fd,strerror(errno));
+		return -1;
+	}
+	for(nh = (struct nlmsghdr *)buf ; NLMSG_OK(nh,(unsigned)r) ; nh = NLMSG_NEXT(nh,r)){
+		if(nh->nlmsg_type == NLMSG_DONE){
+			printf("HANDLED NETLINK MESSAGE\n");
+		}else if(nh->nlmsg_type == NLMSG_ERROR){
+			printf("NETLINK MESSAGE ERROR\n");
+		}
+	}
+	// FIXME handle read data
+	return 0;
+}
+
 static void
-handle_ring_packet(int fd,void *frame){
+handle_ring_packet(int nfd,int fd,void *frame){
 	struct tpacket_hdr *thdr = frame;
 	struct timeval tv;
 
 	while(thdr->tp_status == 0){
-		struct pollfd pfd;
+		struct pollfd pfd[2];
 		int events;
 
 		// fprintf(stderr,"Packet not ready\n");
-		pfd.fd = fd;
-		pfd.revents = 0;
-		pfd.events = POLLIN | POLLRDNORM | POLLERR;
-		while((events = poll(&pfd,1,-1)) == 0){
+		pfd[0].fd = fd;
+		pfd[0].revents = 0;
+		pfd[0].events = POLLIN | POLLRDNORM | POLLERR;
+		pfd[1].fd = nfd;
+		pfd[1].revents = 0;
+		pfd[1].events = POLLIN | POLLRDNORM | POLLERR;
+		while((events = poll(pfd,2,-1)) == 0){
 			fprintf(stderr,"Interrupted polling packet socket %d\n",fd);
 		}
 		if(events < 0){
 			fprintf(stderr,"Error polling packet socket %d (%s?)\n",fd,strerror(errno));
 			return;
 		}
-		if(pfd.revents & POLLERR){
+		if(pfd[0].revents & POLLERR){
 			fprintf(stderr,"Error polling packet socket %d\n",fd);
 			return;
+		}
+		if(pfd[1].revents & POLLERR){
+			fprintf(stderr,"Error polling netlink socket %d\n",nfd);
+			return;
+		}else if(pfd[1].revents){
+			// FIXME handle netlink event
+			// FIXME this can lead to starvation -- if we have
+			// a continuous packet stream, we never read
+			// netlink events
+			handle_netlink_event(nfd);
 		}
 	}
 	if((thdr->tp_status & TP_STATUS_COPY) || thdr->tp_snaplen != thdr->tp_len){
@@ -104,10 +147,11 @@ ssize_t inclen(unsigned *idx,const struct tpacket_req *treq){
 
 	++*idx;
 	if(*idx == treq->tp_frame_nr){
-		inc -= (fperb - 1) * inc;
+		inc -= fperb * inc;
 		if(treq->tp_block_nr > 1){
 			inc -= (treq->tp_block_nr - 1) * treq->tp_block_size;
 		}
+		*idx = 0;
 	}else if(*idx % fperb == 0){
 		inc += treq->tp_block_size - fperb * inc;
 	}
@@ -124,11 +168,11 @@ ring_packet_loop(unsigned count,int rfd,void *rxm,const struct tpacket_req *treq
 	}
 	if(count){
 		while(count--){
-			handle_ring_packet(rfd,rxm);
+			handle_ring_packet(nfd,rfd,rxm);
 			rxm += inclen(&idx,treq);
 		}
 	}else for( ; ; ){ // FIXME install signal handler
-		handle_ring_packet(rfd,rxm);
+		handle_ring_packet(nfd,rfd,rxm);
 		rxm += inclen(&idx,treq);
 	}
 	if(close(nfd)){
