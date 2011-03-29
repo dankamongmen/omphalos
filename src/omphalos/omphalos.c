@@ -134,22 +134,33 @@ handle_packet_socket(const omphalos_ctx *pctx){
 	struct tpacket_req rtpr;
 	void *rxm;
 	size_t rs;
-	int rfd;
+	int rfd,nfd;
 
+	if((nfd = netlink_socket()) < 0){
+		return -1;
+	}
 	if((rfd = packet_socket(ETH_P_ALL)) < 0){
+		close(nfd);
 		return -1;
 	}
 	if((rs = mmap_rx_psocket(rfd,&rxm,&rtpr)) == 0){
 		close(rfd);
+		close(nfd);
 		return -1;
 	}
 	ring_packet_loop(pctx->count,rfd,rxm,&rtpr);
 	if(unmap_psocket(rxm,rs)){
 		close(rfd);
+		close(nfd);
 		return -1;
 	}
 	if(close(rfd)){
 		fprintf(stderr,"Couldn't close packet socket %d (%s?)\n",rfd,strerror(errno));
+		close(nfd);
+		return -1;
+	}
+	if(close(nfd)){
+		fprintf(stderr,"Couldn't close netlink socket %d (%s?)\n",nfd,strerror(errno));
 		return -1;
 	}
 	return 0;
