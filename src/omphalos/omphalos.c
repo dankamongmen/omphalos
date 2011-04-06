@@ -105,7 +105,7 @@ handle_rtm_newlink(const struct nlmsghdr *nl){
 			IFF_FLAG(ii->ifi_flags,ECHO)
 			);
 	}
-	rlen = nl->nlmsg_len - sizeof(*ii);
+	rlen = nl->nlmsg_len - NLMSG_LENGTH(sizeof(*ii));
 	ra = (struct rtattr *)((char *)(NLMSG_DATA(nl)) + sizeof(*ii));
 	while(RTA_OK(ra,rlen)){
 		switch(ra->rta_type){
