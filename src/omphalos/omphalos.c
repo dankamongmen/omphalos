@@ -44,31 +44,54 @@ handle_netlink_event(int fd){
 		&sa,	sizeof(sa),	iov,	sizeof(iov) / sizeof(*iov), NULL, 0, 0
 	};
 	struct nlmsghdr *nh;
-	int r;
+	int r,inmulti;
 
-	if((r = recvmsg(fd,&msg,0)) < 0){
-		fprintf(stderr,"Error reading netlink socket %d (%s?)\n",fd,strerror(errno));
-		return -1;
-	}
-	for(nh = (struct nlmsghdr *)buf ; NLMSG_OK(nh,(unsigned)r) ; nh = NLMSG_NEXT(nh,r)){
-		printf("NLMSG SIZE: %u\n",nh->nlmsg_len);
-		if(nh->nlmsg_type == NLMSG_ERROR){
-			struct nlmsgerr *nerr = NLMSG_DATA(nh);
-
-			if(nerr->error == 0){
-				printf("ACK on netlink %d msgid %u type %u\n",
-					fd,nerr->msg.nlmsg_seq,nerr->msg.nlmsg_type);
-			}else{
-				fprintf(stderr,"Error message on netlink %d msgid %u (%s?)\n",
-					fd,nerr->msg.nlmsg_seq,strerror(nerr->error));
+	// For handling multipart messages
+	inmulti = 0;
+	while((r = recvmsg(fd,&msg,0)) > 0){
+		for(nh = (struct nlmsghdr *)buf ; NLMSG_OK(nh,(unsigned)r) ; nh = NLMSG_NEXT(nh,r)){
+			if(nh->nlmsg_flags & NLM_F_MULTI){
+				inmulti = 1;
 			}
-		}else{
-			printf("NETLINK MESSAGE TYPE %u\n",nh->nlmsg_type);
+			switch(nh->nlmsg_type){
+			case RTM_NEWLINK:{
+				// FIXME handle new link
+				break;
+			}case NLMSG_DONE:{
+				if(!inmulti){
+					fprintf(stderr,"Warning: DONE outside multipart on %d\n",fd);
+				}
+				inmulti = 0;
+				break;
+			}case NLMSG_ERROR:{
+				struct nlmsgerr *nerr = NLMSG_DATA(nh);
+
+				if(nerr->error == 0){
+					printf("ACK on netlink %d msgid %u type %u\n",
+						fd,nerr->msg.nlmsg_seq,nerr->msg.nlmsg_type);
+				}else{
+					fprintf(stderr,"Error message on netlink %d msgid %u (%s?)\n",
+						fd,nerr->msg.nlmsg_seq,strerror(nerr->error));
+				}
+				break;
+			}default:{
+				fprintf(stderr,"Unknown netlink msgtype %u on %d\n",nh->nlmsg_type,fd);
+			}}
+			// FIXME handle read data
 		}
-		if(nh->nlmsg_flags & NLM_F_MULTI){
-			// FIXME handle this...
-		}
-		// FIXME handle read data
+	}
+	if(inmulti){
+		fprintf(stderr,"Warning: unterminated multipart on %d\n",fd);
+	}
+	if(r < 0){
+		// FIXME non-blocking handle
+		fprintf(stderr,"Error reading netlink socket %d (%s?)\n",
+				fd,strerror(errno));
+		return -1;
+	}else if(r == 0){
+		fprintf(stderr,"EOF on netlink socket %d\n",fd);
+		// FIXME reopen...?
+		return -1;
 	}
 	return 0;
 }
