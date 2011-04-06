@@ -30,6 +30,7 @@ usage(const char *arg0,int ret){
 	exit(ret);
 }
 
+// len is actual packet data length, not packet_mmap leaders
 static void
 handle_packet(const struct timeval *tv,const void *frame,size_t len){
 	const struct sockaddr_ll *sall = frame;
