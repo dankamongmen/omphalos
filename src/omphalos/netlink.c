@@ -24,3 +24,17 @@ int netlink_socket(void){
 	}
 	return fd;
 }
+
+int discover_links(int fd){
+	struct nlmsghdr nh = {
+		.nlmsg_len = NLMSG_LENGTH(0),
+		.nlmsg_flags = NLM_F_REQUEST | NLM_F_ACK | NLM_F_DUMP,
+		.nlmsg_type = RTM_GETLINK,
+	};
+	int r;
+
+	if((r = send(fd,&nh,sizeof(nh),0)) < 0){
+		fprintf(stderr,"Failure writing RTM_GETLINK message to %d (%s?)\n",fd,strerror(errno));
+	}
+	return r;
+}

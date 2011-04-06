@@ -6,6 +6,7 @@ extern "C" {
 #endif
 
 int netlink_socket(void);
+int discover_links(int);
 
 #ifdef __cplusplus
 }

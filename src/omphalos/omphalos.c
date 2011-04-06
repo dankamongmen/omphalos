@@ -10,6 +10,7 @@
 #include <omphalos/ll.h>
 #include <net/ethernet.h>
 #include <linux/netlink.h>
+#include <linux/rtnetlink.h>
 #include <linux/if_packet.h>
 #include <omphalos/netlink.h>
 #include <omphalos/psocket.h>
@@ -45,19 +46,30 @@ handle_netlink_event(int fd){
 	struct nlmsghdr *nh;
 	int r;
 
-	printf("NETLINK EVENT\n");
 	if((r = recvmsg(fd,&msg,0)) < 0){
 		fprintf(stderr,"Error reading netlink socket %d (%s?)\n",fd,strerror(errno));
 		return -1;
 	}
 	for(nh = (struct nlmsghdr *)buf ; NLMSG_OK(nh,(unsigned)r) ; nh = NLMSG_NEXT(nh,r)){
-		if(nh->nlmsg_type == NLMSG_DONE){
-			printf("HANDLED NETLINK MESSAGE\n");
-		}else if(nh->nlmsg_type == NLMSG_ERROR){
-			printf("NETLINK MESSAGE ERROR\n");
+		printf("NLMSG SIZE: %u\n",nh->nlmsg_len);
+		if(nh->nlmsg_type == NLMSG_ERROR){
+			struct nlmsgerr *nerr = NLMSG_DATA(nh);
+
+			if(nerr->error == 0){
+				printf("ACK on netlink %d msgid %u type %u\n",
+					fd,nerr->msg.nlmsg_seq,nerr->msg.nlmsg_type);
+			}else{
+				fprintf(stderr,"Error message on netlink %d msgid %u (%s?)\n",
+					fd,nerr->msg.nlmsg_seq,strerror(nerr->error));
+			}
+		}else{
+			printf("NETLINK MESSAGE TYPE %u\n",nh->nlmsg_type);
 		}
+		if(nh->nlmsg_flags & NLM_F_MULTI){
+			// FIXME handle this...
+		}
+		// FIXME handle read data
 	}
-	// FIXME handle read data
 	return 0;
 }
 
@@ -164,6 +176,10 @@ ring_packet_loop(unsigned count,int rfd,void *rxm,const struct tpacket_req *treq
 	int nfd;
 
 	if((nfd = netlink_socket()) < 0){
+		return -1;
+	}
+	if(discover_links(nfd) < 0){
+		close(nfd);
 		return -1;
 	}
 	if(count){
