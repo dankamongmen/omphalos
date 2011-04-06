@@ -49,6 +49,9 @@ static arptype arptypes[] = {
 	},{
 		.ifi_type = ARPHRD_ETHER,
 		.name = "Ethernet",
+	},{
+		.ifi_type = ARPHRD_IEEE80211,
+		.name = "IEEE 802.11",
 	},
 };
 
