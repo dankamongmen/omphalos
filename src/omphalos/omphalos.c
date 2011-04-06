@@ -9,6 +9,7 @@
 #include <sys/poll.h>
 #include <sys/socket.h>
 #include <omphalos/ll.h>
+#include <linux/if_arp.h>
 #include <net/ethernet.h>
 #include <linux/netlink.h>
 #include <linux/rtnetlink.h>
@@ -36,6 +37,53 @@ handle_packet(const struct timeval *tv,const void *frame,size_t len){
 	}
 }
 
+typedef struct arptype {
+	unsigned ifi_type;
+	const char *name;
+} arptype;
+
+static arptype arptypes[] = {
+	{
+		.ifi_type = ARPHRD_LOOPBACK,
+		.name = "loopback",
+	},{
+		.ifi_type = ARPHRD_ETHER,
+		.name = "Ethernet",
+	},
+};
+
+static inline const arptype *
+lookup_arptype(unsigned arphrd){
+	unsigned idx;
+
+	for(idx = 0 ; idx < sizeof(arptypes) / sizeof(*arptypes) ; ++idx){
+		const arptype *at = arptypes + idx;
+
+		if(at->ifi_type == arphrd){
+			return at;
+		}
+	}
+	return NULL;
+}
+
+static int
+handle_rtm_newlink(const struct nlmsghdr *nl){
+	const struct ifinfomsg *ii = NLMSG_DATA(nl);
+	const arptype *at;
+
+	if((at = lookup_arptype(ii->ifi_type)) == NULL){
+		fprintf(stderr,"Unknown dev type %u\n",ii->ifi_type);
+	}else{
+		printf("NEW %s: family %u idx %d flags 0x%x cm 0x%x\n",
+			at->name,
+			ii->ifi_family,
+			ii->ifi_index,
+			ii->ifi_flags,
+			ii->ifi_change);
+	}
+	return 0;
+}
+
 static int
 handle_netlink_event(int fd){
 	char buf[4096]; // FIXME numerous problems
@@ -50,14 +98,15 @@ handle_netlink_event(int fd){
 	// For handling multipart messages
 	inmulti = 0;
 	while((r = recvmsg(fd,&msg,MSG_DONTWAIT)) > 0){
+		// NLMSG_LENGTH sanity checks enforced via NLMSG_OK() and
+		// _NEXT() -- we needn't check amount read within the loop
 		for(nh = (struct nlmsghdr *)buf ; NLMSG_OK(nh,(unsigned)r) ; nh = NLMSG_NEXT(nh,r)){
 			if(nh->nlmsg_flags & NLM_F_MULTI){
 				inmulti = 1;
 			}
 			switch(nh->nlmsg_type){
 			case RTM_NEWLINK:{
-				// FIXME handle new link
-				printf("NEW LINK!?!?\n");
+				handle_rtm_newlink(nh);
 				break;
 			}case NLMSG_DONE:{
 				if(!inmulti){
