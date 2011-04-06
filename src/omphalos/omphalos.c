@@ -108,7 +108,57 @@ handle_rtm_newlink(const struct nlmsghdr *nl){
 	rlen = nl->nlmsg_len - sizeof(*ii);
 	ra = (struct rtattr *)((char *)(NLMSG_DATA(nl)) + sizeof(*ii));
 	while(RTA_OK(ra,rlen)){
-		printf("RTATTR (%u)!\n",ra->rta_type);
+		switch(ra->rta_type){
+			case IFLA_ADDRESS:{
+				break;
+			}case IFLA_BROADCAST:{
+				break;
+			}case IFLA_IFNAME:{
+				fprintf(stderr,"Name: %s\n",(char *)RTA_DATA(ra));
+				break;
+			}case IFLA_MTU:{
+				break;
+			}case IFLA_LINK:{
+				break;
+			}case IFLA_TXQLEN:{
+				break;
+			}case IFLA_MAP:{
+				break;
+			}case IFLA_WEIGHT:{
+				break;
+			}case IFLA_QDISC:{
+				break;
+			}case IFLA_STATS:{
+				break;
+			}case IFLA_WIRELESS:{
+				break;
+			}case IFLA_OPERSTATE:{
+				break;
+			}case IFLA_LINKMODE:{
+				break;
+			}case IFLA_LINKINFO:{
+				break;
+			}case IFLA_NET_NS_PID:{
+				break;
+			}case IFLA_IFALIAS:{
+				break;
+			}case IFLA_NUM_VF:{
+				break;
+			}case IFLA_VFINFO_LIST:{
+				break;
+			}case IFLA_STATS64:{
+				break;
+			}case IFLA_VF_PORTS:{
+				break;
+			}case IFLA_PORT_SELF:{
+				break;
+			}case IFLA_AF_SPEC:{
+				break;
+			}default:{
+				fprintf(stderr,"Unknown rtatype %u\n",ra->rta_type);
+				break;
+			}
+		}
 		ra = RTA_NEXT(ra,rlen);
 	}
 	if(rlen){
