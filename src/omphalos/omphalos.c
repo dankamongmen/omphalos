@@ -30,18 +30,6 @@ usage(const char *arg0,int ret){
 	exit(ret);
 }
 
-// len is actual packet data length, not packet_mmap leaders
-static void
-handle_packet(const struct timeval *tv,const void *frame,size_t len){
-	const struct sockaddr_ll *sall = frame;
-
-	if(len <= 99999){
-		printf("[%d][%5zub] %lu.%06lu\n",sall->sll_ifindex,len,tv->tv_sec,tv->tv_usec);
-	}else{
-		printf("[%d][%zub] %lu.%06lu\n",sall->sll_ifindex,len,tv->tv_sec,tv->tv_usec);
-	}
-}
-
 typedef struct interface {
 	unsigned long pkts;
 	unsigned arptype;
@@ -49,6 +37,33 @@ typedef struct interface {
 } interface;
 
 static interface interfaces[MAXINTERFACES];
+
+// we wouldn't naturally want to use signed integers, but that's the api...
+static inline interface *
+iface_by_idx(int idx){
+	if(idx < 0 || (unsigned)idx >= sizeof(interfaces) / sizeof(*interfaces)){
+		return NULL;
+	}
+	return &interfaces[idx];
+}
+
+// len is actual packet data length, not packet_mmap leaders
+static void
+handle_packet(const struct timeval *tv,const void *frame,size_t len){
+	const struct sockaddr_ll *sall = frame;
+	interface *iface;
+
+	if((iface = iface_by_idx(sall->sll_ifindex)) == NULL){
+		fprintf(stderr,"Invalid interface index: %d\n",sall->sll_ifindex);
+		return;
+	}
+	++iface->pkts;
+	if(len <= 99999){
+		printf("[%d][%5zub] %lu.%06lu\n",sall->sll_ifindex,len,tv->tv_sec,tv->tv_usec);
+	}else{
+		printf("[%d][%zub] %lu.%06lu\n",sall->sll_ifindex,len,tv->tv_sec,tv->tv_usec);
+	}
+}
 
 typedef struct arptype {
 	unsigned ifi_type;
@@ -91,11 +106,10 @@ handle_rtm_newlink(const struct nlmsghdr *nl){
 	interface *iface;
 	int rlen;
 
-	if(ii->ifi_index < 0 || (unsigned)ii->ifi_index > sizeof(interfaces) / sizeof(*interfaces)){
+	if((iface = iface_by_idx(ii->ifi_index)) == NULL){
 		fprintf(stderr,"Invalid interface index: %d\n",ii->ifi_index);
 		return -1;
 	}
-	iface = &interfaces[ii->ifi_index];
 	rlen = nl->nlmsg_len - NLMSG_LENGTH(sizeof(*ii));
 	ra = (struct rtattr *)((char *)(NLMSG_DATA(nl)) + sizeof(*ii));
 	while(RTA_OK(ra,rlen)){
