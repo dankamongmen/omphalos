@@ -279,6 +279,9 @@ handle_ring_packet(int fd,void *frame){
 		fprintf(stderr,"Partial capture (%u/%ub)\n",thdr->tp_snaplen,thdr->tp_len);
 		return;
 	}
+	if(thdr->tp_status & TP_STATUS_LOSING){
+		fprintf(stderr,"FUCK ME; THE RINGBUFFER'S FULL!\n");
+	}
 	tv.tv_sec = thdr->tp_sec;
 	tv.tv_usec = thdr->tp_usec;
 	handle_packet(&tv,(const char *)frame + thdr->tp_mac,thdr->tp_len);
