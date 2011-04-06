@@ -32,10 +32,12 @@ usage(const char *arg0,int ret){
 
 static void
 handle_packet(const struct timeval *tv,const void *frame,size_t len){
+	const struct sockaddr_ll *sall = frame;
+
 	if(len <= 99999){
-		printf("[%5zub] %lu.%06lu %p\n",len,tv->tv_sec,tv->tv_usec,frame);
+		printf("[%d][%5zub] %lu.%06lu\n",sall->sll_ifindex,len,tv->tv_sec,tv->tv_usec);
 	}else{
-		printf("[%zub] %lu.%06lu %p\n",len,tv->tv_sec,tv->tv_usec,frame);
+		printf("[%d][%zub] %lu.%06lu\n",sall->sll_ifindex,len,tv->tv_sec,tv->tv_usec);
 	}
 }
 
@@ -284,7 +286,7 @@ handle_ring_packet(int fd,void *frame){
 	}
 	tv.tv_sec = thdr->tp_sec;
 	tv.tv_usec = thdr->tp_usec;
-	handle_packet(&tv,(const char *)frame + thdr->tp_mac,thdr->tp_len);
+	handle_packet(&tv,(const char *)frame + TPACKET_ALIGN(sizeof(*thdr)),thdr->tp_len);
 	thdr->tp_status = TP_STATUS_KERNEL; // return the frame
 }
 
