@@ -5,6 +5,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/uio.h>
+#include <pthread.h>
 #include <sys/poll.h>
 #include <sys/socket.h>
 #include <omphalos/ll.h>
@@ -56,6 +57,7 @@ handle_netlink_event(int fd){
 			switch(nh->nlmsg_type){
 			case RTM_NEWLINK:{
 				// FIXME handle new link
+				printf("NEW LINK!?!?\n");
 				break;
 			}case NLMSG_DONE:{
 				if(!inmulti){
@@ -96,22 +98,19 @@ handle_netlink_event(int fd){
 }
 
 static void
-handle_ring_packet(int nfd,int fd,void *frame){
+handle_ring_packet(int fd,void *frame){
 	struct tpacket_hdr *thdr = frame;
 	struct timeval tv;
 
 	while(thdr->tp_status == 0){
-		struct pollfd pfd[2];
+		struct pollfd pfd[1];
 		int events;
 
 		// fprintf(stderr,"Packet not ready\n");
 		pfd[0].fd = fd;
 		pfd[0].revents = 0;
 		pfd[0].events = POLLIN | POLLRDNORM | POLLERR;
-		pfd[1].fd = nfd;
-		pfd[1].revents = 0;
-		pfd[1].events = POLLIN | POLLRDNORM | POLLERR;
-		while((events = poll(pfd,2,-1)) == 0){
+		while((events = poll(pfd,sizeof(pfd) / sizeof(*pfd),-1)) == 0){
 			fprintf(stderr,"Interrupted polling packet socket %d\n",fd);
 		}
 		if(events < 0){
@@ -121,16 +120,6 @@ handle_ring_packet(int nfd,int fd,void *frame){
 		if(pfd[0].revents & POLLERR){
 			fprintf(stderr,"Error polling packet socket %d\n",fd);
 			return;
-		}
-		if(pfd[1].revents & POLLERR){
-			fprintf(stderr,"Error polling netlink socket %d\n",nfd);
-			return;
-		}else if(pfd[1].revents){
-			// FIXME handle netlink event
-			// FIXME this can lead to starvation -- if we have
-			// a continuous packet stream, we never read
-			// netlink events
-			handle_netlink_event(nfd);
 		}
 	}
 	if((thdr->tp_status & TP_STATUS_COPY) || thdr->tp_snaplen != thdr->tp_len){
@@ -195,8 +184,81 @@ ssize_t inclen(unsigned *idx,const struct tpacket_req *treq){
 static inline int
 ring_packet_loop(unsigned count,int rfd,void *rxm,const struct tpacket_req *treq){
 	unsigned idx = 0;
+
+	if(count){
+		while(count--){
+			handle_ring_packet(rfd,rxm);
+			rxm += inclen(&idx,treq);
+		}
+	}else for( ; ; ){ // FIXME install signal handler
+		handle_ring_packet(rfd,rxm);
+		rxm += inclen(&idx,treq);
+	}
+	return 0;
+}
+
+typedef struct netlink_thread_marshal {
+	int fd;
+	char errbuf[256];
+} netlink_thread_marshal;
+
+static void *
+netlink_thread(void *v){
+	netlink_thread_marshal *ntmarsh = v;
+	struct pollfd pfd[1] = {
+		{
+			.events = POLLIN | POLLRDNORM | POLLERR,
+			.fd = ntmarsh->fd,
+		}
+	};
+	int events;
+
+	strcpy(ntmarsh->errbuf,"");
+	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE,NULL);
+	for(;;){
+		while((events = poll(pfd,sizeof(pfd) / sizeof(*pfd),-1)) == 0){
+			fprintf(stderr,"Interrupted polling netlink socket %d\n",ntmarsh->fd);
+		}
+		if(pfd[0].revents & POLLERR){
+			snprintf(ntmarsh->errbuf,sizeof(ntmarsh->errbuf),"Error polling netlink socket %d\n",ntmarsh->fd);
+			break; // FIXME
+		}else if(pfd[0].revents){
+			handle_netlink_event(pfd[0].fd);
+		}
+	}
+	pthread_exit(ntmarsh->errbuf);
+}
+
+static int
+reap_netlink_thread(pthread_t tid){
+	void *ret;
+
+	if( (errno = pthread_cancel(tid)) ){
+		fprintf(stderr,"Couldn't cancel netlink thread (%s?)\n",strerror(errno));
+	}
+	if( (errno = pthread_join(tid,&ret)) ){
+		fprintf(stderr,"Couldn't join netlink thread (%s?)\n",strerror(errno));
+		return -1;
+	}
+	if(ret != PTHREAD_CANCELED){
+		fprintf(stderr,"Netlink thread returned error on exit (%s)\n",(char *)ret);
+		return -1;
+	}
+	printf("Successfully reaped netlink thread\n");
+	return 0;
+}
+
+static inline int
+handle_packet_socket(const omphalos_ctx *pctx){
+	netlink_thread_marshal ntmarsh;
+	struct tpacket_req rtpr;
+	int rfd,ret = 0;
+	pthread_t nltid;
+	void *rxm;
+	size_t rs;
 	int nfd;
 
+	// FIXME move into netlink thread
 	if((nfd = netlink_socket()) < 0){
 		return -1;
 	}
@@ -204,34 +266,19 @@ ring_packet_loop(unsigned count,int rfd,void *rxm,const struct tpacket_req *treq
 		close(nfd);
 		return -1;
 	}
-	if(count){
-		while(count--){
-			handle_ring_packet(nfd,rfd,rxm);
-			rxm += inclen(&idx,treq);
-		}
-	}else for( ; ; ){ // FIXME install signal handler
-		handle_ring_packet(nfd,rfd,rxm);
-		rxm += inclen(&idx,treq);
-	}
-	if(close(nfd)){
-		fprintf(stderr,"Couldn't close netlink socket %d (%s?)\n",nfd,strerror(errno));
+	ntmarsh.fd = nfd;
+	if( (errno = pthread_create(&nltid,NULL,netlink_thread,&ntmarsh)) ){
+		fprintf(stderr,"Couldn't create netlink thread (%s?)\n",strerror(errno));
+		close(nfd);
 		return -1;
 	}
-	return 0;
-}
-
-static inline int
-handle_packet_socket(const omphalos_ctx *pctx){
-	struct tpacket_req rtpr;
-	int rfd,ret = 0;
-	void *rxm;
-	size_t rs;
-
 	if((rfd = packet_socket(ETH_P_ALL)) < 0){
+		reap_netlink_thread(nltid);
 		return -1;
 	}
 	if((rs = mmap_rx_psocket(rfd,&rxm,&rtpr)) == 0){
 		close(rfd);
+		reap_netlink_thread(nltid);
 		return -1;
 	}
 	ret |= ring_packet_loop(pctx->count,rfd,rxm,&rtpr);
@@ -242,6 +289,8 @@ handle_packet_socket(const omphalos_ctx *pctx){
 		fprintf(stderr,"Couldn't close packet socket %d (%s?)\n",rfd,strerror(errno));
 		ret = -1;
 	}
+	ret |= reap_netlink_thread(nltid);
+	ret |= close(nfd); // FIXME netlink thread, netlink thread!
 	return ret;
 }
 
