@@ -17,6 +17,8 @@
 #include <omphalos/netlink.h>
 #include <omphalos/psocket.h>
 
+#define MAXINTERFACES (1u << 16) // lame FIXME
+
 typedef struct omphalos_ctx {
 	const char *pcapfn;
 	unsigned long count;
@@ -36,6 +38,14 @@ handle_packet(const struct timeval *tv,const void *frame,size_t len){
 		printf("[%zub] %lu.%06lu %p\n",len,tv->tv_sec,tv->tv_usec,frame);
 	}
 }
+
+typedef struct interface {
+	unsigned long pkts;
+	unsigned arptype;
+	char name[IFNAMSIZ];
+} interface;
+
+static interface interfaces[MAXINTERFACES];
 
 typedef struct arptype {
 	unsigned ifi_type;
@@ -75,36 +85,14 @@ handle_rtm_newlink(const struct nlmsghdr *nl){
 	const struct ifinfomsg *ii = NLMSG_DATA(nl);
 	const struct rtattr *ra;
 	const arptype *at;
+	interface *iface;
 	int rlen;
 
-	if((at = lookup_arptype(ii->ifi_type)) == NULL){
-		fprintf(stderr,"Unknown dev type %u\n",ii->ifi_type);
-	}else{
-		printf("[%s] family %u idx %d cm 0x%x %s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s\n",
-			at->name,
-			ii->ifi_family,
-			ii->ifi_index,
-			ii->ifi_change,
-			IFF_FLAG(ii->ifi_flags,UP),
-			IFF_FLAG(ii->ifi_flags,BROADCAST),
-			IFF_FLAG(ii->ifi_flags,DEBUG),
-			IFF_FLAG(ii->ifi_flags,LOOPBACK),
-			IFF_FLAG(ii->ifi_flags,POINTOPOINT),
-			IFF_FLAG(ii->ifi_flags,NOTRAILERS),
-			IFF_FLAG(ii->ifi_flags,RUNNING),
-			IFF_FLAG(ii->ifi_flags,PROMISC),
-			IFF_FLAG(ii->ifi_flags,ALLMULTI),
-			IFF_FLAG(ii->ifi_flags,MASTER),
-			IFF_FLAG(ii->ifi_flags,SLAVE),
-			IFF_FLAG(ii->ifi_flags,MULTICAST),
-			IFF_FLAG(ii->ifi_flags,PORTSEL),
-			IFF_FLAG(ii->ifi_flags,AUTOMEDIA),
-			IFF_FLAG(ii->ifi_flags,DYNAMIC),
-			IFF_FLAG(ii->ifi_flags,LOWER_UP),
-			IFF_FLAG(ii->ifi_flags,DORMANT),
-			IFF_FLAG(ii->ifi_flags,ECHO)
-			);
+	if(ii->ifi_index < 0 || (unsigned)ii->ifi_index > sizeof(interfaces) / sizeof(*interfaces)){
+		fprintf(stderr,"Invalid interface index: %d\n",ii->ifi_index);
+		return -1;
 	}
+	iface = &interfaces[ii->ifi_index];
 	rlen = nl->nlmsg_len - NLMSG_LENGTH(sizeof(*ii));
 	ra = (struct rtattr *)((char *)(NLMSG_DATA(nl)) + sizeof(*ii));
 	while(RTA_OK(ra,rlen)){
@@ -114,7 +102,11 @@ handle_rtm_newlink(const struct nlmsghdr *nl){
 			}case IFLA_BROADCAST:{
 				break;
 			}case IFLA_IFNAME:{
-				fprintf(stderr,"Name: %s\n",(char *)RTA_DATA(ra));
+				if(strlen(RTA_DATA(ra)) >= sizeof(iface->name)){
+					fprintf(stderr,"Name too long: %s\n",(char *)RTA_DATA(ra));
+					return -1;
+				}
+				strcpy(iface->name,RTA_DATA(ra));
 				break;
 			}case IFLA_MTU:{
 				break;
@@ -163,6 +155,34 @@ handle_rtm_newlink(const struct nlmsghdr *nl){
 	}
 	if(rlen){
 		fprintf(stderr,"%d excess bytes on newlink message\n",rlen);
+	}
+	iface->arptype = ii->ifi_type;
+	if((at = lookup_arptype(iface->arptype)) == NULL){
+		fprintf(stderr,"Unknown dev type %u\n",iface->arptype);
+	}else{
+		printf("[%3d][%8s][%s] %s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s\n",
+			ii->ifi_index,
+			iface->name,
+			at->name,
+			IFF_FLAG(ii->ifi_flags,UP),
+			IFF_FLAG(ii->ifi_flags,BROADCAST),
+			IFF_FLAG(ii->ifi_flags,DEBUG),
+			IFF_FLAG(ii->ifi_flags,LOOPBACK),
+			IFF_FLAG(ii->ifi_flags,POINTOPOINT),
+			IFF_FLAG(ii->ifi_flags,NOTRAILERS),
+			IFF_FLAG(ii->ifi_flags,RUNNING),
+			IFF_FLAG(ii->ifi_flags,PROMISC),
+			IFF_FLAG(ii->ifi_flags,ALLMULTI),
+			IFF_FLAG(ii->ifi_flags,MASTER),
+			IFF_FLAG(ii->ifi_flags,SLAVE),
+			IFF_FLAG(ii->ifi_flags,MULTICAST),
+			IFF_FLAG(ii->ifi_flags,PORTSEL),
+			IFF_FLAG(ii->ifi_flags,AUTOMEDIA),
+			IFF_FLAG(ii->ifi_flags,DYNAMIC),
+			IFF_FLAG(ii->ifi_flags,LOWER_UP),
+			IFF_FLAG(ii->ifi_flags,DORMANT),
+			IFF_FLAG(ii->ifi_flags,ECHO)
+			);
 	}
 	return 0;
 }
