@@ -69,6 +69,7 @@ lookup_arptype(unsigned arphrd){
 	return NULL;
 }
 
+#define IFF_FLAG(flags,f) ((flags) & (IFF_##f) ? #f" " : "")
 static int
 handle_rtm_newlink(const struct nlmsghdr *nl){
 	const struct ifinfomsg *ii = NLMSG_DATA(nl);
@@ -77,15 +78,34 @@ handle_rtm_newlink(const struct nlmsghdr *nl){
 	if((at = lookup_arptype(ii->ifi_type)) == NULL){
 		fprintf(stderr,"Unknown dev type %u\n",ii->ifi_type);
 	}else{
-		printf("NEW %s: family %u idx %d flags 0x%x cm 0x%x\n",
+		printf("[%s] family %u idx %d cm 0x%x %s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s\n",
 			at->name,
 			ii->ifi_family,
 			ii->ifi_index,
-			ii->ifi_flags,
-			ii->ifi_change);
+			ii->ifi_change,
+			IFF_FLAG(ii->ifi_flags,UP),
+			IFF_FLAG(ii->ifi_flags,BROADCAST),
+			IFF_FLAG(ii->ifi_flags,DEBUG),
+			IFF_FLAG(ii->ifi_flags,LOOPBACK),
+			IFF_FLAG(ii->ifi_flags,POINTOPOINT),
+			IFF_FLAG(ii->ifi_flags,NOTRAILERS),
+			IFF_FLAG(ii->ifi_flags,RUNNING),
+			IFF_FLAG(ii->ifi_flags,PROMISC),
+			IFF_FLAG(ii->ifi_flags,ALLMULTI),
+			IFF_FLAG(ii->ifi_flags,MASTER),
+			IFF_FLAG(ii->ifi_flags,SLAVE),
+			IFF_FLAG(ii->ifi_flags,MULTICAST),
+			IFF_FLAG(ii->ifi_flags,PORTSEL),
+			IFF_FLAG(ii->ifi_flags,AUTOMEDIA),
+			IFF_FLAG(ii->ifi_flags,DYNAMIC),
+			IFF_FLAG(ii->ifi_flags,LOWER_UP),
+			IFF_FLAG(ii->ifi_flags,DORMANT),
+			IFF_FLAG(ii->ifi_flags,ECHO)
+			);
 	}
 	return 0;
 }
+#undef IFF_FLAG
 
 static int
 handle_netlink_event(int fd){
