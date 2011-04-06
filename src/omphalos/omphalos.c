@@ -73,7 +73,9 @@ lookup_arptype(unsigned arphrd){
 static int
 handle_rtm_newlink(const struct nlmsghdr *nl){
 	const struct ifinfomsg *ii = NLMSG_DATA(nl);
+	const struct rtattr *ra;
 	const arptype *at;
+	int rlen;
 
 	if((at = lookup_arptype(ii->ifi_type)) == NULL){
 		fprintf(stderr,"Unknown dev type %u\n",ii->ifi_type);
@@ -102,6 +104,15 @@ handle_rtm_newlink(const struct nlmsghdr *nl){
 			IFF_FLAG(ii->ifi_flags,DORMANT),
 			IFF_FLAG(ii->ifi_flags,ECHO)
 			);
+	}
+	rlen = nl->nlmsg_len - sizeof(*ii);
+	ra = (struct rtattr *)((char *)(NLMSG_DATA(nl)) + sizeof(*ii));
+	while(RTA_OK(ra,rlen)){
+		printf("RTATTR (%u)!\n",ra->rta_type);
+		ra = RTA_NEXT(ra,rlen);
+	}
+	if(rlen){
+		fprintf(stderr,"%d excess bytes on newlink message\n",rlen);
 	}
 	return 0;
 }
