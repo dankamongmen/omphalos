@@ -48,7 +48,7 @@ handle_netlink_event(int fd){
 
 	// For handling multipart messages
 	inmulti = 0;
-	while((r = recvmsg(fd,&msg,0)) > 0){
+	while((r = recvmsg(fd,&msg,MSG_DONTWAIT)) > 0){
 		for(nh = (struct nlmsghdr *)buf ; NLMSG_OK(nh,(unsigned)r) ; nh = NLMSG_NEXT(nh,r)){
 			if(nh->nlmsg_flags & NLM_F_MULTI){
 				inmulti = 1;
@@ -83,8 +83,7 @@ handle_netlink_event(int fd){
 	if(inmulti){
 		fprintf(stderr,"Warning: unterminated multipart on %d\n",fd);
 	}
-	if(r < 0){
-		// FIXME non-blocking handle
+	if(r < 0 && errno != EAGAIN){
 		fprintf(stderr,"Error reading netlink socket %d (%s?)\n",
 				fd,strerror(errno));
 		return -1;
