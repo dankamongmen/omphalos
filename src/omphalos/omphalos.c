@@ -13,6 +13,7 @@
 #include <linux/if_arp.h>
 #include <net/ethernet.h>
 #include <linux/netlink.h>
+#include <sys/capability.h>
 #include <linux/rtnetlink.h>
 #include <linux/if_packet.h>
 #include <omphalos/netlink.h>
@@ -527,6 +528,35 @@ reap_netlink_thread(pthread_t tid){
 	return 0;
 }
 
+static int
+handle_priv_drop(const char *name){
+	cap_flag_value_t val;
+	cap_t cap;
+
+	if(strlen(name) == 0){ // empty string disables permissions drop
+		return 0;
+	}
+	if((cap = cap_get_pid(getpid())) == NULL){
+		return -1;
+	}
+	if(cap_get_flag(cap,CAP_NET_ADMIN,CAP_EFFECTIVE,&val)){
+		cap_free(cap);
+		return -1;
+	}
+	cap_free(cap);
+	if(val == CAP_SET){
+		struct passwd *pw = getpwnam(name);
+
+		if(pw == NULL){
+			return -1;
+		}
+		if(setuid(pw->pw_uid)){
+			return -1;
+		}
+	}
+	return 0;
+}
+
 static inline int
 handle_packet_socket(const omphalos_ctx *pctx){
 	netlink_thread_marshal ntmarsh;
@@ -556,6 +586,13 @@ handle_packet_socket(const omphalos_ctx *pctx){
 		return -1;
 	}
 	if((rs = mmap_rx_psocket(rfd,&rxm,&rtpr)) == 0){
+		close(rfd);
+		reap_netlink_thread(nltid);
+		return -1;
+	}
+	if(handle_priv_drop(pctx->user)){
+		fprintf(stderr,"Couldn't become user %s (%s?)\n",pctx->user,strerror(errno));
+		unmap_psocket(rxm,rs);
 		close(rfd);
 		reap_netlink_thread(nltid);
 		return -1;
@@ -633,16 +670,11 @@ int main(int argc,char * const *argv){
 	if(pctx.user == NULL){
 		pctx.user = DEFAULT_USERNAME;
 	}
-	if(strlen(pctx.user)){ // empty string disables permissions drop
-		struct passwd *pw = getpwnam(pctx.user);
-
-		if(pw == NULL){
-			fprintf(stderr,"Couldn't find user %s (%s?)\n",pctx.user,strerror(errno));
+	if(pctx.pcapfn){
+		if(handle_priv_drop(pctx.user)){
+			fprintf(stderr,"Couldn't become user %s (%s?)\n",pctx.user,strerror(errno));
 			usage(argv[0],EXIT_FAILURE);
 		}
-		// FIXME drop privs
-	}
-	if(pctx.pcapfn){
 		if(handle_pcap_file(&pctx)){
 			return EXIT_FAILURE;
 		}
