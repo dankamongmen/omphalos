@@ -58,9 +58,19 @@ iface_by_idx(int idx){
 	return &interfaces[idx];
 }
 
-// len is actual packet data length, not packet_mmap leaders
 static void
-handle_packet(const struct timeval *tv,const void *frame,size_t len){
+handle_packet(const struct timeval *tv,const void *frame,size_t len,const char *src){
+	if(len <= 99999){
+		printf("[%s][%5zub] %lu.%06lu\n",src,len,tv->tv_sec,tv->tv_usec);
+	}else{
+		printf("[%s][%zub] %lu.%06lu\n",src,len,tv->tv_sec,tv->tv_usec);
+	}
+	frame = NULL; // FIXME
+}
+
+// len is actual packet data length, not mmap (tpacket_hdr etc) leaders
+static void
+handle_live_packet(const struct timeval *tv,const void *frame,size_t len){
 	const struct sockaddr_ll *sall = frame;
 	interface *iface;
 
@@ -69,11 +79,7 @@ handle_packet(const struct timeval *tv,const void *frame,size_t len){
 		return;
 	}
 	++iface->pkts;
-	if(len <= 99999){
-		printf("[%d][%5zub] %lu.%06lu\n",sall->sll_ifindex,len,tv->tv_sec,tv->tv_usec);
-	}else{
-		printf("[%d][%zub] %lu.%06lu\n",sall->sll_ifindex,len,tv->tv_sec,tv->tv_usec);
-	}
+	handle_packet(tv,(char *)frame + sizeof(*sall),len - sizeof(*sall),iface->name);
 }
 
 typedef struct arptype {
@@ -408,7 +414,7 @@ handle_ring_packet(int fd,void *frame){
 	}
 	tv.tv_sec = thdr->tp_sec;
 	tv.tv_usec = thdr->tp_usec;
-	handle_packet(&tv,(const char *)frame + TPACKET_ALIGN(sizeof(*thdr)),thdr->tp_len);
+	handle_live_packet(&tv,(const char *)frame + TPACKET_ALIGN(sizeof(*thdr)),thdr->tp_len);
 	thdr->tp_status = TP_STATUS_KERNEL; // return the frame
 }
 
@@ -422,7 +428,7 @@ handle_pcap_packet(u_char *user,const struct pcap_pkthdr *h,const u_char *bytes)
 		fprintf(stderr,"Partial capture (%u/%ub)\n",h->caplen,h->len);
 		return;
 	}
-	handle_packet(&h->ts,bytes,h->caplen);
+	handle_packet(&h->ts,bytes,h->caplen,"file"); // FIXME get filename
 }
 
 static int
