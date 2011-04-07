@@ -25,14 +25,23 @@ sockets. Packet transmission requires at least a 2.6.29 kernel.
 II. Building and installation
 ===================================================================
 
+If filesystem-based capabilities are supported, it might be desirable to
+bestow CAP_SETUID privileges (this is *not* equivalent to a setuid binary).
+See "Usage" regarding switch to the "nobody" user when CAP_SETUID is
+possessed: this can help defend users from malicious files, even if they're
+not allowed to open packet sockets. If non-root users should be able to use
+network capabilities, add CAP_NET_ADMIN and CAP_NET_RAW to the binary.
+
 ===================================================================
 III. Usage
 ===================================================================
 
-CAP_NET_ADMIN capabilities are required for omphalos's usage of packet and
+Several capabilities are required for omphalos's usage of packet and
 netlink sockets. Omphalos *does not* need to run as root, and generally
-should not be. If filesystem-based capability support is present, adding
-the CAP_NET_ADMIN capability to the omphalos binary provides all necessary
-privileges. Omphalos will try to become the user "nobody" regardless of how
-it acquired capabilities; to suppress this, provide the -u argument with an
-empty string (-u "").
+should not be. See "Building and installation" for details on setting up
+the omphalos binary's privileges.
+
+If omphalos possesses the CAP_SETUID capability (as it always will if run
+as root), it will by default attempt to become the "nobody" user. This can
+be suppressed via an empty argument to the -u option (-u ""), but helps
+defend against malicious input.
