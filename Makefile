@@ -1,6 +1,7 @@
 .DELTE_ON_ERROR:
 .DEFAULT_GOAL:=test
-.PHONY: all bin lib doc livetest test clean install uninstall
+.PHONY: all bin lib doc livetest test clean install uninstall \
+	bless sudobless
 
 VERSION=0.0.1
 
@@ -10,6 +11,7 @@ DOC:=doc
 PROJ:=omphalos
 TAGS:=$(OUT)/tags
 OMPHALOS:=$(OUT)/$(PROJ)/$(PROJ)
+ADDCAPS:=tools/addcaps
 
 BIN:=$(OMPHALOS)
 
@@ -76,6 +78,12 @@ $(TAGS): $(wildcard $(SRC)/*/*.c) $(wildcard $(SRC)/*/*.h)
 clean:
 	rm -rf $(OUT)
 
+bless: all
+	$(ADDCAPS) $(OMPHALOS)
+
+sudobless: all
+	sudo $(ADDCAPS) $(OMPHALOS)
+
 install: all doc
 	@mkdir -p $(PREFIX)/lib
 	$(INSTALL) -m 0644 $(realpath $(LIB)) $(PREFIX)/lib
@@ -85,6 +93,5 @@ install: all doc
 	@$(INSTALL) -m 0644 $(MAN3) $(DOCPREFIX)/man3
 	@echo "Running $(LDCONFIG) $(PREFIX)/lib..." && $(LDCONFIG) $(PREFIX)/lib
 	@echo "Running $(MANBIN) $(DOCPREFIX)..." && $(MANBIN) $(DOCPREFIX)
-
 
 uninstall:
