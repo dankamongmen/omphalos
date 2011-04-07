@@ -1,0 +1,15 @@
+#!/bin/sh
+
+# Set up a binary to use netlink/packet sockets without being root.
+# Requires filesystem-based capabilities (Linux 2.6.24+)
+
+set -e
+set -o nounset
+set -o pipefail
+
+usageerr () { echo "usage: `basename $0` executable" ; }
+usage () { usageerr >&2 ; return 1 ; }
+
+[ $# -eq 1 ] || usage
+
+setcap "= cap_net_admin,cap_net_raw=ep" "$1"
