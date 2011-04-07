@@ -34,6 +34,7 @@ typedef struct interface {
 	unsigned long pkts;
 	unsigned arptype;
 	char name[IFNAMSIZ];
+	int mtu;		// to match netdevice(7)'s ifr_mtu...
 } interface;
 
 static interface interfaces[MAXINTERFACES];
@@ -126,6 +127,7 @@ handle_rtm_newlink(const struct nlmsghdr *nl){
 				strcpy(iface->name,RTA_DATA(ra));
 				break;
 			}case IFLA_MTU:{
+				iface->mtu = *(int *)RTA_DATA(ra);
 				break;
 			}case IFLA_LINK:{
 				break;
@@ -177,10 +179,11 @@ handle_rtm_newlink(const struct nlmsghdr *nl){
 	if((at = lookup_arptype(iface->arptype)) == NULL){
 		fprintf(stderr,"Unknown dev type %u\n",iface->arptype);
 	}else{
-		printf("[%3d][%8s][%s] %s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s\n",
+		printf("[%3d][%8s][%s] mtu: %d %s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s\n",
 			ii->ifi_index,
 			iface->name,
 			at->name,
+			iface->mtu,
 			IFF_FLAG(ii->ifi_flags,UP),
 			IFF_FLAG(ii->ifi_flags,BROADCAST),
 			IFF_FLAG(ii->ifi_flags,DEBUG),
