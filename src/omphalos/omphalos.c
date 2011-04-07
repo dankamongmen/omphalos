@@ -98,6 +98,81 @@ lookup_arptype(unsigned arphrd){
 	return NULL;
 }
 
+static int
+handle_rtm_newneigh(const struct nlmsghdr *nl){
+	const struct ndmsg *nd = NLMSG_DATA(nl);
+	interface *iface;
+
+	if((iface = iface_by_idx(nd->ndm_ifindex)) == NULL){
+		fprintf(stderr,"Invalid interface index: %d\n",nd->ndm_ifindex);
+		return -1;
+	}
+	// FIXME
+	return 0;
+}
+
+static int
+handle_rtm_delneigh(const struct nlmsghdr *nl){
+	const struct ndmsg *nd = NLMSG_DATA(nl);
+	interface *iface;
+
+	if((iface = iface_by_idx(nd->ndm_ifindex)) == NULL){
+		fprintf(stderr,"Invalid interface index: %d\n",nd->ndm_ifindex);
+		return -1;
+	}
+	// FIXME
+	return 0;
+}
+
+static int
+handle_rtm_deladdr(const struct nlmsghdr *nl){
+	const struct ifaddrmsg *ia = NLMSG_DATA(nl);
+	interface *iface;
+
+	if((iface = iface_by_idx(ia->ifa_index)) == NULL){
+		fprintf(stderr,"Invalid interface index: %d\n",ia->ifa_index);
+		return -1;
+	}
+	// FIXME
+	return 0;
+}
+
+static int
+handle_rtm_newaddr(const struct nlmsghdr *nl){
+	const struct ifaddrmsg *ia = NLMSG_DATA(nl);
+	interface *iface;
+
+	if((iface = iface_by_idx(ia->ifa_index)) == NULL){
+		fprintf(stderr,"Invalid interface index: %d\n",ia->ifa_index);
+		return -1;
+	}
+	// FIXME
+	return 0;
+}
+
+static int
+handle_rtm_dellink(const struct nlmsghdr *nl){
+	const struct ifinfomsg *ii = NLMSG_DATA(nl);
+	const struct rtattr *ra;
+	interface *iface;
+	int rlen;
+
+	if((iface = iface_by_idx(ii->ifi_index)) == NULL){
+		fprintf(stderr,"Invalid interface index: %d\n",ii->ifi_index);
+		return -1;
+	}
+	rlen = nl->nlmsg_len - NLMSG_LENGTH(sizeof(*ii));
+	ra = (struct rtattr *)((char *)(NLMSG_DATA(nl)) + sizeof(*ii));
+	// FIXME how to process?
+	while(RTA_OK(ra,rlen)){
+		ra = RTA_NEXT(ra,rlen);
+	}
+	if(rlen){
+		fprintf(stderr,"%d excess bytes on dellink message\n",rlen);
+	}
+	return 0;
+}
+
 #define IFF_FLAG(flags,f) ((flags) & (IFF_##f) ? #f" " : "")
 static int
 handle_rtm_newlink(const struct nlmsghdr *nl){
@@ -217,8 +292,9 @@ handle_netlink_event(int fd){
 		&sa,	sizeof(sa),	iov,	sizeof(iov) / sizeof(*iov), NULL, 0, 0
 	};
 	struct nlmsghdr *nh;
-	int r,inmulti;
+	int r,inmulti,res;
 
+	res = 0;
 	// For handling multipart messages
 	inmulti = 0;
 	while((r = recvmsg(fd,&msg,MSG_DONTWAIT)) > 0){
@@ -230,7 +306,22 @@ handle_netlink_event(int fd){
 			}
 			switch(nh->nlmsg_type){
 			case RTM_NEWLINK:{
-				handle_rtm_newlink(nh);
+				res |= handle_rtm_newlink(nh);
+				break;
+			}case RTM_DELLINK:{
+				res |= handle_rtm_dellink(nh);
+				break;
+			}case RTM_NEWADDR:{
+				res |= handle_rtm_newaddr(nh);
+				break;
+			}case RTM_DELADDR:{
+				res |= handle_rtm_deladdr(nh);
+				break;
+			}case RTM_NEWNEIGH:{
+				res |= handle_rtm_newneigh(nh);
+				break;
+			}case RTM_DELNEIGH:{
+				res |= handle_rtm_delneigh(nh);
 				break;
 			}case NLMSG_DONE:{
 				if(!inmulti){
@@ -247,27 +338,30 @@ handle_netlink_event(int fd){
 				}else{
 					fprintf(stderr,"Error message on netlink %d msgid %u (%s?)\n",
 						fd,nerr->msg.nlmsg_seq,strerror(nerr->error));
+					res = -1;
 				}
 				break;
 			}default:{
 				fprintf(stderr,"Unknown netlink msgtype %u on %d\n",nh->nlmsg_type,fd);
+				res = -1;
 			}}
 			// FIXME handle read data
 		}
 	}
 	if(inmulti){
 		fprintf(stderr,"Warning: unterminated multipart on %d\n",fd);
+		res = -1;
 	}
 	if(r < 0 && errno != EAGAIN){
 		fprintf(stderr,"Error reading netlink socket %d (%s?)\n",
 				fd,strerror(errno));
-		return -1;
+		res = -1;
 	}else if(r == 0){
 		fprintf(stderr,"EOF on netlink socket %d\n",fd);
 		// FIXME reopen...?
-		return -1;
+		res = -1;
 	}
-	return 0;
+	return res;
 }
 
 static void
