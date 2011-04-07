@@ -26,7 +26,13 @@ typedef struct omphalos_ctx {
 
 static void
 usage(const char *arg0,int ret){
-	fprintf(stderr,"usage: %s [ -f filename ] [ -c count ]\n",arg0);
+	fprintf(stderr,"usage: %s [ -u username ] [ -f filename ] [ -c count ]\n",
+			basename(arg0));
+	fprintf(stderr,"options:\n");
+	fprintf(stderr,"-u username: user name to take after creating packet socket.\n");
+	fprintf(stderr,"\t'nobody' by default. provide empty string to disable.\n");
+	fprintf(stderr,"-f filename: libpcap-format save file for input.\n");
+	fprintf(stderr,"-c count: exit after reading this many packets.\n");
 	exit(ret);
 }
 
@@ -572,7 +578,7 @@ int main(int argc,char * const *argv){
 	};
 	
 	opterr = 0; // suppress getopt() diagnostic to stderr while((opt = getopt(argc,argv,":c:f:")) >= 0){ switch(opt){ case 'c':{
-	while((opt = getopt(argc,argv,":c:f:")) >= 0){
+	while((opt = getopt(argc,argv,":c:f:u:")) >= 0){
 		switch(opt){
 		case 'c':{
 			char *ep;
@@ -582,6 +588,10 @@ int main(int argc,char * const *argv){
 				usage(argv[0],EXIT_FAILURE);
 			}
 			if((pctx.count = strtoul(optarg,&ep,0)) == ULONG_MAX && errno == ERANGE){
+				fprintf(stderr,"Bad value for %c: %s\n",opt,optarg);
+				usage(argv[0],EXIT_FAILURE);
+			}
+			if(pctx.count == 0){
 				fprintf(stderr,"Bad value for %c: %s\n",opt,optarg);
 				usage(argv[0],EXIT_FAILURE);
 			}
