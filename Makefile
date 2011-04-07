@@ -43,7 +43,7 @@ doc: $(MAN3)
 
 lib: $(LIB)
 
-TESTPCAP:=test/testpcap
+TESTPCAPS:=$(wildcard test/*)
 
 CSRCDIRS:=$(wildcard $(SRC)/*)
 CSRCS:=$(shell find $(CSRCDIRS) -type f -iname \*.c -print)
@@ -54,8 +54,8 @@ COBJS:=$(addprefix $(OUT)/,$(CSRCS:%.c=%.o))
 livetest: all
 	$(OMPHALOS)
 
-test: all $(TESTPCAP)
-	$(OMPHALOS) -f $(TESTPCAP)
+test: all $(TESTPCAPS)
+	for i in $(TESTPCAPS) ; do $(OMPHALOS) -f $$i ; done
 
 $(OMPHALOS): $(COBJS)
 	@mkdir -p $(@D)
