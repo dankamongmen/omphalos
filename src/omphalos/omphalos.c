@@ -539,7 +539,7 @@ handle_priv_drop(const char *name){
 	if((cap = cap_get_pid(getpid())) == NULL){
 		return -1;
 	}
-	if(cap_get_flag(cap,CAP_NET_ADMIN,CAP_EFFECTIVE,&val)){
+	if(cap_get_flag(cap,CAP_SETUID,CAP_EFFECTIVE,&val)){
 		cap_free(cap);
 		return -1;
 	}
