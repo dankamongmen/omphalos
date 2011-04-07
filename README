@@ -7,3 +7,32 @@ Omphalos is an integrated tool for network enumeration and domination. It
 is designed around Linux's rtnetlink(7) layer and PACKET_MMAP capabilities.
 Whereas other tools are geared towards either reconnaissance or directed
 attacks, omphalos is designed to "spray the area".
+
+I. Requirements
+II. Building and installation
+III. Usage
+
+===================================================================
+I. Requirements
+===================================================================
+
+libpcap is used at both build and runtime.
+
+Omphalos currently only builds or runs on a Linux kernel with PACKET_MMAP
+sockets. Packet transmission requires at least a 2.6.29 kernel.
+
+===================================================================
+II. Building and installation
+===================================================================
+
+===================================================================
+III. Usage
+===================================================================
+
+CAP_NET_ADMIN capabilities are required for omphalos's usage of packet and
+netlink sockets. Omphalos *does not* need to run as root, and generally
+should not be. If filesystem-based capability support is present, adding
+the CAP_NET_ADMIN capability to the omphalos binary provides all necessary
+privileges. Omphalos will try to become the user "nobody" regardless of how
+it acquired capabilities; to suppress this, provide the -u argument with an
+empty string (-u "").

@@ -1,3 +1,4 @@
+#include <pwd.h>
 #include <pcap.h>
 #include <errno.h>
 #include <limits.h>
@@ -18,10 +19,12 @@
 #include <omphalos/psocket.h>
 
 #define MAXINTERFACES (1u << 16) // lame FIXME
+#define DEFAULT_USERNAME "nobody"
 
 typedef struct omphalos_ctx {
 	const char *pcapfn;
 	unsigned long count;
+	const char *user;
 } omphalos_ctx;
 
 static void
@@ -30,7 +33,7 @@ usage(const char *arg0,int ret){
 			basename(arg0));
 	fprintf(stderr,"options:\n");
 	fprintf(stderr,"-u username: user name to take after creating packet socket.\n");
-	fprintf(stderr,"\t'nobody' by default. provide empty string to disable.\n");
+	fprintf(stderr,"\t'%s' by default. provide empty string to disable.\n",DEFAULT_USERNAME);
 	fprintf(stderr,"-f filename: libpcap-format save file for input.\n");
 	fprintf(stderr,"-c count: exit after reading this many packets.\n");
 	exit(ret);
@@ -575,6 +578,7 @@ int main(int argc,char * const *argv){
 	omphalos_ctx pctx = {
 		.pcapfn = NULL,
 		.count = 0,
+		.user = NULL,
 	};
 	
 	opterr = 0; // suppress getopt() diagnostic to stderr while((opt = getopt(argc,argv,":c:f:")) >= 0){ switch(opt){ case 'c':{
@@ -607,6 +611,13 @@ int main(int argc,char * const *argv){
 			}
 			pctx.pcapfn = optarg;
 			break;
+		}case 'u':{
+			if(pctx.user){
+				fprintf(stderr,"Provided %c twice\n",opt);
+				usage(argv[0],EXIT_FAILURE);
+			}
+			pctx.user = optarg;
+			break;
 		}case ':':{
 			fprintf(stderr,"Option requires argument: '%c'\n",optopt);
 			usage(argv[0],EXIT_FAILURE);
@@ -618,6 +629,18 @@ int main(int argc,char * const *argv){
 	if(argv[optind]){ // don't allow trailing arguments
 		fprintf(stderr,"Trailing argument: %s\n",argv[optind]);
 		usage(argv[0],EXIT_FAILURE);
+	}
+	if(pctx.user == NULL){
+		pctx.user = DEFAULT_USERNAME;
+	}
+	if(strlen(pctx.user)){ // empty string disables permissions drop
+		struct passwd *pw = getpwnam(pctx.user);
+
+		if(pw == NULL){
+			fprintf(stderr,"Couldn't find user %s (%s?)\n",pctx.user,strerror(errno));
+			usage(argv[0],EXIT_FAILURE);
+		}
+		// FIXME drop privs
 	}
 	if(pctx.pcapfn){
 		if(handle_pcap_file(&pctx)){
