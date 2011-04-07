@@ -1,0 +1,9 @@
+*omphalos* by nick black <nickblack@linux.com>
+==============================================
+
+"Gaze into your omphalos." - James Joyce, Ulysses
+
+Omphalos is an integrated tool for network enumeration and domination. It
+is designed around Linux's rtnetlink(7) layer and PACKET_MMAP capabilities.
+Whereas other tools are geared towards either reconnaissance or directed
+attacks, omphalos is designed to "spray the area".
