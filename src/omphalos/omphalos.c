@@ -169,23 +169,14 @@ handle_rtm_newaddr(const struct nlmsghdr *nl){
 static int
 handle_rtm_dellink(const struct nlmsghdr *nl){
 	const struct ifinfomsg *ii = NLMSG_DATA(nl);
-	const struct rtattr *ra;
 	interface *iface;
-	int rlen;
 
 	if((iface = iface_by_idx(ii->ifi_index)) == NULL){
 		fprintf(stderr,"Invalid interface index: %d\n",ii->ifi_index);
 		return -1;
 	}
-	rlen = nl->nlmsg_len - NLMSG_LENGTH(sizeof(*ii));
-	ra = (struct rtattr *)((char *)(NLMSG_DATA(nl)) + sizeof(*ii));
-	// FIXME how to process?
-	while(RTA_OK(ra,rlen)){
-		ra = RTA_NEXT(ra,rlen);
-	}
-	if(rlen){
-		fprintf(stderr,"%d excess bytes on dellink message\n",rlen);
-	}
+	printf("Link %d (%s) was removed\n",ii->ifi_index,iface->name);
+	// FIXME do we care?
 	return 0;
 }
 
