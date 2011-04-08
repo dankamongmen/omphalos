@@ -687,8 +687,10 @@ print_iface_stats(const interface *i,interface *agg,const char *decorator){
 			return -1;
 		}
 	}
-	if(printf("<frames>%ju</frames>",i->pkts) < 0){
-		return -1;
+	if(i->pkts){
+		if(printf("<frames>%ju</frames>",i->pkts) < 0){
+			return -1;
+		}
 	}
 	if(printf("</%s>",decorator) < 0){
 		return -1;
@@ -701,6 +703,7 @@ print_iface_stats(const interface *i,interface *agg,const char *decorator){
 
 static int
 print_stats(void){
+	const interface *iface;
 	interface total;
 	unsigned i;
 
@@ -709,16 +712,16 @@ print_stats(void){
 		return -1;
 	}
 	for(i = 0 ; i < sizeof(interfaces) / sizeof(*interfaces) ; ++i){
-		const interface *iface = &interfaces[i];
-
-		if(iface->pkts){
+		iface = &interfaces[i];
+		if(iface->pkts || strlen(iface->name)){
 			if(print_iface_stats(iface,&total,"iface") < 0){
 				return -1;
 			}
 		}
 	}
-	if(pcap_file_interface.pkts){
-		if(print_iface_stats(&pcap_file_interface,&total,"file") < 0){
+	iface = &pcap_file_interface;
+	if(iface->pkts || strlen(iface->name)){
+		if(print_iface_stats(iface,&total,"file") < 0){
 			return -1;
 		}
 	}
