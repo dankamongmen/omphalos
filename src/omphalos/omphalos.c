@@ -136,6 +136,7 @@ handle_rtm_newneigh(const struct nlmsghdr *nl){
 		fprintf(stderr,"Invalid interface index: %d\n",nd->ndm_ifindex);
 		return -1;
 	}
+	printf("[%s] NEIGHBOR ADDED\n",iface->name);
 	// FIXME
 	return 0;
 }
@@ -149,6 +150,7 @@ handle_rtm_delneigh(const struct nlmsghdr *nl){
 		fprintf(stderr,"Invalid interface index: %d\n",nd->ndm_ifindex);
 		return -1;
 	}
+	printf("[%s] NEIGHBOR DELETED\n",iface->name);
 	// FIXME
 	return 0;
 }
@@ -162,6 +164,7 @@ handle_rtm_deladdr(const struct nlmsghdr *nl){
 		fprintf(stderr,"Invalid interface index: %d\n",ia->ifa_index);
 		return -1;
 	}
+	printf("[%s] ADDRESS DELETED\n",iface->name);
 	// FIXME
 	return 0;
 }
@@ -175,6 +178,7 @@ handle_rtm_newaddr(const struct nlmsghdr *nl){
 		fprintf(stderr,"Invalid interface index: %d\n",ia->ifa_index);
 		return -1;
 	}
+	printf("[%s] ADDRESS ADDED\n",iface->name);
 	// FIXME
 	return 0;
 }
