@@ -54,13 +54,13 @@ usage(const char *arg0,int ret){
 }
 
 typedef struct interface {
-	unsigned long pkts;
+	uintmax_t pkts;
 	unsigned arptype;
 	char name[IFNAMSIZ];
 	int mtu;		// to match netdevice(7)'s ifr_mtu...
 } interface;
 
-static interface interfaces[MAXINTERFACES];
+static interface interfaces[MAXINTERFACES],pcap_file_interface;
 
 // we wouldn't naturally want to use signed integers, but that's the api...
 static inline interface *
@@ -72,12 +72,13 @@ iface_by_idx(int idx){
 }
 
 static void
-handle_packet(const struct timeval *tv,const void *frame,size_t len,const char *src){
+handle_packet(interface *iface,const struct timeval *tv,const void *frame,size_t len){
 	if(len <= 99999){
-		printf("[%s][%5zub] %lu.%06lu\n",src,len,tv->tv_sec,tv->tv_usec);
+		printf("[%s][%5zub] %lu.%06lu\n",iface->name,len,tv->tv_sec,tv->tv_usec);
 	}else{
-		printf("[%s][%zub] %lu.%06lu\n",src,len,tv->tv_sec,tv->tv_usec);
+		printf("[%s][%zub] %lu.%06lu\n",iface->name,len,tv->tv_sec,tv->tv_usec);
 	}
+	++iface->pkts;
 	frame = NULL; // FIXME
 }
 
@@ -91,8 +92,7 @@ handle_live_packet(const struct timeval *tv,const void *frame,size_t len){
 		fprintf(stderr,"Invalid interface index: %d\n",sall->sll_ifindex);
 		return;
 	}
-	++iface->pkts;
-	handle_packet(tv,(char *)frame + sizeof(*sall),len - sizeof(*sall),iface->name);
+	handle_packet(iface,tv,(char *)frame + sizeof(*sall),len - sizeof(*sall));
 }
 
 typedef struct arptype {
@@ -437,28 +437,30 @@ handle_ring_packet(int fd,void *frame){
 }
 
 static void
-handle_pcap_packet(u_char *user,const struct pcap_pkthdr *h,const u_char *bytes){
-	if(user){
-		fprintf(stderr,"Unexpected parameter: %p\n",user);
-		return;
-	}
+handle_pcap_packet(u_char *gi,const struct pcap_pkthdr *h,const u_char *bytes){
+	interface *iface = (interface *)gi; // global interface for the pcap
+
 	if(h->caplen != h->len){
 		fprintf(stderr,"Partial capture (%u/%ub)\n",h->caplen,h->len);
 		return;
 	}
-	handle_packet(&h->ts,bytes,h->caplen,"file"); // FIXME get filename
+	handle_packet(iface,&h->ts,bytes,h->caplen);
 }
 
 static int
 handle_pcap_file(const omphalos_ctx *pctx){
 	char ebuf[PCAP_ERRBUF_SIZE];
 	pcap_t *pcap;
+	interface *i;
 
+	i = &pcap_file_interface;
+	snprintf(i->name,sizeof(i->name),pctx->pcapfn); // FIXME malloc str
+	// FIXME set up remainder of interface as best we can...
 	if((pcap = pcap_open_offline(pctx->pcapfn,ebuf)) == NULL){
 		fprintf(stderr,"Couldn't open %s (%s?)\n",pctx->pcapfn,ebuf);
 		return -1;
 	}
-	if(pcap_loop(pcap,-1,handle_pcap_packet,NULL)){
+	if(pcap_loop(pcap,-1,handle_pcap_packet,(u_char *)i)){
 		fprintf(stderr,"Error processing pcap file %s (%s?)\n",pctx->pcapfn,pcap_geterr(pcap));
 		pcap_close(pcap);
 		return -1;
@@ -673,6 +675,43 @@ handle_packet_socket(const omphalos_ctx *pctx){
 	return ret;
 }
 
+static int
+print_iface_stats(const interface *i){
+	if(strlen(i->name) == 0){
+		return 0;
+	}
+	if(printf("<iface><name>%s</name>",i->name) < 0){
+		return -1;
+	}
+	if(printf("<frames>%ju</frames></iface>",i->pkts) < 0){
+		return -1;
+	}
+	return 0;
+}
+
+static int
+print_stats(void){
+	unsigned i;
+
+	if(printf("<stats>") < 0){
+		return -1;
+	}
+	for(i = 0 ; i < sizeof(interfaces) / sizeof(*interfaces) ; ++i){
+		const interface *iface = &interfaces[i];
+
+		if(print_iface_stats(iface) < 0){
+			return -1;
+		}
+	}
+	if(print_iface_stats(&pcap_file_interface) < 0){
+		return -1;
+	}
+	if(printf("</stats>\n") < 0){
+		return -1;
+	}
+	return 0;
+}
+
 int main(int argc,char * const *argv){
 	int opt;
 	omphalos_ctx pctx = {
@@ -745,6 +784,9 @@ int main(int argc,char * const *argv){
 		if(handle_packet_socket(&pctx)){
 			return EXIT_FAILURE;
 		}
+	}
+	if(print_stats()){
+		return EXIT_FAILURE;
 	}
 	return EXIT_SUCCESS;
 }
