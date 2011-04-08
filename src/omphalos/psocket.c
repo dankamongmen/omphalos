@@ -76,6 +76,7 @@ size_t mmap_psocket(int op,int fd,void **map,struct tpacket_req *treq){
 	}
 	if((*map = mmap(0,size,PROT_READ|PROT_WRITE,MAP_SHARED,fd,0)) == MAP_FAILED){
 		fprintf(stderr,"Couldn't mmap %zub (%s?)\n",size,strerror(errno));
+		return 0;
 	}
 	return size;
 }
