@@ -14,6 +14,7 @@
 #include <net/ethernet.h>
 #include <linux/netlink.h>
 #include <sys/capability.h>
+#include <linux/if_ether.h>
 #include <linux/rtnetlink.h>
 #include <linux/if_packet.h>
 #include <omphalos/hwaddrs.h>
@@ -72,14 +73,19 @@ iface_by_idx(int idx){
 }
 
 static void
-handle_packet(interface *iface,const struct timeval *tv,const void *frame,size_t len){
+handle_packet(interface *iface,const struct timeval *tv,const void *frame,size_t len,
+		const unsigned char *hwaddr,size_t hwlen){
+	struct l2host *l2;
+
 	if(len <= 99999){
 		printf("[%s][%5zub] %lu.%06lu\n",iface->name,len,tv->tv_sec,tv->tv_usec);
 	}else{
 		printf("[%s][%zub] %lu.%06lu\n",iface->name,len,tv->tv_sec,tv->tv_usec);
 	}
 	++iface->pkts;
-	frame = NULL; // FIXME
+	if( (l2 = lookup_l2host(hwaddr,hwlen)) ){
+		frame = NULL; // FIXME
+	}
 }
 
 // len is actual packet data length, not mmap (tpacket_hdr etc) leaders
@@ -92,7 +98,8 @@ handle_live_packet(const struct timeval *tv,const void *frame,size_t len){
 		fprintf(stderr,"Invalid interface index: %d\n",sall->sll_ifindex);
 		return;
 	}
-	handle_packet(iface,tv,(char *)frame + sizeof(*sall),len - sizeof(*sall));
+	handle_packet(iface,tv,(char *)frame + sizeof(*sall),
+			len - sizeof(*sall),sall->sll_addr,sall->sll_halen);
 }
 
 typedef struct arptype {
@@ -450,7 +457,9 @@ handle_pcap_packet(u_char *gi,const struct pcap_pkthdr *h,const u_char *bytes){
 		fprintf(stderr,"Partial capture (%u/%ub)\n",h->caplen,h->len);
 		return;
 	}
-	handle_packet(iface,&h->ts,bytes,h->caplen);
+	// FIXME verify link type! see pcap-linktype(7)
+	handle_packet(iface,&h->ts,bytes,h->caplen,((const struct ethhdr *)bytes)->h_dest,
+			ETH_ALEN);
 }
 
 static int

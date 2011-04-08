@@ -19,6 +19,7 @@ static inline l2host *
 create_l2host(const void *hwaddr,size_t addrlen){
 	l2host *l2;
 
+	printf("CREATE\n");
 	if( (l2 = malloc(sizeof(*l2))) ){
 		if((l2->hwaddr = malloc(addrlen)) == NULL){
 			free(l2);
