@@ -415,7 +415,9 @@ handle_ring_packet(int fd,void *frame){
 			fprintf(stderr,"Interrupted polling packet socket %d\n",fd);
 		}
 		if(events < 0){
-			fprintf(stderr,"Error polling packet socket %d (%s?)\n",fd,strerror(errno));
+			if(!cancelled || errno != EINTR){
+				fprintf(stderr,"Error polling packet socket %d (%s?)\n",fd,strerror(errno));
+			}
 			return;
 		}
 		if(pfd[0].revents & POLLERR){
@@ -563,7 +565,6 @@ reap_netlink_thread(pthread_t tid){
 		fprintf(stderr,"Netlink thread returned error on exit (%s)\n",(char *)ret);
 		return -1;
 	}
-	printf("Successfully reaped netlink thread\n");
 	return 0;
 }
 
