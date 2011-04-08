@@ -189,6 +189,12 @@ handle_rtm_dellink(const struct nlmsghdr *nl){
 	return 0;
 }
 
+static int
+handle_wireless_event(interface *i,void *data,int len){
+	fprintf(stderr,"WIRELESS EVENT on %s (%p/%d)!\n",i->name,data,len);
+	return 0;
+}
+
 #define IFF_FLAG(flags,f) ((flags) & (IFF_##f) ? #f" " : "")
 static int
 handle_rtm_newlink(const struct nlmsghdr *nl){
@@ -218,6 +224,10 @@ handle_rtm_newlink(const struct nlmsghdr *nl){
 				strcpy(iface->name,RTA_DATA(ra));
 				break;
 			}case IFLA_MTU:{
+				if(RTA_PAYLOAD(ra) != sizeof(int)){
+					fprintf(stderr,"Expected %zu MTU bytes, got %lu\n",
+							sizeof(int),RTA_PAYLOAD(ra));
+				}
 				iface->mtu = *(int *)RTA_DATA(ra);
 				break;
 			}case IFLA_LINK:{
@@ -233,6 +243,9 @@ handle_rtm_newlink(const struct nlmsghdr *nl){
 			}case IFLA_STATS:{
 				break;
 			}case IFLA_WIRELESS:{
+				if(handle_wireless_event(iface,RTA_DATA(ra),RTA_PAYLOAD(ra)) < 0){
+					return -1;
+				}
 				break;
 			}case IFLA_OPERSTATE:{
 				break;
