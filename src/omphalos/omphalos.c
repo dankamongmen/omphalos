@@ -677,34 +677,52 @@ handle_packet_socket(const omphalos_ctx *pctx){
 }
 
 static int
-print_iface_stats(const interface *i){
+print_iface_stats(const interface *i,interface *agg,const char *decorator){
 	if(strlen(i->name) == 0){
-		return 0;
+		if(printf("<%s>",decorator) < 0){
+			return -1;
+		}
+	}else{
+		if(printf("<%s name=\"%s\">",decorator,i->name) < 0){
+			return -1;
+		}
 	}
-	if(printf("<iface><name>%s</name>",i->name) < 0){
+	if(printf("<frames>%ju</frames>",i->pkts) < 0){
 		return -1;
 	}
-	if(printf("<frames>%ju</frames></iface>",i->pkts) < 0){
+	if(printf("</%s>",decorator) < 0){
 		return -1;
+	}
+	if(agg){
+		agg->pkts += i->pkts;
 	}
 	return 0;
 }
 
 static int
 print_stats(void){
+	interface total;
 	unsigned i;
 
+	memset(&total,0,sizeof(total));
 	if(printf("<stats>") < 0){
 		return -1;
 	}
 	for(i = 0 ; i < sizeof(interfaces) / sizeof(*interfaces) ; ++i){
 		const interface *iface = &interfaces[i];
 
-		if(print_iface_stats(iface) < 0){
+		if(iface->pkts){
+			if(print_iface_stats(iface,&total,"iface") < 0){
+				return -1;
+			}
+		}
+	}
+	if(pcap_file_interface.pkts){
+		if(print_iface_stats(&pcap_file_interface,&total,"file") < 0){
 			return -1;
 		}
 	}
-	if(print_iface_stats(&pcap_file_interface) < 0){
+	if(print_iface_stats(&total,NULL,"total") < 0){
 		return -1;
 	}
 	if(printf("</stats>\n") < 0){
