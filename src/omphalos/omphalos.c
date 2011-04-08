@@ -598,7 +598,7 @@ static int
 mask_cancel_sigs(sigset_t *oldsigs){
 	struct sigaction sa = {
 		.sa_handler = cancellation_signal_handler,
-		.sa_flags = SA_ONSTACK | SA_RESETHAND | SA_RESTART,
+		.sa_flags = SA_ONSTACK | SA_RESTART,
 	};
 	sigset_t cancelsigs;
 
