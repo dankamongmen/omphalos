@@ -10,13 +10,13 @@
 #include <pthread.h>
 #include <sys/poll.h>
 #include <sys/socket.h>
-#include <omphalos/ll.h>
 #include <linux/if_arp.h>
 #include <net/ethernet.h>
 #include <linux/netlink.h>
 #include <sys/capability.h>
 #include <linux/rtnetlink.h>
 #include <linux/if_packet.h>
+#include <omphalos/hwaddrs.h>
 #include <omphalos/netlink.h>
 #include <omphalos/psocket.h>
 
