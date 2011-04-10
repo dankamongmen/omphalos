@@ -11,7 +11,6 @@
 #include <sys/poll.h>
 #include <sys/socket.h>
 #include <linux/if_arp.h>
-#include <omphalos/sll.h>
 #include <net/ethernet.h>
 #include <omphalos/pcap.h>
 #include <linux/netlink.h>

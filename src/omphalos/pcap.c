@@ -25,15 +25,16 @@ handle_pcap_packet(u_char *gi,const struct pcap_pkthdr *h,const u_char *bytes){
 	++iface->pkts;
 	if(h->caplen != h->len){
 		fprintf(stderr,"Partial capture (%u/%ub)\n",h->caplen,h->len);
+		++iface->truncated;
 		return;
 	}
-	sll = (const struct pcapsll *)bytes;
 	if(h->len < sizeof(*sll)){
 		++iface->malformed;
 		return;
 	}
-	// sll_protocol is in network byte-order. rather than possibly
-	// switch it every time, we provide the cases in network byte-order
+	sll = (const struct pcapsll *)bytes;
+	// proto is in network byte-order. rather than possibly switch it
+	// every time, we provide the cases in network byte-order
 	switch(sll->proto){
 		case __constant_ntohs(ETH_P_IP):{
 			handle_ip_packet(bytes + sizeof(*sll),h->len - sizeof(*sll));
