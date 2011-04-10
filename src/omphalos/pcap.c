@@ -23,6 +23,7 @@ handle_pcap_packet(u_char *gi,const struct pcap_pkthdr *h,const u_char *bytes){
 }
 
 int handle_pcap_file(const omphalos_ctx *pctx){
+	void (*fxn)(u_char *,const struct pcap_pkthdr *,const u_char *);
 	char ebuf[PCAP_ERRBUF_SIZE];
 	pcap_t *pcap;
 	interface *i;
@@ -38,7 +39,23 @@ int handle_pcap_file(const omphalos_ctx *pctx){
 		fprintf(stderr,"Couldn't open %s (%s?)\n",pctx->pcapfn,ebuf);
 		return -1;
 	}
-	if(pcap_loop(pcap,-1,handle_pcap_packet,(u_char *)i)){
+	switch(pcap_datalink(pcap)){
+		case DLT_EN10MB:{
+			fxn = handle_pcap_packet; // FIXME assumes cooked
+			break;
+		}case DLT_LINUX_SLL:{
+			fxn = handle_pcap_packet;
+			break;
+		}default:{
+			fprintf(stderr,"Unhandled datalink type: %d\n",pcap_datalink(pcap));
+			break;
+		}
+	}
+	if(fxn == NULL){
+		pcap_close(pcap);
+		return -1;
+	}
+	if(pcap_loop(pcap,-1,fxn,(u_char *)i)){
 		fprintf(stderr,"Error processing pcap file %s (%s?)\n",pctx->pcapfn,pcap_geterr(pcap));
 		pcap_close(pcap);
 		return -1;
