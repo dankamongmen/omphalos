@@ -50,3 +50,14 @@ l2host *lookup_l2host(const void *hwaddr,size_t addrlen){
 	}
 	return create_l2host(hwaddr,addrlen);
 }
+
+void cleanup_l2hosts(void){
+	l2host *l2,*tmp;
+
+	for(l2 = etherlist ; l2 ; l2 = tmp){
+		tmp = l2->next;
+		free(l2->hwaddr);
+		free(l2);
+	}
+	etherlist = NULL;
+}

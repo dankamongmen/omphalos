@@ -10,6 +10,7 @@ extern "C" {
 struct l2host;
 
 struct l2host *lookup_l2host(const void *,size_t);
+void cleanup_l2hosts(void);
 
 #ifdef __cplusplus
 }

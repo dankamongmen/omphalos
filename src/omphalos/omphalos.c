@@ -16,6 +16,7 @@
 #include <linux/netlink.h>
 #include <sys/capability.h>
 #include <linux/rtnetlink.h>
+#include <omphalos/hwaddrs.h>
 #include <omphalos/netlink.h>
 #include <omphalos/psocket.h>
 #include <omphalos/omphalos.h>
@@ -754,5 +755,6 @@ int main(int argc,char * const *argv){
 	}
 	cleanup_interfaces();
 	cleanup_pcap();
+	cleanup_l2hosts();
 	return EXIT_SUCCESS;
 }
