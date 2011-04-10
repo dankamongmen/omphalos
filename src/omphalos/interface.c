@@ -43,3 +43,8 @@ char *hwaddrstr(const interface *i){
 	}
 	return r;
 }
+
+void free_iface(interface *i){
+	free(i->name);
+	free(i->addr);
+}

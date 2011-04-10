@@ -113,3 +113,7 @@ int print_pcap_stats(FILE *fp,interface *agg){
 	}
 	return 0;
 }
+
+void cleanup_pcap(void){
+	free_iface(&pcap_file_interface);
+}

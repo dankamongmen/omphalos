@@ -667,6 +667,15 @@ print_stats(FILE *fp){
 	return 0;
 }
 
+static void
+cleanup_interfaces(void){
+	unsigned i;
+
+	for(i = 0 ; i < sizeof(interfaces) / sizeof(*interfaces) ; ++i){
+		free_iface(&interfaces[i]);
+	}
+}
+
 int main(int argc,char * const *argv){
 	int opt;
 	omphalos_ctx pctx = {
@@ -743,5 +752,7 @@ int main(int argc,char * const *argv){
 	if(print_stats(stdout)){
 		return EXIT_FAILURE;
 	}
+	cleanup_interfaces();
+	cleanup_pcap();
 	return EXIT_SUCCESS;
 }

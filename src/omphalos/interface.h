@@ -22,6 +22,7 @@ typedef struct interface {
 
 int print_iface_stats(FILE *,const interface *,interface *,const char *);
 char *hwaddrstr(const interface *);
+void free_iface(interface *);
 
 #ifdef __cplusplus
 }
