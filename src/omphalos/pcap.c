@@ -5,9 +5,11 @@
 #include <asm/byteorder.h>
 #include <omphalos/pcap.h>
 #include <linux/if_ether.h>
+#include <omphalos/hwaddrs.h>
 #include <omphalos/ethernet.h>
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
+#include <arpa/inet.h>
 
 static interface pcap_file_interface;
 
@@ -34,6 +36,7 @@ handle_pcap_cooked(u_char *gi,const struct pcap_pkthdr *h,const u_char *bytes){
 		char hwaddr[8];
 		uint16_t proto;
 	} *sll;
+	struct l2host *l2s;
 
 	++iface->pkts;
 	if(h->caplen != h->len){
@@ -41,11 +44,14 @@ handle_pcap_cooked(u_char *gi,const struct pcap_pkthdr *h,const u_char *bytes){
 		++iface->truncated;
 		return;
 	}
-	if(h->len < sizeof(*sll)){
+	sll = (const struct pcapsll *)bytes;
+	if(h->len < sizeof(*sll) || ntohs(sll->hwlen) > sizeof(sll->hwaddr)){
 		++iface->malformed;
 		return;
 	}
-	sll = (const struct pcapsll *)bytes;
+	if((l2s = lookup_l2host(sll->hwaddr,ntohs(sll->hwlen))) == NULL){
+		return;
+	}
 	// proto is in network byte-order. rather than possibly switch it
 	// every time, we provide the cases in network byte-order
 	switch(sll->proto){
