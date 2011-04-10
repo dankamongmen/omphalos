@@ -1,6 +1,7 @@
 #include <pcap.h>
 #include <stdlib.h>
 #include <string.h>
+#include <omphalos/sll.h>
 #include <omphalos/pcap.h>
 #include <linux/if_ether.h>
 #include <omphalos/ethernet.h>
@@ -17,13 +18,11 @@ handle_pcap_packet(u_char *gi,const struct pcap_pkthdr *h,const u_char *bytes){
 		fprintf(stderr,"Partial capture (%u/%ub)\n",h->caplen,h->len);
 		return;
 	}
-	// FIXME verify link type! see pcap-linktype(7)
-	handle_ethernet_packet(iface,&h->ts,bytes,h->caplen,
-			((const struct ethhdr *)bytes)->h_dest);
+	handle_cooked_packet(iface,&h->ts,bytes,h->caplen);
 }
 
 int handle_pcap_file(const omphalos_ctx *pctx){
-	void (*fxn)(u_char *,const struct pcap_pkthdr *,const u_char *);
+	pcap_handler fxn;
 	char ebuf[PCAP_ERRBUF_SIZE];
 	pcap_t *pcap;
 	interface *i;
@@ -39,6 +38,7 @@ int handle_pcap_file(const omphalos_ctx *pctx){
 		fprintf(stderr,"Couldn't open %s (%s?)\n",pctx->pcapfn,ebuf);
 		return -1;
 	}
+	fxn = NULL;
 	switch(pcap_datalink(pcap)){
 		case DLT_EN10MB:{
 			fxn = handle_pcap_packet; // FIXME assumes cooked
