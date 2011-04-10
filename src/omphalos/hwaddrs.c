@@ -61,3 +61,40 @@ void cleanup_l2hosts(void){
 	}
 	etherlist = NULL;
 }
+
+char *l2addrstr(const void *addr,size_t len){
+	unsigned idx;
+	size_t s;
+	char *r;
+
+	// Each byte becomes two ASCII characters and either a separator or a nul
+	s = len * 3;
+	if( (r = malloc(s)) ){
+		for(idx = 0 ; idx < len ; ++idx){
+			snprintf(r + idx * 3,s - idx * 3,"%02x:",((unsigned char *)addr)[idx]);
+		}
+	}
+	return r;
+}
+
+int print_l2hosts(FILE *fp){
+	const l2host *l2;
+
+	if( (l2 = etherlist) ){
+		if(fprintf(fp,"<neighbors>") < 0){
+			return -1;
+		}
+		do{
+			char *hwaddr = l2addrstr(l2->hwaddr,IFHWADDRLEN);
+
+			if(fprintf(fp,"<ieee802 addr=\"%s\"/>",hwaddr) < 0){
+				return -1;
+			}
+			free(hwaddr);
+		}while( (l2 = l2->next) );
+		if(fprintf(fp,"</neighbors>") < 0){
+			return -1;
+		}
+	}
+	return 0;
+}

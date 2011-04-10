@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <sys/socket.h>
 #include <linux/if_arp.h>
+#include <omphalos/hwaddrs.h>
 #include <omphalos/interface.h>
 
 #define STAT(fp,i,x) if((i)->x) { if(fprintf((fp),"<"#x">%ju</"#x">",(i)->x) < 0){ return -1; } }
@@ -30,18 +31,7 @@ int print_iface_stats(FILE *fp,const interface *i,interface *agg,const char *dec
 #undef STAT
 
 char *hwaddrstr(const interface *i){
-	unsigned idx;
-	size_t s;
-	char *r;
-
-	// Each byte becomes two ASCII characters and either a separator or a nul
-	s = i->addrlen * 3;
-	if( (r = malloc(s)) ){
-		for(idx = 0 ; idx < i->addrlen ; ++idx){
-			snprintf(r + idx * 3,s - idx * 3,"%02x:",((unsigned char *)i->addr)[idx]);
-		}
-	}
-	return r;
+	return l2addrstr(i->addr,i->addrlen);
 }
 
 void free_iface(interface *i){

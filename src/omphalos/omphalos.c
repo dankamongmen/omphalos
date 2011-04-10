@@ -662,7 +662,7 @@ print_stats(FILE *fp){
 	if(print_iface_stats(fp,&total,NULL,"total") < 0){
 		return -1;
 	}
-	if(printf("</stats>\n") < 0){
+	if(printf("</stats>") < 0){
 		return -1;
 	}
 	return 0;
@@ -751,6 +751,15 @@ int main(int argc,char * const *argv){
 		}
 	}
 	if(print_stats(stdout)){
+		fprintf(stderr,"Couldn't write output (%s?)\n",strerror(errno));
+		return EXIT_FAILURE;
+	}
+	if(print_l2hosts(stdout)){
+		fprintf(stderr,"Couldn't write output (%s?)\n",strerror(errno));
+		return EXIT_FAILURE;
+	}
+	if(printf("\n") < 0 || fflush(stdout)){
+		fprintf(stderr,"Couldn't write output (%s?)\n",strerror(errno));
 		return EXIT_FAILURE;
 	}
 	cleanup_interfaces();
