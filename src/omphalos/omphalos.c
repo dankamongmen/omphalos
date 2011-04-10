@@ -1,5 +1,5 @@
 #include <pwd.h>
-#include <pcap.h>
+#include <stdio.h>
 #include <errno.h>
 #include <limits.h>
 #include <stdlib.h>
@@ -12,14 +12,16 @@
 #include <sys/socket.h>
 #include <linux/if_arp.h>
 #include <net/ethernet.h>
+#include <omphalos/pcap.h>
 #include <linux/netlink.h>
 #include <sys/capability.h>
-#include <linux/if_ether.h>
 #include <linux/rtnetlink.h>
 #include <linux/if_packet.h>
-#include <omphalos/hwaddrs.h>
 #include <omphalos/netlink.h>
 #include <omphalos/psocket.h>
+#include <omphalos/omphalos.h>
+#include <omphalos/ethernet.h>
+#include <omphalos/interface.h>
 
 #define MAXINTERFACES (1u << 16) // lame FIXME
 #define DEFAULT_USERNAME "nobody"
@@ -36,12 +38,6 @@ cancellation_signal_handler(int signo __attribute__ ((unused))){
 }
 // End nasty signals-based cancellation.
 
-typedef struct omphalos_ctx {
-	const char *pcapfn;
-	unsigned long count;
-	const char *user;
-} omphalos_ctx;
-
 static void
 usage(const char *arg0,int ret){
 	fprintf(stderr,"usage: %s [ -u username ] [ -f filename ] [ -c count ]\n",
@@ -54,14 +50,7 @@ usage(const char *arg0,int ret){
 	exit(ret);
 }
 
-typedef struct interface {
-	uintmax_t pkts;
-	unsigned arptype;
-	char name[IFNAMSIZ];
-	int mtu;		// to match netdevice(7)'s ifr_mtu...
-} interface;
-
-static interface interfaces[MAXINTERFACES],pcap_file_interface;
+static interface interfaces[MAXINTERFACES];
 
 // we wouldn't naturally want to use signed integers, but that's the api...
 static inline interface *
@@ -70,22 +59,6 @@ iface_by_idx(int idx){
 		return NULL;
 	}
 	return &interfaces[idx];
-}
-
-static void
-handle_packet(interface *iface,const struct timeval *tv,const void *frame,size_t len,
-		const unsigned char *hwaddr,size_t hwlen){
-	struct l2host *l2;
-
-	if(len <= 99999){
-		printf("[%s][%5zub] %lu.%06lu\n",iface->name,len,tv->tv_sec,tv->tv_usec);
-	}else{
-		printf("[%s][%zub] %lu.%06lu\n",iface->name,len,tv->tv_sec,tv->tv_usec);
-	}
-	++iface->pkts;
-	if( (l2 = lookup_l2host(hwaddr,hwlen)) ){
-		frame = NULL; // FIXME
-	}
 }
 
 // len is actual packet data length, not mmap (tpacket_hdr etc) leaders
@@ -98,8 +71,8 @@ handle_live_packet(const struct timeval *tv,const void *frame,size_t len){
 		fprintf(stderr,"Invalid interface index: %d\n",sall->sll_ifindex);
 		return;
 	}
-	handle_packet(iface,tv,(char *)frame + sizeof(*sall),
-			len - sizeof(*sall),sall->sll_addr,sall->sll_halen);
+	handle_ethernet_packet(iface,tv,(char *)frame + sizeof(*sall),
+			len - sizeof(*sall),sall->sll_addr);
 }
 
 typedef struct arptype {
@@ -232,11 +205,14 @@ handle_rtm_newlink(const struct nlmsghdr *nl){
 			}case IFLA_BROADCAST:{
 				break;
 			}case IFLA_IFNAME:{
-				if(strlen(RTA_DATA(ra)) >= sizeof(iface->name)){
+				char *name;
+
+				if((name = strdup(RTA_DATA(ra))) == NULL){
 					fprintf(stderr,"Name too long: %s\n",(char *)RTA_DATA(ra));
 					return -1;
 				}
-				strcpy(iface->name,RTA_DATA(ra));
+				free(iface->name);
+				iface->name = name;
 				break;
 			}case IFLA_MTU:{
 				if(RTA_PAYLOAD(ra) != sizeof(int)){
@@ -449,41 +425,6 @@ handle_ring_packet(int fd,void *frame){
 	thdr->tp_status = TP_STATUS_KERNEL; // return the frame
 }
 
-static void
-handle_pcap_packet(u_char *gi,const struct pcap_pkthdr *h,const u_char *bytes){
-	interface *iface = (interface *)gi; // global interface for the pcap
-
-	if(h->caplen != h->len){
-		fprintf(stderr,"Partial capture (%u/%ub)\n",h->caplen,h->len);
-		return;
-	}
-	// FIXME verify link type! see pcap-linktype(7)
-	handle_packet(iface,&h->ts,bytes,h->caplen,((const struct ethhdr *)bytes)->h_dest,
-			ETH_ALEN);
-}
-
-static int
-handle_pcap_file(const omphalos_ctx *pctx){
-	char ebuf[PCAP_ERRBUF_SIZE];
-	pcap_t *pcap;
-	interface *i;
-
-	i = &pcap_file_interface;
-	snprintf(i->name,sizeof(i->name),pctx->pcapfn); // FIXME malloc str
-	// FIXME set up remainder of interface as best we can...
-	if((pcap = pcap_open_offline(pctx->pcapfn,ebuf)) == NULL){
-		fprintf(stderr,"Couldn't open %s (%s?)\n",pctx->pcapfn,ebuf);
-		return -1;
-	}
-	if(pcap_loop(pcap,-1,handle_pcap_packet,(u_char *)i)){
-		fprintf(stderr,"Error processing pcap file %s (%s?)\n",pctx->pcapfn,pcap_geterr(pcap));
-		pcap_close(pcap);
-		return -1;
-	}
-	pcap_close(pcap);
-	return 0;
-}
-
 static inline
 ssize_t inclen(unsigned *idx,const struct tpacket_req *treq){
 	ssize_t inc = treq->tp_frame_size; // advance at least this much
@@ -690,31 +631,6 @@ handle_packet_socket(const omphalos_ctx *pctx){
 }
 
 static int
-print_iface_stats(const interface *i,interface *agg,const char *decorator){
-	if(strlen(i->name) == 0){
-		if(printf("<%s>",decorator) < 0){
-			return -1;
-		}
-	}else{
-		if(printf("<%s name=\"%s\">",decorator,i->name) < 0){
-			return -1;
-		}
-	}
-	if(i->pkts){
-		if(printf("<frames>%ju</frames>",i->pkts) < 0){
-			return -1;
-		}
-	}
-	if(printf("</%s>",decorator) < 0){
-		return -1;
-	}
-	if(agg){
-		agg->pkts += i->pkts;
-	}
-	return 0;
-}
-
-static int
 print_stats(void){
 	const interface *iface;
 	interface total;
@@ -727,18 +643,15 @@ print_stats(void){
 	for(i = 0 ; i < sizeof(interfaces) / sizeof(*interfaces) ; ++i){
 		iface = &interfaces[i];
 		if(iface->pkts || strlen(iface->name)){
-			if(print_iface_stats(iface,&total,"iface") < 0){
+			if(print_iface_stats(stdout,iface,&total,"iface") < 0){
 				return -1;
 			}
 		}
 	}
-	iface = &pcap_file_interface;
-	if(iface->pkts || strlen(iface->name)){
-		if(print_iface_stats(iface,&total,"file") < 0){
-			return -1;
-		}
+	if(print_pcap_stats(stdout,&total) < 0){
+		return -1;
 	}
-	if(print_iface_stats(&total,NULL,"total") < 0){
+	if(print_iface_stats(stdout,&total,NULL,"total") < 0){
 		return -1;
 	}
 	if(printf("</stats>\n") < 0){

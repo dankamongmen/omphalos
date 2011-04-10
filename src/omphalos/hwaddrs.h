@@ -5,6 +5,8 @@
 extern "C" {
 #endif
 
+#include <stddef.h>
+
 struct l2host;
 
 struct l2host *lookup_l2host(const void *,size_t);
