@@ -63,7 +63,7 @@ iface_by_idx(int idx){
 
 // len is actual packet data length, not mmap (tpacket_hdr etc) leaders
 static void
-handle_live_packet(const struct timeval *tv,const void *frame,size_t len){
+handle_live_packet(const void *frame,size_t len){
 	const struct sockaddr_ll *sall = frame;
 	interface *iface;
 
@@ -71,8 +71,8 @@ handle_live_packet(const struct timeval *tv,const void *frame,size_t len){
 		fprintf(stderr,"Invalid interface index: %d\n",sall->sll_ifindex);
 		return;
 	}
-	handle_ethernet_packet(iface,tv,(char *)frame + sizeof(*sall),
-			len - sizeof(*sall),sall->sll_addr);
+	handle_ethernet_packet(iface,(char *)frame + sizeof(*sall),
+			len - sizeof(*sall));
 }
 
 typedef struct arptype {
@@ -388,7 +388,6 @@ handle_netlink_event(int fd){
 static void
 handle_ring_packet(int fd,void *frame){
 	struct tpacket_hdr *thdr = frame;
-	struct timeval tv;
 
 	while(thdr->tp_status == 0){
 		struct pollfd pfd[1];
@@ -419,9 +418,7 @@ handle_ring_packet(int fd,void *frame){
 	if(thdr->tp_status & TP_STATUS_LOSING){
 		fprintf(stderr,"FUCK ME; THE RINGBUFFER'S FULL!\n");
 	}
-	tv.tv_sec = thdr->tp_sec;
-	tv.tv_usec = thdr->tp_usec;
-	handle_live_packet(&tv,(const char *)frame + TPACKET_ALIGN(sizeof(*thdr)),thdr->tp_len);
+	handle_live_packet((const char *)frame + TPACKET_ALIGN(sizeof(*thdr)),thdr->tp_len);
 	thdr->tp_status = TP_STATUS_KERNEL; // return the frame
 }
 

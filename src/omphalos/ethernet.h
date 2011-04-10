@@ -7,11 +7,9 @@ extern "C" {
 
 #include <stddef.h>
 
-struct timeval;
 struct interface;
 
-void handle_ethernet_packet(struct interface *,const struct timeval *,
-				const void *,size_t,const unsigned char *);
+void handle_ethernet_packet(struct interface *,const void *,size_t);
 
 #ifdef __cplusplus
 }

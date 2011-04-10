@@ -3,12 +3,12 @@
 #include <omphalos/ethernet.h>
 #include <omphalos/interface.h>
 
-void handle_ethernet_packet(interface *iface,const struct timeval *tv __attribute__ ((unused)),
-		const void *frame,size_t len __attribute__ ((unused)),const unsigned char *hwaddr){
+void handle_ethernet_packet(interface *iface,const void *frame,size_t len __attribute__ ((unused))){
+	const struct ethhdr *hdr = frame;
 	struct l2host *l2;
 
 	++iface->pkts;
-	if( (l2 = lookup_l2host(hwaddr,ETH_ALEN)) ){
+	if( (l2 = lookup_l2host(hdr->h_source,ETH_ALEN)) ){
 		frame = NULL; // FIXME
 	}
 }

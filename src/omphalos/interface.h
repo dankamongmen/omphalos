@@ -10,6 +10,9 @@ extern "C" {
 
 typedef struct interface {
 	uintmax_t pkts;
+	uintmax_t malformed;
+	uintmax_t truncated;
+	uintmax_t noprotocol;
 	unsigned arptype;
 	int mtu;		// to match netdevice(7)'s ifr_mtu...
 	char *name;
