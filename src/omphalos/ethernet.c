@@ -3,7 +3,7 @@
 #include <omphalos/ethernet.h>
 #include <omphalos/interface.h>
 
-void handle_ethernet_packet(interface *iface,const void *frame,size_t len __attribute__ ((unused))){
+void handle_ethernet_packet(const void *frame,size_t len __attribute__ ((unused))){
 	const struct ethhdr *hdr = frame;
 	struct l2host *l2;
 

@@ -72,8 +72,7 @@ handle_live_packet(const void *frame,size_t len){
 		return;
 	}
 	++iface->pkts;
-	handle_ethernet_packet(iface,(char *)frame + sizeof(*sall),
-			len - sizeof(*sall));
+	handle_ethernet_packet((char *)frame + sizeof(*sall),len - sizeof(*sall));
 }
 
 typedef struct arptype {

@@ -19,7 +19,7 @@ void handle_cooked_packet(interface *iface,const unsigned char *pkt,size_t len){
 	// switch it every time, we provide the cases in network byte-order
 	switch(sll->sll_protocol){
 		case __constant_ntohs(ARPHRD_ETHER):{
-			handle_ethernet_packet(iface,pkt + sizeof(*sll),len - sizeof(*sll));
+			handle_ethernet_packet(pkt + sizeof(*sll),len - sizeof(*sll));
 			break;
 		}default:{
 			++iface->noprotocol;
