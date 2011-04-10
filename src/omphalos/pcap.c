@@ -12,7 +12,20 @@
 static interface pcap_file_interface;
 
 static void
-handle_pcap_packet(u_char *gi,const struct pcap_pkthdr *h,const u_char *bytes){
+handle_pcap_ethernet(u_char *gi,const struct pcap_pkthdr *h,const u_char *bytes){
+	interface *iface = (interface *)gi; // interface for the pcap file
+
+	++iface->pkts;
+	if(h->caplen != h->len){
+		fprintf(stderr,"Partial capture (%u/%ub)\n",h->caplen,h->len);
+		++iface->truncated;
+		return;
+	}
+	handle_ethernet_packet(bytes,h->len);
+}
+
+static void
+handle_pcap_cooked(u_char *gi,const struct pcap_pkthdr *h,const u_char *bytes){
 	interface *iface = (interface *)gi; // interface for the pcap file
 	const struct pcapsll { // taken from pcap-linktype(7), "LINKTYPE_LINUX_SLL"
 		uint16_t pkttype;
@@ -66,10 +79,10 @@ int handle_pcap_file(const omphalos_ctx *pctx){
 	fxn = NULL;
 	switch(pcap_datalink(pcap)){
 		case DLT_EN10MB:{
-			fxn = handle_pcap_packet; // FIXME assumes cooked
+			fxn = handle_pcap_ethernet;
 			break;
 		}case DLT_LINUX_SLL:{
-			fxn = handle_pcap_packet;
+			fxn = handle_pcap_cooked;
 			break;
 		}default:{
 			fprintf(stderr,"Unhandled datalink type: %d\n",pcap_datalink(pcap));
