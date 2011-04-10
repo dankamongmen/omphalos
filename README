@@ -30,7 +30,8 @@ bestow CAP_SETUID privileges (this is *not* equivalent to a setuid binary).
 See "Usage" regarding switch to the "nobody" user when CAP_SETUID is
 possessed: this can help defend users from malicious files, even if they're
 not allowed to open packet sockets. If non-root users should be able to use
-network capabilities, add CAP_NET_ADMIN and CAP_NET_RAW to the binary.
+network capabilities, add CAP_NET_ADMIN and CAP_NET_RAW to the binary. This
+can be accomplished by running "make sudobless" or running tools/addcaps.
 
 If MADV_HUGEPAGE is available at compilation time, madvise() will be used
 to advise hugepage backing for important, large data structures including
