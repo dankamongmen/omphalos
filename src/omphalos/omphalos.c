@@ -677,6 +677,23 @@ cleanup_interfaces(void){
 	}
 }
 
+static int
+dump_output(FILE *fp){
+	if(fprintf(fp,"<omphalos>") < 0){
+		return -1;
+	}
+	if(print_stats(fp)){
+		return -1;
+	}
+	if(print_l2hosts(fp)){
+		return -1;
+	}
+	if(fprintf(fp,"</omphalos>\n") < 0 || fflush(fp)){
+		return -1;
+	}
+	return 0;
+}
+
 int main(int argc,char * const *argv){
 	int opt;
 	omphalos_ctx pctx = {
@@ -750,16 +767,10 @@ int main(int argc,char * const *argv){
 			return EXIT_FAILURE;
 		}
 	}
-	if(print_stats(stdout)){
-		fprintf(stderr,"Couldn't write output (%s?)\n",strerror(errno));
-		return EXIT_FAILURE;
-	}
-	if(print_l2hosts(stdout)){
-		fprintf(stderr,"Couldn't write output (%s?)\n",strerror(errno));
-		return EXIT_FAILURE;
-	}
-	if(printf("\n") < 0 || fflush(stdout)){
-		fprintf(stderr,"Couldn't write output (%s?)\n",strerror(errno));
+	if(dump_output(stdout) < 0){
+		if(errno != ENOMEM){
+			fprintf(stderr,"Couldn't write output (%s?)\n",strerror(errno));
+		}
 		return EXIT_FAILURE;
 	}
 	cleanup_interfaces();
