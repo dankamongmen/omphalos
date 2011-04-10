@@ -16,9 +16,12 @@ typedef struct interface {
 	unsigned arptype;
 	int mtu;		// to match netdevice(7)'s ifr_mtu...
 	char *name;
+	void *addr;		// multiple hwaddrs are multiple ifaces...
+	size_t addrlen;
 } interface;
 
 int print_iface_stats(FILE *,const interface *,interface *,const char *);
+char *hwaddrstr(const interface *);
 
 #ifdef __cplusplus
 }

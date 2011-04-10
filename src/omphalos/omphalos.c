@@ -201,6 +201,16 @@ handle_rtm_newlink(const struct nlmsghdr *nl){
 	while(RTA_OK(ra,rlen)){
 		switch(ra->rta_type){
 			case IFLA_ADDRESS:{
+				char *addr;
+
+				if((addr = malloc(RTA_PAYLOAD(ra))) == NULL){
+					fprintf(stderr,"Address too long: %lu\n",RTA_PAYLOAD(ra));
+					return -1;
+				}
+				memcpy(addr,RTA_DATA(ra),RTA_PAYLOAD(ra));
+				free(iface->addr);
+				iface->addr = addr;
+				iface->addrlen = RTA_PAYLOAD(ra);
 				break;
 			}case IFLA_BROADCAST:{
 				break;
@@ -274,10 +284,16 @@ handle_rtm_newlink(const struct nlmsghdr *nl){
 	if((at = lookup_arptype(iface->arptype)) == NULL){
 		fprintf(stderr,"Unknown dev type %u\n",iface->arptype);
 	}else{
-		printf("[%3d][%8s][%s] mtu: %d %s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s\n",
+		char *hwaddr;
+
+		if((hwaddr = hwaddrstr(iface)) == NULL){
+			return -1;
+		}
+		printf("[%3d][%8s][%s] %s %d %s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s\n",
 			ii->ifi_index,
 			iface->name,
 			at->name,
+			hwaddr,
 			iface->mtu,
 			IFF_FLAG(ii->ifi_flags,UP),
 			IFF_FLAG(ii->ifi_flags,BROADCAST),
@@ -298,6 +314,7 @@ handle_rtm_newlink(const struct nlmsghdr *nl){
 			IFF_FLAG(ii->ifi_flags,DORMANT),
 			IFF_FLAG(ii->ifi_flags,ECHO)
 			);
+		free(hwaddr);
 	}
 	return 0;
 }
