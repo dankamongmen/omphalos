@@ -656,7 +656,7 @@ print_stats(FILE *fp){
 	}
 	for(i = 0 ; i < sizeof(interfaces) / sizeof(*interfaces) ; ++i){
 		iface = &interfaces[i];
-		if(iface->pkts || iface->name){
+		if(iface->pkts){
 			if(print_iface_stats(fp,iface,&total,"iface") < 0){
 				return -1;
 			}
