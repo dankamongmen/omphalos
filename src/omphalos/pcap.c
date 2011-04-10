@@ -14,6 +14,7 @@ static void
 handle_pcap_packet(u_char *gi,const struct pcap_pkthdr *h,const u_char *bytes){
 	interface *iface = (interface *)gi; // interface for the pcap file
 
+	++iface->pkts;
 	if(h->caplen != h->len){
 		fprintf(stderr,"Partial capture (%u/%ub)\n",h->caplen,h->len);
 		return;

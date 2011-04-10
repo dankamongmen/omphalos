@@ -11,7 +11,6 @@
 void handle_cooked_packet(interface *iface,const unsigned char *pkt,size_t len){
 	struct sockaddr_ll *sll = (struct sockaddr_ll *)pkt;
 
-	++iface->pkts;
 	if(len < sizeof(*sll)){
 		++iface->malformed;
 		return;
