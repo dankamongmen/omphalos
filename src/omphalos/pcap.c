@@ -1,7 +1,8 @@
 #include <pcap.h>
 #include <stdlib.h>
 #include <string.h>
-#include <omphalos/sll.h>
+#include <omphalos/ip.h>
+#include <asm/byteorder.h>
 #include <omphalos/pcap.h>
 #include <linux/if_ether.h>
 #include <omphalos/ethernet.h>
@@ -13,13 +14,35 @@ static interface pcap_file_interface;
 static void
 handle_pcap_packet(u_char *gi,const struct pcap_pkthdr *h,const u_char *bytes){
 	interface *iface = (interface *)gi; // interface for the pcap file
+	const struct pcapsll { // taken from pcap-linktype(7), "LINKTYPE_LINUX_SLL"
+		uint16_t pkttype;
+		uint16_t arptype;
+		uint16_t hwlen;
+		char hwaddr[8];
+		uint16_t proto;
+	} *sll;
 
 	++iface->pkts;
 	if(h->caplen != h->len){
 		fprintf(stderr,"Partial capture (%u/%ub)\n",h->caplen,h->len);
 		return;
 	}
-	handle_cooked_packet(iface,bytes,h->caplen);
+	sll = (const struct pcapsll *)bytes;
+	if(h->len < sizeof(*sll)){
+		++iface->malformed;
+		return;
+	}
+	// sll_protocol is in network byte-order. rather than possibly
+	// switch it every time, we provide the cases in network byte-order
+	switch(sll->proto){
+		case __constant_ntohs(ETH_P_IP):{
+			handle_ip_packet(bytes + sizeof(*sll),h->len - sizeof(*sll));
+			break;
+		}default:{
+			++iface->noprotocol;
+			break;
+		}
+	}
 }
 
 int handle_pcap_file(const omphalos_ctx *pctx){
