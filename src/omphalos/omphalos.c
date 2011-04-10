@@ -11,12 +11,12 @@
 #include <sys/poll.h>
 #include <sys/socket.h>
 #include <linux/if_arp.h>
+#include <omphalos/sll.h>
 #include <net/ethernet.h>
 #include <omphalos/pcap.h>
 #include <linux/netlink.h>
 #include <sys/capability.h>
 #include <linux/rtnetlink.h>
-#include <linux/if_packet.h>
 #include <omphalos/netlink.h>
 #include <omphalos/psocket.h>
 #include <omphalos/omphalos.h>

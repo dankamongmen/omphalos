@@ -1,5 +1,5 @@
-#ifndef OMPHALOS_LLC
-#define OMPHALOS_LLC
+#ifndef OMPHALOS_SLL
+#define OMPHALOS_SLL
 
 #ifdef __cplusplus
 extern "C" {

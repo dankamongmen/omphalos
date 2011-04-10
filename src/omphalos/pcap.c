@@ -18,7 +18,7 @@ handle_pcap_packet(u_char *gi,const struct pcap_pkthdr *h,const u_char *bytes){
 		fprintf(stderr,"Partial capture (%u/%ub)\n",h->caplen,h->len);
 		return;
 	}
-	handle_cooked_packet(iface,&h->ts,bytes,h->caplen);
+	handle_cooked_packet(iface,bytes,h->caplen);
 }
 
 int handle_pcap_file(const omphalos_ctx *pctx){
