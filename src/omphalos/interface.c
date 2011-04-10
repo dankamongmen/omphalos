@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <omphalos/interface.h>
 
+#define STAT(fp,i,x) if((i)->x) { if(fprintf((fp),"<"#x">%ju</"#x">",(i)->x) < 0){ return -1; } }
 int print_iface_stats(FILE *fp,const interface *i,interface *agg,const char *decorator){
 	if(i->name == NULL){
 		if(fprintf(fp,"<%s>",decorator) < 0){
@@ -11,11 +12,10 @@ int print_iface_stats(FILE *fp,const interface *i,interface *agg,const char *dec
 			return -1;
 		}
 	}
-	if(i->pkts){
-		if(fprintf(fp,"<frames>%ju</frames>",i->pkts) < 0){
-			return -1;
-		}
-	}
+	STAT(fp,i,pkts);
+	STAT(fp,i,truncated);
+	STAT(fp,i,noprotocol);
+	STAT(fp,i,malformed);
 	if(fprintf(fp,"</%s>",decorator) < 0){
 		return -1;
 	}
@@ -24,3 +24,4 @@ int print_iface_stats(FILE *fp,const interface *i,interface *agg,const char *dec
 	}
 	return 0;
 }
+#undef STAT
