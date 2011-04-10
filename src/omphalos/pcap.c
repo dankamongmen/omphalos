@@ -69,7 +69,7 @@ int handle_pcap_file(const omphalos_ctx *pctx){
 	free(i->name);
 	memset(i,0,sizeof(*i));
 	// FIXME set up remainder of interface as best we can...
-	if((i->name = strdup(pctx->pcapfn)) == NULL){ // FIXME when to free?
+	if((i->name = strdup(pctx->pcapfn)) == NULL){
 		return -1;
 	}
 	if((pcap = pcap_open_offline(pctx->pcapfn,ebuf)) == NULL){
