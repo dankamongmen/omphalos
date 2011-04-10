@@ -71,6 +71,7 @@ handle_live_packet(const void *frame,size_t len){
 		fprintf(stderr,"Invalid interface index: %d\n",sall->sll_ifindex);
 		return;
 	}
+	++iface->pkts;
 	handle_ethernet_packet(iface,(char *)frame + sizeof(*sall),
 			len - sizeof(*sall));
 }
