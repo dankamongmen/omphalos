@@ -21,7 +21,7 @@ handle_pcap_ethernet(u_char *gi,const struct pcap_pkthdr *h,const u_char *bytes)
 		++iface->truncated;
 		return;
 	}
-	handle_ethernet_packet(bytes,h->len);
+	handle_ethernet_packet(iface,bytes,h->len);
 }
 
 static void
@@ -50,7 +50,7 @@ handle_pcap_cooked(u_char *gi,const struct pcap_pkthdr *h,const u_char *bytes){
 	// every time, we provide the cases in network byte-order
 	switch(sll->proto){
 		case __constant_ntohs(ETH_P_IP):{
-			handle_ip_packet(bytes + sizeof(*sll),h->len - sizeof(*sll));
+			handle_ip_packet(iface,bytes + sizeof(*sll),h->len - sizeof(*sll));
 			break;
 		}default:{
 			++iface->noprotocol;

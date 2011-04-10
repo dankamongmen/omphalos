@@ -428,7 +428,7 @@ handle_ring_packet(int fd,void *frame){
 		return;
 	}
 	++iface->pkts;
-	handle_ethernet_packet((char *)frame + thdr->tp_mac,thdr->tp_len);
+	handle_ethernet_packet(iface,(char *)frame + thdr->tp_mac,thdr->tp_len);
 	thdr->tp_status = TP_STATUS_KERNEL; // return the frame
 }
 

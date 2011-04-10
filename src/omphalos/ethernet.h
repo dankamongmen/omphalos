@@ -7,7 +7,7 @@ extern "C" {
 
 #include <stddef.h>
 
-void handle_ethernet_packet(const void *,size_t);
+void handle_ethernet_packet(struct interface *,const void *,size_t);
 
 #ifdef __cplusplus
 }
