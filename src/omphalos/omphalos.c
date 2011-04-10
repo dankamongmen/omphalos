@@ -631,7 +631,7 @@ handle_packet_socket(const omphalos_ctx *pctx){
 }
 
 static int
-print_stats(void){
+print_stats(FILE *fp){
 	const interface *iface;
 	interface total;
 	unsigned i;
@@ -642,16 +642,16 @@ print_stats(void){
 	}
 	for(i = 0 ; i < sizeof(interfaces) / sizeof(*interfaces) ; ++i){
 		iface = &interfaces[i];
-		if(iface->pkts || strlen(iface->name)){
-			if(print_iface_stats(stdout,iface,&total,"iface") < 0){
+		if(iface->pkts || iface->name){
+			if(print_iface_stats(fp,iface,&total,"iface") < 0){
 				return -1;
 			}
 		}
 	}
-	if(print_pcap_stats(stdout,&total) < 0){
+	if(print_pcap_stats(fp,&total) < 0){
 		return -1;
 	}
-	if(print_iface_stats(stdout,&total,NULL,"total") < 0){
+	if(print_iface_stats(fp,&total,NULL,"total") < 0){
 		return -1;
 	}
 	if(printf("</stats>\n") < 0){
@@ -733,7 +733,7 @@ int main(int argc,char * const *argv){
 			return EXIT_FAILURE;
 		}
 	}
-	if(print_stats()){
+	if(print_stats(stdout)){
 		return EXIT_FAILURE;
 	}
 	return EXIT_SUCCESS;

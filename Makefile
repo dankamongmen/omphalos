@@ -15,7 +15,7 @@ ADDCAPS:=tools/addcaps
 
 BIN:=$(OMPHALOS)
 
-CFLAGS+=-I$(SRC) -pthread -D_GNU_SOURCE -fpic -I$(SRC)/lib$(PROJ) -fvisibility=hidden -O2 -Wall -W -Werror
+CFLAGS+=-I$(SRC) -pthread -D_GNU_SOURCE -fpic -I$(SRC)/lib$(PROJ) -fvisibility=hidden -O2 -Wall -W -Werror -g
 LFLAGS+=-Wl,-O,--default-symver,--enable-new-dtags,--as-needed,--warn-common
 LFLAGS+=-lpcap -lcap
 CTAGS?=$(shell (which ctags || echo ctags) 2> /dev/null)
