@@ -50,8 +50,8 @@ CSRCS:=$(shell find $(CSRCDIRS) -type f -iname \*.c -print)
 CINCS:=$(shell find $(CSRCDIRS) -type f -iname \*.h -print)
 COBJS:=$(addprefix $(OUT)/,$(CSRCS:%.c=%.o))
 
-# Requires CAP_NET_ADMIN privileges
-livetest: all
+# Requires CAP_NET_ADMIN privileges bestowed upon the binary
+livetest: sudobless
 	$(OMPHALOS)
 
 test: all $(TESTPCAPS)
@@ -81,7 +81,7 @@ clean:
 bless: all
 	$(ADDCAPS) $(OMPHALOS)
 
-sudobless: all
+sudobless: test
 	sudo $(ADDCAPS) $(OMPHALOS)
 
 install: all doc
