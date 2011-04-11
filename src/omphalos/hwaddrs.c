@@ -20,9 +20,15 @@ create_l2host(const void *hwaddr,size_t addrlen){
 	l2host *l2;
 
 	if( (l2 = malloc(sizeof(*l2))) ){
+		char *hwstr;
+
 		if((l2->hwaddr = malloc(addrlen)) == NULL){
 			free(l2);
 			return NULL;
+		}
+		if( (hwstr = l2addrstr(hwaddr,addrlen)) ){ // FIXME
+			printf("New neighbor: %s\n",hwstr);
+			free(hwstr);
 		}
 		memcpy(l2->hwaddr,hwaddr,addrlen);
 		l2->next = etherlist;
