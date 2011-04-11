@@ -13,6 +13,7 @@ void handle_ethernet_packet(struct interface *i,const void *frame,size_t len){
 	struct l2host *l2s,*l2d;
 
 	if(len < sizeof(*hdr)){
+		printf("%s malformed with %zu\n",__func__,len);
 		++i->malformed;
 		return;
 	}
@@ -28,7 +29,11 @@ void handle_ethernet_packet(struct interface *i,const void *frame,size_t len){
 				}case __constant_ntohs(ETH_P_ARP):{
 					handle_arp_packet(i,dgram,dlen);
 					break;
+				}case __constant_ntohs(ETH_P_IPV6):{
+					handle_ipv6bb_packet(i,dgram,dlen);
+					break;
 				}default:{
+					printf("%s noproto for %u\n",__func__,hdr->h_proto);
 					++i->noprotocol;
 					break;
 				}
