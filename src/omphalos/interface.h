@@ -20,9 +20,12 @@ typedef struct interface {
 	size_t addrlen;
 } interface;
 
+interface *iface_by_idx(int);
 int print_iface_stats(FILE *,const interface *,interface *,const char *);
 char *hwaddrstr(const interface *);
 void free_iface(interface *);
+void cleanup_interfaces(void);
+int print_all_iface_stats(FILE *,interface *);
 
 #ifdef __cplusplus
 }

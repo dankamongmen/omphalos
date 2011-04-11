@@ -5,6 +5,10 @@
 #include <omphalos/hwaddrs.h>
 #include <omphalos/interface.h>
 
+#define MAXINTERFACES (1u << 16) // lame FIXME
+
+static interface interfaces[MAXINTERFACES];
+
 #define STAT(fp,i,x) if((i)->x) { if(fprintf((fp),"<"#x">%ju</"#x">",(i)->x) < 0){ return -1; } }
 int print_iface_stats(FILE *fp,const interface *i,interface *agg,const char *decorator){
 	if(i->name == NULL){
@@ -30,6 +34,14 @@ int print_iface_stats(FILE *fp,const interface *i,interface *agg,const char *dec
 }
 #undef STAT
 
+// we wouldn't naturally want to use signed integers, but that's the api...
+interface *iface_by_idx(int idx){
+	if(idx < 0 || (unsigned)idx >= sizeof(interfaces) / sizeof(*interfaces)){
+		return NULL;
+	}
+	return &interfaces[idx];
+}
+
 char *hwaddrstr(const interface *i){
 	return l2addrstr(i->addr,i->addrlen);
 }
@@ -37,4 +49,27 @@ char *hwaddrstr(const interface *i){
 void free_iface(interface *i){
 	free(i->name);
 	free(i->addr);
+}
+
+void cleanup_interfaces(void){
+	unsigned i;
+
+	for(i = 0 ; i < sizeof(interfaces) / sizeof(*interfaces) ; ++i){
+		free_iface(&interfaces[i]);
+	}
+}
+
+int print_all_iface_stats(FILE *fp,interface *agg){
+	unsigned i;
+
+	for(i = 0 ; i < sizeof(interfaces) / sizeof(*interfaces) ; ++i){
+		const interface *iface = &interfaces[i];
+
+		if(iface->pkts){
+			if(print_iface_stats(fp,iface,agg,"iface") < 0){
+				return -1;
+			}
+		}
+	}
+	return 0;
 }

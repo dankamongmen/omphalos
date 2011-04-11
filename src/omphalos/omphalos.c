@@ -24,7 +24,6 @@
 #include <omphalos/ethernet.h>
 #include <omphalos/interface.h>
 
-#define MAXINTERFACES (1u << 16) // lame FIXME
 #define DEFAULT_USERNAME "nobody"
 
 // External cancellation, tested in input-handling loops. This only works
@@ -49,17 +48,6 @@ usage(const char *arg0,int ret){
 	fprintf(stderr,"-f filename: libpcap-format save file for input.\n");
 	fprintf(stderr,"-c count: exit after reading this many packets.\n");
 	exit(ret);
-}
-
-static interface interfaces[MAXINTERFACES];
-
-// we wouldn't naturally want to use signed integers, but that's the api...
-static inline interface *
-iface_by_idx(int idx){
-	if(idx < 0 || (unsigned)idx >= sizeof(interfaces) / sizeof(*interfaces)){
-		return NULL;
-	}
-	return &interfaces[idx];
 }
 
 typedef struct arptype {
@@ -641,21 +629,14 @@ handle_packet_socket(const omphalos_ctx *pctx){
 
 static int
 print_stats(FILE *fp){
-	const interface *iface;
 	interface total;
-	unsigned i;
 
 	memset(&total,0,sizeof(total));
 	if(printf("<stats>") < 0){
 		return -1;
 	}
-	for(i = 0 ; i < sizeof(interfaces) / sizeof(*interfaces) ; ++i){
-		iface = &interfaces[i];
-		if(iface->pkts){
-			if(print_iface_stats(fp,iface,&total,"iface") < 0){
-				return -1;
-			}
-		}
+	if(print_all_iface_stats(fp,&total) < 0){
+		return -1;
 	}
 	if(print_pcap_stats(fp,&total) < 0){
 		return -1;
@@ -667,15 +648,6 @@ print_stats(FILE *fp){
 		return -1;
 	}
 	return 0;
-}
-
-static void
-cleanup_interfaces(void){
-	unsigned i;
-
-	for(i = 0 ; i < sizeof(interfaces) / sizeof(*interfaces) ; ++i){
-		free_iface(&interfaces[i]);
-	}
 }
 
 static int
