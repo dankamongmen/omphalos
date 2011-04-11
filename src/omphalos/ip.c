@@ -1,8 +1,14 @@
 #include <endian.h>
+#include <bits/sockaddr.h>
 #include <linux/ip.h>
+#include <linux/in.h>
 #include <linux/in6.h>
+#include <linux/tcp.h>
+#include <linux/udp.h>
+#include <linux/icmp.h>
 #include <linux/ipv6.h>
 #include <omphalos/ip.h>
+#include <omphalos/netaddrs.h>
 #include <omphalos/interface.h>
 
 void handle_ipv6_packet(interface *i,const void *frame,size_t len){
@@ -24,6 +30,42 @@ void handle_ipv6_packet(interface *i,const void *frame,size_t len){
 		return;
 	}
 	// FIXME...
+}
+
+static void
+handle_tcp_packet(interface *i,const void *frame,size_t len){
+	const struct tcphdr *tcp = frame;
+
+	if(len < sizeof(*tcp)){
+		printf("%s malformed with %zu\n",__func__,len);
+		++i->malformed;
+		return;
+	}
+	// FIXME check header len etc...
+}
+
+static void
+handle_udp_packet(interface *i,const void *frame,size_t len){
+	const struct udphdr *udp = frame;
+
+	if(len < sizeof(*udp)){
+		printf("%s malformed with %zu\n",__func__,len);
+		++i->malformed;
+		return;
+	}
+	// FIXME check header len etc...
+}
+
+static void
+handle_icmp_packet(interface *i,const void *frame,size_t len){
+	const struct icmphdr *icmp = frame;
+
+	if(len < sizeof(*icmp)){
+		printf("%s malformed with %zu\n",__func__,len);
+		++i->malformed;
+		return;
+	}
+	// FIXME check header len etc...
 }
 
 void handle_ipv4_packet(interface *i,const void *frame,size_t len){
@@ -52,8 +94,8 @@ void handle_ipv4_packet(interface *i,const void *frame,size_t len){
 		++i->malformed;
 		return;
 	}
-	if( (ips = lookup_iphost(ip->src)) ){
-		if( (ipd = lookup_iphost(ip->dst)) ){
+	if( (ips = lookup_iphost(&ip->saddr)) ){
+		if( (ipd = lookup_iphost(&ip->daddr)) ){
 			const void *nhdr = (const unsigned char *)frame + hlen;
 			const size_t nlen = len - hlen;
 
@@ -69,7 +111,7 @@ void handle_ipv4_packet(interface *i,const void *frame,size_t len){
 				break;
 			}default:{
 				printf("%s noproto for %u\n",__func__,ip->protocol);
-				++i->noproto;
+				++i->noprotocol;
 				break;
 			}
 			}

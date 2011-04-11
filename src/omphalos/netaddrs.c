@@ -1,103 +1,95 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdint.h>
+#include <arpa/inet.h>
+#include <netinet/ip6.h>
 #include <omphalos/netaddrs.h>
-
-struct ipv6host;
 
 // No need to store addrlen, since all objects in a given arena have the
 // same length of hardware address.
 typedef struct iphost {
-	uint32_t ip;		// host byte order
+	uint32_t ip;		// network byte order
 	struct iphost *next;
 } iphost;
 
-// FIXME support multiple zones, for different addrlens
+typedef struct ipv6host {
+	struct in6_addr ip;	// network byte order
+	struct ipv6host *next;
+} ipv6host;
+
+// FIXME linked list is grotesque
 static iphost *iplist;
+static ipv6host *ipv6list;
 
 // FIXME replace internals with LRU acquisition...
 static inline iphost *
-create_iphost(const void *hwaddr,size_t addrlen){
-	iphost *l2;
+create_iphost(const uint32_t ip){
+	iphost *i;
 
-	if( (l2 = malloc(sizeof(*l2))) ){
-		char *hwstr;
-
-		if((l2->hwaddr = malloc(addrlen)) == NULL){
-			free(l2);
-			return NULL;
-		}
-		if( (hwstr = l2addrstr(hwaddr,addrlen)) ){ // FIXME
-			printf("New neighbor: %s\n",hwstr);
-			free(hwstr);
-		}
-		memcpy(l2->hwaddr,hwaddr,addrlen);
-		l2->next = etherlist;
-		etherlist = l2;
+	if( (i = malloc(sizeof(*i))) ){
+		i->ip = ip;
+		i->next = iplist;
+		iplist = i;
 	}
-	return l2;
+	return i;
 }
 
 // FIXME strictly proof-of-concept. we'll want a trie- or hash-based
 // lookup, backed by an arena-allocated LRU, etc...
-iphost *lookup_iphost(const void *hwaddr,size_t addrlen){
-	iphost *l2,**prev;
+iphost *lookup_iphost(const void *addr){
+	iphost *ip,**prev;
+	uint32_t i;
 
-	if(addrlen != IFHWADDRLEN){
-		fprintf(stderr,"Only 48-bit l2 addresses are supported\n");
-		return NULL;
-	}
-	for(prev = &etherlist ; (l2 = *prev) ; prev = &l2->next){
-		if(memcmp(l2->hwaddr,hwaddr,addrlen) == 0){
-			*prev = l2->next;
-			l2->next = etherlist;
-			etherlist = l2;
-			return l2;
+	memcpy(&i,addr,sizeof(i)); // input might not be word-aligned
+	for(prev = &iplist ; (ip = *prev) ; prev = &ip->next){
+		if(ip->ip == i){
+			*prev = ip->next;
+			ip->next = iplist;
+			iplist = ip;
+			return ip;
 		}
 	}
-	return create_iphost(hwaddr,addrlen);
+	return create_iphost(i);
 }
 
 void cleanup_l3hosts(void){
-	iphost *l3,*tmp;
+	ipv6host *ip6,*tmp6;
+	iphost *ip,*tmp;
 
-	for(l3 = iplist ; l3 ; l3 = tmp){
-		tmp = l3->next;
-		free(l3);
+	for(ip = iplist ; ip ; ip = tmp){
+		tmp = ip->next;
+		free(ip);
 	}
+	for(ip6 = ipv6list ; ip6 ; ip6 = tmp6){
+		tmp6 = ip6->next;
+		free(ip6);
+	}
+	ipv6list = NULL;
 	iplist = NULL;
 }
 
-char *ipaddrstr(const void *addr,size_t len){
-	unsigned idx;
-	size_t s;
-	char *r;
-
-	// Each byte becomes two ASCII characters and either a separator or a nul
-	s = len * 3;
-	if( (r = malloc(s)) ){
-		for(idx = 0 ; idx < len ; ++idx){
-			snprintf(r + idx * 3,s - idx * 3,"%02x:",((unsigned char *)addr)[idx]);
-		}
-	}
-	return r;
-}
-
 int print_l3hosts(FILE *fp){
-	const iphost *i;
+	if(iplist || ipv6list){
+		char str[INET6_ADDRSTRLEN];
+		const ipv6host *i6;
+		const iphost *i;
 
-	if( (i = iplist) ){
 		if(fprintf(fp,"<hosts>") < 0){
 			return -1;
 		}
-		do{
-			char *l3addr = ipaddrstr(i->addr);
-
-			if(fprintf(fp,"<ipv4 addr=\"%s\"/>",l3addr) < 0){
+		for(i = iplist ; i ; i = i->next){
+			inet_ntop(AF_INET,&i->ip,str,sizeof(str));
+			if(fprintf(fp,"<ipv4 addr=\"%s\"/>",str) < 0){
 				return -1;
 			}
-			free(l3addr);
-		}while( (i = i->next) );
+		}
+		for(i6 = ipv6list ; i6 ; i6 = i6->next){
+			inet_ntop(AF_INET6,&i6->ip,str,sizeof(str));
+			if(fprintf(fp,"<ipv6 addr=\"%s\"/>",str) < 0){
+				return -1;
+			}
+		}
 		if(fprintf(fp,"</hosts>") < 0){
 			return -1;
 		}
