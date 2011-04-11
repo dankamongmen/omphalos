@@ -6,6 +6,7 @@
 #include <linux/tcp.h>
 #include <linux/udp.h>
 #include <linux/icmp.h>
+#include <linux/igmp.h>
 #include <linux/ipv6.h>
 #include <omphalos/ip.h>
 #include <omphalos/netaddrs.h>
@@ -53,7 +54,7 @@ handle_udp_packet(interface *i,const void *frame,size_t len){
 		++i->malformed;
 		return;
 	}
-	// FIXME check header len etc...
+	// FIXME
 }
 
 static void
@@ -65,7 +66,19 @@ handle_icmp_packet(interface *i,const void *frame,size_t len){
 		++i->malformed;
 		return;
 	}
-	// FIXME check header len etc...
+	// FIXME
+}
+
+static void
+handle_igmp_packet(interface *i,const void *frame,size_t len){
+	const struct igmphdr *igmp = frame;
+
+	if(len < sizeof(*igmp)){
+		printf("%s malformed with %zu\n",__func__,len);
+		++i->malformed;
+		return;
+	}
+	// FIXME
 }
 
 void handle_ipv4_packet(interface *i,const void *frame,size_t len){
@@ -108,6 +121,9 @@ void handle_ipv4_packet(interface *i,const void *frame,size_t len){
 				break;
 			}case IPPROTO_ICMP:{
 				handle_icmp_packet(i,nhdr,nlen);
+				break;
+			}case IPPROTO_IGMP:{
+				handle_igmp_packet(i,nhdr,nlen);
 				break;
 			}default:{
 				printf("%s noproto for %u\n",__func__,ip->protocol);
