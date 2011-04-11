@@ -24,13 +24,13 @@ void handle_ethernet_packet(struct interface *i,const void *frame,size_t len){
 
 			switch(hdr->h_proto){
 				case __constant_ntohs(ETH_P_IP):{
-					handle_ip_packet(i,dgram,dlen);
+					handle_ipv4_packet(i,dgram,dlen);
 					break;
 				}case __constant_ntohs(ETH_P_ARP):{
 					handle_arp_packet(i,dgram,dlen);
 					break;
 				}case __constant_ntohs(ETH_P_IPV6):{
-					handle_ipv6bb_packet(i,dgram,dlen);
+					handle_ipv6_packet(i,dgram,dlen);
 					break;
 				}default:{
 					printf("%s noproto for %u\n",__func__,hdr->h_proto);

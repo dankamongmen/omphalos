@@ -9,8 +9,9 @@ extern "C" {
 
 struct interface;
 
-void handle_ip_packet(struct interface *,const void *,size_t);
-void handle_ipv6bb_packet(struct interface *,const void *,size_t);
+// Ethernet protocols 0x8000 and 0x86DD
+void handle_ipv4_packet(struct interface *,const void *,size_t);
+void handle_ipv6_packet(struct interface *,const void *,size_t);
 
 #ifdef __cplusplus
 }
