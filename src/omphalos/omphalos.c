@@ -20,6 +20,7 @@
 #include <omphalos/netlink.h>
 #include <omphalos/psocket.h>
 #include <omphalos/omphalos.h>
+#include <omphalos/netaddrs.h>
 #include <omphalos/ethernet.h>
 #include <omphalos/interface.h>
 
@@ -688,6 +689,9 @@ dump_output(FILE *fp){
 	if(print_l2hosts(fp)){
 		return -1;
 	}
+	if(print_l3hosts(fp)){
+		return -1;
+	}
 	if(fprintf(fp,"</omphalos>\n") < 0 || fflush(fp)){
 		return -1;
 	}
@@ -776,5 +780,6 @@ int main(int argc,char * const *argv){
 	cleanup_interfaces();
 	cleanup_pcap();
 	cleanup_l2hosts();
+	cleanup_l3hosts();
 	return EXIT_SUCCESS;
 }
