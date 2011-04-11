@@ -28,6 +28,7 @@ void handle_ipv6_packet(interface *i,const void *frame,size_t len){
 
 void handle_ipv4_packet(interface *i,const void *frame,size_t len){
 	const struct iphdr *ip = frame;
+	struct iphost *ips,*ipd;
 	unsigned hlen;
 
 	if(len < sizeof(*ip)){
@@ -50,6 +51,29 @@ void handle_ipv4_packet(interface *i,const void *frame,size_t len){
 		printf("%s malformed with %zu vs %hu\n",__func__,len,be16toh(ip->tot_len));
 		++i->malformed;
 		return;
+	}
+	if( (ips = lookup_iphost(ip->src)) ){
+		if( (ipd = lookup_iphost(ip->dst)) ){
+			const void *nhdr = (const unsigned char *)frame + hlen;
+			const size_t nlen = len - hlen;
+
+			switch(ip->protocol){
+			case IPPROTO_TCP:{
+				handle_tcp_packet(i,nhdr,nlen);
+				break;
+			}case IPPROTO_UDP:{
+				handle_udp_packet(i,nhdr,nlen);
+				break;
+			}case IPPROTO_ICMP:{
+				handle_icmp_packet(i,nhdr,nlen);
+				break;
+			}default:{
+				printf("%s noproto for %u\n",__func__,ip->protocol);
+				++i->noproto;
+				break;
+			}
+			}
+		}
 	}
 	// FIXME...
 }
