@@ -8,6 +8,7 @@ extern "C" {
 int netlink_socket(void);
 int discover_addrs(int);
 int discover_links(int);
+int discover_routes(int);
 int handle_netlink_event(int);
 
 #ifdef __cplusplus

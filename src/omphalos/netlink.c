@@ -48,6 +48,10 @@ int discover_links(int fd){
 	nldiscover(RTM_GETLINK,ifinfomsg,ifi_family);
 }
 
+int discover_routes(int fd){
+	nldiscover(RTM_GETROUTE,rtmsg,rtm_family);
+}
+
 /* This is all pretty omphalos-specific from here on out */
 #include <stdlib.h>
 #include <sys/uio.h>
