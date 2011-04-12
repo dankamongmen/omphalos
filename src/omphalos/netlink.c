@@ -214,6 +214,7 @@ handle_rtm_newlink(const struct nlmsghdr *nl){
 				if(RTA_PAYLOAD(ra) != sizeof(int)){
 					fprintf(stderr,"Expected %zu MTU bytes, got %lu\n",
 							sizeof(int),RTA_PAYLOAD(ra));
+					break;
 				}
 				iface->mtu = *(int *)RTA_DATA(ra);
 				break;
