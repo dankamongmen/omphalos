@@ -122,6 +122,104 @@ handle_rtm_delneigh(const struct nlmsghdr *nl){
 }
 
 static int
+handle_rtm_delroute(const struct nlmsghdr *nl){
+	const struct rtmsg *rt = NLMSG_DATA(nl);
+	struct rtattr *ra;
+	int rlen;
+
+	printf("ROUTE DELETED\n");
+	rlen = nl->nlmsg_len - NLMSG_LENGTH(sizeof(*rt));
+	ra = (struct rtattr *)((char *)(NLMSG_DATA(nl)) + sizeof(*rt));
+	while(RTA_OK(ra,rlen)){
+		switch(ra->rta_type){
+		case RTA_DST:{
+		break;}case RTA_SRC:{
+		break;}case RTA_IIF:{
+		break;}case RTA_OIF:{
+		break;}default:{
+			fprintf(stderr,"Unknown rtatype %u\n",ra->rta_type);
+			break;
+		break;}}
+		ra = RTA_NEXT(ra,rlen);
+	}
+	if(rlen){
+		fprintf(stderr,"%d excess bytes on newlink message\n",rlen);
+	}
+	return 0;
+}
+
+static int
+handle_rtm_newroute(const struct nlmsghdr *nl){
+	const struct rtmsg *rt = NLMSG_DATA(nl);
+	struct sockaddr_storage sss,ssd;
+	const interface *iface;
+	struct rtattr *ra;
+	int rlen,iif,oif;
+	size_t flen;
+
+	memset(&sss,0,sizeof(sss));
+	memset(&ssd,0,sizeof(ssd));
+	switch(rt->rtm_family){
+	case AF_INET:{
+		flen = sizeof(uint32_t);
+	break;}case AF_INET6:{
+		flen = sizeof(uint32_t) * 4;
+	break;}default:{
+		flen = 0;
+	break;} }
+	rlen = nl->nlmsg_len - NLMSG_LENGTH(sizeof(*rt));
+	ra = (struct rtattr *)((char *)(NLMSG_DATA(nl)) + sizeof(*rt));
+	while(RTA_OK(ra,rlen)){
+		switch(ra->rta_type){
+		case RTA_DST:{
+		break;}case RTA_SRC:{
+		break;}case RTA_IIF:{
+			if(RTA_PAYLOAD(ra) != sizeof(int)){
+				fprintf(stderr,"Expected %zu iface bytes, got %lu\n",
+						sizeof(int),RTA_PAYLOAD(ra));
+				break;
+			}
+			iif = *(int *)RTA_DATA(ra);
+		break;}case RTA_OIF:{
+			if(RTA_PAYLOAD(ra) != sizeof(int)){
+				fprintf(stderr,"Expected %zu iface bytes, got %lu\n",
+						sizeof(int),RTA_PAYLOAD(ra));
+				break;
+			}
+			oif = *(int *)RTA_DATA(ra);
+		break;}case RTA_GATEWAY:{
+		break;}case RTA_PRIORITY:{
+		break;}case RTA_PREFSRC:{
+		break;}case RTA_METRICS:{
+		break;}case RTA_MULTIPATH:{
+		// break;}case RTA_PROTOINFO:{ // unused
+		break;}case RTA_FLOW:{
+		break;}case RTA_CACHEINFO:{
+		// break;}case RTA_SESSION:{ // unused
+		// break;}case RTA_MP_ALGO:{ // unused
+		break;}case RTA_TABLE:{
+		break;}case RTA_MARK:{
+		break;}default:{
+			fprintf(stderr,"Unknown rtatype %u\n",ra->rta_type);
+		break;}}
+		ra = RTA_NEXT(ra,rlen);
+	}
+	if(rlen){
+		fprintf(stderr,"%d excess bytes on newlink message\n",rlen);
+	}
+	if(oif){
+		if((iface = iface_by_idx(oif)) == NULL){
+			goto err;
+		}
+	}
+	printf("[%8s]NEW ROUTE type %u flen %zu\n",iface->name,rt->rtm_family,flen);
+	return 0;
+
+err:
+	return -1;
+}
+
+static int
 handle_rtm_deladdr(const struct nlmsghdr *nl){
 	const struct ifaddrmsg *ia = NLMSG_DATA(nl);
 	interface *iface;
@@ -330,29 +428,26 @@ int handle_netlink_event(int fd){
 			switch(nh->nlmsg_type){
 			case RTM_NEWLINK:{
 				res |= handle_rtm_newlink(nh);
-				break;
-			}case RTM_DELLINK:{
+			break;}case RTM_DELLINK:{
 				res |= handle_rtm_dellink(nh);
-				break;
-			}case RTM_NEWADDR:{
-				res |= handle_rtm_newaddr(nh);
-				break;
-			}case RTM_DELADDR:{
-				res |= handle_rtm_deladdr(nh);
-				break;
-			}case RTM_NEWNEIGH:{
+			break;}case RTM_NEWNEIGH:{
 				res |= handle_rtm_newneigh(nh);
-				break;
-			}case RTM_DELNEIGH:{
+			break;}case RTM_DELNEIGH:{
 				res |= handle_rtm_delneigh(nh);
-				break;
-			}case NLMSG_DONE:{
+			break;}case RTM_NEWROUTE:{
+				res |= handle_rtm_newroute(nh);
+			break;}case RTM_DELROUTE:{
+				res |= handle_rtm_delroute(nh);
+			break;}case RTM_NEWADDR:{
+				res |= handle_rtm_newaddr(nh);
+			break;}case RTM_DELADDR:{
+				res |= handle_rtm_deladdr(nh);
+			break;}case NLMSG_DONE:{
 				if(!inmulti){
 					fprintf(stderr,"Warning: DONE outside multipart on %d\n",fd);
 				}
 				inmulti = 0;
-				break;
-			}case NLMSG_ERROR:{
+			break;}case NLMSG_ERROR:{
 				struct nlmsgerr *nerr = NLMSG_DATA(nh);
 
 				if(nerr->error == 0){
@@ -363,8 +458,7 @@ int handle_netlink_event(int fd){
 						fd,nerr->msg.nlmsg_seq,strerror(-nerr->error));
 					res = -1;
 				}
-				break;
-			}default:{
+			break;}default:{
 				fprintf(stderr,"Unknown netlink msgtype %u on %d\n",nh->nlmsg_type,fd);
 				res = -1;
 			}}
