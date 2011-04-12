@@ -50,6 +50,10 @@ int discover_links(int fd){
 	nldiscover(RTM_GETLINK,ifinfomsg,ifi_family);
 }
 
+int discover_neighbors(int fd){
+	nldiscover(RTM_GETNEIGH,ndmsg,ndm_family);
+}
+
 int discover_routes(int fd){
 	nldiscover(RTM_GETROUTE,rtmsg,rtm_family);
 }
