@@ -32,7 +32,7 @@ void handle_ethernet_packet(interface *i,const void *frame,size_t len){
 					handle_ipv6_packet(i,dgram,dlen);
 					break;
 				}case __constant_ntohs(ETH_P_PAE):{
-					handle_pae_packet(i,dgram,dlen);
+					handle_eapol_packet(i,dgram,dlen);
 					break;
 				}default:{
 					printf("%s noproto for 0x%x\n",__func__,hdr->h_proto);
