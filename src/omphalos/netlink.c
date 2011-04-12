@@ -196,7 +196,7 @@ handle_rtm_newroute(const struct nlmsghdr *nl){
 			}
 			memcpy(ad,RTA_DATA(ra),flen);
 		break;}case RTA_SRC:{
-			if(rt->rtm_src_len != flen || RTA_PAYLOAD(ra) != flen){
+			if(RTA_PAYLOAD(ra) != flen){
 				fprintf(stderr,"Expected %zu src bytes, got %lu\n",
 						flen,RTA_PAYLOAD(ra));
 				break;
