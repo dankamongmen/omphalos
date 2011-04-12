@@ -65,13 +65,13 @@ typedef struct arptype {
 static arptype arptypes[] = {
 	{
 		.ifi_type = ARPHRD_LOOPBACK,
-		.name = "loopback",
+		.name = "Loopback",
 	},{
 		.ifi_type = ARPHRD_ETHER,
 		.name = "Ethernet",
 	},{
 		.ifi_type = ARPHRD_IEEE80211,
-		.name = "IEEE 802.11",
+		.name = "Wireless",
 	},
 };
 
@@ -98,7 +98,7 @@ handle_rtm_newneigh(const struct nlmsghdr *nl){
 		fprintf(stderr,"Invalid interface index: %d\n",nd->ndm_ifindex);
 		return -1;
 	}
-	printf("[%s] NEIGHBOR ADDED\n",iface->name);
+	printf("[%8s] NEIGHBOR ADDED\n",iface->name);
 	// FIXME
 	return 0;
 }
@@ -112,7 +112,7 @@ handle_rtm_delneigh(const struct nlmsghdr *nl){
 		fprintf(stderr,"Invalid interface index: %d\n",nd->ndm_ifindex);
 		return -1;
 	}
-	printf("[%s] NEIGHBOR DELETED\n",iface->name);
+	printf("[%8s] NEIGHBOR DELETED\n",iface->name);
 	// FIXME
 	return 0;
 }
@@ -126,7 +126,7 @@ handle_rtm_deladdr(const struct nlmsghdr *nl){
 		fprintf(stderr,"Invalid interface index: %d\n",ia->ifa_index);
 		return -1;
 	}
-	printf("[%s] ADDRESS DELETED\n",iface->name);
+	printf("[%8s] ADDRESS DELETED\n",iface->name);
 	// FIXME
 	return 0;
 }
@@ -140,7 +140,7 @@ handle_rtm_newaddr(const struct nlmsghdr *nl){
 		fprintf(stderr,"Invalid interface index: %d\n",ia->ifa_index);
 		return -1;
 	}
-	printf("[%s] ADDRESS ADDED\n",iface->name);
+	printf("[%8s] ADDRESS ADDED\n",iface->name);
 	// FIXME
 	return 0;
 }
@@ -271,8 +271,7 @@ handle_rtm_newlink(const struct nlmsghdr *nl){
 		if((hwaddr = hwaddrstr(iface)) == NULL){
 			return -1;
 		}
-		printf("[%3d][%8s][%s] %s %d %s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s\n",
-			ii->ifi_index,
+		printf("[%8s][%s] %s %d %s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s\n",
 			iface->name,
 			at->name,
 			hwaddr,
