@@ -374,7 +374,7 @@ int handle_netlink_event(int fd){
 						fd,nerr->msg.nlmsg_seq,nerr->msg.nlmsg_type);
 				}else{
 					fprintf(stderr,"Error message on netlink %d msgid %u (%s?)\n",
-						fd,nerr->msg.nlmsg_seq,strerror(nerr->error));
+						fd,nerr->msg.nlmsg_seq,strerror(-nerr->error));
 					res = -1;
 				}
 				break;
