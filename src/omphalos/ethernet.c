@@ -33,7 +33,7 @@ void handle_ethernet_packet(struct interface *i,const void *frame,size_t len){
 					handle_ipv6_packet(i,dgram,dlen);
 					break;
 				}default:{
-					printf("%s noproto for %u\n",__func__,hdr->h_proto);
+					printf("%s noproto for 0x%x\n",__func__,hdr->h_proto);
 					++i->noprotocol;
 					break;
 				}
