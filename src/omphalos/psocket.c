@@ -136,10 +136,8 @@ typedef struct netlink_thread_marshal {
 static void *
 netlink_thread(void *v){
 	netlink_thread_marshal *ntmarsh = v;
-	struct pollfd pfd[2] = {
+	struct pollfd pfd[1] = {
 		{
-			.events = POLLIN | POLLRDNORM | POLLERR,
-		},{
 			.events = POLLIN | POLLRDNORM | POLLERR,
 		}
 	};
@@ -149,12 +147,16 @@ netlink_thread(void *v){
 	if((pfd[0].fd = netlink_socket()) < 0){
 		return NULL;
 	}
-	if((pfd[1].fd = netlink_socket()) < 0){
+	if(discover_links(pfd[0].fd) < 0){
+		close(pfd[0].fd);
 		return NULL;
 	}
-	if(discover_links(pfd[0].fd) < 0 || discover_routes(pfd[1].fd) < 0){
+	if(discover_routes(pfd[0].fd) < 0){
 		close(pfd[0].fd);
-		close(pfd[1].fd);
+		return NULL;
+	}
+	if(discover_neighbors(pfd[0].fd) < 0){
+		close(pfd[0].fd);
 		return NULL;
 	}
 	strcpy(ntmarsh->errbuf,"");
