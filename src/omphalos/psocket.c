@@ -154,6 +154,7 @@ netlink_thread(void *v){
 	}
 	if(discover_links(pfd[0].fd) < 0 || discover_routes(pfd[1].fd) < 0){
 		close(pfd[0].fd);
+		close(pfd[1].fd);
 		return NULL;
 	}
 	strcpy(ntmarsh->errbuf,"");
