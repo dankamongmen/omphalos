@@ -1,14 +1,13 @@
 #include <omphalos/ip.h>
 #include <omphalos/arp.h>
 #include <asm/byteorder.h>
+#include <omphalos/eapol.h>
 #include <linux/if_ether.h>
 #include <omphalos/hwaddrs.h>
 #include <omphalos/ethernet.h>
 #include <omphalos/interface.h>
 
-#include <arpa/inet.h>
-
-void handle_ethernet_packet(struct interface *i,const void *frame,size_t len){
+void handle_ethernet_packet(interface *i,const void *frame,size_t len){
 	const struct ethhdr *hdr = frame;
 	struct l2host *l2s,*l2d;
 
@@ -31,6 +30,9 @@ void handle_ethernet_packet(struct interface *i,const void *frame,size_t len){
 					break;
 				}case __constant_ntohs(ETH_P_IPV6):{
 					handle_ipv6_packet(i,dgram,dlen);
+					break;
+				}case __constant_ntohs(ETH_P_PAE):{
+					handle_pae_packet(i,dgram,dlen);
 					break;
 				}default:{
 					printf("%s noproto for 0x%x\n",__func__,hdr->h_proto);
