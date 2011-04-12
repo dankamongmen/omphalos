@@ -3,6 +3,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/socket.h>
+#include <netinet/in.h>
 #include <linux/if_addr.h>
 #include <linux/netlink.h>
 #include <linux/rtnetlink.h>
@@ -155,6 +156,7 @@ handle_rtm_newroute(const struct nlmsghdr *nl){
 	const interface *iface;
 	struct rtattr *ra;
 	int rlen,iif,oif;
+	void *as,*ad;
 	size_t flen;
 
 	memset(&sss,0,sizeof(sss));
@@ -162,17 +164,37 @@ handle_rtm_newroute(const struct nlmsghdr *nl){
 	switch(rt->rtm_family){
 	case AF_INET:{
 		flen = sizeof(uint32_t);
+		as = &((struct sockaddr_in *)&sss)->sin_addr;
+		ad = &((struct sockaddr_in *)&ssd)->sin_addr;
 	break;}case AF_INET6:{
 		flen = sizeof(uint32_t) * 4;
+		as = &((struct sockaddr_in6 *)&sss)->sin6_addr;
+		ad = &((struct sockaddr_in6 *)&ssd)->sin6_addr;
 	break;}default:{
 		flen = 0;
 	break;} }
+	if(flen == 0 || flen > sizeof(sss.__ss_padding)){
+		fprintf(stderr,"Bad route family %u\n",rt->rtm_family);
+		return -1;
+	}
 	rlen = nl->nlmsg_len - NLMSG_LENGTH(sizeof(*rt));
 	ra = (struct rtattr *)((char *)(NLMSG_DATA(nl)) + sizeof(*rt));
 	while(RTA_OK(ra,rlen)){
 		switch(ra->rta_type){
 		case RTA_DST:{
+			if(RTA_PAYLOAD(ra) != flen){
+				fprintf(stderr,"Expected %zu src bytes, got %lu\n",
+						flen,RTA_PAYLOAD(ra));
+				break;
+			}
+			memcpy(ad,RTA_DATA(ra),flen);
 		break;}case RTA_SRC:{
+			if(rt->rtm_src_len != flen || RTA_PAYLOAD(ra) != flen){
+				fprintf(stderr,"Expected %zu src bytes, got %lu\n",
+						flen,RTA_PAYLOAD(ra));
+				break;
+			}
+			memcpy(as,RTA_DATA(ra),flen);
 		break;}case RTA_IIF:{
 			if(RTA_PAYLOAD(ra) != sizeof(int)){
 				fprintf(stderr,"Expected %zu iface bytes, got %lu\n",
@@ -211,6 +233,9 @@ handle_rtm_newroute(const struct nlmsghdr *nl){
 		if((iface = iface_by_idx(oif)) == NULL){
 			goto err;
 		}
+	}else{
+		fprintf(stderr,"No output interface for route\n");
+		goto err;
 	}
 	printf("[%8s]NEW ROUTE type %u flen %zu\n",iface->name,rt->rtm_family,flen);
 	return 0;
