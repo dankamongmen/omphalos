@@ -1,4 +1,7 @@
-#include <pwent.h>
+#include <pwd.h>
+#include <unistd.h>
+#include <string.h>
+#include <sys/capability.h>
 
 int handle_priv_drop(const char *name){
 	cap_flag_value_t val;

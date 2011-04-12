@@ -5,6 +5,9 @@
 extern "C" {
 #endif
 
+struct tpacket_req;
+struct omphalos_ctx;
+
 // Open a packet socket. Requires superuser or network admin capabilities.
 int packet_socket(unsigned protocol);
 
@@ -15,6 +18,9 @@ size_t mmap_tx_psocket(int fd,void **map,struct tpacket_req *treq);
 
 // map and size ought have been returned by mmap_*_psocket().
 int unmap_psocket(void *map,size_t size);
+
+// Loop on a packet socket according to provided program parameters
+int handle_packet_socket(const struct omphalos_ctx *);
 
 #ifdef __cplusplus
 }
