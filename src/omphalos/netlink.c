@@ -65,6 +65,7 @@ int discover_routes(int fd){
 #include <linux/if_arp.h>
 #include <linux/netlink.h>
 #include <linux/rtnetlink.h>
+#include <omphalos/hwaddrs.h>
 #include <omphalos/interface.h>
 
 typedef struct arptype {
@@ -105,6 +106,7 @@ handle_rtm_newneigh(const struct nlmsghdr *nl){
 	char ll[IFHWADDRLEN]; // FIXME get from selected interface
 	struct sockaddr_storage ssd;
 	struct rtattr *ra;
+	struct l2host *l2;
 	interface *iface;
 	size_t flen;
 	int rlen;
@@ -156,6 +158,8 @@ handle_rtm_newneigh(const struct nlmsghdr *nl){
 	if(rlen){
 		fprintf(stderr,"%d excess bytes on newlink message\n",rlen);
 	}
+	l2 = lookup_l2host(ll,sizeof(ll));
+	// FIXME and do what with it?
 	{
 		char str[INET6_ADDRSTRLEN];
 		inet_ntop(nd->ndm_family,ad,str,sizeof(str));
@@ -404,10 +408,8 @@ handle_rtm_newlink(const struct nlmsghdr *nl){
 				free(iface->addr);
 				iface->addr = addr;
 				iface->addrlen = RTA_PAYLOAD(ra);
-				break;
-			}case IFLA_BROADCAST:{
-				break;
-			}case IFLA_IFNAME:{
+			break;}case IFLA_BROADCAST:{
+			break;}case IFLA_IFNAME:{
 				char *name;
 
 				if((name = strdup(RTA_DATA(ra))) == NULL){
@@ -416,58 +418,36 @@ handle_rtm_newlink(const struct nlmsghdr *nl){
 				}
 				free(iface->name);
 				iface->name = name;
-				break;
-			}case IFLA_MTU:{
+			break;}case IFLA_MTU:{
 				if(RTA_PAYLOAD(ra) != sizeof(int)){
 					fprintf(stderr,"Expected %zu MTU bytes, got %lu\n",
 							sizeof(int),RTA_PAYLOAD(ra));
 					break;
 				}
 				iface->mtu = *(int *)RTA_DATA(ra);
-				break;
-			}case IFLA_LINK:{
-				break;
-			}case IFLA_TXQLEN:{
-				break;
-			}case IFLA_MAP:{
-				break;
-			}case IFLA_WEIGHT:{
-				break;
-			}case IFLA_QDISC:{
-				break;
-			}case IFLA_STATS:{
-				break;
-			}case IFLA_WIRELESS:{
+			break;}case IFLA_LINK:{
+			break;}case IFLA_TXQLEN:{
+			break;}case IFLA_MAP:{
+			break;}case IFLA_WEIGHT:{
+			break;}case IFLA_QDISC:{
+			break;}case IFLA_STATS:{
+			break;}case IFLA_WIRELESS:{
 				if(handle_wireless_event(iface,RTA_DATA(ra),RTA_PAYLOAD(ra)) < 0){
 					return -1;
 				}
-				break;
-			}case IFLA_OPERSTATE:{
-				break;
-			}case IFLA_LINKMODE:{
-				break;
-			}case IFLA_LINKINFO:{
-				break;
-			}case IFLA_NET_NS_PID:{
-				break;
-			}case IFLA_IFALIAS:{
-				break;
-			}case IFLA_NUM_VF:{
-				break;
-			}case IFLA_VFINFO_LIST:{
-				break;
-			}case IFLA_STATS64:{
-				break;
-			}case IFLA_VF_PORTS:{
-				break;
-			}case IFLA_PORT_SELF:{
-				break;
-			}case IFLA_AF_SPEC:{
-				break;
-			}default:{
+			break;}case IFLA_OPERSTATE:{
+			break;}case IFLA_LINKMODE:{
+			break;}case IFLA_LINKINFO:{
+			break;}case IFLA_NET_NS_PID:{
+			break;}case IFLA_IFALIAS:{
+			break;}case IFLA_NUM_VF:{
+			break;}case IFLA_STATS64:{
+			break;}case IFLA_VF_PORTS:{
+			break;}case IFLA_PORT_SELF:{
+			break;}case IFLA_AF_SPEC:{
+			break;}default:{
 				fprintf(stderr,"Unknown rtatype %u\n",ra->rta_type);
-				break;
-			}
+			break;}
 		}
 		ra = RTA_NEXT(ra,rlen);
 	}
