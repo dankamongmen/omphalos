@@ -150,32 +150,38 @@ handle_rtm_delroute(const struct nlmsghdr *nl){
 	return 0;
 }
 
+typedef struct route {
+	sa_family_t family;
+	struct sockaddr_storage sss,ssd;
+	unsigned maskbits;
+} route;
+
 static int
 handle_rtm_newroute(const struct nlmsghdr *nl){
 	const struct rtmsg *rt = NLMSG_DATA(nl);
-	struct sockaddr_storage sss,ssd;
 	const interface *iface;
 	struct rtattr *ra;
 	int rlen,iif,oif;
 	void *as,*ad;
 	size_t flen;
+	route r;
 
-	memset(&sss,0,sizeof(sss));
-	memset(&ssd,0,sizeof(ssd));
-	switch(rt->rtm_family){
+	memset(&r,0,sizeof(r));
+	switch( (r.family = rt->rtm_family) ){
 	case AF_INET:{
 		flen = sizeof(uint32_t);
-		as = &((struct sockaddr_in *)&sss)->sin_addr;
-		ad = &((struct sockaddr_in *)&ssd)->sin_addr;
+		as = &((struct sockaddr_in *)&r.sss)->sin_addr;
+		ad = &((struct sockaddr_in *)&r.ssd)->sin_addr;
 	break;}case AF_INET6:{
 		flen = sizeof(uint32_t) * 4;
-		as = &((struct sockaddr_in6 *)&sss)->sin6_addr;
-		ad = &((struct sockaddr_in6 *)&ssd)->sin6_addr;
+		as = &((struct sockaddr_in6 *)&r.sss)->sin6_addr;
+		ad = &((struct sockaddr_in6 *)&r.ssd)->sin6_addr;
 	break;}default:{
 		flen = 0;
 	break;} }
-	if(flen == 0 || flen > sizeof(sss.__ss_padding)){
-		fprintf(stderr,"Bad route family %u\n",rt->rtm_family);
+	r.maskbits = rt->rtm_dst_len;
+	if(flen == 0 || flen > sizeof(r.sss.__ss_padding)){
+		fprintf(stderr,"Unknown route family %u\n",rt->rtm_family);
 		return -1;
 	}
 	rlen = nl->nlmsg_len - NLMSG_LENGTH(sizeof(*rt));
@@ -241,7 +247,7 @@ handle_rtm_newroute(const struct nlmsghdr *nl){
 	{
 		char str[INET6_ADDRSTRLEN];
 		inet_ntop(rt->rtm_family,ad,str,sizeof(str));
-	printf("[%8s] route to %s/%u %s\n",iface->name,str,rt->rtm_dst_len,
+	printf("[%8s] route to %s/%u %s\n",iface->name,str,r.maskbits,
 			rt->rtm_type == RTN_LOCAL ? "(local)" :
 			rt->rtm_type == RTN_BROADCAST ? "(broadcast)" :
 			rt->rtm_type == RTN_UNREACHABLE ? "(unreachable)" :
