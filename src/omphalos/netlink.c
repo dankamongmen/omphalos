@@ -45,25 +45,7 @@ int discover_addrs(int fd){
 }
 
 int discover_links(int fd){
-	struct {
-		struct nlmsghdr nh;
-		struct ifinfomsg ii;
-	} req = {
-		.nh = {
-			.nlmsg_len = NLMSG_LENGTH(sizeof(req.ii)),
-			.nlmsg_flags = NLM_F_REQUEST | NLM_F_ACK | NLM_F_DUMP,
-			.nlmsg_type = RTM_GETLINK,
-		},
-		.ii = {
-			.ifi_family = AF_UNSPEC,
-		},
-	};
-	int r;
-
-	if((r = send(fd,&req,sizeof(req),0)) < 0){
-		fprintf(stderr,"Failure writing RTM_GETLINK message to %d (%s?)\n",fd,strerror(errno));
-	}
-	return r;
+	nldiscover(RTM_GETLINK,ifinfomsg,ifi_family);
 }
 
 /* This is all pretty omphalos-specific from here on out */
