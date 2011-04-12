@@ -102,14 +102,74 @@ lookup_arptype(unsigned arphrd){
 static int
 handle_rtm_newneigh(const struct nlmsghdr *nl){
 	const struct ndmsg *nd = NLMSG_DATA(nl);
+	char ll[IFHWADDRLEN]; // FIXME get from selected interface
+	struct sockaddr_storage ssd;
+	struct rtattr *ra;
 	interface *iface;
+	size_t flen;
+	int rlen;
+	void *ad;
 
 	if((iface = iface_by_idx(nd->ndm_ifindex)) == NULL){
 		fprintf(stderr,"Invalid interface index: %d\n",nd->ndm_ifindex);
 		return -1;
 	}
-	printf("[%8s] NEIGHBOR ADDED\n",iface->name);
-	// FIXME
+	switch(nd->ndm_family){
+	case AF_INET:{
+		flen = sizeof(uint32_t);
+		ad = &((struct sockaddr_in *)&ssd)->sin_addr;
+	break;}case AF_INET6:{
+		flen = sizeof(uint32_t) * 4;
+		ad = &((struct sockaddr_in6 *)&ssd)->sin6_addr;
+	break;}default:{
+		flen = 0;
+	break;} }
+	if(flen == 0){
+		fprintf(stderr,"Unknown route family %u\n",nd->ndm_family);
+		return -1;
+	}
+	rlen = nl->nlmsg_len - NLMSG_LENGTH(sizeof(*nd));
+	ra = (struct rtattr *)((char *)(NLMSG_DATA(nl)) + sizeof(*nd));
+	while(RTA_OK(ra,rlen)){
+		switch(ra->rta_type){
+		case NDA_DST:{
+			if(RTA_PAYLOAD(ra) != flen){
+				fprintf(stderr,"Expected %zu nw bytes, got %lu\n",
+						flen,RTA_PAYLOAD(ra));
+				break;
+			}
+			memcpy(ad,RTA_DATA(ra),flen);
+		break;}case NDA_LLADDR:{
+			if(RTA_PAYLOAD(ra) != sizeof(ll)){
+				fprintf(stderr,"Expected %zu ll bytes, got %lu\n",
+						sizeof(ll),RTA_PAYLOAD(ra));
+				break;
+			}
+			memcpy(ll,RTA_DATA(ra),sizeof(ll));
+		break;}case NDA_CACHEINFO:{
+		break;}case NDA_PROBES:{
+		break;}default:{
+			fprintf(stderr,"Unknown rtatype %u\n",ra->rta_type);
+		break;}}
+		ra = RTA_NEXT(ra,rlen);
+	}
+	if(rlen){
+		fprintf(stderr,"%d excess bytes on newlink message\n",rlen);
+	}
+	{
+		char str[INET6_ADDRSTRLEN];
+		inet_ntop(nd->ndm_family,ad,str,sizeof(str));
+		printf("[%8s] neighbor %s %s%s%s%s%s%s%s%s\n",iface->name,str,
+			nd->ndm_state & NUD_INCOMPLETE ? "INCOMPLETE" : "",
+			nd->ndm_state & NUD_REACHABLE ? "REACHABLE" : "",
+			nd->ndm_state & NUD_STALE ? "STALE" : "",
+			nd->ndm_state & NUD_DELAY ? "DELAY" : "",
+			nd->ndm_state & NUD_PROBE ? "PROBE" : "",
+			nd->ndm_state & NUD_FAILED ? "FAILED" : "",
+			nd->ndm_state & NUD_NOARP ? "NOARP" : "",
+			nd->ndm_state & NUD_PERMANENT ? "PERMANENT" : ""
+			);
+	}
 	return 0;
 }
 
