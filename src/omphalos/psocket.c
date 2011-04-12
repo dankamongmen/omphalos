@@ -136,8 +136,10 @@ typedef struct netlink_thread_marshal {
 static void *
 netlink_thread(void *v){
 	netlink_thread_marshal *ntmarsh = v;
-	struct pollfd pfd[1] = {
+	struct pollfd pfd[2] = {
 		{
+			.events = POLLIN | POLLRDNORM | POLLERR,
+		},{
 			.events = POLLIN | POLLRDNORM | POLLERR,
 		}
 	};
@@ -147,13 +149,18 @@ netlink_thread(void *v){
 	if((pfd[0].fd = netlink_socket()) < 0){
 		return NULL;
 	}
-	if(discover_links(pfd[0].fd) < 0 || discover_addrs(pfd[0].fd) < 0){
+	if((pfd[1].fd = netlink_socket()) < 0){
+		return NULL;
+	}
+	if(discover_links(pfd[0].fd) < 0 || discover_addrs(pfd[1].fd) < 0){
 		close(pfd[0].fd);
 		return NULL;
 	}
 	strcpy(ntmarsh->errbuf,"");
 	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE,NULL);
 	for(;;){
+		unsigned z;
+
 		errno = 0;
 		while((events = poll(pfd,sizeof(pfd) / sizeof(*pfd),-1)) <= 0){
 			fprintf(stderr,"Wakeup on netlink socket %d (%s?)\n",
@@ -161,13 +168,16 @@ netlink_thread(void *v){
 			errno = 0;
 			// FIXME bail on terrible errors?
 		}
-		if(pfd[0].revents & POLLERR){
-			snprintf(ntmarsh->errbuf,sizeof(ntmarsh->errbuf),"Error polling netlink socket %d\n",pfd[0].fd);
-			break; // FIXME
-		}else if(pfd[0].revents){
-			handle_netlink_event(pfd[0].fd);
+		for(z = 0 ; z < sizeof(pfd) / sizeof(*pfd) ; ++z){
+			if(pfd[z].revents & POLLERR){
+				snprintf(ntmarsh->errbuf,sizeof(ntmarsh->errbuf),
+					"Error polling netlink socket %d\n",pfd[z].fd);
+				break; // FIXME
+			}else if(pfd[z].revents){
+				handle_netlink_event(pfd[z].fd);
+			}
+			pfd[z].revents = 0;
 		}
-		pfd[0].revents = 0;
 	}
 	pthread_exit(ntmarsh->errbuf);
 }
