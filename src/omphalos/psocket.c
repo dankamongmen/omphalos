@@ -147,7 +147,7 @@ netlink_thread(void *v){
 	if((pfd[0].fd = netlink_socket()) < 0){
 		return NULL;
 	}
-	if(discover_links(pfd[0].fd) < 0){
+	if(discover_links(pfd[0].fd) < 0 || discover_addrs(pfd[0].fd) < 0){
 		close(pfd[0].fd);
 		return NULL;
 	}

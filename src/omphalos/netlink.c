@@ -3,6 +3,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/socket.h>
+#include <linux/if_addr.h>
 #include <linux/netlink.h>
 #include <linux/rtnetlink.h>
 
@@ -23,6 +24,24 @@ int netlink_socket(void){
 		return -1;
 	}
 	return fd;
+}
+
+#define nldiscover(msg,famtype,famfield) do {\
+	struct { struct nlmsghdr nh ; struct famtype m ; } req = { \
+		.nh = { .nlmsg_len = NLMSG_LENGTH(sizeof(req.m)), \
+			.nlmsg_flags = NLM_F_REQUEST | NLM_F_ACK | NLM_F_DUMP, \
+			.nlmsg_type = msg, }, \
+		.m = { .famfield = AF_UNSPEC, }, }; \
+	int r; \
+	if((r = send(fd,&req,req.nh.nlmsg_len,0)) < 0){ \
+		fprintf(stderr,"Failure writing " #msg " to %d (%s?)\n",\
+				fd,strerror(errno)); \
+	} \
+	return r; \
+}while(0)
+
+int discover_addrs(int fd){
+	nldiscover(RTM_GETADDR,ifaddrmsg,ifa_family);
 }
 
 int discover_links(int fd){

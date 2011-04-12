@@ -6,6 +6,7 @@ extern "C" {
 #endif
 
 int netlink_socket(void);
+int discover_addrs(int);
 int discover_links(int);
 int handle_netlink_event(int);
 
