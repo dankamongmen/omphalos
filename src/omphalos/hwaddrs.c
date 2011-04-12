@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <net/if.h>
+#include <linux/rtnetlink.h>
 #include <omphalos/hwaddrs.h>
 
 // No need to store addrlen, since all objects in a given arena have the
@@ -83,6 +84,20 @@ char *l2addrstr(const void *addr,size_t len){
 	return r;
 }
 
+static const unsigned char brd[] = "\xff\xff\xff\xff\xff\xff";
+
+static int
+categorize_ethaddr(const unsigned char *mac){
+	if(mac[0] & 0x1){
+		// Can't use sizeof(brd), since it has a terminating NUL :/
+		if(memcmp(mac,brd,IFHWADDRLEN) == 0){
+			return RTN_BROADCAST;
+		}
+		return RTN_MULTICAST;
+	}
+	return RTN_UNICAST;
+}
+
 int print_l2hosts(FILE *fp){
 	const l2host *l2;
 
@@ -91,10 +106,35 @@ int print_l2hosts(FILE *fp){
 			return -1;
 		}
 		do{
-			char *hwaddr = l2addrstr(l2->hwaddr,IFHWADDRLEN);
+			int ethtype = categorize_ethaddr(l2->hwaddr);
+			char *hwaddr = NULL;
 
-			if(fprintf(fp,"<ieee802 addr=\"%s\"/>",hwaddr) < 0){
+			switch(ethtype){
+			case RTN_BROADCAST:{
+				if(fprintf(fp,"<ieee802 broadcast/>") < 0){
+					return -1;
+				}
+				break;
+			}case RTN_MULTICAST:{
+				hwaddr = l2addrstr(l2->hwaddr,IFHWADDRLEN);
+
+				if(fprintf(fp,"<ieee802 mcast=\"%s\"/>",hwaddr) < 0){
+					free(hwaddr);
+					return -1;
+				}
+				break;
+			}case RTN_UNICAST:{
+				hwaddr = l2addrstr(l2->hwaddr,IFHWADDRLEN);
+
+				if(fprintf(fp,"<ieee802 addr=\"%s\"/>",hwaddr) < 0){
+					free(hwaddr);
+					return -1;
+				}
+				break;
+			}default:{
+				fprintf(stderr,"Unknown ethtype: %d\n",ethtype);
 				return -1;
+			}
 			}
 			free(hwaddr);
 		}while( (l2 = l2->next) );
