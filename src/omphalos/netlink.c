@@ -513,6 +513,35 @@ handle_rtm_newlink(const struct nlmsghdr *nl){
 }
 #undef IFF_FLAG
 
+static int
+handle_netlink_error(int fd,const struct nlmsgerr *nerr){
+	if(nerr->error == 0){
+		printf("ACK on netlink %d msgid %u type %u\n",
+			fd,nerr->msg.nlmsg_seq,nerr->msg.nlmsg_type);
+		// FIXME do we care?
+		return 0;
+	}
+	if(-nerr->error == EAGAIN || -nerr->error == EBUSY){
+		switch(nerr->msg.nlmsg_type){
+		case RTM_GETLINK:{
+			return discover_links(fd);
+		break;}case RTM_GETADDR:{
+			return discover_addrs(fd);
+		break;}case RTM_GETROUTE:{
+			return discover_routes(fd);
+		break;}case RTM_GETNEIGH:{
+			return discover_neighbors(fd);
+		break;}default:{
+			fprintf(stderr,"Unknown msgtype in EAGAIN: %u\n",nerr->msg.nlmsg_type);
+			return -1;
+		break;}
+		}
+	}
+	fprintf(stderr,"Error message on netlink %d msgid %u type %u (%s?)\n",
+		fd,nerr->msg.nlmsg_seq,nerr->msg.nlmsg_type,strerror(-nerr->error));
+	return -1;
+}
+
 int handle_netlink_event(int fd){
 	char buf[4096]; // FIXME numerous problems
 	struct iovec iov[1] = { { buf, sizeof(buf) } };
@@ -557,20 +586,11 @@ int handle_netlink_event(int fd){
 				}
 				inmulti = 0;
 			break;}case NLMSG_ERROR:{
-				struct nlmsgerr *nerr = NLMSG_DATA(nh);
-
-				if(nerr->error == 0){
-					printf("ACK on netlink %d msgid %u type %u\n",
-						fd,nerr->msg.nlmsg_seq,nerr->msg.nlmsg_type);
-				}else{
-					fprintf(stderr,"Error message on netlink %d msgid %u (%s?)\n",
-						fd,nerr->msg.nlmsg_seq,strerror(-nerr->error));
-					res = -1;
-				}
+				res |= handle_netlink_error(fd,NLMSG_DATA(nh));
 			break;}default:{
 				fprintf(stderr,"Unknown netlink msgtype %u on %d\n",nh->nlmsg_type,fd);
 				res = -1;
-			}}
+			break;}}
 			// FIXME handle read data
 		}
 	}
