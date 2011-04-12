@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <arpa/inet.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <linux/if_addr.h>
@@ -237,7 +238,20 @@ handle_rtm_newroute(const struct nlmsghdr *nl){
 		fprintf(stderr,"No output interface for route\n");
 		goto err;
 	}
-	printf("[%8s]NEW ROUTE type %u flen %zu\n",iface->name,rt->rtm_family,flen);
+	{
+		char str[INET6_ADDRSTRLEN];
+		inet_ntop(rt->rtm_family,ad,str,sizeof(str));
+	printf("[%8s] route to %s/%u %s\n",iface->name,str,rt->rtm_dst_len,
+			rt->rtm_type == RTN_LOCAL ? "(local)" :
+			rt->rtm_type == RTN_BROADCAST ? "(broadcast)" :
+			rt->rtm_type == RTN_UNREACHABLE ? "(unreachable)" :
+			rt->rtm_type == RTN_ANYCAST ? "(anycast)" :
+			rt->rtm_type == RTN_UNICAST ? "(unicast)" :
+			rt->rtm_type == RTN_MULTICAST ? "(multicast)" :
+			rt->rtm_type == RTN_BLACKHOLE ? "(blackhole)" :
+			rt->rtm_type == RTN_MULTICAST ? "(multicast)" :
+			"");
+	}
 	return 0;
 
 err:
