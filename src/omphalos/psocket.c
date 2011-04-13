@@ -5,6 +5,7 @@
 #include <sys/mman.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
+#include <linux/if_arp.h>
 #include <linux/if_packet.h>
 #include <omphalos/psocket.h>
 
@@ -63,7 +64,7 @@ size_mmap_psocket(struct tpacket_req *treq){
 	return treq->tp_block_nr * treq->tp_block_size;
 }
 
-size_t mmap_psocket(int op,int fd,void **map,struct tpacket_req *treq){
+size_t mmap_psocket(int op,int idx,int fd,void **map,struct tpacket_req *treq){
 	size_t size;
 
 	*map = MAP_FAILED;
@@ -73,6 +74,21 @@ size_t mmap_psocket(int op,int fd,void **map,struct tpacket_req *treq){
 	if(setsockopt(fd,SOL_PACKET,op,treq,sizeof(*treq)) < 0){
 		fprintf(stderr,"Couldn't set socket option (%s?)\n",strerror(errno));
 		return 0;
+	}
+	if(op == PACKET_TX_RING){
+		struct sockaddr_ll sll;
+
+		memset(&sll,0,sizeof(sll));
+		sll.sll_family = AF_PACKET;
+		sll.sll_protocol = ETH_P_ALL;
+		sll.sll_ifindex = idx;
+		if(bind(fd,(struct sockaddr *)&sll,sizeof(sll)) < 0){
+			fprintf(stderr,"Couldn't bind idx %d (%s?)\n",idx,strerror(errno));
+			return 0;
+		}
+	}else if(idx != -1){
+		fprintf(stderr,"Invalid idx with op %d: %d\n",op,idx);
+		return -1;
 	}
 	if((*map = mmap(0,size,PROT_READ|PROT_WRITE,MAP_SHARED,fd,0)) == MAP_FAILED){
 		fprintf(stderr,"Couldn't mmap %zub (%s?)\n",size,strerror(errno));
@@ -87,15 +103,13 @@ size_t mmap_psocket(int op,int fd,void **map,struct tpacket_req *treq){
 }
 
 size_t mmap_rx_psocket(int fd,void **map,struct tpacket_req *treq){
-	return mmap_psocket(PACKET_RX_RING,fd,map,treq);
+	return mmap_psocket(PACKET_RX_RING,-1,fd,map,treq);
 }
 
-#ifdef PACKET_TX_RING
 // FIXME: need always bind to an interface on tx
-size_t mmap_tx_psocket(int fd,void **map,struct tpacket_req *treq){
-	return mmap_psocket(PACKET_TX_RING,fd,map,treq);
+size_t mmap_tx_psocket(int fd,int idx,void **map,struct tpacket_req *treq){
+	return mmap_psocket(PACKET_TX_RING,idx,fd,map,treq);
 }
-#endif
 
 int unmap_psocket(void *map,size_t size){
 	if(munmap(map,size)){
@@ -122,7 +136,6 @@ cancellation_signal_handler(int signo __attribute__ ((unused))){
 #include <signal.h>
 #include <pthread.h>
 #include <sys/poll.h>
-#include <linux/if_arp.h>
 #include <omphalos/privs.h>
 #include <omphalos/netlink.h>
 #include <omphalos/omphalos.h>
