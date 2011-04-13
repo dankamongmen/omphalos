@@ -66,6 +66,7 @@ int discover_routes(int fd){
 #include <linux/netlink.h>
 #include <linux/rtnetlink.h>
 #include <omphalos/hwaddrs.h>
+#include <omphalos/psocket.h>
 #include <omphalos/interface.h>
 
 typedef struct arptype {
@@ -488,6 +489,21 @@ handle_rtm_newlink(const struct nlmsghdr *nl){
 			IFF_FLAG(ii->ifi_flags,ECHO)
 			);
 		free(hwaddr);
+	}
+	{
+		struct tpacket_req ttpr;
+		void *txm;
+		size_t ts;
+		int tfd;
+
+		if((tfd = packet_socket(ETH_P_ALL)) < 0){
+			return -1;
+		}
+		if((ts = mmap_tx_psocket(tfd,ii->ifi_index,&txm,&ttpr)) == 0){
+			close(tfd);
+			return -1;
+		}
+		// FIXME and do what with it?
 	}
 	return 0;
 }
