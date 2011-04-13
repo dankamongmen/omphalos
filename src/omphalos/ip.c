@@ -9,6 +9,7 @@
 #include <linux/igmp.h>
 #include <linux/ipv6.h>
 #include <omphalos/ip.h>
+#include <omphalos/ethernet.h>
 #include <omphalos/netaddrs.h>
 #include <omphalos/interface.h>
 
@@ -102,7 +103,7 @@ void handle_ipv4_packet(interface *i,const void *frame,size_t len){
 		++i->malformed;
 		return;
 	}
-	if(len != be16toh(ip->tot_len)){
+	if(check_ethernet_padup(len,be16toh(ip->tot_len))){
 		printf("%s malformed with %zu vs %hu\n",__func__,len,be16toh(ip->tot_len));
 		++i->malformed;
 		return;
@@ -110,7 +111,7 @@ void handle_ipv4_packet(interface *i,const void *frame,size_t len){
 	if( (ips = lookup_iphost(&ip->saddr)) ){
 		if( (ipd = lookup_iphost(&ip->daddr)) ){
 			const void *nhdr = (const unsigned char *)frame + hlen;
-			const size_t nlen = len - hlen;
+			const size_t nlen = be16toh(ip->tot_len) - hlen;
 
 			switch(ip->protocol){
 			case IPPROTO_TCP:{

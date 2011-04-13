@@ -2,6 +2,7 @@
 #include <linux/if_arp.h>
 #include <omphalos/arp.h>
 #include <asm/byteorder.h>
+#include <omphalos/ethernet.h>
 #include <omphalos/interface.h>
 
 void handle_arp_packet(interface *i,const void *frame,size_t len){
@@ -11,7 +12,7 @@ void handle_arp_packet(interface *i,const void *frame,size_t len){
 		++i->malformed;
 		return;
 	}
-	if(len != sizeof(*ap) + ap->ar_hln * 2 + ap->ar_pln * 2){
+	if(check_ethernet_padup(len,sizeof(*ap) + ap->ar_hln * 2 + ap->ar_pln * 2)){
 		fprintf(stderr,"%s malformed expected %zu got %zu\n",
 			__func__, sizeof(*ap) + ap->ar_hln * 2 + ap->ar_pln * 2,len);
 		++i->malformed;
