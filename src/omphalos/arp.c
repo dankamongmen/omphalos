@@ -1,6 +1,7 @@
 #include <sys/socket.h>
 #include <linux/if_arp.h>
 #include <omphalos/arp.h>
+#include <asm/byteorder.h>
 #include <omphalos/interface.h>
 
 void handle_arp_packet(interface *i,const void *frame,size_t len){
@@ -17,8 +18,9 @@ void handle_arp_packet(interface *i,const void *frame,size_t len){
 		return;
 	}
 	switch(ap->ar_op){
-	case ARPOP_REQUEST:{
+	case __constant_ntohs(ARPOP_REQUEST):{
 		// FIXME reply with ARP spoof...
+	break;}case __constant_ntohs(ARPOP_REPLY):{
 	break;}default:{
 		fprintf(stderr,"%s unknown op %u\n",__func__,ap->ar_op);
 		++i->noprotocol;
