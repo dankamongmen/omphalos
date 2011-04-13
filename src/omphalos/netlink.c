@@ -84,6 +84,9 @@ static arptype arptypes[] = {
 	},{
 		.ifi_type = ARPHRD_IEEE80211,
 		.name = "Wireless",
+	},{
+		.ifi_type = ARPHRD_NONE,
+		.name = "VArpless",
 	},
 };
 
