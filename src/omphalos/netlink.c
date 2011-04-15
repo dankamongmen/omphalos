@@ -19,7 +19,8 @@ int netlink_socket(void){
 	}
 	memset(&sa,0,sizeof(sa));
 	sa.nl_family = AF_NETLINK;
-	sa.nl_groups = RTNLGRP_MAX;
+	sa.nl_groups = RTNLGRP_NOTIFY | RTNLGRP_LINK | RTNLGRP_NEIGH |
+			RTNLGRP_IPV4_ROUTE | RTNLGRP_IPV6_ROUTE;
 	if(bind(fd,(const struct sockaddr *)&sa,sizeof(sa))){
 		fprintf(stderr,"Couldn't bind NETLINK_ROUTE socket %d (%s?)\n",fd,strerror(errno));
 		close(fd);
