@@ -58,8 +58,13 @@ char *hwaddrstr(const interface *i){
 }
 
 void free_iface(interface *i){
+	if(i->fd >= 0){
+		close(i->fd);
+	}
 	free(i->name);
 	free(i->addr);
+	memset(i,0,sizeof(*i));
+	i->fd = -1;
 }
 
 void cleanup_interfaces(void){
