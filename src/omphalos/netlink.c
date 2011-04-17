@@ -245,6 +245,7 @@ handle_rtm_newroute(const struct nlmsghdr *nl){
 	size_t flen;
 	route r;
 
+	oif = -1;
 	memset(&r,0,sizeof(r));
 	switch( (r.family = rt->rtm_family) ){
 	case AF_INET:{
@@ -317,7 +318,7 @@ handle_rtm_newroute(const struct nlmsghdr *nl){
 	if(rlen){
 		fprintf(stderr,"%d excess bytes on newlink message\n",rlen);
 	}
-	if(oif){
+	if(oif > -1){
 		if((iface = iface_by_idx(oif)) == NULL){
 			goto err;
 		}
