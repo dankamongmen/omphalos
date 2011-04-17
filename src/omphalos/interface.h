@@ -11,6 +11,7 @@ extern "C" {
 
 typedef struct interface {
 	uintmax_t pkts;
+	uintmax_t partials;
 	uintmax_t malformed;
 	uintmax_t truncated;
 	uintmax_t noprotocol;

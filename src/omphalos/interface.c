@@ -34,6 +34,7 @@ int print_iface_stats(FILE *fp,const interface *i,interface *agg,const char *dec
 		}
 	}
 	STAT(fp,i,pkts);
+	STAT(fp,i,partials);
 	STAT(fp,i,truncated);
 	STAT(fp,i,noprotocol);
 	STAT(fp,i,malformed);

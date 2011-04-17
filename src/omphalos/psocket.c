@@ -266,17 +266,19 @@ handle_ring_packet(int fd,void *frame){
 			return;
 		}
 	}
-	if((thdr->tp_status & TP_STATUS_COPY) || thdr->tp_snaplen != thdr->tp_len){
-		fprintf(stderr,"Partial capture (%u/%ub)\n",thdr->tp_snaplen,thdr->tp_len);
-		return;
-	}
-	if(thdr->tp_status & TP_STATUS_LOSING){
-		fprintf(stderr,"FUCK ME; THE RINGBUFFER'S FULL!\n");
-	}
 	sall = (struct sockaddr_ll *)((char *)frame + TPACKET_ALIGN(sizeof(*thdr)));
 	if((iface = iface_by_idx(sall->sll_ifindex)) == NULL){
 		fprintf(stderr,"Invalid interface index: %d\n",sall->sll_ifindex);
 		return;
+	}
+	if((thdr->tp_status & TP_STATUS_COPY) || thdr->tp_snaplen != thdr->tp_len){
+		fprintf(stderr,"Partial capture on %s (%d) (%u/%ub)\n",
+				iface->name,sall->sll_ifindex,thdr->tp_snaplen,thdr->tp_len);
+		++iface->partials;
+		return;
+	}
+	if(thdr->tp_status & TP_STATUS_LOSING){
+		fprintf(stderr,"FUCK ME; THE RINGBUFFER'S FULL!\n");
 	}
 	++iface->pkts;
 	handle_ethernet_packet(iface,(char *)frame + thdr->tp_mac,thdr->tp_len);
