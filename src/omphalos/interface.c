@@ -33,8 +33,7 @@ int print_iface_stats(FILE *fp,const interface *i,interface *agg,const char *dec
 			return -1;
 		}
 	}
-	STAT(fp,i,pkts);
-	STAT(fp,i,partials);
+	STAT(fp,i,frames);
 	STAT(fp,i,truncated);
 	STAT(fp,i,noprotocol);
 	STAT(fp,i,malformed);
@@ -42,7 +41,10 @@ int print_iface_stats(FILE *fp,const interface *i,interface *agg,const char *dec
 		return -1;
 	}
 	if(agg){
-		agg->pkts += i->pkts;
+		agg->frames += i->frames;
+		agg->truncated += i->truncated;
+		agg->noprotocol += i->noprotocol;
+		agg->malformed += i->malformed;
 	}
 	return 0;
 }
@@ -84,7 +86,7 @@ int print_all_iface_stats(FILE *fp,interface *agg){
 	for(i = 0 ; i < sizeof(interfaces) / sizeof(*interfaces) ; ++i){
 		const interface *iface = &interfaces[i];
 
-		if(iface->pkts){
+		if(iface->frames){
 			if(print_iface_stats(fp,iface,agg,"iface") < 0){
 				return -1;
 			}

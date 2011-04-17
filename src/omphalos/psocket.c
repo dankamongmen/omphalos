@@ -278,13 +278,13 @@ handle_ring_packet(int fd,void *frame){
 	if((thdr->tp_status & TP_STATUS_COPY) || thdr->tp_snaplen != thdr->tp_len){
 		fprintf(stderr,"Partial capture on %s (%d) (%u/%ub)\n",
 				iface->name,sall->sll_ifindex,thdr->tp_snaplen,thdr->tp_len);
-		++iface->partials;
+		++iface->truncated;
 		return;
 	}
 	if(thdr->tp_status & TP_STATUS_LOSING){
 		fprintf(stderr,"FUCK ME; THE RINGBUFFER'S FULL!\n");
 	}
-	++iface->pkts;
+	++iface->frames;
 	handle_ethernet_packet(iface,(char *)frame + thdr->tp_mac,thdr->tp_len);
 	thdr->tp_status = TP_STATUS_KERNEL; // return the frame
 }

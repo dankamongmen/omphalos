@@ -11,11 +11,11 @@ extern "C" {
 #include <linux/if_packet.h>
 
 typedef struct interface {
-	uintmax_t pkts;
-	uintmax_t partials;
+	uintmax_t frames;	// Statistics
 	uintmax_t malformed;
 	uintmax_t truncated;
 	uintmax_t noprotocol;
+
 	unsigned arptype;	// from rtnetlink(7) ifi_type
 	unsigned flags;		// from rtnetlink(7) ifi_flags
 	int mtu;		// to match netdevice(7)'s ifr_mtu...
