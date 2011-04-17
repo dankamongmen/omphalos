@@ -8,7 +8,7 @@ extern "C" {
 struct iw_event;
 struct interface;
 
-int handle_wireless_event(struct interface *,const struct iw_event *);
+int handle_wireless_event(struct interface *,const struct iw_event *,size_t);
 
 #ifdef __cplusplus
 }

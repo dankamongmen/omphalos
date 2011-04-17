@@ -69,6 +69,7 @@ int discover_routes(int fd){
 #include <omphalos/ethtool.h>
 #include <omphalos/hwaddrs.h>
 #include <omphalos/psocket.h>
+#include <omphalos/wireless.h>
 #include <omphalos/interface.h>
 
 typedef struct arptype {
@@ -384,12 +385,6 @@ handle_rtm_dellink(const struct nlmsghdr *nl){
 	}
 	printf("Link %d (%s) was removed\n",ii->ifi_index,iface->name);
 	free_iface(iface);
-	return 0;
-}
-
-static int
-handle_wireless_event(interface *i,void *data,int len){
-	fprintf(stderr,"WIRELESS EVENT on %s (%p/%d)!\n",i->name,data,len);
 	return 0;
 }
 
