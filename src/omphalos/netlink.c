@@ -466,6 +466,7 @@ handle_rtm_newlink(const struct nlmsghdr *nl){
 		fprintf(stderr,"%d excess bytes on newlink message\n",rlen);
 	}
 	iface->arptype = ii->ifi_type;
+	iface->flags = ii->ifi_flags;
 	if((at = lookup_arptype(iface->arptype)) == NULL){
 		fprintf(stderr,"Unknown dev type %u\n",iface->arptype);
 	}else{
@@ -500,20 +501,17 @@ handle_rtm_newlink(const struct nlmsghdr *nl){
 			);
 		free(hwaddr);
 	}
-	{
-		struct tpacket_req ttpr;
-		void *txm;
-		size_t ts;
-		int tfd;
-
-		if((tfd = packet_socket(ETH_P_ALL)) < 0){
+	if(iface->fd < 0){
+		if((iface->fd = packet_socket(ETH_P_ALL)) < 0){
 			return -1;
 		}
-		if((ts = mmap_tx_psocket(tfd,ii->ifi_index,&txm,&ttpr)) == 0){
-			close(tfd);
+		if((iface->ts = mmap_tx_psocket(iface->fd,ii->ifi_index,&iface->txm,&iface->ttpr)) == 0){
+			memset(&iface->ttpr,0,sizeof(iface->ttpr));
+			iface->txm = NULL;
+			close(iface->fd);
+			iface->fd = -1;
 			return -1;
 		}
-		// FIXME and do what with it?
 	}
 	return 0;
 }

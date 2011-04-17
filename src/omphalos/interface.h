@@ -7,18 +7,23 @@ extern "C" {
 
 #include <stdio.h>
 #include <stdint.h>
+#include <linux/if_packet.h>
 
 typedef struct interface {
 	uintmax_t pkts;
 	uintmax_t malformed;
 	uintmax_t truncated;
 	uintmax_t noprotocol;
-	unsigned arptype;
+	unsigned arptype;	// from rtnetlink(7) ifi_type
+	unsigned flags;		// from rtnetlink(7) ifi_flags
 	int mtu;		// to match netdevice(7)'s ifr_mtu...
 	char *name;
 	void *addr;		// multiple hwaddrs are multiple ifaces...
 	size_t addrlen;
 	int fd;			// TX packet socket
+	void *txm;		// TX packet ring buffer
+	size_t ts;		// TX packet ring size in bytes
+	struct tpacket_req ttpr;// TX packet ring descriptor
 } interface;
 
 int init_interfaces(void);
