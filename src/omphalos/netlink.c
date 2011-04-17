@@ -307,9 +307,7 @@ handle_rtm_newroute(const struct nlmsghdr *nl){
 		// break;}case RTA_SESSION:{ // unused
 		// break;}case RTA_MP_ALGO:{ // unused
 		break;}case RTA_TABLE:{
-#ifdef RTA_MARK
 		break;}case RTA_MARK:{
-#endif
 		break;}default:{
 			fprintf(stderr,"Unknown rtatype %u\n",ra->rta_type);
 		break;}}
@@ -454,21 +452,11 @@ handle_rtm_newlink(const struct nlmsghdr *nl){
 			break;}case IFLA_LINKINFO:{
 			break;}case IFLA_NET_NS_PID:{
 			break;}case IFLA_IFALIAS:{
-#ifdef IFLA_NUM_VF
 			break;}case IFLA_NUM_VF:{
-#endif
-#ifdef IFLA_STATS64
 			break;}case IFLA_STATS64:{
-#endif
-#ifdef IFLA_VF_PORTS
 			break;}case IFLA_VF_PORTS:{
-#endif
-#ifdef IFLA_PORT_SELF
 			break;}case IFLA_PORT_SELF:{
-#endif
-#ifdef IFLA_AF_SPEC
 			break;}case IFLA_AF_SPEC:{
-#endif
 			break;}default:{
 				fprintf(stderr,"Unknown rtatype %u\n",ra->rta_type);
 			break;}
