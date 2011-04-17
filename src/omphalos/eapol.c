@@ -26,7 +26,7 @@ void handle_eapol_packet(interface *i,const void *frame,size_t len){
 		++i->noprotocol;
 	}
 	if(eaphdr->len != len - sizeof(*eaphdr)){
-		fprintf(stderr,"%s malformed (%zu != %zu)\n",__func__,len,sizeof(*eaphdr));
+		fprintf(stderr,"%s malformed (%u != %zu)\n",__func__,eaphdr->len,len - sizeof(*eaphdr));
 		++i->malformed;
 		return;
 	}
