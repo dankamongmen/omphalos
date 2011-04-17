@@ -381,7 +381,7 @@ handle_rtm_dellink(const struct nlmsghdr *nl){
 		return -1;
 	}
 	printf("Link %d (%s) was removed\n",ii->ifi_index,iface->name);
-	// FIXME do we care?
+	free_iface(iface);
 	return 0;
 }
 
