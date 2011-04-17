@@ -471,23 +471,17 @@ handle_rtm_newlink(const struct nlmsghdr *nl){
 		fprintf(stderr,"No name in new link message\n");
 		return -1;
 	}
-	if(iface_driver_info(iface->name)){
+	iface->arptype = ii->ifi_type;
+	if(!(ii->ifi_flags & IFF_LOOPBACK) && iface_driver_info(iface->name)){
 		return -1;
 	}
-	iface->arptype = ii->ifi_type;
 	iface->flags = ii->ifi_flags;
 	if((at = lookup_arptype(iface->arptype)) == NULL){
 		fprintf(stderr,"Unknown dev type %u\n",iface->arptype);
 	}else{
-		char *hwaddr;
-
-		if((hwaddr = hwaddrstr(iface)) == NULL){
-			return -1;
-		}
-		printf("[%8s][%s] %s %d %s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s\n",
+		printf("[%8s][%s] %d %s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s\n",
 			iface->name,
 			at->name,
-			hwaddr,
 			iface->mtu,
 			IFF_FLAG(ii->ifi_flags,UP),
 			IFF_FLAG(ii->ifi_flags,BROADCAST),
@@ -508,7 +502,6 @@ handle_rtm_newlink(const struct nlmsghdr *nl){
 			IFF_FLAG(ii->ifi_flags,DORMANT),
 			IFF_FLAG(ii->ifi_flags,ECHO)
 			);
-		free(hwaddr);
 	}
 	if(iface->fd < 0){
 		if((iface->fd = packet_socket(ETH_P_ALL)) < 0){
