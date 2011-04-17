@@ -73,8 +73,6 @@ void handle_ethernet_packet(interface *i,const void *frame,size_t len){
 					handle_eapol_packet(i,dgram,dlen);
 					break;
 				}case ETH_P_8021Q:{
-					// FIXME handle IEEE 802.1q
-					dlen -= 4;
 					handle_8021q(i,frame,len);
 					break;
 				}default:{
