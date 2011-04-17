@@ -7,6 +7,7 @@ extern "C" {
 
 #include <stdio.h>
 #include <stdint.h>
+#include <linux/ethtool.h>
 #include <linux/if_packet.h>
 
 typedef struct interface {
@@ -25,6 +26,7 @@ typedef struct interface {
 	void *txm;		// TX packet ring buffer
 	size_t ts;		// TX packet ring size in bytes
 	struct tpacket_req ttpr;// TX packet ring descriptor
+	struct ethtool_drvinfo drv;	// ethtool driver info
 } interface;
 
 int init_interfaces(void);

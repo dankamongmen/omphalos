@@ -472,8 +472,12 @@ handle_rtm_newlink(const struct nlmsghdr *nl){
 		return -1;
 	}
 	iface->arptype = ii->ifi_type;
-	if(!(ii->ifi_flags & IFF_LOOPBACK) && iface_driver_info(iface->name)){
-		return -1;
+	if(!(ii->ifi_flags & IFF_LOOPBACK)){
+		if(iface_driver_info(iface->name,&iface->drv)){
+			return -1;
+		}
+	}else{
+		memset(&iface->drv,0,sizeof(iface->drv));
 	}
 	iface->flags = ii->ifi_flags;
 	if((at = lookup_arptype(iface->arptype)) == NULL){
@@ -502,6 +506,10 @@ handle_rtm_newlink(const struct nlmsghdr *nl){
 			IFF_FLAG(ii->ifi_flags,DORMANT),
 			IFF_FLAG(ii->ifi_flags,ECHO)
 			);
+		if(!(ii->ifi_flags & IFF_LOOPBACK)){
+			printf("\t   driver: %s %s @ %s\n",iface->drv.driver,
+					iface->drv.version,iface->drv.bus_info);
+		}
 	}
 	if(iface->fd < 0){
 		if((iface->fd = packet_socket(ETH_P_ALL)) < 0){
