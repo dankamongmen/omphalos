@@ -9,6 +9,17 @@
 
 static interface interfaces[MAXINTERFACES];
 
+int init_interfaces(void){
+	unsigned i;
+
+	for(i = 0 ; i < sizeof(interfaces) / sizeof(*interfaces) ; ++i){
+		interface *iface = &interfaces[i];
+
+		iface->fd = -1;
+	}
+	return 0;
+}
+
 #define STAT(fp,i,x) if((i)->x) { if(fprintf((fp),"<"#x">%ju</"#x">",(i)->x) < 0){ return -1; } }
 int print_iface_stats(FILE *fp,const interface *i,interface *agg,const char *decorator){
 	if(i->name == NULL){

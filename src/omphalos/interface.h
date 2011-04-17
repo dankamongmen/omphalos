@@ -18,8 +18,10 @@ typedef struct interface {
 	char *name;
 	void *addr;		// multiple hwaddrs are multiple ifaces...
 	size_t addrlen;
+	int fd;			// TX packet socket
 } interface;
 
+int init_interfaces(void);
 interface *iface_by_idx(int);
 int print_iface_stats(FILE *,const interface *,interface *,const char *);
 char *hwaddrstr(const interface *);

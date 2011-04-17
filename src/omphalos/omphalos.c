@@ -129,6 +129,9 @@ int main(int argc,char * const *argv){
 		fprintf(stderr,"Trailing argument: %s\n",argv[optind]);
 		usage(argv[0],EXIT_FAILURE);
 	}
+	if(init_interfaces()){
+		return EXIT_FAILURE;
+	}
 	if(pctx.user == NULL){
 		pctx.user = DEFAULT_USERNAME;
 	}
