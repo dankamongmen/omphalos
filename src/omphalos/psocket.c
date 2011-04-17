@@ -9,6 +9,10 @@
 #include <linux/if_packet.h>
 #include <omphalos/psocket.h>
 
+#ifndef PACKET_TX_RING
+#define PACKET_TX_RING 13
+#endif
+
 static const unsigned MAX_FRAME_SIZE = 1518; // FIXME get from device
 static const unsigned MMAP_BLOCK_COUNT = 32768; // FIXME do better
 
