@@ -9,8 +9,7 @@
 #include <linux/ethtool.h>
 #include <omphalos/ethtool.h>
 
-int iface_driver_info(const char *name){
-	struct ethtool_drvinfo drv;
+int iface_driver_info(const char *name,struct ethtool_drvinfo *drv){
 	struct ifreq ifr;
 	int fd;
 
@@ -19,8 +18,8 @@ int iface_driver_info(const char *name){
 		return -1;
 	}
 	strcpy(ifr.ifr_name,name);
-	ifr.ifr_data = (caddr_t)&drv;
-	drv.cmd = ETHTOOL_GDRVINFO;
+	ifr.ifr_data = (caddr_t)drv;
+	drv->cmd = ETHTOOL_GDRVINFO;
 	if((fd = socket(AF_INET,SOCK_DGRAM,0)) < 0){
 		fprintf(stderr,"Couldn't open ethtool fd (%s?)\n",strerror(errno));
 		return -1;

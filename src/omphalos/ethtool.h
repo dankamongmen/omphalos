@@ -5,7 +5,9 @@
 extern "C" {
 #endif
 
-int iface_driver_info(const char *);
+struct ethtool_drvinfo;
+
+int iface_driver_info(const char *,struct ethtool_drvinfo *);
 
 #ifdef __cplusplus
 }
