@@ -27,11 +27,6 @@ static inline iphost *
 create_iphost(const uint32_t ip){
 	iphost *i;
 
-	{
-		char str[INET_ADDRSTRLEN];
-		inet_ntop(AF_INET,&ip,str,sizeof(str));
-		printf("New host: %s\n",str);
-	}
 	if( (i = malloc(sizeof(*i))) ){
 		i->ip = ip;
 		i->next = iplist;
