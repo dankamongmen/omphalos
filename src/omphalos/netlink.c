@@ -66,6 +66,7 @@ int discover_routes(int fd){
 #include <linux/if_arp.h>
 #include <linux/netlink.h>
 #include <linux/rtnetlink.h>
+#include <omphalos/ethtool.h>
 #include <omphalos/hwaddrs.h>
 #include <omphalos/psocket.h>
 #include <omphalos/interface.h>
@@ -465,6 +466,13 @@ handle_rtm_newlink(const struct nlmsghdr *nl){
 	}
 	if(rlen){
 		fprintf(stderr,"%d excess bytes on newlink message\n",rlen);
+	}
+	if(iface->name == NULL){
+		fprintf(stderr,"No name in new link message\n");
+		return -1;
+	}
+	if(iface_driver_info(iface->name)){
+		return -1;
 	}
 	iface->arptype = ii->ifi_type;
 	iface->flags = ii->ifi_flags;
