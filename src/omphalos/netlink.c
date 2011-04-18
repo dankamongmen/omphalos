@@ -121,8 +121,8 @@ handle_rtm_newneigh(const struct nlmsghdr *nl){
 	struct rtattr *ra;
 	struct l2host *l2;
 	interface *iface;
+	int rlen,llen;
 	size_t flen;
-	int rlen;
 	void *ad;
 
 	if((iface = iface_by_idx(nd->ndm_ifindex)) == NULL){
@@ -143,6 +143,7 @@ handle_rtm_newneigh(const struct nlmsghdr *nl){
 		fprintf(stderr,"Unknown route family %u\n",nd->ndm_family);
 		return -1;
 	}
+	llen = 0;
 	rlen = nl->nlmsg_len - NLMSG_LENGTH(sizeof(*nd));
 	ra = (struct rtattr *)((char *)(NLMSG_DATA(nl)) + sizeof(*nd));
 	while(RTA_OK(ra,rlen)){
@@ -155,12 +156,16 @@ handle_rtm_newneigh(const struct nlmsghdr *nl){
 			}
 			memcpy(ad,RTA_DATA(ra),flen);
 		break;}case NDA_LLADDR:{
-			if(RTA_PAYLOAD(ra) != sizeof(ll)){
-				fprintf(stderr,"Expected %zu ll bytes, got %lu\n",
-						sizeof(ll),RTA_PAYLOAD(ra));
-				break;
+			llen = RTA_PAYLOAD(ra);
+			if(llen){
+				if(llen != sizeof(ll)){
+					fprintf(stderr,"Expected %zu ll bytes, got %d\n",
+						sizeof(ll),llen);
+					llen = 0;
+					break;
+				}
+				memcpy(ll,RTA_DATA(ra),sizeof(ll));
 			}
-			memcpy(ll,RTA_DATA(ra),sizeof(ll));
 		break;}case NDA_CACHEINFO:{
 		break;}case NDA_PROBES:{
 		break;}default:{
@@ -171,8 +176,10 @@ handle_rtm_newneigh(const struct nlmsghdr *nl){
 	if(rlen){
 		fprintf(stderr,"%d excess bytes on newlink message\n",rlen);
 	}
-	l2 = lookup_l2host(ll,sizeof(ll));
-	// FIXME and do what with it?
+	if(llen){
+		l2 = lookup_l2host(ll,sizeof(ll));
+		// FIXME and do what with it?
+	}
 	{
 		char str[INET6_ADDRSTRLEN];
 		inet_ntop(nd->ndm_family,ad,str,sizeof(str));
