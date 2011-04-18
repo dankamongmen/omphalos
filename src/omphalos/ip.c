@@ -26,11 +26,12 @@ void handle_ipv6_packet(interface *i,const void *frame,size_t len){
 		++i->noprotocol;
 		return;
 	}
-	if(len < ip->nexthdr){
-		printf("%s malformed with %zu\n",__func__,len);
+	if(len != be16toh(ip->payload_len) + sizeof(*ip)){
+		printf("%s malformed with %zu != %zu\n",__func__,len,be16toh(ip->payload_len) + sizeof(*ip));
 		++i->malformed;
 		return;
 	}
+	// FIXME check extension headers...
 	// FIXME...
 }
 
