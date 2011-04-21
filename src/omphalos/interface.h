@@ -60,8 +60,8 @@ int del_route4(interface *,const struct in_addr *,unsigned);
 int del_route6(interface *,const struct in6_addr *,unsigned);
 
 // predicates. racey against netlink messages.
-int is_routable4(const struct in_addr *);
-int is_routable6(const struct in6_addr *);
+int is_local4(const interface *,uint32_t);
+int is_local6(const interface *,const struct in6_addr *);
 
 #ifdef __cplusplus
 }

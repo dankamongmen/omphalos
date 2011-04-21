@@ -109,8 +109,8 @@ void handle_ipv4_packet(interface *i,const void *frame,size_t len){
 		++i->malformed;
 		return;
 	}
-	ips = lookup_iphost(&ip->saddr);
-	ipd = lookup_iphost(&ip->daddr);
+	ips = lookup_iphost(i,&ip->saddr);
+	ipd = lookup_iphost(i,&ip->daddr);
 
 	const void *nhdr = (const unsigned char *)frame + hlen;
 	const size_t nlen = be16toh(ip->tot_len) - hlen;
