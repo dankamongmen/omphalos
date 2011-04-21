@@ -168,3 +168,47 @@ int del_route6(interface *i,const struct in6_addr *a,unsigned blen){
 	}
 	return -1;
 }
+
+static inline int
+ip4_in_route(const ip4route *r,uint32_t i){
+	uint32_t mask = ~0U;
+
+	mask <<= 32 - r->maskbits;
+	return (r->dst.s_addr & mask) == (i & mask);
+}
+
+int is_local4(const struct in_addr *a,int idx){
+	const interface *i;
+	const ip4route *r;
+
+	if((i = iface_by_idx(idx)) ){
+		for(r = i->ip4r ; r ; r = r->next){
+			if(ip4_in_route(r,a->s_addr)){
+				return 1;
+			}
+		}
+	}
+	return 0;
+}
+
+static inline int
+ip6_in_route(const ip6route *r,const uint32_t *i){
+	if(!r || !i){
+		return 0;
+	}
+	return 1; // FIXME
+}
+
+int is_local6(const struct in6_addr *a,int idx){
+	const interface *i;
+	const ip6route *r;
+
+	if((i = iface_by_idx(idx)) ){
+		for(r = i->ip6r ; r ; r = r->next){
+			if(ip6_in_route(r,a->in6_u.u6_addr32)){
+				return 1;
+			}
+		}
+	}
+	return 0;
+}
