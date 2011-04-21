@@ -129,17 +129,30 @@ int add_route6(interface *i,const struct in6_addr *s,const struct in6_addr *via,
 	return 0;
 }
 
-// FIXME need to implement
-int del_route4(interface *i,const struct in_addr *s,unsigned blen){
-	if(!i || !s || !blen){
-		return -1;
+// FIXME need to check for overlaps and intersections etc
+int del_route4(interface *i,const struct in_addr *a,unsigned blen){
+	ip4route *r,**prev;
+
+	for(prev = &i->ip4r ; (r = *prev) ; prev = &r->next){
+		if(r->dst.s_addr == a->s_addr && r->maskbits == blen){
+			*prev = r->next;
+			free(r);
+			return 0;
+		}
 	}
-	return 0;
+	return -1;
 }
 
-int del_route6(interface *i,const struct in6_addr *s,unsigned blen){
-	if(!i || !s || !blen){
-		return -1;
+// FIXME need to implement
+int del_route6(interface *i,const struct in6_addr *a,unsigned blen){
+	ip6route *r,**prev;
+
+	for(prev = &i->ip6r ; (r = *prev) ; prev = &r->next){
+		if(!memcmp(&r->dst.in6_u,&a->in6_u,sizeof(a->in6_u)) && r->maskbits == blen){
+			*prev = r->next;
+			free(r);
+			return 0;
+		}
 	}
-	return 0;
+	return -1;
 }

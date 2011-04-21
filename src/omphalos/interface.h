@@ -13,13 +13,13 @@ extern "C" {
 #include <linux/if_packet.h>
 
 typedef struct ip4route {
-	struct sockaddr_in dst,via;
+	struct in_addr dst,via;
 	unsigned maskbits;
 	struct ip4route *next;
 } ip4route;
 
 typedef struct ip6route {
-	struct sockaddr_in6 dst,via;
+	struct in6_addr dst,via;
 	unsigned maskbits;
 	struct ip6route *next;
 } ip6route;
