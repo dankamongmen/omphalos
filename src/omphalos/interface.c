@@ -182,7 +182,7 @@ int is_local4(const interface *i,uint32_t ip){
 
 	for(r = i->ip4r ; r ; r = r->next){
 		if(ip4_in_route(r,ip)){
-			return 1;
+			return (r->via.s_addr == 0);
 		}
 	}
 	return 0;

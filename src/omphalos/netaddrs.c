@@ -27,7 +27,7 @@ static inline iphost *
 create_iphost(const interface *iface,const uint32_t ip){
 	iphost *i;
 
-	if(is_local4(iface,ip)){
+	if(!is_local4(iface,ip)){
 		return NULL;
 	}
 	if( (i = malloc(sizeof(*i))) ){
