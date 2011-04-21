@@ -64,6 +64,18 @@ char *hwaddrstr(const interface *i){
 }
 
 void free_iface(interface *i){
+	while(i->ip6r){
+		struct ip6route *r6 = i->ip6r->next;
+
+		free(i->ip6r);
+		i->ip6r = r6;
+	}
+	while(i->ip4r){
+		struct ip4route *r4 = i->ip4r->next;
+
+		free(i->ip4r);
+		i->ip4r = r4;
+	}
 	if(i->fd >= 0){
 		close(i->fd);
 	}
