@@ -1,6 +1,7 @@
-#include <arpa/inet.h>
+#include <sys/socket.h>
 #include <omphalos/ip.h>
 #include <omphalos/arp.h>
+#include <omphalos/util.h>
 #include <omphalos/eapol.h>
 #include <linux/if_ether.h>
 #include <omphalos/hwaddrs.h>
@@ -22,7 +23,7 @@ handle_8021q(interface *i,const void *frame,size_t len){
 		return;
 	}
 	type = ((const unsigned char *)frame + ETH_ALEN * 2 + 4);
-	proto = ntohs(*(const uint16_t *)type);
+	proto = be16toh(*(const uint16_t *)type);
  	dgram = (const char *)frame + sizeof(*hdr) + 4;
 	dlen = len - sizeof(*hdr) - 4;
 	switch(proto){
@@ -38,7 +39,7 @@ handle_8021q(interface *i,const void *frame,size_t len){
 		if(proto <= 1500){
 			// FIXME handle IEEE 802.3
 		}else{
-			printf("%s noproto for 0x%x\n",__func__,proto);
+			printf("%s %s noproto for 0x%x\n",__func__,i->name,proto);
 			++i->noprotocol;
 		}
 	break;} }
@@ -56,7 +57,7 @@ void handle_ethernet_packet(interface *i,const void *frame,size_t len){
 	if( (l2s = lookup_l2host(hdr->h_source,ETH_ALEN)) ){
 		if( (l2d = lookup_l2host(hdr->h_dest,ETH_ALEN)) ){
 			const void *dgram = (const char *)frame + sizeof(*hdr);
-			uint16_t proto = ntohs(hdr->h_proto);
+			uint16_t proto = be16toh(hdr->h_proto);
 			size_t dlen = len - sizeof(*hdr);
 
 			switch(proto){

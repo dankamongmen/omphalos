@@ -1,4 +1,3 @@
-#include <endian.h>
 #include <bits/sockaddr.h>
 #include <linux/ip.h>
 #include <linux/in.h>
@@ -9,6 +8,7 @@
 #include <linux/igmp.h>
 #include <linux/ipv6.h>
 #include <omphalos/ip.h>
+#include <omphalos/util.h>
 #include <omphalos/ethernet.h>
 #include <omphalos/netaddrs.h>
 #include <omphalos/interface.h>

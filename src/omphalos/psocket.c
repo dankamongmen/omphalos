@@ -3,11 +3,21 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/mman.h>
-#include <arpa/inet.h>
 #include <sys/socket.h>
 #include <linux/if_arp.h>
 #include <linux/if_packet.h>
 #include <omphalos/psocket.h>
+#include <omphalos/interface.h>
+
+/* The remainder of this file is pretty omphalos-specific. It doesn't
+ * belong here if this ever becomes a library. */
+#include <signal.h>
+#include <pthread.h>
+#include <sys/poll.h>
+#include <omphalos/privs.h>
+#include <omphalos/netlink.h>
+#include <omphalos/omphalos.h>
+#include <omphalos/ethernet.h>
 
 #ifndef PACKET_TX_RING
 #define PACKET_TX_RING 13
@@ -20,7 +30,7 @@ static const unsigned MMAP_BLOCK_COUNT = 32768; // FIXME do better
 int packet_socket(unsigned protocol){
 	int fd;
 
-	if((fd = socket(AF_PACKET,SOCK_RAW,htons(protocol))) < 0){
+	if((fd = socket(AF_PACKET,SOCK_RAW,be16toh(protocol))) < 0){
 		fprintf(stderr,"Couldn't open packet socket (%s?)\n",strerror(errno));
 		return -1;
 	}
@@ -133,17 +143,6 @@ cancellation_signal_handler(int signo __attribute__ ((unused))){
 	cancelled = 1;
 }
 // End nasty signals-based cancellation.
-
-/* The remainder of this file is pretty omphalos-specific. It doesn't
- * belong here if this ever becomes a library. */
-#include <signal.h>
-#include <pthread.h>
-#include <sys/poll.h>
-#include <omphalos/privs.h>
-#include <omphalos/netlink.h>
-#include <omphalos/omphalos.h>
-#include <omphalos/ethernet.h>
-#include <omphalos/interface.h>
 
 typedef struct netlink_thread_marshal {
 	char errbuf[256];

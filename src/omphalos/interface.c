@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <sys/socket.h>
 #include <linux/if_arp.h>
+#include <omphalos/util.h>
 #include <omphalos/hwaddrs.h>
 #include <omphalos/interface.h>
 
@@ -91,6 +92,48 @@ int print_all_iface_stats(FILE *fp,interface *agg){
 				return -1;
 			}
 		}
+	}
+	return 0;
+}
+
+// FIXME need to check and ensure they don't overlap with existing routes
+int add_route4(interface *i,const struct in_addr *s,unsigned blen){
+	ip4route *r;
+
+	if((r = malloc(sizeof(*r))) == NULL){
+		return -1;
+	}
+	memcpy(&r->dst,s,sizeof(*s));
+	r->maskbits = blen;
+	r->next = i->ip4r;
+	i->ip4r = r;
+	return 0;
+}
+
+int add_route6(interface *i,const struct in6_addr *s,unsigned blen){
+	ip6route *r;
+
+	if((r = malloc(sizeof(*r))) == NULL){
+		return -1;
+	}
+	memcpy(&r->dst,s,sizeof(*s));
+	r->maskbits = blen;
+	r->next = i->ip6r;
+	i->ip6r = r;
+	return 0;
+}
+
+// FIXME need to implement
+int del_route4(interface *i,const struct in_addr *s,unsigned blen){
+	if(!i || !s || !blen){
+		return -1;
+	}
+	return 0;
+}
+
+int del_route6(interface *i,const struct in6_addr *s,unsigned blen){
+	if(!i || !s || !blen){
+		return -1;
 	}
 	return 0;
 }

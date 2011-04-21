@@ -2,9 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-#include <arpa/inet.h>
 #include <sys/socket.h>
-#include <netinet/in.h>
 #include <linux/if_addr.h>
 #include <linux/netlink.h>
 #include <linux/rtnetlink.h>
@@ -180,6 +178,7 @@ handle_rtm_newneigh(const struct nlmsghdr *nl){
 		l2 = lookup_l2host(ll,sizeof(ll));
 		// FIXME and do what with it?
 	}
+	/*
 	{
 		char str[INET6_ADDRSTRLEN];
 		inet_ntop(nd->ndm_family,ad,str,sizeof(str));
@@ -194,6 +193,7 @@ handle_rtm_newneigh(const struct nlmsghdr *nl){
 			nd->ndm_state & NUD_PERMANENT ? "PERMANENT" : ""
 			);
 	}
+	*/
 	return 0;
 }
 
@@ -333,6 +333,7 @@ handle_rtm_newroute(const struct nlmsghdr *nl){
 		fprintf(stderr,"No output interface for route\n");
 		goto err;
 	}
+	/*
 	{
 		char str[INET6_ADDRSTRLEN];
 		inet_ntop(rt->rtm_family,ad,str,sizeof(str));
@@ -347,6 +348,7 @@ handle_rtm_newroute(const struct nlmsghdr *nl){
 			rt->rtm_type == RTN_MULTICAST ? "(multicast)" :
 			"");
 	}
+	*/
 	return 0;
 
 err:
