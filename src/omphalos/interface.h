@@ -13,13 +13,13 @@ extern "C" {
 #include <linux/if_packet.h>
 
 typedef struct ip4route {
-	struct sockaddr_in dst;
+	struct sockaddr_in dst,via;
 	unsigned maskbits;
 	struct ip4route *next;
 } ip4route;
 
 typedef struct ip6route {
-	struct sockaddr_in6 dst;
+	struct sockaddr_in6 dst,via;
 	unsigned maskbits;
 	struct ip6route *next;
 } ip6route;
@@ -54,8 +54,8 @@ char *hwaddrstr(const interface *);
 void free_iface(interface *);
 void cleanup_interfaces(void);
 int print_all_iface_stats(FILE *,interface *);
-int add_route4(interface *,const struct in_addr *,unsigned);
-int add_route6(interface *,const struct in6_addr *,unsigned);
+int add_route4(interface *,const struct in_addr *,const struct in_addr *,unsigned);
+int add_route6(interface *,const struct in6_addr *,const struct in6_addr *,unsigned);
 int del_route4(interface *,const struct in_addr *,unsigned);
 int del_route6(interface *,const struct in6_addr *,unsigned);
 
