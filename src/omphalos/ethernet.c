@@ -79,7 +79,7 @@ void handle_ethernet_packet(interface *i,const void *frame,size_t len){
 					if(proto <= 1500){
 						// FIXME handle IEEE 802.3
 					}else{
-						printf("%s noproto for 0x%x\n",__func__,proto);
+						printf("%s %s noproto for 0x%x\n",__func__,i->name,proto);
 						++i->noprotocol;
 					}
 					break;
