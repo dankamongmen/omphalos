@@ -1,4 +1,5 @@
-#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <omphalos/util.h>
 #include <omphalos/eapol.h>
 #include <omphalos/interface.h>
 
@@ -26,8 +27,8 @@ void handle_eapol_packet(interface *i,const void *frame,size_t len){
 		fprintf(stderr,"Unknown EAPOL version %u\n",eaphdr->version);
 		++i->noprotocol;
 	}
-	if(ntohs(eaphdr->len) != len - sizeof(*eaphdr)){
-		fprintf(stderr,"%s malformed (%u != %zu)\n",__func__,ntohs(eaphdr->len),len - sizeof(*eaphdr));
+	if(be16toh(eaphdr->len) != len - sizeof(*eaphdr)){
+		fprintf(stderr,"%s malformed (%u != %zu)\n",__func__,be16toh(eaphdr->len),len - sizeof(*eaphdr));
 		++i->malformed;
 		return;
 	}

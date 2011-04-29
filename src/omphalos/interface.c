@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <sys/socket.h>
 #include <linux/if_arp.h>
+#include <omphalos/util.h>
 #include <omphalos/hwaddrs.h>
 #include <omphalos/interface.h>
 
@@ -63,6 +64,18 @@ char *hwaddrstr(const interface *i){
 }
 
 void free_iface(interface *i){
+	while(i->ip6r){
+		struct ip6route *r6 = i->ip6r->next;
+
+		free(i->ip6r);
+		i->ip6r = r6;
+	}
+	while(i->ip4r){
+		struct ip4route *r4 = i->ip4r->next;
+
+		free(i->ip4r);
+		i->ip4r = r4;
+	}
 	if(i->fd >= 0){
 		close(i->fd);
 	}
@@ -90,6 +103,105 @@ int print_all_iface_stats(FILE *fp,interface *agg){
 			if(print_iface_stats(fp,iface,agg,"iface") < 0){
 				return -1;
 			}
+		}
+	}
+	return 0;
+}
+
+// FIXME need to check and ensure they don't overlap with existing routes
+int add_route4(interface *i,const struct in_addr *s,const struct in_addr *via,unsigned blen){
+	ip4route *r;
+
+	if((r = malloc(sizeof(*r))) == NULL){
+		return -1;
+	}
+	memcpy(&r->dst,s,sizeof(*s));
+	if(via){
+		memcpy(&r->via,via,sizeof(*via));
+	}
+	r->maskbits = blen;
+	r->next = i->ip4r;
+	i->ip4r = r;
+	return 0;
+}
+
+int add_route6(interface *i,const struct in6_addr *s,const struct in6_addr *via,unsigned blen){
+	ip6route *r;
+
+	if((r = malloc(sizeof(*r))) == NULL){
+		return -1;
+	}
+	memcpy(&r->dst,s,sizeof(*s));
+	if(via){
+		memcpy(&r->via,via,sizeof(*via));
+	}
+	r->maskbits = blen;
+	r->next = i->ip6r;
+	i->ip6r = r;
+	return 0;
+}
+
+// FIXME need to check for overlaps and intersections etc
+int del_route4(interface *i,const struct in_addr *a,unsigned blen){
+	ip4route *r,**prev;
+
+	for(prev = &i->ip4r ; (r = *prev) ; prev = &r->next){
+		if(r->dst.s_addr == a->s_addr && r->maskbits == blen){
+			*prev = r->next;
+			free(r);
+			return 0;
+		}
+	}
+	return -1;
+}
+
+// FIXME need to implement
+int del_route6(interface *i,const struct in6_addr *a,unsigned blen){
+	ip6route *r,**prev;
+
+	for(prev = &i->ip6r ; (r = *prev) ; prev = &r->next){
+		if(!memcmp(&r->dst.in6_u,&a->in6_u,sizeof(a->in6_u)) && r->maskbits == blen){
+			*prev = r->next;
+			free(r);
+			return 0;
+		}
+	}
+	return -1;
+}
+
+static inline int
+ip4_in_route(const ip4route *r,uint32_t i){
+	uint32_t mask = ~0U;
+
+	mask <<= 32 - r->maskbits;
+	return (r->dst.s_addr & mask) == (i & mask);
+}
+
+int is_local4(const interface *i,uint32_t ip){
+	const ip4route *r;
+
+	for(r = i->ip4r ; r ; r = r->next){
+		if(ip4_in_route(r,ip)){
+			return (r->via.s_addr == 0);
+		}
+	}
+	return 0;
+}
+
+static inline int
+ip6_in_route(const ip6route *r,const uint32_t *i){
+	if(!r || !i){
+		return 0;
+	}
+	return 1; // FIXME
+}
+
+int is_local6(const interface *i,const struct in6_addr *a){
+	const ip6route *r;
+
+	for(r = i->ip6r ; r ; r = r->next){
+		if(ip6_in_route(r,a->in6_u.u6_addr32)){
+			return 1;
 		}
 	}
 	return 0;

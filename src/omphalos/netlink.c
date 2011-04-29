@@ -2,9 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-#include <arpa/inet.h>
 #include <sys/socket.h>
-#include <netinet/in.h>
 #include <linux/if_addr.h>
 #include <linux/netlink.h>
 #include <linux/rtnetlink.h>
@@ -180,6 +178,7 @@ handle_rtm_newneigh(const struct nlmsghdr *nl){
 		l2 = lookup_l2host(ll,sizeof(ll));
 		// FIXME and do what with it?
 	}
+	/*
 	{
 		char str[INET6_ADDRSTRLEN];
 		inet_ntop(nd->ndm_family,ad,str,sizeof(str));
@@ -194,6 +193,7 @@ handle_rtm_newneigh(const struct nlmsghdr *nl){
 			nd->ndm_state & NUD_PERMANENT ? "PERMANENT" : ""
 			);
 	}
+	*/
 	return 0;
 }
 
@@ -310,17 +310,17 @@ handle_rtm_delroute(const struct nlmsghdr *nl){
 
 typedef struct route {
 	sa_family_t family;
-	struct sockaddr_storage sss,ssd;
+	struct sockaddr_storage sss,ssd,ssg;
 	unsigned maskbits;
 } route;
 
 static int
 handle_rtm_newroute(const struct nlmsghdr *nl){
 	const struct rtmsg *rt = NLMSG_DATA(nl);
-	const interface *iface;
 	struct rtattr *ra;
 	int rlen,iif,oif;
-	void *as,*ad;
+	void *as,*ad,*ag;
+	interface *iface;
 	size_t flen;
 	route r;
 
@@ -331,10 +331,12 @@ handle_rtm_newroute(const struct nlmsghdr *nl){
 		flen = sizeof(uint32_t);
 		as = &((struct sockaddr_in *)&r.sss)->sin_addr;
 		ad = &((struct sockaddr_in *)&r.ssd)->sin_addr;
+		ag = &((struct sockaddr_in *)&r.ssg)->sin_addr;
 	break;}case AF_INET6:{
 		flen = sizeof(uint32_t) * 4;
 		as = &((struct sockaddr_in6 *)&r.sss)->sin6_addr;
 		ad = &((struct sockaddr_in6 *)&r.ssd)->sin6_addr;
+		ag = &((struct sockaddr_in6 *)&r.ssg)->sin6_addr;
 	break;}default:{
 		flen = 0;
 	break;} }
@@ -376,6 +378,12 @@ handle_rtm_newroute(const struct nlmsghdr *nl){
 			}
 			oif = *(int *)RTA_DATA(ra);
 		break;}case RTA_GATEWAY:{
+			if(RTA_PAYLOAD(ra) != flen){
+				fprintf(stderr,"Expected %zu gw bytes, got %lu\n",
+						flen,RTA_PAYLOAD(ra));
+				break;
+			}
+			memcpy(ag,RTA_DATA(ra),flen);
 		break;}case RTA_PRIORITY:{
 		break;}case RTA_PREFSRC:{
 		break;}case RTA_METRICS:{
@@ -403,6 +411,16 @@ handle_rtm_newroute(const struct nlmsghdr *nl){
 		fprintf(stderr,"No output interface for route\n");
 		goto err;
 	}
+	if(r.family == AF_INET){
+		if(add_route4(iface,ad,ag,r.maskbits)){
+			return -1;
+		}
+	}else if(r.family == AF_INET6){
+		if(add_route6(iface,ad,ag,r.maskbits)){
+			return -1;
+		}
+	}
+	/*
 	{
 		char str[INET6_ADDRSTRLEN];
 		inet_ntop(rt->rtm_family,ad,str,sizeof(str));
@@ -417,6 +435,7 @@ handle_rtm_newroute(const struct nlmsghdr *nl){
 			rt->rtm_type == RTN_MULTICAST ? "(multicast)" :
 			"");
 	}
+	*/
 	return 0;
 
 err:

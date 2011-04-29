@@ -2,9 +2,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include <arpa/inet.h>
-#include <netinet/ip6.h>
+#include <sys/socket.h>
 #include <omphalos/netaddrs.h>
+#include <omphalos/interface.h>
 
 // No need to store addrlen, since all objects in a given arena have the
 // same length of hardware address.
@@ -24,9 +24,12 @@ static ipv6host *ipv6list;
 
 // FIXME replace internals with LRU acquisition...
 static inline iphost *
-create_iphost(const uint32_t ip){
+create_iphost(const interface *iface,const uint32_t ip){
 	iphost *i;
 
+	if(!is_local4(iface,ip)){
+		return NULL;
+	}
 	if( (i = malloc(sizeof(*i))) ){
 		i->ip = ip;
 		i->next = iplist;
@@ -37,7 +40,7 @@ create_iphost(const uint32_t ip){
 
 // FIXME strictly proof-of-concept. we'll want a trie- or hash-based
 // lookup, backed by an arena-allocated LRU, etc...
-iphost *lookup_iphost(const void *addr){
+iphost *lookup_iphost(const interface *iface,const void *addr){
 	iphost *ip,**prev;
 	uint32_t i;
 
@@ -50,7 +53,7 @@ iphost *lookup_iphost(const void *addr){
 			return ip;
 		}
 	}
-	return create_iphost(i);
+	return create_iphost(iface,i);
 }
 
 void cleanup_l3hosts(void){
@@ -68,6 +71,11 @@ void cleanup_l3hosts(void){
 	ipv6list = NULL;
 	iplist = NULL;
 }
+
+// FIXME
+#define INET6_ADDRSTRLEN 46
+const char *inet_ntop(int af, const void *src, char *dst, socklen_t size);
+// end FIXME
 
 int print_l3hosts(FILE *fp){
 	if(iplist || ipv6list){

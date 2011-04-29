@@ -1,4 +1,3 @@
-#include <endian.h>
 #include <bits/sockaddr.h>
 #include <linux/ip.h>
 #include <linux/in.h>
@@ -9,6 +8,7 @@
 #include <linux/igmp.h>
 #include <linux/ipv6.h>
 #include <omphalos/ip.h>
+#include <omphalos/util.h>
 #include <omphalos/ethernet.h>
 #include <omphalos/netaddrs.h>
 #include <omphalos/interface.h>
@@ -109,31 +109,24 @@ void handle_ipv4_packet(interface *i,const void *frame,size_t len){
 		++i->malformed;
 		return;
 	}
-	if( (ips = lookup_iphost(&ip->saddr)) ){
-		if( (ipd = lookup_iphost(&ip->daddr)) ){
-			const void *nhdr = (const unsigned char *)frame + hlen;
-			const size_t nlen = be16toh(ip->tot_len) - hlen;
+	ips = lookup_iphost(i,&ip->saddr);
+	ipd = lookup_iphost(i,&ip->daddr);
 
-			switch(ip->protocol){
-			case IPPROTO_TCP:{
-				handle_tcp_packet(i,nhdr,nlen);
-				break;
-			}case IPPROTO_UDP:{
-				handle_udp_packet(i,nhdr,nlen);
-				break;
-			}case IPPROTO_ICMP:{
-				handle_icmp_packet(i,nhdr,nlen);
-				break;
-			}case IPPROTO_IGMP:{
-				handle_igmp_packet(i,nhdr,nlen);
-				break;
-			}default:{
-				printf("%s noproto for %u\n",__func__,ip->protocol);
-				++i->noprotocol;
-				break;
-			}
-			}
-		}
-	}
+	const void *nhdr = (const unsigned char *)frame + hlen;
+	const size_t nlen = be16toh(ip->tot_len) - hlen;
+
+	switch(ip->protocol){
+	case IPPROTO_TCP:{
+		handle_tcp_packet(i,nhdr,nlen);
+	break; }case IPPROTO_UDP:{
+		handle_udp_packet(i,nhdr,nlen);
+	break; }case IPPROTO_ICMP:{
+		handle_icmp_packet(i,nhdr,nlen);
+	break; }case IPPROTO_IGMP:{
+		handle_igmp_packet(i,nhdr,nlen);
+	break; }default:{
+		printf("%s noproto for %u\n",__func__,ip->protocol);
+		++i->noprotocol;
+	break; } }
 	// FIXME...
 }
