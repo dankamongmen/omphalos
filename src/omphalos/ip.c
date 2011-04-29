@@ -1,33 +1,34 @@
-#include <bits/sockaddr.h>
-#include <linux/ip.h>
-#include <linux/in.h>
-#include <linux/in6.h>
+#include <netinet/ip.h>
 #include <linux/tcp.h>
-#include <linux/udp.h>
 #include <linux/icmp.h>
 #include <linux/igmp.h>
-#include <linux/ipv6.h>
+#include <netinet/ip6.h>
 #include <omphalos/ip.h>
+#include <omphalos/udp.h>
 #include <omphalos/util.h>
 #include <omphalos/ethernet.h>
 #include <omphalos/netaddrs.h>
 #include <omphalos/interface.h>
 
 void handle_ipv6_packet(interface *i,const void *frame,size_t len){
-	const struct ipv6hdr *ip = frame;
+	const struct ip6_hdr *ip = frame;
+	uint16_t plen;
+	unsigned ver;
 
 	if(len < sizeof(*ip)){
 		printf("%s malformed with %zu\n",__func__,len);
 		++i->malformed;
 		return;
 	}
-	if(ip->version != 6){
-		printf("%s noproto for %u\n",__func__,ip->version);
+	ver = ip->ip6_ctlun.ip6_un1.ip6_un1_flow >> 28u;
+	if(ver != 6){
+		printf("%s noproto for %u\n",__func__,ver);
 		++i->noprotocol;
 		return;
 	}
-	if(len != be16toh(ip->payload_len) + sizeof(*ip)){
-		printf("%s malformed with %zu != %zu\n",__func__,len,be16toh(ip->payload_len) + sizeof(*ip));
+	plen = be16toh(ip->ip6_ctlun.ip6_un1.ip6_un1_plen);
+	if(len != plen + sizeof(*ip)){
+		printf("%s malformed with %zu != %u\n",__func__,len,plen);
 		++i->malformed;
 		return;
 	}
@@ -45,18 +46,6 @@ handle_tcp_packet(interface *i,const void *frame,size_t len){
 		return;
 	}
 	// FIXME check header len etc...
-}
-
-static void
-handle_udp_packet(interface *i,const void *frame,size_t len){
-	const struct udphdr *udp = frame;
-
-	if(len < sizeof(*udp)){
-		printf("%s malformed with %zu\n",__func__,len);
-		++i->malformed;
-		return;
-	}
-	// FIXME
 }
 
 static void

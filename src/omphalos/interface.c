@@ -160,7 +160,7 @@ int del_route6(interface *i,const struct in6_addr *a,unsigned blen){
 	ip6route *r,**prev;
 
 	for(prev = &i->ip6r ; (r = *prev) ; prev = &r->next){
-		if(!memcmp(&r->dst.in6_u,&a->in6_u,sizeof(a->in6_u)) && r->maskbits == blen){
+		if(!memcmp(&r->dst.s6_addr,&a->s6_addr,sizeof(a->s6_addr)) && r->maskbits == blen){
 			*prev = r->next;
 			free(r);
 			return 0;
@@ -200,7 +200,7 @@ int is_local6(const interface *i,const struct in6_addr *a){
 	const ip6route *r;
 
 	for(r = i->ip6r ; r ; r = r->next){
-		if(ip6_in_route(r,a->in6_u.u6_addr32)){
+		if(ip6_in_route(r,a->s6_addr32)){
 			return 1;
 		}
 	}

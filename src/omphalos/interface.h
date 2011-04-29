@@ -7,8 +7,8 @@ extern "C" {
 
 #include <stdio.h>
 #include <stdint.h>
-#include <linux/in.h>
-#include <linux/in6.h>
+#include <netinet/in.h>
+//#include <linux/in6.h>
 #include <linux/ethtool.h>
 #include <linux/if_packet.h>
 

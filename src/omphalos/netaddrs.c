@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <arpa/inet.h>
 #include <sys/socket.h>
 #include <omphalos/netaddrs.h>
 #include <omphalos/interface.h>
@@ -71,11 +72,6 @@ void cleanup_l3hosts(void){
 	ipv6list = NULL;
 	iplist = NULL;
 }
-
-// FIXME
-#define INET6_ADDRSTRLEN 46
-const char *inet_ntop(int af, const void *src, char *dst, socklen_t size);
-// end FIXME
 
 int print_l3hosts(FILE *fp){
 	if(iplist || ipv6list){
