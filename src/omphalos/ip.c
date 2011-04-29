@@ -20,7 +20,7 @@ void handle_ipv6_packet(interface *i,const void *frame,size_t len){
 		++i->malformed;
 		return;
 	}
-	ver = ip->ip6_ctlun.ip6_un1.ip6_un1_flow >> 28u;
+	ver = be32toh(ip->ip6_ctlun.ip6_un1.ip6_un1_flow) >> 28u;
 	if(ver != 6){
 		printf("%s noproto for %u\n",__func__,ver);
 		++i->noprotocol;
