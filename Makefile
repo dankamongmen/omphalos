@@ -63,7 +63,7 @@ test: all $(TESTPCAPS)
 
 $(OMPHALOS)-ncurses: $(COREOBJS) $(OUT)/$(SRC)/ui/ncurses.o
 	@mkdir -p $(@D)
-	$(CC) $(CFLAGS) -o $@ $^ $(LFLAGS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LFLAGS) -lncurses
 
 $(OMPHALOS)-tty: $(COREOBJS) $(OUT)/$(SRC)/ui/tty.o
 	@mkdir -p $(@D)
