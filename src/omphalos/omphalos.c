@@ -29,50 +29,7 @@ usage(const char *arg0,int ret){
 }
 
 
-static int
-print_stats(FILE *fp){
-	interface total;
-
-	memset(&total,0,sizeof(total));
-	if(printf("<stats>") < 0){
-		return -1;
-	}
-	if(print_all_iface_stats(fp,&total) < 0){
-		return -1;
-	}
-	if(print_pcap_stats(fp,&total) < 0){
-		return -1;
-	}
-	if(print_iface_stats(fp,&total,NULL,"total") < 0){
-		return -1;
-	}
-	if(printf("</stats>") < 0){
-		return -1;
-	}
-	return 0;
-}
-
-static int
-dump_output(FILE *fp){
-	if(fprintf(fp,"<omphalos>") < 0){
-		return -1;
-	}
-	if(print_stats(fp)){
-		return -1;
-	}
-	if(print_l2hosts(fp)){
-		return -1;
-	}
-	if(print_l3hosts(fp)){
-		return -1;
-	}
-	if(fprintf(fp,"</omphalos>\n") < 0 || fflush(fp)){
-		return -1;
-	}
-	return 0;
-}
-
-int main(int argc,char * const *argv){
+int omphalos_init(int argc,char * const *argv){
 	int opt;
 	omphalos_ctx pctx = {
 		.pcapfn = NULL,
@@ -88,49 +45,49 @@ int main(int argc,char * const *argv){
 
 			if(pctx.count){
 				fprintf(stderr,"Provided %c twice\n",opt);
-				usage(argv[0],EXIT_FAILURE);
+				usage(argv[0],-1);
 			}
 			if((pctx.count = strtoul(optarg,&ep,0)) == ULONG_MAX && errno == ERANGE){
 				fprintf(stderr,"Bad value for %c: %s\n",opt,optarg);
-				usage(argv[0],EXIT_FAILURE);
+				usage(argv[0],-1);
 			}
 			if(pctx.count == 0){
 				fprintf(stderr,"Bad value for %c: %s\n",opt,optarg);
-				usage(argv[0],EXIT_FAILURE);
+				usage(argv[0],-1);
 			}
 			if(ep == optarg || *ep){
 				fprintf(stderr,"Bad value for %c: %s\n",opt,optarg);
-				usage(argv[0],EXIT_FAILURE);
+				usage(argv[0],-1);
 			}
 			break;
 		}case 'f':{
 			if(pctx.pcapfn){
 				fprintf(stderr,"Provided %c twice\n",opt);
-				usage(argv[0],EXIT_FAILURE);
+				usage(argv[0],-1);
 			}
 			pctx.pcapfn = optarg;
 			break;
 		}case 'u':{
 			if(pctx.user){
 				fprintf(stderr,"Provided %c twice\n",opt);
-				usage(argv[0],EXIT_FAILURE);
+				usage(argv[0],-1);
 			}
 			pctx.user = optarg;
 			break;
 		}case ':':{
 			fprintf(stderr,"Option requires argument: '%c'\n",optopt);
-			usage(argv[0],EXIT_FAILURE);
+			usage(argv[0],-1);
 		}default:
 			fprintf(stderr,"Unknown option: '%c'\n",optopt);
-			usage(argv[0],EXIT_FAILURE);
+			usage(argv[0],-1);
 		}
 	}
 	if(argv[optind]){ // don't allow trailing arguments
 		fprintf(stderr,"Trailing argument: %s\n",argv[optind]);
-		usage(argv[0],EXIT_FAILURE);
+		usage(argv[0],-1);
 	}
 	if(init_interfaces()){
-		return EXIT_FAILURE;
+		return -1;
 	}
 	if(pctx.user == NULL){
 		pctx.user = DEFAULT_USERNAME;
@@ -138,25 +95,22 @@ int main(int argc,char * const *argv){
 	if(pctx.pcapfn){
 		if(handle_priv_drop(pctx.user)){
 			fprintf(stderr,"Couldn't become user %s (%s?)\n",pctx.user,strerror(errno));
-			usage(argv[0],EXIT_FAILURE);
+			usage(argv[0],-1);
 		}
 		if(handle_pcap_file(&pctx)){
-			return EXIT_FAILURE;
+			return -1;
 		}
 	}else{
 		if(handle_packet_socket(&pctx)){
-			return EXIT_FAILURE;
+			return -1;
 		}
 	}
-	if(dump_output(stdout) < 0){
-		if(errno != ENOMEM){
-			fprintf(stderr,"Couldn't write output (%s?)\n",strerror(errno));
-		}
-		return EXIT_FAILURE;
-	}
+	return 0;
+}
+
+void omphalos_cleanup(void){
 	cleanup_interfaces();
 	cleanup_pcap();
 	cleanup_l2hosts();
 	cleanup_l3hosts();
-	return EXIT_SUCCESS;
 }

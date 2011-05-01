@@ -13,6 +13,9 @@ typedef struct omphalos_ctx {
 	const char *user;
 } omphalos_ctx;
 
+int omphalos_init(int,char * const *);
+void omphalos_cleanup(void);
+
 #ifdef __cplusplus
 }
 #endif

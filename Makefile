@@ -13,7 +13,8 @@ TAGS:=$(OUT)/tags
 OMPHALOS:=$(OUT)/$(PROJ)/$(PROJ)
 ADDCAPS:=tools/addcaps
 
-BIN:=$(OMPHALOS)
+UI:=ncurses tty
+BIN:=$(addprefix $(OMPHALOS)-,$(UI))
 
 CFLAGS+=-I$(SRC) -pthread -D_GNU_SOURCE -fpic -I$(SRC)/lib$(PROJ) -fvisibility=hidden -O2 -Wall -W -Werror -g
 LFLAGS+=-Wl,-O,--default-symver,--enable-new-dtags,--as-needed,--warn-common
@@ -50,14 +51,21 @@ CSRCS:=$(shell find $(CSRCDIRS) -type f -iname \*.c -print)
 CINCS:=$(shell find $(CSRCDIRS) -type f -iname \*.h -print)
 COBJS:=$(addprefix $(OUT)/,$(CSRCS:%.c=%.o))
 
+# Various UI's plus the core make the binaries
+COREOBJS:=$(filter $(OUT)/$(SRC)/$(PROJ)/%.o,$(COBJS))
+
 # Requires CAP_NET_ADMIN privileges bestowed upon the binary
 livetest: sudobless
-	$(OMPHALOS)
+	$(OMPHALOS)-ncurses
 
 test: all $(TESTPCAPS)
-	for i in $(TESTPCAPS) ; do $(OMPHALOS) -f $$i ; done
+	for i in $(TESTPCAPS) ; do $(OMPHALOS)-tty -f $$i ; done
 
-$(OMPHALOS): $(COBJS)
+$(OMPHALOS)-ncurses: $(COREOBJS) $(OUT)/$(SRC)/ui/ncurses.o
+	@mkdir -p $(@D)
+	$(CC) $(CFLAGS) -o $@ $^ $(LFLAGS)
+
+$(OMPHALOS)-tty: $(COREOBJS) $(OUT)/$(SRC)/ui/tty.o
 	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -o $@ $^ $(LFLAGS)
 
@@ -79,10 +87,10 @@ clean:
 	rm -rf $(OUT)
 
 bless: all
-	$(ADDCAPS) $(OMPHALOS)
+	$(ADDCAPS) $(BIN)
 
 sudobless: test
-	sudo $(ADDCAPS) $(OMPHALOS)
+	sudo $(ADDCAPS) $(BIN)
 
 install: all doc
 	@mkdir -p $(PREFIX)/lib
