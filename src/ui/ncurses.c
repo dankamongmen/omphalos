@@ -16,6 +16,7 @@ int main(int argc,char * const *argv){
 		fprintf(stderr,"Couldn't initialize ncurses\n");
 		return EXIT_FAILURE;
 	}
+	refresh();
 	if(omphalos_init(argc,argv)){
 		return EXIT_FAILURE;
 	}
