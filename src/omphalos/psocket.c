@@ -108,9 +108,10 @@ size_t mmap_psocket(int op,int idx,int fd,void **map,struct tpacket_req *treq){
 		fprintf(stderr,"Couldn't mmap %zub (%s?)\n",size,strerror(errno));
 		return 0;
 	}
+	// FIXME MADV_HUGEPAGE support was dropped in 2.6.38.4, it seems.
 #ifdef MADV_HUGEPAGE
 	if(madvise(*map,size,MADV_HUGEPAGE)){
-		fprintf(stderr,"Couldn't advise hugepages for %zu\n",size);
+		fprintf(stderr,"Couldn't advise hugepages for %zu (%s?)\n",size,strerror(errno));
 	}
 #endif
 	return size;

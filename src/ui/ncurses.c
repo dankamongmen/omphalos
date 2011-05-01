@@ -5,14 +5,15 @@
 #include <ncurses.h>
 #include <omphalos/omphalos.h>
 
-#define PROGNAME "omphalos" // FIXME
+#define PROGNAME "omphalos"	// FIXME
+#define VERSION  "0.98pre"	// FIXME
 
 static int
-draw_main_window(WINDOW *w,const char *name){
-	if(wprintw(w,"%s\n",name) < 0){
+draw_main_window(WINDOW *w,const char *name,const char *ver){
+	if(box(w,0,0) != OK){
 		return -1;
 	}
-	if(box(w,0,0) != OK){
+	if(mvwprintw(w,0,2,"[%s %s]",name,ver) < 0){
 		return -1;
 	}
 	if(wrefresh(w)){
@@ -43,7 +44,11 @@ int main(int argc,char * const *argv){
 		fprintf(stderr,"Couldn't initialize ncurses\n");
 		goto err;
 	}
-	if(draw_main_window(w,PROGNAME)){
+	if(start_color() != OK){
+		fprintf(stderr,"Couldn't initialize ncurses color\n");
+		goto err;
+	}
+	if(draw_main_window(w,PROGNAME,VERSION)){
 		fprintf(stderr,"Couldn't use ncurses\n");
 		goto err;
 	}
