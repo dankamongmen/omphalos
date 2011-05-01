@@ -17,6 +17,8 @@ UI:=ncurses tty
 BIN:=$(addprefix $(OMPHALOS)-,$(UI))
 
 CFLAGS+=-I$(SRC) -pthread -D_GNU_SOURCE -fpic -I$(SRC)/lib$(PROJ) -fvisibility=hidden -O2 -Wall -W -Werror -g
+# FIXME doesn't work with gold, there we need:
+#GOLDLFLAGS+=-Wl,-O2,--enable-new-dtags,--as-needed,--warn-common
 LFLAGS+=-Wl,-O,--default-symver,--enable-new-dtags,--as-needed,--warn-common
 LFLAGS+=-lpcap -lcap
 CTAGS?=$(shell (which ctags || echo ctags) 2> /dev/null)
