@@ -10,6 +10,8 @@ set -o pipefail
 usageerr () { echo "usage: `basename $0` executable" ; }
 usage () { usageerr >&2 ; return 1 ; }
 
-[ $# -eq 1 ] || usage
+[ $# -ge 1 ] || usage
 
-setcap "= cap_net_admin,cap_net_raw=ep" "$1"
+for i in "$@" ; do
+	setcap "= cap_net_admin,cap_net_raw=ep" "$i"
+done
