@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <locale.h>
 #include <string.h>
+#include <signal.h>
 #include <ncurses.h>
 #include <pthread.h>
 #include <omphalos/omphalos.h>
@@ -24,7 +25,7 @@ ncurses_input_thread(void *nil){
 	if(!nil){
 		while((ch = getch()) != 'q' && ch != 'Q');
 		printf("DONE\n");
-		abort();
+		raise(SIGINT);
 	}
 	pthread_exit(NULL);
 }
