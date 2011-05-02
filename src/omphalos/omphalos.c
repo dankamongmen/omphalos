@@ -29,29 +29,25 @@ usage(const char *arg0,int ret){
 }
 
 
-int omphalos_init(int argc,char * const *argv){
+int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 	int opt;
-	omphalos_ctx pctx = {
-		.pcapfn = NULL,
-		.count = 0,
-		.user = NULL,
-	};
 	
+	memset(pctx,0,sizeof(*pctx));
 	opterr = 0; // suppress getopt() diagnostic to stderr while((opt = getopt(argc,argv,":c:f:")) >= 0){ switch(opt){ case 'c':{
 	while((opt = getopt(argc,argv,":c:f:u:")) >= 0){
 		switch(opt){
 		case 'c':{
 			char *ep;
 
-			if(pctx.count){
+			if(pctx->count){
 				fprintf(stderr,"Provided %c twice\n",opt);
 				usage(argv[0],-1);
 			}
-			if((pctx.count = strtoul(optarg,&ep,0)) == ULONG_MAX && errno == ERANGE){
+			if((pctx->count = strtoul(optarg,&ep,0)) == ULONG_MAX && errno == ERANGE){
 				fprintf(stderr,"Bad value for %c: %s\n",opt,optarg);
 				usage(argv[0],-1);
 			}
-			if(pctx.count == 0){
+			if(pctx->count == 0){
 				fprintf(stderr,"Bad value for %c: %s\n",opt,optarg);
 				usage(argv[0],-1);
 			}
@@ -61,25 +57,27 @@ int omphalos_init(int argc,char * const *argv){
 			}
 			break;
 		}case 'f':{
-			if(pctx.pcapfn){
+			if(pctx->pcapfn){
 				fprintf(stderr,"Provided %c twice\n",opt);
 				usage(argv[0],-1);
 			}
-			pctx.pcapfn = optarg;
+			pctx->pcapfn = optarg;
 			break;
 		}case 'u':{
-			if(pctx.user){
+			if(pctx->user){
 				fprintf(stderr,"Provided %c twice\n",opt);
 				usage(argv[0],-1);
 			}
-			pctx.user = optarg;
+			pctx->user = optarg;
 			break;
 		}case ':':{
 			fprintf(stderr,"Option requires argument: '%c'\n",optopt);
 			usage(argv[0],-1);
+			break;
 		}default:
 			fprintf(stderr,"Unknown option: '%c'\n",optopt);
 			usage(argv[0],-1);
+			break;
 		}
 	}
 	if(argv[optind]){ // don't allow trailing arguments
@@ -89,19 +87,23 @@ int omphalos_init(int argc,char * const *argv){
 	if(init_interfaces()){
 		return -1;
 	}
-	if(pctx.user == NULL){
-		pctx.user = DEFAULT_USERNAME;
+	if(pctx->user == NULL){
+		pctx->user = DEFAULT_USERNAME;
 	}
-	if(pctx.pcapfn){
-		if(handle_priv_drop(pctx.user)){
-			fprintf(stderr,"Couldn't become user %s (%s?)\n",pctx.user,strerror(errno));
-			usage(argv[0],-1);
+	return 0;
+}
+
+int omphalos_init(const omphalos_ctx *pctx){
+	if(pctx->pcapfn){
+		if(handle_priv_drop(pctx->user)){
+			fprintf(stderr,"Couldn't become user %s (%s?)\n",pctx->user,strerror(errno));
+			return -1;
 		}
-		if(handle_pcap_file(&pctx)){
+		if(handle_pcap_file(pctx)){
 			return -1;
 		}
 	}else{
-		if(handle_packet_socket(&pctx)){
+		if(handle_packet_socket(pctx)){
 			return -1;
 		}
 	}

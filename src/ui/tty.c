@@ -52,7 +52,12 @@ dump_output(FILE *fp){
 }
 
 int main(int argc,char * const *argv){
-	if(omphalos_init(argc,argv)){
+	omphalos_ctx pctx;
+
+	if(omphalos_setup(argc,argv,&pctx)){
+		return EXIT_FAILURE;
+	}
+	if(omphalos_init(&pctx)){
 		return EXIT_FAILURE;
 	}
 	if(dump_output(stdout) < 0){

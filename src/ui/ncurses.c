@@ -115,6 +115,10 @@ ncurses_setup(void){
 		fprintf(stderr,"Couldn't disable cursor\n");
 		goto err;
 	}
+	if(draw_main_window(w,PROGNAME,VERSION)){
+		fprintf(stderr,"Couldn't use ncurses\n");
+		goto err;
+	}
 	return w;
 
 err:
@@ -123,6 +127,7 @@ err:
 }
 
 int main(int argc,char * const *argv){
+	omphalos_ctx pctx;
 	WINDOW *w;
 
 	if(setlocale(LC_ALL,"") == NULL){
@@ -132,11 +137,10 @@ int main(int argc,char * const *argv){
 	if((w = ncurses_setup()) == NULL){
 		return EXIT_FAILURE;
 	}
-	if(draw_main_window(w,PROGNAME,VERSION)){
-		fprintf(stderr,"Couldn't use ncurses\n");
-		goto err;
+	if(omphalos_setup(argc,argv,&pctx)){
+		return EXIT_FAILURE;
 	}
-	if(omphalos_init(argc,argv)){
+	if(omphalos_init(&pctx)){
 		goto err;
 	}
 	omphalos_cleanup();
