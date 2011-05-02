@@ -21,7 +21,7 @@ check_ethernet_padup(size_t rx,size_t expected){
 	if(expected == rx){
 		return 0;
 	}else if(rx > expected){
-		if(rx == ETH_ZLEN - sizeof(struct ethhdr)){
+		if(rx <= ETH_ZLEN - sizeof(struct ethhdr)){
 			return 0;
 		}
 	}

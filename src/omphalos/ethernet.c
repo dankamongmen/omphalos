@@ -8,6 +8,7 @@
 #include <omphalos/ethernet.h>
 #include <omphalos/interface.h>
 
+#include <stdio.h>
 static void
 handle_8021q(interface *i,const void *frame,size_t len){
 	const struct ethhdr *hdr = frame;

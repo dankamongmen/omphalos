@@ -14,7 +14,7 @@ void handle_arp_packet(interface *i,const void *frame,size_t len){
 	}
 	if(check_ethernet_padup(len,sizeof(*ap) + ap->ar_hln * 2 + ap->ar_pln * 2)){
 		fprintf(stderr,"%s malformed expected %zu got %zu\n",
-			__func__, sizeof(*ap) + ap->ar_hln * 2 + ap->ar_pln * 2,len);
+			__func__,sizeof(*ap) + ap->ar_hln * 2 + ap->ar_pln * 2,len);
 		++i->malformed;
 		return;
 	}
