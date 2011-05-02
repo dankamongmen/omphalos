@@ -24,16 +24,13 @@ draw_main_window(WINDOW *w,const char *name,const char *ver){
 	if(mvwprintw(w,0,2,"[") < 0){
 		return -1;
 	}
-	if(wcolor_set(w,HEADING_COLOR,NULL) != OK){
-		return -1;
-	}
-	if(wattron(w,A_BOLD) != OK){
+	if(wattron(w,A_BOLD | COLOR_PAIR(HEADING_COLOR)) != OK){
 		return -1;
 	}
 	if(wprintw(w,"%s %s",name,ver) < 0){
 		return -1;
 	}
-	if(wattroff(w,A_BOLD) != OK){
+	if(wattroff(w,A_BOLD | COLOR_PAIR(HEADING_COLOR)) != OK){
 		return -1;
 	}
 	if(wcolor_set(w,BORDER_COLOR,NULL) != OK){
