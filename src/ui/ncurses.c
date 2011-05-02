@@ -3,6 +3,7 @@
 #include <locale.h>
 #include <string.h>
 #include <ncurses.h>
+#include <pthread.h>
 #include <omphalos/omphalos.h>
 
 #define PROGNAME "omphalos"	// FIXME
@@ -12,6 +13,21 @@ enum {
 	BORDER_COLOR = 1,
 	HEADING_COLOR = 2,
 };
+
+static pthread_t inputtid;
+
+// FIXME do stuff here, proof of concept skeleton currently
+static void *
+ncurses_input_thread(void *nil){
+	int ch;
+
+	if(!nil){
+		while((ch = getch()) != 'q' && ch != 'Q');
+		printf("DONE\n");
+		abort();
+	}
+	pthread_exit(NULL);
+}
 
 static int
 draw_main_window(WINDOW *w,const char *name,const char *ver){
@@ -42,6 +58,9 @@ draw_main_window(WINDOW *w,const char *name,const char *ver){
 	if(wrefresh(w)){
 		return -1;
 	}
+	if(pthread_create(&inputtid,NULL,ncurses_input_thread,NULL)){
+		return -1;
+	}
 	return 0;
 }
 
@@ -69,6 +88,10 @@ ncurses_setup(void){
 
 	if((w = initscr()) == NULL){
 		fprintf(stderr,"Couldn't initialize ncurses\n");
+		goto err;
+	}
+	if(cbreak() != OK){
+		fprintf(stderr,"Couldn't disable input buffering\n");
 		goto err;
 	}
 	if(start_color() != OK){
