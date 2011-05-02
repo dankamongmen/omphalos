@@ -79,12 +79,16 @@ ncurses_setup(void){
 		fprintf(stderr,"Couldn't initialize ncurses colordefs\n");
 		goto err;
 	}
-	if(init_pair(BORDER_COLOR,COLOR_GREEN,COLOR_BLACK)){
+	if(init_pair(BORDER_COLOR,COLOR_GREEN,COLOR_BLACK) != OK){
 		fprintf(stderr,"Couldn't initialize ncurses colorpair\n");
 		goto err;
 	}
-	if(init_pair(HEADING_COLOR,COLOR_YELLOW,COLOR_BLACK)){
+	if(init_pair(HEADING_COLOR,COLOR_YELLOW,COLOR_BLACK) != OK){
 		fprintf(stderr,"Couldn't initialize ncurses colorpair\n");
+		goto err;
+	}
+	if(curs_set(0) == ERR){
+		fprintf(stderr,"Couldn't disable cursor\n");
 		goto err;
 	}
 	return w;
