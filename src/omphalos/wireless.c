@@ -14,7 +14,7 @@ int handle_wireless_event(interface *i,const struct iw_event *iw,size_t len){
 		fprintf(stderr,"\t   Scan results on %s\n",i->name);
 		break;
 	}default:{
-		fprintf(stderr,"\t   Unknown wireless event on %s: %x\n",i->name,iw->cmd);
+		fprintf(stderr,"\t   Unknown wireless event on %s: 0x%x\n",i->name,iw->cmd);
 		break;
 	} }
 	return 0;
