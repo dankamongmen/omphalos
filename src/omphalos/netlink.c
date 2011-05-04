@@ -88,6 +88,9 @@ static arptype arptypes[] = {
 		.ifi_type = ARPHRD_IEEE80211,
 		.name = "Wireless",
 	},{
+		.ifi_type = ARPHRD_IEEE80211_RADIOTAP,
+		.name = "Radiotap",
+	},{
 		.ifi_type = ARPHRD_TUNNEL,
 		.name = "Tunnelv4",
 	},{
