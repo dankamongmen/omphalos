@@ -14,13 +14,15 @@ extern "C" {
 
 typedef struct ip4route {
 	struct in_addr dst,via;
-	unsigned maskbits;
+	unsigned maskbits;		// 0..31
+	int iif;			// input iface, -1 if unspecified
 	struct ip4route *next;
 } ip4route;
 
 typedef struct ip6route {
 	struct in6_addr dst,via;
-	unsigned maskbits;
+	unsigned maskbits;		// 0..127
+	int iif;			// input iface, -1 if unspecified
 	struct ip6route *next;
 } ip6route;
 
@@ -54,8 +56,10 @@ char *hwaddrstr(const interface *);
 void free_iface(interface *);
 void cleanup_interfaces(void);
 int print_all_iface_stats(FILE *,interface *);
-int add_route4(interface *,const struct in_addr *,const struct in_addr *,unsigned);
-int add_route6(interface *,const struct in6_addr *,const struct in6_addr *,unsigned);
+int add_route4(interface *,const struct in_addr *,const struct in_addr *,
+						unsigned,int);
+int add_route6(interface *,const struct in6_addr *,const struct in6_addr *,
+						unsigned,int);
 int del_route4(interface *,const struct in_addr *,unsigned);
 int del_route6(interface *,const struct in6_addr *,unsigned);
 
