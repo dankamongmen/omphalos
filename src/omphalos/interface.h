@@ -64,7 +64,7 @@ int is_local4(const interface *,uint32_t);
 int is_local6(const interface *,const struct in6_addr *);
 
 // FIXME ought generate string
-int print_iface(const interface *);
+int print_iface(FILE *,const interface *);
 
 #ifdef __cplusplus
 }

@@ -253,7 +253,7 @@ lookup_arptype(unsigned arphrd){
 
 // FIXME this ought return a string rather than printing it
 #define IFF_FLAG(flags,f) ((flags) & (IFF_##f) ? #f" " : "")
-int print_iface(const interface *iface){
+int print_iface(FILE *fp,const interface *iface){
 	const arptype *at;
 	int n = 0;
 
@@ -261,7 +261,7 @@ int print_iface(const interface *iface){
 		fprintf(stderr,"Unknown dev type %u\n",iface->arptype);
 		return -1;
 	}
-	printf("[%8s][%s] %d %s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s\n",
+	n = fprintf(fp,"[%8s][%s] %d %s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s\n",
 		iface->name,at->name,iface->mtu,
 		IFF_FLAG(iface->flags,UP),
 		IFF_FLAG(iface->flags,BROADCAST),
@@ -282,9 +282,18 @@ int print_iface(const interface *iface){
 		IFF_FLAG(iface->flags,DORMANT),
 		IFF_FLAG(iface->flags,ECHO)
 		);
+	if(n < 0){
+		return -1;
+	}
 	if(!(iface->flags & IFF_LOOPBACK)){
-		printf("\t   driver: %s %s @ %s\n",iface->drv.driver,
+		int nn;
+
+		nn = fprintf(fp,"\t   driver: %s %s @ %s\n",iface->drv.driver,
 				iface->drv.version,iface->drv.bus_info);
+		if(nn < 0){
+			return -1;
+		}
+		n += nn;
 	}
 	return n;
 }

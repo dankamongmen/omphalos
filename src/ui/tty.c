@@ -51,12 +51,18 @@ dump_output(FILE *fp){
 	return 0;
 }
 
+static void
+iface_event(const interface *i){
+	print_iface(stdout,i);
+}
+
 int main(int argc,char * const *argv){
 	omphalos_ctx pctx;
 
 	if(omphalos_setup(argc,argv,&pctx)){
 		return EXIT_FAILURE;
 	}
+	pctx.iface.iface_event = iface_event;
 	if(omphalos_init(&pctx)){
 		return EXIT_FAILURE;
 	}
