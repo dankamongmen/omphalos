@@ -374,11 +374,11 @@ handle_rtm_newroute(const struct nlmsghdr *nl){
 		goto err;
 	}
 	if(r.family == AF_INET){
-		if(add_route4(iface,ad,ag,r.maskbits)){
+		if(add_route4(iface,ad,ag,r.maskbits,iif)){
 			return -1;
 		}
 	}else if(r.family == AF_INET6){
-		if(add_route6(iface,ad,ag,r.maskbits)){
+		if(add_route6(iface,ad,ag,r.maskbits,iif)){
 			return -1;
 		}
 	}
