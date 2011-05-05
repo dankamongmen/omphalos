@@ -100,6 +100,10 @@ ncurses_setup(void){
 		fprintf(stderr,"Couldn't disable input buffering\n");
 		goto err;
 	}
+	if(noecho() != OK){
+		fprintf(stderr,"Couldn't disable input echoing\n");
+		goto err;
+	}
 	if(start_color() != OK){
 		fprintf(stderr,"Couldn't initialize ncurses color\n");
 		goto err;
@@ -133,18 +137,22 @@ err:
 
 static void
 packet_callback(void){
-	static uint64_t pkts = 0;
+	static uintmax_t pkts = ~0ULL;
 
 	// FIXME will need to move to per-interface window
-	mvprintw(2,2,"pkts: %lu",++pkts);
+	mvprintw(2,2,"pkts: %ju",++pkts);
 	refresh();
 }
 
 static void
 interface_callback(const interface *i){
-	static uint64_t events = 0;
+	static uintmax_t events = 0;
 
-	mvprintw(3,2,"events: %lu (most recent on %s)",++events,i->name);
+	if(i){
+		mvprintw(3,2,"events: %ju (most recent on %s)",++events,i->name);
+	}else{
+		mvprintw(3,2,"no events yet...");
+	}
 	refresh();
 }
 
@@ -162,6 +170,8 @@ int main(int argc,char * const *argv){
 	if(omphalos_setup(argc,argv,&pctx)){
 		return EXIT_FAILURE;
 	}
+	packet_callback();
+	interface_callback(NULL);
 	pctx.iface.packet_read = packet_callback;
 	pctx.iface.iface_event = interface_callback;
 	if(omphalos_init(&pctx)){
