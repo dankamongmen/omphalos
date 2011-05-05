@@ -2,8 +2,10 @@
 #include <string.h>
 #include <stdlib.h>
 #include <net/if.h>
+#include <arpa/inet.h>
 #include <linux/rtnetlink.h>
 #include <omphalos/hwaddrs.h>
+#include <omphalos/interface.h>
 
 // No need to store addrlen, since all objects in a given arena have the
 // same length of hardware address.
@@ -143,4 +145,25 @@ int print_l2hosts(FILE *fp){
 		}
 	}
 	return 0;
+}
+
+int print_neigh(const interface *iface,const struct l2host *l2){
+	char str[INET6_ADDRSTRLEN];
+	int n;
+
+	// FIXME need real family! inet_ntop(nd->ndm_family,l2->hwaddr,str,sizeof(str));
+	inet_ntop(AF_INET6,l2->hwaddr,str,sizeof(str));
+	n = printf("[%8s] neighbor %s\n",iface->name,str);
+	/* FIXME printf("[%8s] neighbor %s %s%s%s%s%s%s%s%s\n",iface->name,str,
+			nd->ndm_state & NUD_INCOMPLETE ? "INCOMPLETE" : "",
+			nd->ndm_state & NUD_REACHABLE ? "REACHABLE" : "",
+			nd->ndm_state & NUD_STALE ? "STALE" : "",
+			nd->ndm_state & NUD_DELAY ? "DELAY" : "",
+			nd->ndm_state & NUD_PROBE ? "PROBE" : "",
+			nd->ndm_state & NUD_FAILED ? "FAILED" : "",
+			nd->ndm_state & NUD_NOARP ? "NOARP" : "",
+			nd->ndm_state & NUD_PERMANENT ? "PERMANENT" : ""
+			);
+		*/
+	return n;
 }
