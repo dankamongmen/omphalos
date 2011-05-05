@@ -7,6 +7,7 @@
 #include <ncurses.h>
 #include <pthread.h>
 #include <omphalos/omphalos.h>
+#include <omphalos/interface.h>
 
 #define PROGNAME "omphalos"	// FIXME
 #define VERSION  "0.98pre"	// FIXME
@@ -58,6 +59,9 @@ draw_main_window(WINDOW *w,const char *name,const char *ver){
 		return -1;
 	}
 	if(wrefresh(w)){
+		return -1;
+	}
+	if(wcolor_set(w,0,NULL) != OK){
 		return -1;
 	}
 	if(pthread_create(&inputtid,NULL,ncurses_input_thread,NULL)){
@@ -132,14 +136,16 @@ packet_callback(void){
 	static uint64_t pkts = 0;
 
 	// FIXME will need to move to per-interface window
-	mvprintw(2,2,"pkts: %lu\n",++pkts);
+	mvprintw(2,2,"pkts: %lu",++pkts);
+	refresh();
 }
 
 static void
-interface_callback(const struct interface *i){
-	if(i == NULL){
-		return;
-	}
+interface_callback(const interface *i){
+	static uint64_t events = 0;
+
+	mvprintw(3,2,"events: %lu (most recent on %s)",++events,i->name);
+	refresh();
 }
 
 int main(int argc,char * const *argv){

@@ -73,50 +73,6 @@ int discover_routes(int fd){
 #include <omphalos/wireless.h>
 #include <omphalos/interface.h>
 
-typedef struct arptype {
-	unsigned ifi_type;
-	const char *name;
-} arptype;
-
-static arptype arptypes[] = {
-	{
-		.ifi_type = ARPHRD_LOOPBACK,
-		.name = "Loopback",
-	},{
-		.ifi_type = ARPHRD_ETHER,
-		.name = "Ethernet",
-	},{
-		.ifi_type = ARPHRD_IEEE80211,
-		.name = "Wireless",
-	},{
-		.ifi_type = ARPHRD_IEEE80211_RADIOTAP,
-		.name = "Radiotap",
-	},{
-		.ifi_type = ARPHRD_TUNNEL,
-		.name = "Tunnelv4",
-	},{
-		.ifi_type = ARPHRD_TUNNEL6,
-		.name = "TunnelV6",
-	},{
-		.ifi_type = ARPHRD_NONE,
-		.name = "VArpless",
-	},
-};
-
-static inline const arptype *
-lookup_arptype(unsigned arphrd){
-	unsigned idx;
-
-	for(idx = 0 ; idx < sizeof(arptypes) / sizeof(*arptypes) ; ++idx){
-		const arptype *at = arptypes + idx;
-
-		if(at->ifi_type == arphrd){
-			return at;
-		}
-	}
-	return NULL;
-}
-
 static int
 handle_rtm_newneigh(const struct nlmsghdr *nl){
 	const struct ndmsg *nd = NLMSG_DATA(nl);
@@ -490,12 +446,10 @@ handle_rtm_dellink(const struct nlmsghdr *nl){
 	return 0;
 }
 
-#define IFF_FLAG(flags,f) ((flags) & (IFF_##f) ? #f" " : "")
 static int
 handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	const struct ifinfomsg *ii = NLMSG_DATA(nl);
 	const struct rtattr *ra;
-	const arptype *at;
 	interface *iface;
 	int rlen;
 
@@ -577,37 +531,6 @@ handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 		memset(&iface->drv,0,sizeof(iface->drv));
 	}
 	iface->flags = ii->ifi_flags;
-	if((at = lookup_arptype(iface->arptype)) == NULL){
-		fprintf(stderr,"Unknown dev type %u\n",iface->arptype);
-	}else{
-		printf("[%8s][%s] %d %s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s\n",
-			iface->name,
-			at->name,
-			iface->mtu,
-			IFF_FLAG(ii->ifi_flags,UP),
-			IFF_FLAG(ii->ifi_flags,BROADCAST),
-			IFF_FLAG(ii->ifi_flags,DEBUG),
-			IFF_FLAG(ii->ifi_flags,LOOPBACK),
-			IFF_FLAG(ii->ifi_flags,POINTOPOINT),
-			IFF_FLAG(ii->ifi_flags,NOTRAILERS),
-			IFF_FLAG(ii->ifi_flags,RUNNING),
-			IFF_FLAG(ii->ifi_flags,PROMISC),
-			IFF_FLAG(ii->ifi_flags,ALLMULTI),
-			IFF_FLAG(ii->ifi_flags,MASTER),
-			IFF_FLAG(ii->ifi_flags,SLAVE),
-			IFF_FLAG(ii->ifi_flags,MULTICAST),
-			IFF_FLAG(ii->ifi_flags,PORTSEL),
-			IFF_FLAG(ii->ifi_flags,AUTOMEDIA),
-			IFF_FLAG(ii->ifi_flags,DYNAMIC),
-			IFF_FLAG(ii->ifi_flags,LOWER_UP),
-			IFF_FLAG(ii->ifi_flags,DORMANT),
-			IFF_FLAG(ii->ifi_flags,ECHO)
-			);
-		if(!(ii->ifi_flags & IFF_LOOPBACK)){
-			printf("\t   driver: %s %s @ %s\n",iface->drv.driver,
-					iface->drv.version,iface->drv.bus_info);
-		}
-	}
 	if(iface->fd < 0){
 		if((iface->fd = packet_socket(ETH_P_ALL)) < 0){
 			return -1;
@@ -625,7 +548,6 @@ handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	}
 	return 0;
 }
-#undef IFF_FLAG
 
 static int
 handle_netlink_error(int fd,const struct nlmsgerr *nerr){

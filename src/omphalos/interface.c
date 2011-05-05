@@ -206,3 +206,86 @@ int is_local6(const interface *i,const struct in6_addr *a){
 	}
 	return 0;
 }
+
+typedef struct arptype {
+	unsigned ifi_type;
+	const char *name;
+} arptype;
+
+static arptype arptypes[] = {
+	{
+		.ifi_type = ARPHRD_LOOPBACK,
+		.name = "Loopback",
+	},{
+		.ifi_type = ARPHRD_ETHER,
+		.name = "Ethernet",
+	},{
+		.ifi_type = ARPHRD_IEEE80211,
+		.name = "Wireless",
+	},{
+		.ifi_type = ARPHRD_IEEE80211_RADIOTAP,
+		.name = "Radiotap",
+	},{
+		.ifi_type = ARPHRD_TUNNEL,
+		.name = "Tunnelv4",
+	},{
+		.ifi_type = ARPHRD_TUNNEL6,
+		.name = "TunnelV6",
+	},{
+		.ifi_type = ARPHRD_NONE,
+		.name = "VArpless",
+	},
+};
+
+static inline const arptype *
+lookup_arptype(unsigned arphrd){
+	unsigned idx;
+
+	for(idx = 0 ; idx < sizeof(arptypes) / sizeof(*arptypes) ; ++idx){
+		const arptype *at = arptypes + idx;
+
+		if(at->ifi_type == arphrd){
+			return at;
+		}
+	}
+	return NULL;
+}
+
+// FIXME this ought return a string rather than printing it
+#define IFF_FLAG(flags,f) ((flags) & (IFF_##f) ? #f" " : "")
+int print_iface(const interface *iface){
+	const arptype *at;
+	int n = 0;
+
+	if((at = lookup_arptype(iface->arptype)) == NULL){
+		fprintf(stderr,"Unknown dev type %u\n",iface->arptype);
+		return -1;
+	}
+	printf("[%8s][%s] %d %s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s\n",
+		iface->name,at->name,iface->mtu,
+		IFF_FLAG(iface->flags,UP),
+		IFF_FLAG(iface->flags,BROADCAST),
+		IFF_FLAG(iface->flags,DEBUG),
+		IFF_FLAG(iface->flags,LOOPBACK),
+		IFF_FLAG(iface->flags,POINTOPOINT),
+		IFF_FLAG(iface->flags,NOTRAILERS),
+		IFF_FLAG(iface->flags,RUNNING),
+		IFF_FLAG(iface->flags,PROMISC),
+		IFF_FLAG(iface->flags,ALLMULTI),
+		IFF_FLAG(iface->flags,MASTER),
+		IFF_FLAG(iface->flags,SLAVE),
+		IFF_FLAG(iface->flags,MULTICAST),
+		IFF_FLAG(iface->flags,PORTSEL),
+		IFF_FLAG(iface->flags,AUTOMEDIA),
+		IFF_FLAG(iface->flags,DYNAMIC),
+		IFF_FLAG(iface->flags,LOWER_UP),
+		IFF_FLAG(iface->flags,DORMANT),
+		IFF_FLAG(iface->flags,ECHO)
+		);
+	if(!(iface->flags & IFF_LOOPBACK)){
+		printf("\t   driver: %s %s @ %s\n",iface->drv.driver,
+				iface->drv.version,iface->drv.bus_info);
+	}
+	return n;
+}
+#undef IFF_FLAG
