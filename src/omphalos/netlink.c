@@ -74,7 +74,7 @@ int discover_routes(int fd){
 #include <omphalos/interface.h>
 
 static int
-handle_rtm_newneigh(const struct nlmsghdr *nl){
+handle_rtm_newneigh(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	const struct ndmsg *nd = NLMSG_DATA(nl);
 	char ll[IFHWADDRLEN]; // FIXME get from selected interface
 	struct sockaddr_storage ssd;
@@ -138,10 +138,88 @@ handle_rtm_newneigh(const struct nlmsghdr *nl){
 	}
 	if(llen){
 		l2 = lookup_l2host(ll,sizeof(ll));
-		// FIXME and do what with it?
+		if(octx->neigh_event){
+			octx->neigh_event(l2);
+		}
+		// FIXME and do what else with it?
 	}
-	/*
-	{
+	return 0;
+}
+
+static int
+handle_rtm_delneigh(const omphalos_iface *octx,const struct nlmsghdr *nl){
+	const struct ndmsg *nd = NLMSG_DATA(nl);
+	char ll[IFHWADDRLEN]; // FIXME get from selected interface
+	struct sockaddr_storage ssd;
+	struct rtattr *ra;
+	struct l2host *l2;
+	interface *iface;
+	int rlen,llen;
+	size_t flen;
+	void *ad;
+
+	if((iface = iface_by_idx(nd->ndm_ifindex)) == NULL){
+		fprintf(stderr,"Invalid interface index: %d\n",nd->ndm_ifindex);
+		return -1;
+	}
+	switch(nd->ndm_family){
+	case AF_INET:{
+		flen = sizeof(uint32_t);
+		ad = &((struct sockaddr_in *)&ssd)->sin_addr;
+	break;}case AF_INET6:{
+		flen = sizeof(uint32_t) * 4;
+		ad = &((struct sockaddr_in6 *)&ssd)->sin6_addr;
+	break;}default:{
+		flen = 0;
+	break;} }
+	if(flen == 0){
+		fprintf(stderr,"Unknown route family %u\n",nd->ndm_family);
+		return -1;
+	}
+	llen = 0;
+	rlen = nl->nlmsg_len - NLMSG_LENGTH(sizeof(*nd));
+	ra = (struct rtattr *)((char *)(NLMSG_DATA(nl)) + sizeof(*nd));
+	while(RTA_OK(ra,rlen)){
+		switch(ra->rta_type){
+		case NDA_DST:{
+			if(RTA_PAYLOAD(ra) != flen){
+				fprintf(stderr,"Expected %zu nw bytes, got %lu\n",
+						flen,RTA_PAYLOAD(ra));
+				break;
+			}
+			memcpy(ad,RTA_DATA(ra),flen);
+		break;}case NDA_LLADDR:{
+			llen = RTA_PAYLOAD(ra);
+			if(llen){
+				if(llen != sizeof(ll)){
+					fprintf(stderr,"Expected %zu ll bytes, got %d\n",
+						sizeof(ll),llen);
+					llen = 0;
+					break;
+				}
+				memcpy(ll,RTA_DATA(ra),sizeof(ll));
+			}
+		break;}case NDA_CACHEINFO:{
+		break;}case NDA_PROBES:{
+		break;}default:{
+			fprintf(stderr,"Unknown rtatype %u\n",ra->rta_type);
+		break;}}
+		ra = RTA_NEXT(ra,rlen);
+	}
+	if(rlen){
+		fprintf(stderr,"%d excess bytes on newlink message\n",rlen);
+	}
+	if(llen){
+		l2 = lookup_l2host(ll,sizeof(ll));
+		if(octx->neigh_removed){
+			octx->neigh_removed(l2);
+		}
+		// FIXME and do what else with it?
+	}
+	return 0;
+}
+
+/*int print_neighbor(void){
 		char str[INET6_ADDRSTRLEN];
 		inet_ntop(nd->ndm_family,ad,str,sizeof(str));
 		printf("[%8s] neighbor %s %s%s%s%s%s%s%s%s\n",iface->name,str,
@@ -154,94 +232,7 @@ handle_rtm_newneigh(const struct nlmsghdr *nl){
 			nd->ndm_state & NUD_NOARP ? "NOARP" : "",
 			nd->ndm_state & NUD_PERMANENT ? "PERMANENT" : ""
 			);
-	}
-	*/
-	return 0;
-}
-
-static int
-handle_rtm_delneigh(const struct nlmsghdr *nl){
-	const struct ndmsg *nd = NLMSG_DATA(nl);
-	char ll[IFHWADDRLEN]; // FIXME get from selected interface
-	struct sockaddr_storage ssd;
-	struct rtattr *ra;
-	struct l2host *l2;
-	interface *iface;
-	int rlen,llen;
-	size_t flen;
-	void *ad;
-
-	if((iface = iface_by_idx(nd->ndm_ifindex)) == NULL){
-		fprintf(stderr,"Invalid interface index: %d\n",nd->ndm_ifindex);
-		return -1;
-	}
-	switch(nd->ndm_family){
-	case AF_INET:{
-		flen = sizeof(uint32_t);
-		ad = &((struct sockaddr_in *)&ssd)->sin_addr;
-	break;}case AF_INET6:{
-		flen = sizeof(uint32_t) * 4;
-		ad = &((struct sockaddr_in6 *)&ssd)->sin6_addr;
-	break;}default:{
-		flen = 0;
-	break;} }
-	if(flen == 0){
-		fprintf(stderr,"Unknown route family %u\n",nd->ndm_family);
-		return -1;
-	}
-	llen = 0;
-	rlen = nl->nlmsg_len - NLMSG_LENGTH(sizeof(*nd));
-	ra = (struct rtattr *)((char *)(NLMSG_DATA(nl)) + sizeof(*nd));
-	while(RTA_OK(ra,rlen)){
-		switch(ra->rta_type){
-		case NDA_DST:{
-			if(RTA_PAYLOAD(ra) != flen){
-				fprintf(stderr,"Expected %zu nw bytes, got %lu\n",
-						flen,RTA_PAYLOAD(ra));
-				break;
-			}
-			memcpy(ad,RTA_DATA(ra),flen);
-		break;}case NDA_LLADDR:{
-			llen = RTA_PAYLOAD(ra);
-			if(llen){
-				if(llen != sizeof(ll)){
-					fprintf(stderr,"Expected %zu ll bytes, got %d\n",
-						sizeof(ll),llen);
-					llen = 0;
-					break;
-				}
-				memcpy(ll,RTA_DATA(ra),sizeof(ll));
-			}
-		break;}case NDA_CACHEINFO:{
-		break;}case NDA_PROBES:{
-		break;}default:{
-			fprintf(stderr,"Unknown rtatype %u\n",ra->rta_type);
-		break;}}
-		ra = RTA_NEXT(ra,rlen);
-	}
-	if(rlen){
-		fprintf(stderr,"%d excess bytes on newlink message\n",rlen);
-	}
-	if(llen){
-		l2 = lookup_l2host(ll,sizeof(ll));
-		// FIXME and do what with it?
-	}
-	{
-		char str[INET6_ADDRSTRLEN];
-		inet_ntop(nd->ndm_family,ad,str,sizeof(str));
-		printf("[%8s] deleted neighbor %s %s%s%s%s%s%s%s%s\n",iface->name,str,
-			nd->ndm_state & NUD_INCOMPLETE ? "INCOMPLETE" : "",
-			nd->ndm_state & NUD_REACHABLE ? "REACHABLE" : "",
-			nd->ndm_state & NUD_STALE ? "STALE" : "",
-			nd->ndm_state & NUD_DELAY ? "DELAY" : "",
-			nd->ndm_state & NUD_PROBE ? "PROBE" : "",
-			nd->ndm_state & NUD_FAILED ? "FAILED" : "",
-			nd->ndm_state & NUD_NOARP ? "NOARP" : "",
-			nd->ndm_state & NUD_PERMANENT ? "PERMANENT" : ""
-			);
-	}
-	return 0;
-}
+} */
 
 static int
 handle_rtm_delroute(const struct nlmsghdr *nl){
@@ -404,7 +395,7 @@ err:
 	return -1;
 }
 
-static int
+/*static int
 handle_rtm_deladdr(const struct nlmsghdr *nl){
 	const struct ifaddrmsg *ia = NLMSG_DATA(nl);
 	interface *iface;
@@ -430,10 +421,10 @@ handle_rtm_newaddr(const struct nlmsghdr *nl){
 	printf("[%8s] ADDRESS ADDED\n",iface->name);
 	// FIXME
 	return 0;
-}
+}*/
 
 static int
-handle_rtm_dellink(const struct nlmsghdr *nl){
+handle_rtm_dellink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	const struct ifinfomsg *ii = NLMSG_DATA(nl);
 	interface *iface;
 
@@ -441,7 +432,9 @@ handle_rtm_dellink(const struct nlmsghdr *nl){
 		fprintf(stderr,"Invalid interface index: %d\n",ii->ifi_index);
 		return -1;
 	}
-	printf("Link %d (%s) was removed\n",ii->ifi_index,iface->name);
+	if(octx->iface_removed){
+		octx->iface_removed(iface);
+	}
 	free_iface(iface);
 	return 0;
 }
@@ -603,19 +596,17 @@ int handle_netlink_event(const omphalos_iface *octx,int fd){
 			case RTM_NEWLINK:{
 				res |= handle_rtm_newlink(octx,nh);
 			break;}case RTM_DELLINK:{
-				res |= handle_rtm_dellink(nh);
+				res |= handle_rtm_dellink(octx,nh);
 			break;}case RTM_NEWNEIGH:{
-				res |= handle_rtm_newneigh(nh);
+				res |= handle_rtm_newneigh(octx,nh);
 			break;}case RTM_DELNEIGH:{
-				res |= handle_rtm_delneigh(nh);
+				res |= handle_rtm_delneigh(octx,nh);
 			break;}case RTM_NEWROUTE:{
 				res |= handle_rtm_newroute(nh);
 			break;}case RTM_DELROUTE:{
 				res |= handle_rtm_delroute(nh);
 			break;}case RTM_NEWADDR:{
-				res |= handle_rtm_newaddr(nh);
 			break;}case RTM_DELADDR:{
-				res |= handle_rtm_deladdr(nh);
 			break;}case NLMSG_DONE:{
 				if(!inmulti){
 					fprintf(stderr,"Warning: DONE outside multipart on %d\n",fd);
