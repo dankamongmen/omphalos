@@ -139,7 +139,7 @@ handle_rtm_newneigh(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	if(llen){
 		l2 = lookup_l2host(ll,sizeof(ll));
 		if(octx->neigh_event){
-			octx->neigh_event(l2);
+			octx->neigh_event(iface,l2);
 		}
 		// FIXME and do what else with it?
 	}
@@ -212,27 +212,12 @@ handle_rtm_delneigh(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	if(llen){
 		l2 = lookup_l2host(ll,sizeof(ll));
 		if(octx->neigh_removed){
-			octx->neigh_removed(l2);
+			octx->neigh_removed(iface,l2);
 		}
 		// FIXME and do what else with it?
 	}
 	return 0;
 }
-
-/*int print_neighbor(void){
-		char str[INET6_ADDRSTRLEN];
-		inet_ntop(nd->ndm_family,ad,str,sizeof(str));
-		printf("[%8s] neighbor %s %s%s%s%s%s%s%s%s\n",iface->name,str,
-			nd->ndm_state & NUD_INCOMPLETE ? "INCOMPLETE" : "",
-			nd->ndm_state & NUD_REACHABLE ? "REACHABLE" : "",
-			nd->ndm_state & NUD_STALE ? "STALE" : "",
-			nd->ndm_state & NUD_DELAY ? "DELAY" : "",
-			nd->ndm_state & NUD_PROBE ? "PROBE" : "",
-			nd->ndm_state & NUD_FAILED ? "FAILED" : "",
-			nd->ndm_state & NUD_NOARP ? "NOARP" : "",
-			nd->ndm_state & NUD_PERMANENT ? "PERMANENT" : ""
-			);
-} */
 
 static int
 handle_rtm_delroute(const struct nlmsghdr *nl){
