@@ -56,6 +56,16 @@ iface_event(const interface *i){
 	print_iface(stdout,i);
 }
 
+static void
+neigh_event(const struct interface *i,const struct l2host *l2){
+	print_neigh(i,l2);
+}
+
+static void
+iface_removed(const interface *i){
+	printf("[%s] removed\n",i->name);
+}
+
 int main(int argc,char * const *argv){
 	omphalos_ctx pctx;
 
@@ -63,6 +73,8 @@ int main(int argc,char * const *argv){
 		return EXIT_FAILURE;
 	}
 	pctx.iface.iface_event = iface_event;
+	pctx.iface.iface_removed = iface_removed;
+	pctx.iface.neigh_event = neigh_event;
 	if(omphalos_init(&pctx)){
 		return EXIT_FAILURE;
 	}
