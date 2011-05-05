@@ -12,8 +12,10 @@ int handle_wireless_event(interface *i,const struct iw_event *iw,size_t len){
 	case SIOCGIWSCAN:{
 		// FIXME handle scan results
 		fprintf(stderr,"\t   Scan results on %s\n",i->name);
-		break;
-	}default:{
+	break;}case SIOCGIWAP:{
+		// FIXME handle AP results
+		fprintf(stderr,"\t   Access point on %s\n",i->name);
+	break;}default:{
 		fprintf(stderr,"\t   Unknown wireless event on %s: 0x%x\n",i->name,iw->cmd);
 		break;
 	} }
