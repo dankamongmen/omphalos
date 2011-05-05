@@ -14,9 +14,17 @@
 
 static interface pcap_file_interface;
 
+typedef struct pcap_marshal {
+	interface *i;
+	const omphalos_iface *octx;
+} pcap_marshal;
+
+// FIXME need to call back even on truncations etc. move function pointer
+// to pcap_marshal and unify call to redirect + packet_read().
 static void
 handle_pcap_ethernet(u_char *gi,const struct pcap_pkthdr *h,const u_char *bytes){
-	interface *iface = (interface *)gi; // interface for the pcap file
+	pcap_marshal *pm = (pcap_marshal *)gi;
+	interface *iface = pm->i; // interface for the pcap file
 
 	++iface->frames;
 	if(h->caplen != h->len){
@@ -25,11 +33,15 @@ handle_pcap_ethernet(u_char *gi,const struct pcap_pkthdr *h,const u_char *bytes)
 		return;
 	}
 	handle_ethernet_packet(iface,bytes,h->len);
+	if(pm->octx->packet_read){
+		pm->octx->packet_read();
+	}
 }
 
 static void
 handle_pcap_cooked(u_char *gi,const struct pcap_pkthdr *h,const u_char *bytes){
-	interface *iface = (interface *)gi; // interface for the pcap file
+	pcap_marshal *pm = (pcap_marshal *)gi;
+	interface *iface = pm->i; // interface for the pcap file
 	const struct pcapsll { // taken from pcap-linktype(7), "LINKTYPE_LINUX_SLL"
 		uint16_t pkttype;
 		uint16_t arptype;
@@ -67,19 +79,24 @@ handle_pcap_cooked(u_char *gi,const struct pcap_pkthdr *h,const u_char *bytes){
 			break;
 		}
 	}
+	if(pm->octx->packet_read){
+		pm->octx->packet_read();
+	}
 }
 
 int handle_pcap_file(const omphalos_ctx *pctx){
 	pcap_handler fxn;
 	char ebuf[PCAP_ERRBUF_SIZE];
+	pcap_marshal pmarsh = {
+		.octx = &pctx->iface,
+	};
 	pcap_t *pcap;
-	interface *i;
 
-	i = &pcap_file_interface;
-	free(i->name);
-	memset(i,0,sizeof(*i));
+	pmarsh.i = &pcap_file_interface;
+	free(pmarsh.i->name);
+	memset(pmarsh.i,0,sizeof(*pmarsh.i));
 	// FIXME set up remainder of interface as best we can...
-	if((i->name = strdup(pctx->pcapfn)) == NULL){
+	if((pmarsh.i->name = strdup(pctx->pcapfn)) == NULL){
 		return -1;
 	}
 	if((pcap = pcap_open_offline(pctx->pcapfn,ebuf)) == NULL){
@@ -103,7 +120,7 @@ int handle_pcap_file(const omphalos_ctx *pctx){
 		pcap_close(pcap);
 		return -1;
 	}
-	if(pcap_loop(pcap,-1,fxn,(u_char *)i)){
+	if(pcap_loop(pcap,-1,fxn,(u_char *)&pmarsh)){
 		fprintf(stderr,"Error processing pcap file %s (%s?)\n",pctx->pcapfn,pcap_geterr(pcap));
 		pcap_close(pcap);
 		return -1;

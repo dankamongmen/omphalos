@@ -1,7 +1,7 @@
 .DELTE_ON_ERROR:
 .DEFAULT_GOAL:=test
-.PHONY: all bin lib doc livetest test clean install uninstall \
-	bless sudobless
+.PHONY: all bin lib doc livetest test clean install uninstall
+.PHONY:	bless sudobless
 
 VERSION=0.0.1
 
@@ -61,7 +61,7 @@ livetest: sudobless
 	$(OMPHALOS)-ncurses
 
 test: all $(TESTPCAPS)
-	for i in $(TESTPCAPS) ; do $(OMPHALOS)-tty -f $$i ; done
+	for i in $(TESTPCAPS) ; do $(OMPHALOS)-tty -f $$i || exit 1 ; done
 
 $(OMPHALOS)-ncurses: $(COREOBJS) $(OUT)/$(SRC)/ui/ncurses.o
 	@mkdir -p $(@D)
