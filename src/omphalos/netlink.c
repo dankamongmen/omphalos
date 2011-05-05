@@ -69,6 +69,7 @@ int discover_routes(int fd){
 #include <omphalos/ethtool.h>
 #include <omphalos/hwaddrs.h>
 #include <omphalos/psocket.h>
+#include <omphalos/omphalos.h>
 #include <omphalos/wireless.h>
 #include <omphalos/interface.h>
 
@@ -491,7 +492,7 @@ handle_rtm_dellink(const struct nlmsghdr *nl){
 
 #define IFF_FLAG(flags,f) ((flags) & (IFF_##f) ? #f" " : "")
 static int
-handle_rtm_newlink(const struct nlmsghdr *nl){
+handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	const struct ifinfomsg *ii = NLMSG_DATA(nl);
 	const struct rtattr *ra;
 	const arptype *at;
@@ -619,6 +620,9 @@ handle_rtm_newlink(const struct nlmsghdr *nl){
 			return -1;
 		}
 	}
+	if(octx->iface_event){
+		octx->iface_event(iface);
+	}
 	return 0;
 }
 #undef IFF_FLAG
@@ -652,7 +656,7 @@ handle_netlink_error(int fd,const struct nlmsgerr *nerr){
 	return -1;
 }
 
-int handle_netlink_event(int fd){
+int handle_netlink_event(const omphalos_iface *octx,int fd){
 	char buf[4096]; // FIXME numerous problems
 	struct iovec iov[1] = { { buf, sizeof(buf) } };
 	struct sockaddr_nl sa;
@@ -675,7 +679,7 @@ int handle_netlink_event(int fd){
 			}
 			switch(nh->nlmsg_type){
 			case RTM_NEWLINK:{
-				res |= handle_rtm_newlink(nh);
+				res |= handle_rtm_newlink(octx,nh);
 			break;}case RTM_DELLINK:{
 				res |= handle_rtm_dellink(nh);
 			break;}case RTM_NEWNEIGH:{

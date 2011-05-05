@@ -7,6 +7,12 @@ extern "C" {
 
 struct interface;
 
+// UI callback interface. Any number may be NULL.
+typedef struct omphalos_iface {
+	void (*packet_read)(void); // FIXME
+	void (*iface_event)(const struct interface *);
+} omphalos_iface;
+
 // Process-scope settings, generally configured on startup based off
 // command-line options.
 typedef struct omphalos_ctx {
@@ -19,8 +25,7 @@ typedef struct omphalos_ctx {
 	// Username to setuid() to.
 	const char *user;
 
-	// UI callback interface. Any number may be NULL.
-	void (*iface_event)(const struct interface *);
+	omphalos_iface iface;
 } omphalos_ctx;
 
 // Parse the command line for common arguments (a UI introducing its own

@@ -147,6 +147,7 @@ cancellation_signal_handler(int signo __attribute__ ((unused))){
 
 typedef struct netlink_thread_marshal {
 	char errbuf[256];
+	const omphalos_iface *octx;
 } netlink_thread_marshal;
 
 static void *
@@ -193,7 +194,7 @@ netlink_thread(void *v){
 					"Error polling netlink socket %d\n",pfd[z].fd);
 				break; // FIXME
 			}else if(pfd[z].revents){
-				handle_netlink_event(pfd[z].fd);
+				handle_netlink_event(ntmarsh->octx,pfd[z].fd);
 			}
 			pfd[z].revents = 0;
 		}
@@ -355,6 +356,7 @@ int handle_packet_socket(const omphalos_ctx *pctx){
 		close(rfd);
 		return -1;
 	}
+	ntmarsh.octx = &pctx->iface;
 	if( (errno = pthread_create(&nltid,NULL,netlink_thread,&ntmarsh)) ){
 		fprintf(stderr,"Couldn't create netlink thread (%s?)\n",strerror(errno));
 		unmap_psocket(rxm,rs);

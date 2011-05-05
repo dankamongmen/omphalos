@@ -1,4 +1,5 @@
 #include <errno.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <locale.h>
 #include <string.h>
@@ -126,6 +127,21 @@ err:
 	return NULL;
 }
 
+static void
+packet_callback(void){
+	static uint64_t pkts = 0;
+
+	// FIXME will need to move to per-interface window
+	mvprintw(2,2,"pkts: %lu\n",++pkts);
+}
+
+static void
+interface_callback(const struct interface *i){
+	if(i == NULL){
+		return;
+	}
+}
+
 int main(int argc,char * const *argv){
 	omphalos_ctx pctx;
 	WINDOW *w;
@@ -140,6 +156,8 @@ int main(int argc,char * const *argv){
 	if(omphalos_setup(argc,argv,&pctx)){
 		return EXIT_FAILURE;
 	}
+	pctx.iface.packet_read = packet_callback;
+	pctx.iface.iface_event = interface_callback;
 	if(omphalos_init(&pctx)){
 		goto err;
 	}
