@@ -15,6 +15,7 @@ typedef struct omphalos_iface {
 	void (*iface_removed)(const struct interface *);
 	void (*neigh_event)(const struct interface *,const struct l2host *);
 	void (*neigh_removed)(const struct interface *,const struct l2host *);
+	void (*wireless_event)(const struct interface *);
 } omphalos_iface;
 
 // Process-scope settings, generally configured on startup based off

@@ -1,9 +1,11 @@
 #include <sys/socket.h>
 #include <linux/wireless.h>
 #include <omphalos/wireless.h>
+#include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
 
-int handle_wireless_event(interface *i,const struct iw_event *iw,size_t len){
+int handle_wireless_event(const omphalos_iface *octx,interface *i,
+				const struct iw_event *iw,size_t len){
 	if(len < IW_EV_LCP_LEN){
 		fprintf(stderr,"Wireless msg too short on %s (%zu)\n",i->name,len);
 		return -1;
@@ -22,5 +24,8 @@ int handle_wireless_event(interface *i,const struct iw_event *iw,size_t len){
 		fprintf(stderr,"\t   Unknown wireless event on %s: 0x%x\n",i->name,iw->cmd);
 		break;
 	} }
+	if(octx->wireless_event){
+		octx->wireless_event(i);
+	}
 	return 0;
 }
