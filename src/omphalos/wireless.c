@@ -25,7 +25,27 @@ int handle_wireless_event(const omphalos_iface *octx,interface *i,
 		break;
 	} }
 	if(octx->wireless_event){
-		octx->wireless_event(i);
+		octx->wireless_event(i,iw->cmd);
 	}
 	return 0;
+}
+
+int print_wireless_event(FILE *fp,const interface *i,unsigned cmd){
+	int n = 0;
+
+	switch(cmd){
+	case SIOCGIWSCAN:{
+		// FIXME handle scan results
+		n = fprintf(fp,"\t   Scan results on %s\n",i->name);
+	break;}case SIOCGIWAP:{
+		// FIXME handle AP results
+		n = fprintf(fp,"\t   Access point on %s\n",i->name);
+	break;}case IWEVASSOCRESPIE:{
+		// FIXME handle IE reassociation results
+		n = fprintf(fp,"\t   Reassociation on %s\n",i->name);
+	break;}default:{
+		n = fprintf(fp,"\t   Unknown wireless event on %s: 0x%x\n",i->name,cmd);
+		break;
+	} }
+	return n;
 }
