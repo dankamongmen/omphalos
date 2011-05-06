@@ -5,6 +5,7 @@
 #include <omphalos/pcap.h>
 #include <omphalos/hwaddrs.h>
 #include <omphalos/netaddrs.h>
+#include <omphalos/wireless.h>
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
 
@@ -66,6 +67,11 @@ iface_removed(const interface *i){
 	printf("[%s] removed\n",i->name);
 }
 
+static void
+wireless_event(const interface *i,unsigned cmd){
+	print_wireless_event(stdout,i,cmd);
+}
+
 int main(int argc,char * const *argv){
 	omphalos_ctx pctx;
 
@@ -75,6 +81,7 @@ int main(int argc,char * const *argv){
 	pctx.iface.iface_event = iface_event;
 	pctx.iface.iface_removed = iface_removed;
 	pctx.iface.neigh_event = neigh_event;
+	pctx.iface.wireless_event = wireless_event;
 	if(omphalos_init(&pctx)){
 		return EXIT_FAILURE;
 	}

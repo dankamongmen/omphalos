@@ -13,16 +13,13 @@ int handle_wireless_event(const omphalos_iface *octx,interface *i,
 	switch(iw->cmd){
 	case SIOCGIWSCAN:{
 		// FIXME handle scan results
-		fprintf(stderr,"\t   Scan results on %s\n",i->name);
 	break;}case SIOCGIWAP:{
 		// FIXME handle AP results
-		fprintf(stderr,"\t   Access point on %s\n",i->name);
 	break;}case IWEVASSOCRESPIE:{
 		// FIXME handle IE reassociation results
-		fprintf(stderr,"\t   Reassociation on %s\n",i->name);
 	break;}default:{
 		fprintf(stderr,"\t   Unknown wireless event on %s: 0x%x\n",i->name,iw->cmd);
-		break;
+		return -1;
 	} }
 	if(octx->wireless_event){
 		octx->wireless_event(i,iw->cmd);
