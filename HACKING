@@ -1,0 +1,49 @@
+=======================================
+Networking
+=======================================
+
+We cannot assume that we will see all traffic, due to drops, switched
+networks, wireless topography, and physical/network-layer encryption.
+
+We cannot transmit with another station's hardware address; this will not
+be generally allowed in a switched network.
+
+We cannot assume that we have an IP address on a local network; this
+requires configuration, and will never be the case for eg a bridge.
+
+We cannot assume other hosts are not misconfigured, broken, or adversarial.
+
+=======================================
+UIs/clients
+=======================================
+
+Callback functions might be called by any number of different threads,
+possibly concurrently. No relationship can be assumed between threads and
+callbacks.
+
+Callbacks are like interrupt handlers. There is a finite ringbuffer for
+incoming packets. Packet handling must proceed at wire rate, or else the
+ringbuffer will eventually be filled up. GUI events cannot generally
+proceed at wire rate, so packet handlers must generally aggregate events
+and dispatch work.
+
+=======================================
+Porting
+=======================================
+
+Omphalos uses several advanced features of the Linux kernel directly, and
+many use cases require other functionality. Porting will involve, at
+minimum:
+
+ - a means of reading packets from the wire (traditional packet(7) sockets,
+    libpcap, etc)
+ - a means of transmitting packets on the wire (traditional packet(7)
+    sockets)
+ - a means of acquiring link, address, route and neighbor information from
+    the kernel (we use rtnetlink). this has traditionally been a messy set
+    of ioctl()s on linux, which would have to be poll()ed.
+ - a means of acquiring physical information from the kernel, especially
+    for wireless devices (we use nl80211).
+ - a means of dropping general privileges, but retaining those capabilities
+    necessary for network activity (perhaps a client/server process pair'
+    communicating over PF_UNIX sockets).
