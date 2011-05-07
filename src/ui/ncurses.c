@@ -6,6 +6,7 @@
 #include <signal.h>
 #include <ncurses.h>
 #include <pthread.h>
+#include <sys/utsname.h>
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
 
@@ -18,6 +19,7 @@ enum {
 };
 
 static pthread_t inputtid;
+static struct utsname sysuts;
 
 // FIXME do stuff here, proof of concept skeleton currently
 static void *
@@ -46,7 +48,7 @@ draw_main_window(WINDOW *w,const char *name,const char *ver){
 	if(wattron(w,A_BOLD | COLOR_PAIR(HEADING_COLOR)) != OK){
 		return -1;
 	}
-	if(wprintw(w,"%s %s",name,ver) < 0){
+	if(wprintw(w,"%s %s on %s %s",name,ver,sysuts.sysname,sysuts.release) < 0){
 		return -1;
 	}
 	if(wattroff(w,A_BOLD | COLOR_PAIR(HEADING_COLOR)) != OK){
@@ -162,6 +164,10 @@ int main(int argc,char * const *argv){
 
 	if(setlocale(LC_ALL,"") == NULL){
 		fprintf(stderr,"Couldn't initialize locale (%s?)\n",strerror(errno));
+		return EXIT_FAILURE;
+	}
+	if(uname(&sysuts)){
+		fprintf(stderr,"Coudln't get OS info (%s?)\n",strerror(errno));
 		return EXIT_FAILURE;
 	}
 	if((w = ncurses_setup()) == NULL){
