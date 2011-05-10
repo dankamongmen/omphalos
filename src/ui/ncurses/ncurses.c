@@ -153,12 +153,19 @@ typedef struct iface_state {
 } iface_state;
 
 #define PAD_LINES 4
+#define PAD_COLS (COLS - START_COL * 2)
 #define START_LINE 2
 #define START_COL 2
 
 static int
 print_iface_state(const interface *i,const iface_state *is){
-	return mvwprintw(is->subpad,is->scrline,START_COL,"[%8s] %ju",i->name,is->pkts);
+	if(mvwprintw(is->subpad,0,0,"[%8s] %ju",i->name,is->pkts) != OK){
+		return -1;
+	}
+	if(prefresh(is->subpad,0,0,is->scrline,START_COL,is->scrline + PAD_LINES,START_COL + PAD_COLS) != OK){
+		return -1;
+	}
+	return 0;
 }
 
 static void
@@ -168,7 +175,6 @@ packet_callback(const interface *i,void *unsafe){
 	if(unsafe){
 		++is->pkts;
 		print_iface_state(i,is);
-		prefresh(is->subpad,0,0,0,0,LINES,COLS);
 	}
 }
 
@@ -180,10 +186,10 @@ interface_callback(const interface *i,void *unsafe){
 
 	if((ret = unsafe) == NULL){
 		if( (ret = malloc(sizeof(iface_state))) ){
+			ret->scrline = START_LINE + 2 + ifaces * (PAD_LINES + 1);
+			ret->subpad = subpad(pad,PAD_LINES,PAD_COLS,ret->scrline,START_COL);
 			++ifaces;
-			ret->scrline = START_LINE + ifaces * (PAD_LINES + 1);
 			ret->pkts = 0;
-			ret->subpad = pad;
 			print_iface_state(i,ret);
 		}
 	}
