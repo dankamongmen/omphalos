@@ -4,23 +4,30 @@
 #include <locale.h>
 #include <string.h>
 #include <signal.h>
+#include <net/if.h>
 #include <ncurses.h>
 #include <pthread.h>
 #include <sys/utsname.h>
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
+#include <gnu/libc-version.h>
 
 #define PROGNAME "omphalos"	// FIXME
-#define VERSION  "0.98pre"	// FIXME
+#define VERSION  "0.98-pre"	// FIXME
 
 enum {
 	BORDER_COLOR = 1,
 	HEADING_COLOR = 2,
+	DBORDER_COLOR = 3,
+	DHEADING_COLOR = 4,
+	UBORDER_COLOR = 5,
+	UHEADING_COLOR = 6,
 };
 
 static WINDOW *pad;
 static pthread_t inputtid;
 static struct utsname sysuts;
+static const char *glibc_version,*glibc_release;
 
 // FIXME do stuff here, proof of concept skeleton currently
 static void *
@@ -48,7 +55,8 @@ draw_main_window(WINDOW *w,const char *name,const char *ver){
 	if(wattron(w,A_BOLD | COLOR_PAIR(HEADING_COLOR)) != OK){
 		return -1;
 	}
-	if(wprintw(w,"%s %s on %s %s",name,ver,sysuts.sysname,sysuts.release) < 0){
+	if(wprintw(w,"%s %s on %s %s (libc %s-%s)",name,ver,sysuts.sysname,
+				sysuts.release,glibc_version,glibc_release) < 0){
 		return -1;
 	}
 	if(wattroff(w,A_BOLD | COLOR_PAIR(HEADING_COLOR)) != OK){
@@ -129,6 +137,18 @@ ncurses_setup(WINDOW **mainwin){
 		fprintf(stderr,"Couldn't initialize ncurses colorpair\n");
 		goto err;
 	}
+	if(init_pair(DHEADING_COLOR,COLOR_WHITE,COLOR_BLACK) != OK){
+		fprintf(stderr,"Couldn't initialize ncurses colorpair\n");
+		goto err;
+	}
+	if(init_pair(UBORDER_COLOR,COLOR_WHITE,COLOR_BLACK) != OK){
+		fprintf(stderr,"Couldn't initialize ncurses colorpair\n");
+		goto err;
+	}
+	if(init_pair(UHEADING_COLOR,COLOR_GREEN,COLOR_BLACK) != OK){
+		fprintf(stderr,"Couldn't initialize ncurses colorpair\n");
+		goto err;
+	}
 	if(curs_set(0) == ERR){
 		fprintf(stderr,"Couldn't disable cursor\n");
 		goto err;
@@ -180,15 +200,40 @@ packet_callback(const interface *i,void *unsafe){
 
 static WINDOW *
 iface_box(WINDOW *parent,unsigned line,const interface *i){
+	int bcolor,hcolor;
 	WINDOW *w;
 
+	// FIXME shouldn't have to know IFF_UP out here
+	bcolor = (i->flags & IFF_UP) ? UBORDER_COLOR : DBORDER_COLOR;
+	hcolor = (i->flags & IFF_UP) ? UHEADING_COLOR : DHEADING_COLOR;
 	if((w = subpad(parent,PAD_LINES,PAD_COLS,line,START_COL)) == NULL){
 		return NULL;
+	}
+	if(wcolor_set(w,bcolor,NULL) != OK){
+		goto err;
 	}
 	if(box(w,0,0) != OK){
 		goto err;
 	}
-	if(mvwprintw(w,0,PAD_COLS - 12,"[%8s]",i->name) != OK){
+	if(mvwprintw(w,0,PAD_COLS - 12,"[") < 0){
+		goto err;
+	}
+	if(wattron(w,A_BOLD | COLOR_PAIR(hcolor)) != OK){
+		goto err;
+	}
+	if(wprintw(w,"%8s",i->name) != OK){
+		goto err;
+	}
+	if(wattroff(w,A_BOLD | COLOR_PAIR(hcolor)) != OK){
+		goto err;
+	}
+	if(wcolor_set(w,bcolor,NULL) != OK){
+		goto err;
+	}
+	if(wprintw(w,"]") < 0){
+		goto err;
+	}
+	if(wcolor_set(w,0,NULL) != OK){
 		goto err;
 	}
 	return w;
@@ -206,10 +251,12 @@ interface_callback(const interface *i,void *unsafe){
 	if((ret = unsafe) == NULL){
 		if( (ret = malloc(sizeof(iface_state))) ){
 			ret->scrline = START_LINE + ifaces * (PAD_LINES + 1);
+			ret->pkts = 0;
 			if( (ret->subpad = iface_box(pad,ret->scrline,i)) ){
+				if(i->flags & IFF_UP){
+					print_iface_state(i,ret);
+				}
 				++ifaces;
-				ret->pkts = 0;
-				print_iface_state(i,ret);
 				touchwin(pad);
 				prefresh(pad,0,0,0,0,LINES,COLS);
 			}else{
@@ -218,6 +265,7 @@ interface_callback(const interface *i,void *unsafe){
 			}
 		}
 	}
+	// FIXME otherwise, redraw to reflect interface status change
 	return ret;
 }
 
@@ -243,6 +291,8 @@ int main(int argc,char * const *argv){
 		fprintf(stderr,"Coudln't get OS info (%s?)\n",strerror(errno));
 		return EXIT_FAILURE;
 	}
+	glibc_version = gnu_get_libc_version();
+	glibc_release = gnu_get_libc_release();
 	if((pad = ncurses_setup(&w)) == NULL){
 		return EXIT_FAILURE;
 	}
