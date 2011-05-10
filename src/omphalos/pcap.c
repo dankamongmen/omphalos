@@ -58,11 +58,11 @@ handle_pcap_cooked(u_char *gi,const struct pcap_pkthdr *h,const u_char *bytes){
 		return;
 	}
 	sll = (const struct pcapsll *)bytes;
-	if(h->len < sizeof(*sll) || be16toh(sll->hwlen) > sizeof(sll->hwaddr)){
+	if(h->len < sizeof(*sll) || ntohs(sll->hwlen) > sizeof(sll->hwaddr)){
 		++iface->malformed;
 		return;
 	}
-	if((l2s = lookup_l2host(sll->hwaddr,be16toh(sll->hwlen))) == NULL){
+	if((l2s = lookup_l2host(sll->hwaddr,ntohs(sll->hwlen))) == NULL){
 		return;
 	}
 	// proto is in network byte-order. rather than possibly switch it

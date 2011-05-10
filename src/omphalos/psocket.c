@@ -30,7 +30,7 @@ static const unsigned MMAP_BLOCK_COUNT = 32768; // FIXME do better
 int packet_socket(unsigned protocol){
 	int fd;
 
-	if((fd = socket(AF_PACKET,SOCK_RAW,be16toh(protocol))) < 0){
+	if((fd = socket(AF_PACKET,SOCK_RAW,ntohs(protocol))) < 0){
 		fprintf(stderr,"Couldn't open packet socket (%s?)\n",strerror(errno));
 		return -1;
 	}

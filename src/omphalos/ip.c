@@ -20,13 +20,13 @@ void handle_ipv6_packet(interface *i,const void *frame,size_t len){
 		++i->malformed;
 		return;
 	}
-	ver = be32toh(ip->ip6_ctlun.ip6_un1.ip6_un1_flow) >> 28u;
+	ver = ntohl(ip->ip6_ctlun.ip6_un1.ip6_un1_flow) >> 28u;
 	if(ver != 6){
 		printf("%s noproto for %u\n",__func__,ver);
 		++i->noprotocol;
 		return;
 	}
-	plen = be16toh(ip->ip6_ctlun.ip6_un1.ip6_un1_plen);
+	plen = ntohs(ip->ip6_ctlun.ip6_un1.ip6_un1_plen);
 	if(len != plen + sizeof(*ip)){
 		printf("%s malformed with %zu != %u\n",__func__,len,plen);
 		++i->malformed;
@@ -93,8 +93,8 @@ void handle_ipv4_packet(interface *i,const void *frame,size_t len){
 		++i->malformed;
 		return;
 	}
-	if(check_ethernet_padup(len,be16toh(ip->tot_len))){
-		printf("%s malformed with %zu vs %hu\n",__func__,len,be16toh(ip->tot_len));
+	if(check_ethernet_padup(len,ntohs(ip->tot_len))){
+		printf("%s malformed with %zu vs %hu\n",__func__,len,ntohs(ip->tot_len));
 		++i->malformed;
 		return;
 	}
@@ -102,7 +102,7 @@ void handle_ipv4_packet(interface *i,const void *frame,size_t len){
 	ipd = lookup_iphost(i,&ip->daddr);
 
 	const void *nhdr = (const unsigned char *)frame + hlen;
-	const size_t nlen = be16toh(ip->tot_len) - hlen;
+	const size_t nlen = ntohs(ip->tot_len) - hlen;
 
 	switch(ip->protocol){
 	case IPPROTO_TCP:{
