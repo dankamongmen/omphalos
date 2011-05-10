@@ -2,8 +2,13 @@
 Networking
 =======================================
 
-We cannot assume that we will see all traffic, due to drops, switched
-networks, wireless topography, and physical/network-layer encryption.
+We cannot assume that we will see all control traffic, due to switched
+networks, wireless topography, physical/network-layer encryption and drops.
+Packets can be dropped (possibly silently) at the card, in the networking
+stack (thus being neither copied nor processed), or due to a full
+ringbuffer (thus being processed but not copied). It thus cannot be assumed
+that all packets processed by the machine are able to be read, nor that all
+packets seen on the wire even generate a statistic.
 
 We cannot transmit with another station's hardware address; this will not
 be generally allowed in a switched network.
@@ -26,6 +31,10 @@ incoming packets. Packet handling must proceed at wire rate, or else the
 ringbuffer will eventually be filled up. GUI events cannot generally
 proceed at wire rate, so packet handlers must generally aggregate events
 and dispatch work.
+
+You can associate opaque state with an object passed to a callback by
+returning a pointer to that opaque state. Returning NULL will disassociate
+any attached opaque state.
 
 =======================================
 Porting
