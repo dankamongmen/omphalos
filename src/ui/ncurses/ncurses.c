@@ -146,16 +146,20 @@ packet_callback(void){
 	refresh();
 }
 
-static void
-interface_callback(const interface *i){
-	static uintmax_t events = 0;
+static void *
+interface_callback(const interface *i,void *unsafe){
+	static uintmax_t events = 0; // FIXME
+	static unsigned ifaces = 0; // FIXME
+	void *ret = NULL;
 
-	if(i){
-		mvprintw(3,2,"events: %ju (most recent on %s)",++events,i->name);
-	}else{
-		mvprintw(3,2,"no events yet...");
+	if(unsafe == NULL){
+		++ifaces;
+		mvprintw(3 + ifaces,2,"[%8s]",i->name);
+		ret = &ifaces; // FIXME
 	}
+	mvprintw(3,2,"events: %ju (most recent on %s)",++events,i->name);
 	refresh();
+	return ret;
 }
 
 int main(int argc,char * const *argv){
@@ -177,7 +181,6 @@ int main(int argc,char * const *argv){
 		return EXIT_FAILURE;
 	}
 	packet_callback();
-	interface_callback(NULL);
 	pctx.iface.packet_read = packet_callback;
 	pctx.iface.iface_event = interface_callback;
 	if(omphalos_init(&pctx)){

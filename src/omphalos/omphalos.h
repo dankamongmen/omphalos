@@ -11,11 +11,11 @@ struct interface;
 // UI callback interface. Any number may be NULL.
 typedef struct omphalos_iface {
 	void (*packet_read)(void); // FIXME
-	void (*iface_event)(const struct interface *);
-	void (*iface_removed)(const struct interface *);
-	void (*neigh_event)(const struct interface *,const struct l2host *);
-	void (*neigh_removed)(const struct interface *,const struct l2host *);
-	void (*wireless_event)(const struct interface *,unsigned);
+	void *(*iface_event)(const struct interface *,void *);
+	void (*iface_removed)(const struct interface *,void *);
+	void *(*neigh_event)(const struct interface *,const struct l2host *,void *);
+	void (*neigh_removed)(const struct interface *,const struct l2host *,void *);
+	void *(*wireless_event)(const struct interface *,unsigned,void *);
 } omphalos_iface;
 
 // Process-scope settings, generally configured on startup based off

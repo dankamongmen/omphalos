@@ -47,6 +47,8 @@ typedef struct interface {
 	// destinations -- they must not be considered unique!
 	struct ip4route *ip4r;	// list of IPv4 routes
 	struct ip6route *ip6r;	// list of IPv6 routes
+
+	void *opaque;		// opaque callback state
 } interface;
 
 int init_interfaces(void);

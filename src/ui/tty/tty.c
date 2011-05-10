@@ -52,24 +52,28 @@ dump_output(FILE *fp){
 	return 0;
 }
 
-static void
-iface_event(const interface *i){
+static void *
+iface_event(const interface *i,void *unsafe __attribute__ ((unused))){
 	print_iface(stdout,i);
+	return NULL;
 }
 
-static void
-neigh_event(const struct interface *i,const struct l2host *l2){
+static void *
+neigh_event(const struct interface *i,const struct l2host *l2,
+		void *unsafe __attribute__ ((unused))){
 	print_neigh(i,l2);
+	return NULL;
 }
 
 static void
-iface_removed(const interface *i){
+iface_removed(const interface *i,void *unsafe __attribute__ ((unused))){
 	printf("[%s] removed\n",i->name);
 }
 
-static void
-wireless_event(const interface *i,unsigned cmd){
+static void *
+wireless_event(const interface *i,unsigned cmd,void *unsafe __attribute__ ((unused))){
 	print_wireless_event(stdout,i,cmd);
+	return NULL;
 }
 
 int main(int argc,char * const *argv){

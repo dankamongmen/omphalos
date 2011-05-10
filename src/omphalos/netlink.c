@@ -129,7 +129,7 @@ handle_rtm_newneigh(const omphalos_iface *octx,const struct nlmsghdr *nl){
 		break;}case NDA_CACHEINFO:{
 		break;}case NDA_PROBES:{
 		break;}default:{
-			fprintf(stderr,"Unknown rtatype %u\n",ra->rta_type);
+			fprintf(stderr,"Unknown ndatype %u\n",ra->rta_type);
 		break;}}
 		ra = RTA_NEXT(ra,rlen);
 	}
@@ -139,7 +139,7 @@ handle_rtm_newneigh(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	if(llen){
 		l2 = lookup_l2host(ll,sizeof(ll));
 		if(octx->neigh_event){
-			octx->neigh_event(iface,l2);
+			octx->neigh_event(iface,l2,iface->opaque);
 		}
 		// FIXME and do what else with it?
 	}
@@ -202,7 +202,7 @@ handle_rtm_delneigh(const omphalos_iface *octx,const struct nlmsghdr *nl){
 		break;}case NDA_CACHEINFO:{
 		break;}case NDA_PROBES:{
 		break;}default:{
-			fprintf(stderr,"Unknown rtatype %u\n",ra->rta_type);
+			fprintf(stderr,"Unknown ndatype %u\n",ra->rta_type);
 		break;}}
 		ra = RTA_NEXT(ra,rlen);
 	}
@@ -212,7 +212,7 @@ handle_rtm_delneigh(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	if(llen){
 		l2 = lookup_l2host(ll,sizeof(ll));
 		if(octx->neigh_removed){
-			octx->neigh_removed(iface,l2);
+			octx->neigh_removed(iface,l2,iface->opaque);
 		}
 		// FIXME and do what else with it?
 	}
@@ -332,9 +332,7 @@ handle_rtm_newroute(const struct nlmsghdr *nl){
 		// break;}case RTA_SESSION:{ // unused
 		// break;}case RTA_MP_ALGO:{ // unused
 		break;}case RTA_TABLE:{
-#ifdef RTA_MARK
 		break;}case RTA_MARK:{
-#endif
 		break;}default:{
 			fprintf(stderr,"Unknown rtatype %u\n",ra->rta_type);
 		break;}}
@@ -420,7 +418,7 @@ handle_rtm_dellink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 		return -1;
 	}
 	if(octx->iface_removed){
-		octx->iface_removed(iface);
+		octx->iface_removed(iface,iface->opaque);
 	}
 	free_iface(iface);
 	return 0;
@@ -484,23 +482,13 @@ handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 			break;}case IFLA_LINKINFO:{
 			break;}case IFLA_NET_NS_PID:{
 			break;}case IFLA_IFALIAS:{
-#ifdef IFLA_NUM_VF
 			break;}case IFLA_NUM_VF:{
-#endif
-#ifdef IFLA_STATS64
 			break;}case IFLA_STATS64:{
-#endif
-#ifdef IFLA_VF_PORTS
 			break;}case IFLA_VF_PORTS:{
-#endif
-#ifdef IFLA_PORT_SELF
 			break;}case IFLA_PORT_SELF:{
-#endif
-#ifdef IFLA_AF_SPEC
 			break;}case IFLA_AF_SPEC:{
-#endif
 			break;}default:{
-				fprintf(stderr,"Unknown rtatype %u\n",ra->rta_type);
+				fprintf(stderr,"Unknown iflatype %u\n",ra->rta_type);
 			break;}
 		}
 		ra = RTA_NEXT(ra,rlen);
@@ -534,7 +522,7 @@ handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 		}
 	}
 	if(octx->iface_event){
-		octx->iface_event(iface);
+		octx->iface_event(iface,iface->opaque);
 	}
 	return 0;
 }

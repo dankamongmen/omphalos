@@ -22,7 +22,7 @@ int handle_wireless_event(const omphalos_iface *octx,interface *i,
 		return -1;
 	} }
 	if(octx->wireless_event){
-		octx->wireless_event(i,iw->cmd);
+		octx->wireless_event(i,iw->cmd,i->opaque);
 	}
 	return 0;
 }
