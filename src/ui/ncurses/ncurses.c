@@ -18,6 +18,7 @@ enum {
 	HEADING_COLOR = 2,
 };
 
+static WINDOW *pad;
 static pthread_t inputtid;
 static struct utsname sysuts;
 
@@ -60,7 +61,7 @@ draw_main_window(WINDOW *w,const char *name,const char *ver){
 	if(wprintw(w,"]") < 0){
 		return -1;
 	}
-	if(wrefresh(w)){
+	if(prefresh(w,0,0,0,0,LINES,COLS)){
 		return -1;
 	}
 	if(wcolor_set(w,0,NULL) != OK){
@@ -75,9 +76,12 @@ draw_main_window(WINDOW *w,const char *name,const char *ver){
 // Cleanup which ought be performed even if we had a failure elsewhere, or
 // indeed never started.
 static int
-mandatory_cleanup(WINDOW *w){
+mandatory_cleanup(WINDOW *w,WINDOW *pad){
 	int ret = 0;
 
+	if(delwin(pad) != OK){
+		ret = -1;
+	}
 	if(delwin(w) != OK){
 		ret = -1;
 	}
@@ -91,11 +95,15 @@ mandatory_cleanup(WINDOW *w){
 }
 
 static WINDOW *
-ncurses_setup(void){
-	WINDOW *w;
+ncurses_setup(WINDOW **mainwin){
+	WINDOW *w = NULL;
 
-	if((w = initscr()) == NULL){
+	if((*mainwin = initscr()) == NULL){
 		fprintf(stderr,"Couldn't initialize ncurses\n");
+		goto err;
+	}
+	if((w = newpad(LINES,COLS)) == NULL){
+		fprintf(stderr,"Couldn't initialize main pad\n");
 		goto err;
 	}
 	if(cbreak() != OK){
@@ -122,18 +130,19 @@ ncurses_setup(void){
 		fprintf(stderr,"Couldn't initialize ncurses colorpair\n");
 		goto err;
 	}
-	if(curs_set(0) == ERR){
-		fprintf(stderr,"Couldn't disable cursor\n");
-		goto err;
-	}
 	if(draw_main_window(w,PROGNAME,VERSION)){
 		fprintf(stderr,"Couldn't use ncurses\n");
+		goto err;
+	}
+	if(curs_set(0) == ERR){
+		fprintf(stderr,"Couldn't disable cursor\n");
 		goto err;
 	}
 	return w;
 
 err:
-	mandatory_cleanup(w);
+	mandatory_cleanup(*mainwin,w);
+	*mainwin = NULL;
 	return NULL;
 }
 
@@ -144,8 +153,8 @@ typedef struct iface_state {
 } iface_state;
 
 static int
-print_iface_state(const interface *i,const iface_state *is){
-	return mvprintw(is->scrline,2,"[%8s] %ju",i->name,is->pkts);
+print_iface_state(WINDOW *w,const interface *i,const iface_state *is){
+	return mvwprintw(w,is->scrline,2,"[%8s] %ju",i->name,is->pkts);
 }
 
 static void
@@ -154,8 +163,8 @@ packet_callback(const interface *i,void *unsafe){
 
 	if(unsafe){
 		++is->pkts;
-		print_iface_state(i,is);
-		refresh();
+		print_iface_state(pad,i,is);
+		prefresh(pad,0,0,0,0,LINES,COLS);
 	}
 }
 
@@ -170,11 +179,11 @@ interface_callback(const interface *i,void *unsafe){
 			++ifaces;
 			ret->scrline = 3 + ifaces;
 			ret->pkts = 0;
-			print_iface_state(i,ret);
+			print_iface_state(pad,i,ret);
 		}
 	}
-	mvprintw(3,2,"events: %ju (most recent on %s)",++events,i->name);
-	refresh();
+	mvwprintw(pad,3,2,"events: %ju (most recent on %s)",++events,i->name);
+	prefresh(pad,0,0,0,0,LINES,COLS);
 	return ret;
 }
 
@@ -190,7 +199,7 @@ int main(int argc,char * const *argv){
 		fprintf(stderr,"Coudln't get OS info (%s?)\n",strerror(errno));
 		return EXIT_FAILURE;
 	}
-	if((w = ncurses_setup()) == NULL){
+	if((pad = ncurses_setup(&w)) == NULL){
 		return EXIT_FAILURE;
 	}
 	if(omphalos_setup(argc,argv,&pctx)){
@@ -202,12 +211,12 @@ int main(int argc,char * const *argv){
 		goto err;
 	}
 	omphalos_cleanup();
-	if(mandatory_cleanup(w)){
+	if(mandatory_cleanup(w,pad)){
 		return EXIT_FAILURE;
 	}
 	return EXIT_SUCCESS;
 
 err:
-	mandatory_cleanup(w);
+	mandatory_cleanup(w,pad);
 	return EXIT_FAILURE;
 }
