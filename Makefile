@@ -55,6 +55,8 @@ COBJS:=$(addprefix $(OUT)/,$(CSRCS:%.c=%.o))
 
 # Various UI's plus the core make the binaries
 COREOBJS:=$(filter $(OUT)/$(SRC)/$(PROJ)/%.o,$(COBJS))
+NCURSESOBJS:=$(filter $(OUT)/$(SRC)/ui/ncurses/%.o,$(COBJS))
+TTYOBJS:=$(filter $(OUT)/$(SRC)/ui/tty/%.o,$(COBJS))
 
 # Requires CAP_NET_ADMIN privileges bestowed upon the binary
 livetest: sudobless
@@ -63,11 +65,11 @@ livetest: sudobless
 test: all $(TESTPCAPS)
 	for i in $(TESTPCAPS) ; do $(OMPHALOS)-tty -f $$i || exit 1 ; done
 
-$(OMPHALOS)-ncurses: $(COREOBJS) $(OUT)/$(SRC)/ui/ncurses.o
+$(OMPHALOS)-ncurses: $(COREOBJS) $(NCURSESOBJS)
 	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -o $@ $^ $(LFLAGS) -lncurses
 
-$(OMPHALOS)-tty: $(COREOBJS) $(OUT)/$(SRC)/ui/tty.o
+$(OMPHALOS)-tty: $(COREOBJS) $(TTYOBJS)
 	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -o $@ $^ $(LFLAGS)
 
