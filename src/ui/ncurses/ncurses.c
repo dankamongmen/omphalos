@@ -129,23 +129,27 @@ ncurses_setup(WINDOW **mainwin){
 		fprintf(stderr,"Couldn't initialize ncurses colordefs\n");
 		goto err;
 	}
-	if(init_pair(BORDER_COLOR,COLOR_GREEN,COLOR_BLACK) != OK){
+	if(init_pair(BORDER_COLOR,COLOR_GREEN,-1) != OK){
 		fprintf(stderr,"Couldn't initialize ncurses colorpair\n");
 		goto err;
 	}
-	if(init_pair(HEADING_COLOR,COLOR_YELLOW,COLOR_BLACK) != OK){
+	if(init_pair(HEADING_COLOR,COLOR_YELLOW,-1) != OK){
 		fprintf(stderr,"Couldn't initialize ncurses colorpair\n");
 		goto err;
 	}
-	if(init_pair(DHEADING_COLOR,COLOR_WHITE,COLOR_BLACK) != OK){
+	if(init_pair(DBORDER_COLOR,COLOR_YELLOW,-1) != OK){
 		fprintf(stderr,"Couldn't initialize ncurses colorpair\n");
 		goto err;
 	}
-	if(init_pair(UBORDER_COLOR,COLOR_WHITE,COLOR_BLACK) != OK){
+	if(init_pair(DHEADING_COLOR,COLOR_WHITE,-1) != OK){
 		fprintf(stderr,"Couldn't initialize ncurses colorpair\n");
 		goto err;
 	}
-	if(init_pair(UHEADING_COLOR,COLOR_GREEN,COLOR_BLACK) != OK){
+	if(init_pair(UBORDER_COLOR,COLOR_YELLOW,-1) != OK){
+		fprintf(stderr,"Couldn't initialize ncurses colorpair\n");
+		goto err;
+	}
+	if(init_pair(UHEADING_COLOR,COLOR_GREEN,-1) != OK){
 		fprintf(stderr,"Couldn't initialize ncurses colorpair\n");
 		goto err;
 	}
@@ -215,14 +219,37 @@ iface_box(WINDOW *parent,unsigned line,const interface *i){
 	if(box(w,0,0) != OK){
 		goto err;
 	}
-	if(mvwprintw(w,0,PAD_COLS - 12,"[") < 0){
+	if(mvwprintw(w,0,START_COL,"[") < 0){
 		goto err;
 	}
 	if(wattron(w,A_BOLD | COLOR_PAIR(hcolor)) != OK){
 		goto err;
 	}
-	if(wprintw(w,"%8s",i->name) != OK){
+	if(waddstr(w,i->name) != OK){
 		goto err;
+	}
+	if(strlen(i->drv.driver)){
+		if(wprintw(w," (%s",i->drv.driver) != OK){
+			goto err;
+		}
+		if(strlen(i->drv.version)){
+			if(wprintw(w," %s",i->drv.version) != OK){
+				goto err;
+			}
+		}
+		if(strlen(i->drv.fw_version)){
+			if(wprintw(w," fw %s",i->drv.fw_version) != OK){
+				goto err;
+			}
+		}
+		if(waddch(w,')') != OK){
+			goto err;
+		}
+	}
+	if(strlen(i->drv.bus_info)){
+		if(wprintw(w," @ %s",i->drv.bus_info) != OK){
+			goto err;
+		}
 	}
 	if(wattroff(w,A_BOLD | COLOR_PAIR(hcolor)) != OK){
 		goto err;
