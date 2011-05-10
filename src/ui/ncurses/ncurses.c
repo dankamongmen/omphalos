@@ -129,12 +129,12 @@ ncurses_setup(WINDOW **mainwin){
 		fprintf(stderr,"Couldn't initialize ncurses colorpair\n");
 		goto err;
 	}
-	if(draw_main_window(w,PROGNAME,VERSION)){
-		fprintf(stderr,"Couldn't use ncurses\n");
-		goto err;
-	}
 	if(curs_set(0) == ERR){
 		fprintf(stderr,"Couldn't disable cursor\n");
+		goto err;
+	}
+	if(draw_main_window(w,PROGNAME,VERSION)){
+		fprintf(stderr,"Couldn't use ncurses\n");
 		goto err;
 	}
 	return w;
@@ -158,8 +158,8 @@ typedef struct iface_state {
 #define START_COL 2
 
 static int
-print_iface_state(const interface *i,const iface_state *is){
-	if(mvwprintw(is->subpad,0,0,"[%8s] %ju",i->name,is->pkts) != OK){
+print_iface_state(const interface *i __attribute__ ((unused)),const iface_state *is){
+	if(mvwprintw(is->subpad,1,1,"pkts: %ju",is->pkts) != OK){
 		return -1;
 	}
 	if(prefresh(is->subpad,0,0,is->scrline,START_COL,is->scrline + PAD_LINES,START_COL + PAD_COLS) != OK){
@@ -178,23 +178,46 @@ packet_callback(const interface *i,void *unsafe){
 	}
 }
 
+static WINDOW *
+iface_box(WINDOW *parent,unsigned line,const interface *i){
+	WINDOW *w;
+
+	if((w = subpad(parent,PAD_LINES,PAD_COLS,line,START_COL)) == NULL){
+		return NULL;
+	}
+	if(box(w,0,0) != OK){
+		goto err;
+	}
+	if(mvwprintw(w,0,PAD_COLS - 12,"[%8s]",i->name) != OK){
+		goto err;
+	}
+	return w;
+
+err:
+	delwin(w);
+	return NULL;
+}
+
 static void *
 interface_callback(const interface *i,void *unsafe){
-	static uintmax_t events = 0; // FIXME
 	static unsigned ifaces = 0; // FIXME
 	iface_state *ret;
 
 	if((ret = unsafe) == NULL){
 		if( (ret = malloc(sizeof(iface_state))) ){
-			ret->scrline = START_LINE + 2 + ifaces * (PAD_LINES + 1);
-			ret->subpad = subpad(pad,PAD_LINES,PAD_COLS,ret->scrline,START_COL);
-			++ifaces;
-			ret->pkts = 0;
-			print_iface_state(i,ret);
+			ret->scrline = START_LINE + ifaces * (PAD_LINES + 1);
+			if( (ret->subpad = iface_box(pad,ret->scrline,i)) ){
+				++ifaces;
+				ret->pkts = 0;
+				print_iface_state(i,ret);
+				touchwin(pad);
+				prefresh(pad,0,0,0,0,LINES,COLS);
+			}else{
+				free(ret);
+				ret = NULL;
+			}
 		}
 	}
-	mvwprintw(pad,START_LINE,START_COL,"events: %ju (most recent on %s)",++events,i->name);
-	prefresh(pad,0,0,0,0,LINES,COLS);
 	return ret;
 }
 
