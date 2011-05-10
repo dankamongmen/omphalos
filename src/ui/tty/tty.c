@@ -95,6 +95,6 @@ int main(int argc,char * const *argv){
 		}
 		return EXIT_FAILURE;
 	}
-	omphalos_cleanup();
+	omphalos_cleanup(&pctx);
 	return EXIT_SUCCESS;
 }

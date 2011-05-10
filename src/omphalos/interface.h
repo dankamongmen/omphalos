@@ -8,9 +8,10 @@ extern "C" {
 #include <stdio.h>
 #include <stdint.h>
 #include <netinet/in.h>
-//#include <linux/in6.h>
 #include <linux/ethtool.h>
 #include <linux/if_packet.h>
+
+struct omphalos_iface;
 
 typedef struct ip4route {
 	struct in_addr dst,via;
@@ -56,7 +57,7 @@ interface *iface_by_idx(int);
 int print_iface_stats(FILE *,const interface *,interface *,const char *);
 char *hwaddrstr(const interface *);
 void free_iface(interface *);
-void cleanup_interfaces(void);
+void cleanup_interfaces(const struct omphalos_iface *);
 int print_all_iface_stats(FILE *,interface *);
 int add_route4(interface *,const struct in_addr *,const struct in_addr *,
 						unsigned,int);

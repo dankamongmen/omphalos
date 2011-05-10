@@ -41,7 +41,7 @@ int omphalos_setup(int,char * const *,omphalos_ctx *);
 // Run the provided context
 int omphalos_init(const omphalos_ctx *);
 
-void omphalos_cleanup(void);
+void omphalos_cleanup(const omphalos_ctx *);
 
 #ifdef __cplusplus
 }

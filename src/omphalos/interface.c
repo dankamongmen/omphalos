@@ -6,6 +6,7 @@
 #include <linux/if_arp.h>
 #include <omphalos/util.h>
 #include <omphalos/hwaddrs.h>
+#include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
 
 #define MAXINTERFACES (1u << 16) // lame FIXME
@@ -85,10 +86,13 @@ void free_iface(interface *i){
 	i->fd = -1;
 }
 
-void cleanup_interfaces(void){
+void cleanup_interfaces(const omphalos_iface *pctx){
 	unsigned i;
 
 	for(i = 0 ; i < sizeof(interfaces) / sizeof(*interfaces) ; ++i){
+		if(interfaces[i].opaque && pctx->iface_removed){
+			pctx->iface_removed(&interfaces[i],interfaces[i].opaque);
+		}
 		free_iface(&interfaces[i]);
 	}
 }

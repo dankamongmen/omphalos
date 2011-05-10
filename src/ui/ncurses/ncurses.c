@@ -198,6 +198,16 @@ interface_callback(const interface *i,void *unsafe){
 	return ret;
 }
 
+static void
+interface_removed_callback(const interface *i __attribute__ ((unused)),void *unsafe){
+	iface_state *is;
+
+	if( (is = unsafe) ){
+		delwin(is->subpad);
+		free(is);
+	}
+}
+
 int main(int argc,char * const *argv){
 	omphalos_ctx pctx;
 	WINDOW *w;
@@ -218,10 +228,11 @@ int main(int argc,char * const *argv){
 	}
 	pctx.iface.packet_read = packet_callback;
 	pctx.iface.iface_event = interface_callback;
+	pctx.iface.iface_removed = interface_removed_callback;
 	if(omphalos_init(&pctx)){
 		goto err;
 	}
-	omphalos_cleanup();
+	omphalos_cleanup(&pctx);
 	if(mandatory_cleanup(w,pad)){
 		return EXIT_FAILURE;
 	}
