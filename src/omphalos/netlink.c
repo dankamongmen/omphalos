@@ -139,7 +139,7 @@ handle_rtm_newneigh(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	if(llen){
 		l2 = lookup_l2host(ll,sizeof(ll));
 		if(octx->neigh_event){
-			octx->neigh_event(iface,l2,iface->opaque);
+			iface->opaque = octx->neigh_event(iface,l2,iface->opaque);
 		}
 		// FIXME and do what else with it?
 	}
@@ -522,7 +522,7 @@ handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 		}
 	}
 	if(octx->iface_event){
-		octx->iface_event(iface,iface->opaque);
+		iface->opaque = octx->iface_event(iface,iface->opaque);
 	}
 	return 0;
 }
