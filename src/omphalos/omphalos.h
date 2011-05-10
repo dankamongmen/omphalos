@@ -10,7 +10,7 @@ struct interface;
 
 // UI callback interface. Any number may be NULL.
 typedef struct omphalos_iface {
-	void (*packet_read)(void); // FIXME
+	void (*packet_read)(const struct interface *,void *);
 	void *(*iface_event)(const struct interface *,void *);
 	void (*iface_removed)(const struct interface *,void *);
 	void *(*neigh_event)(const struct interface *,const struct l2host *,void *);

@@ -288,7 +288,7 @@ handle_ring_packet(const omphalos_iface *octx,int fd,void *frame){
 	++iface->frames;
 	handle_ethernet_packet(iface,(char *)frame + thdr->tp_mac,thdr->tp_len);
 	if(octx->packet_read){
-		octx->packet_read();
+		octx->packet_read(iface,iface->opaque);
 	}
 	thdr->tp_status = TP_STATUS_KERNEL; // return the frame
 }

@@ -137,25 +137,41 @@ err:
 	return NULL;
 }
 
-static void
-packet_callback(void){
-	static uintmax_t pkts = ~0ULL;
+// Bind one of these state structures to each interface
+typedef struct iface_state {
+	int scrline;
+	uintmax_t pkts;
+} iface_state;
 
-	// FIXME will need to move to per-interface window
-	mvprintw(2,2,"pkts: %ju",++pkts);
-	refresh();
+static int
+print_iface_state(const interface *i,const iface_state *is){
+	return mvprintw(is->scrline,2,"[%8s] %ju",i->name,is->pkts);
+}
+
+static void
+packet_callback(const interface *i,void *unsafe){
+	iface_state *is = unsafe;
+
+	if(unsafe){
+		++is->pkts;
+		print_iface_state(i,is);
+		refresh();
+	}
 }
 
 static void *
 interface_callback(const interface *i,void *unsafe){
 	static uintmax_t events = 0; // FIXME
 	static unsigned ifaces = 0; // FIXME
-	void *ret = NULL;
+	iface_state *ret;
 
-	if(unsafe == NULL){
-		++ifaces;
-		mvprintw(3 + ifaces,2,"[%8s]",i->name);
-		ret = &ifaces; // FIXME
+	if((ret = unsafe) == NULL){
+		if( (ret = malloc(sizeof(iface_state))) ){
+			++ifaces;
+			ret->scrline = 3 + ifaces;
+			ret->pkts = 0;
+			print_iface_state(i,ret);
+		}
 	}
 	mvprintw(3,2,"events: %ju (most recent on %s)",++events,i->name);
 	refresh();
@@ -180,7 +196,6 @@ int main(int argc,char * const *argv){
 	if(omphalos_setup(argc,argv,&pctx)){
 		return EXIT_FAILURE;
 	}
-	packet_callback();
 	pctx.iface.packet_read = packet_callback;
 	pctx.iface.iface_event = interface_callback;
 	if(omphalos_init(&pctx)){
