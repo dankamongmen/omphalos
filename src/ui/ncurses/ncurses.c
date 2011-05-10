@@ -29,7 +29,6 @@ ncurses_input_thread(void *nil){
 
 	if(!nil){
 		while((ch = getch()) != 'q' && ch != 'Q');
-		printf("DONE\n");
 		raise(SIGINT);
 	}
 	pthread_exit(NULL);
@@ -149,12 +148,17 @@ err:
 // Bind one of these state structures to each interface
 typedef struct iface_state {
 	int scrline;
+	WINDOW *subpad;
 	uintmax_t pkts;
 } iface_state;
 
+#define PAD_LINES 4
+#define START_LINE 2
+#define START_COL 2
+
 static int
-print_iface_state(WINDOW *w,const interface *i,const iface_state *is){
-	return mvwprintw(w,is->scrline,2,"[%8s] %ju",i->name,is->pkts);
+print_iface_state(const interface *i,const iface_state *is){
+	return mvwprintw(is->subpad,is->scrline,START_COL,"[%8s] %ju",i->name,is->pkts);
 }
 
 static void
@@ -163,8 +167,8 @@ packet_callback(const interface *i,void *unsafe){
 
 	if(unsafe){
 		++is->pkts;
-		print_iface_state(pad,i,is);
-		prefresh(pad,0,0,0,0,LINES,COLS);
+		print_iface_state(i,is);
+		prefresh(is->subpad,0,0,0,0,LINES,COLS);
 	}
 }
 
@@ -177,12 +181,13 @@ interface_callback(const interface *i,void *unsafe){
 	if((ret = unsafe) == NULL){
 		if( (ret = malloc(sizeof(iface_state))) ){
 			++ifaces;
-			ret->scrline = 3 + ifaces;
+			ret->scrline = START_LINE + ifaces * (PAD_LINES + 1);
 			ret->pkts = 0;
-			print_iface_state(pad,i,ret);
+			ret->subpad = pad;
+			print_iface_state(i,ret);
 		}
 	}
-	mvwprintw(pad,3,2,"events: %ju (most recent on %s)",++events,i->name);
+	mvwprintw(pad,START_LINE,START_COL,"events: %ju (most recent on %s)",++events,i->name);
 	prefresh(pad,0,0,0,0,LINES,COLS);
 	return ret;
 }
