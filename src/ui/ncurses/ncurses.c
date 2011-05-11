@@ -27,6 +27,7 @@ enum {
 static WINDOW *pad;
 static pthread_t inputtid;
 static struct utsname sysuts;
+static const interface *current_iface;
 static const char *glibc_version,*glibc_release;
 
 // FIXME do stuff here, proof of concept skeleton currently
@@ -206,23 +207,28 @@ static WINDOW *
 iface_box(WINDOW *parent,unsigned line,const interface *i){
 	int bcolor,hcolor;
 	WINDOW *w;
+	int attrs;
 
 	// FIXME shouldn't have to know IFF_UP out here
 	bcolor = (i->flags & IFF_UP) ? UBORDER_COLOR : DBORDER_COLOR;
 	hcolor = (i->flags & IFF_UP) ? UHEADING_COLOR : DHEADING_COLOR;
+	attrs = ((i == current_iface) ? A_REVERSE : 0) | A_BOLD;
 	if((w = subpad(parent,PAD_LINES,PAD_COLS,line,START_COL)) == NULL){
 		return NULL;
 	}
-	if(wcolor_set(w,bcolor,NULL) != OK){
+	if(wattron(w,attrs | COLOR_PAIR(bcolor)) != OK){
 		goto err;
 	}
 	if(box(w,0,0) != OK){
 		goto err;
 	}
+	if(wattroff(w,A_REVERSE)){
+		goto err;
+	}
 	if(mvwprintw(w,0,START_COL,"[") < 0){
 		goto err;
 	}
-	if(wattron(w,A_BOLD | COLOR_PAIR(hcolor)) != OK){
+	if(wcolor_set(w,hcolor,NULL)){
 		goto err;
 	}
 	if(waddstr(w,i->name) != OK){
@@ -251,13 +257,13 @@ iface_box(WINDOW *parent,unsigned line,const interface *i){
 			goto err;
 		}
 	}
-	if(wattroff(w,A_BOLD | COLOR_PAIR(hcolor)) != OK){
-		goto err;
-	}
-	if(wcolor_set(w,bcolor,NULL) != OK){
+	if(wcolor_set(w,bcolor,NULL)){
 		goto err;
 	}
 	if(wprintw(w,"]") < 0){
+		goto err;
+	}
+	if(wattroff(w,attrs) != OK){
 		goto err;
 	}
 	if(wcolor_set(w,0,NULL) != OK){
@@ -279,6 +285,9 @@ interface_callback(const interface *i,void *unsafe){
 		if( (ret = malloc(sizeof(iface_state))) ){
 			ret->scrline = START_LINE + ifaces * (PAD_LINES + 1);
 			ret->pkts = 0;
+			if(current_iface == NULL){
+				current_iface = i;
+			}
 			if( (ret->subpad = iface_box(pad,ret->scrline,i)) ){
 				if(i->flags & IFF_UP){
 					print_iface_state(i,ret);
@@ -287,6 +296,9 @@ interface_callback(const interface *i,void *unsafe){
 				touchwin(pad);
 				prefresh(pad,0,0,0,0,LINES,COLS);
 			}else{
+				if(current_iface == i){
+					current_iface = NULL;
+				}
 				free(ret);
 				ret = NULL;
 			}
