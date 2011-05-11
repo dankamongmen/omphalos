@@ -27,7 +27,7 @@ enum {
 static WINDOW *pad;
 static pthread_t inputtid;
 static struct utsname sysuts;
-static const interface *current_iface;
+static unsigned current_iface,count_interface;
 static const char *glibc_version,*glibc_release;
 
 // FIXME do stuff here, proof of concept skeleton currently
@@ -36,7 +36,22 @@ ncurses_input_thread(void *nil){
 	int ch;
 
 	if(!nil){
-		while((ch = getch()) != 'q' && ch != 'Q');
+		while((ch = getch()) != 'q' && ch != 'Q'){
+		switch(ch){
+			case KEY_UP: case 'k':
+				if(current_iface > 0){
+					--current_iface;
+				}
+				break;
+			case KEY_DOWN: case 'j':
+				if(current_iface < count_interface){
+					++current_iface;
+				}
+				break;
+			default:
+				break;
+		}
+		}
 		raise(SIGINT);
 	}
 	pthread_exit(NULL);
@@ -175,6 +190,7 @@ typedef struct iface_state {
 	int scrline;
 	WINDOW *subpad;
 	uintmax_t pkts;
+	unsigned iface_position;
 } iface_state;
 
 #define PAD_LINES 4
@@ -204,7 +220,7 @@ packet_callback(const interface *i,void *unsafe){
 }
 
 static WINDOW *
-iface_box(WINDOW *parent,unsigned line,const interface *i){
+iface_box(WINDOW *parent,unsigned line,const interface *i,const iface_state *is){
 	int bcolor,hcolor;
 	WINDOW *w;
 	int attrs;
@@ -212,7 +228,7 @@ iface_box(WINDOW *parent,unsigned line,const interface *i){
 	// FIXME shouldn't have to know IFF_UP out here
 	bcolor = (i->flags & IFF_UP) ? UBORDER_COLOR : DBORDER_COLOR;
 	hcolor = (i->flags & IFF_UP) ? UHEADING_COLOR : DHEADING_COLOR;
-	attrs = ((i == current_iface) ? A_REVERSE : 0) | A_BOLD;
+	attrs = ((is->iface_position == current_iface) ? A_REVERSE : 0) | A_BOLD;
 	if((w = subpad(parent,PAD_LINES,PAD_COLS,line,START_COL)) == NULL){
 		return NULL;
 	}
@@ -278,27 +294,23 @@ err:
 
 static void *
 interface_callback(const interface *i,void *unsafe){
-	static unsigned ifaces = 0; // FIXME
 	iface_state *ret;
 
 	if((ret = unsafe) == NULL){
 		if( (ret = malloc(sizeof(iface_state))) ){
-			ret->scrline = START_LINE + ifaces * (PAD_LINES + 1);
+			ret->scrline = START_LINE + count_interface * (PAD_LINES + 1);
 			ret->pkts = 0;
-			if(current_iface == NULL){
-				current_iface = i;
-			}
-			if( (ret->subpad = iface_box(pad,ret->scrline,i)) ){
+			if( (ret->subpad = iface_box(pad,ret->scrline,i,ret)) ){
 				if(i->flags & IFF_UP){
 					print_iface_state(i,ret);
 				}
-				++ifaces;
+				ret->iface_position = ++count_interface;
 				touchwin(pad);
 				prefresh(pad,0,0,0,0,LINES,COLS);
-			}else{
-				if(current_iface == i){
-					current_iface = NULL;
+				if(current_iface == 0){
+					current_iface = 1;
 				}
+			}else{
 				free(ret);
 				ret = NULL;
 			}
