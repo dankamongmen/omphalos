@@ -1,4 +1,5 @@
 #include <errno.h>
+#include <ctype.h>
 #include <stdarg.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -230,14 +231,18 @@ ncurses_input_thread(void *nil){
 				pthread_mutex_unlock(&bfl);
 				break;
 			case 'h':
-				wstatus(pad,"there is no help here");
+				wstatus(pad,"there is no help here"); // FIXME
 				break;
 			default:
-				wstatus(pad,"unknown keypress");
-				// FIXME print 'unknown keypress 'h' for help' status
+				if(isprint(ch)){
+					wstatus(pad,"unknown command '%c' ('h' for help)",ch);
+				}else{
+					wstatus(pad,"unknown scancode '%d' ('h' for help)",ch);
+				}
 				break;
 		}
 		}
+		wstatus(pad,"shutting down");
 		raise(SIGINT);
 	}
 	pthread_exit(NULL);
