@@ -7,6 +7,7 @@
 #include <netinet/in.h>
 #include <linux/if_addr.h>
 #include <linux/netlink.h>
+#include <linux/version.h>
 #include <linux/rtnetlink.h>
 
 int netlink_socket(void){
@@ -262,7 +263,7 @@ handle_rtm_newroute(const struct nlmsghdr *nl){
 	size_t flen;
 	route r;
 
-	oif = -1;
+	iif = oif = -1;
 	memset(&r,0,sizeof(r));
 	switch( (r.family = rt->rtm_family) ){
 	case AF_INET:{
@@ -332,7 +333,9 @@ handle_rtm_newroute(const struct nlmsghdr *nl){
 		// break;}case RTA_SESSION:{ // unused
 		// break;}case RTA_MP_ALGO:{ // unused
 		break;}case RTA_TABLE:{
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,36)
 		break;}case RTA_MARK:{
+#endif
 		break;}default:{
 			fprintf(stderr,"Unknown rtatype %u\n",ra->rta_type);
 		break;}}
@@ -482,11 +485,15 @@ handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 			break;}case IFLA_LINKINFO:{
 			break;}case IFLA_NET_NS_PID:{
 			break;}case IFLA_IFALIAS:{
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,34)
 			break;}case IFLA_NUM_VF:{
 			break;}case IFLA_STATS64:{
+				// see http://git390.marist.edu/cgi-bin/gitweb.cgi?p=linux-2.6.git;a=commitdiff_plain;h=10708f37ae729baba9b67bd134c3720709d4ae62
+				// added in 2.6.35-rc1
 			break;}case IFLA_VF_PORTS:{
 			break;}case IFLA_PORT_SELF:{
 			break;}case IFLA_AF_SPEC:{
+#endif
 			break;}default:{
 				fprintf(stderr,"Unknown iflatype %u\n",ra->rta_type);
 			break;}
