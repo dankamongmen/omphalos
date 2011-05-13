@@ -50,60 +50,6 @@ static const iface_state *current_iface;
 static const char *glibc_version,*glibc_release;
 
 static int
-wstatus(WINDOW *w,const char *fmt,...){
-	int rows,cols,ret;
-	va_list va;
-	char *buf;
-
-	// FIXME need set and reset attrs
-	getmaxyx(w,rows,cols);
-	if(cols <= START_COL){
-		return -1;
-	}
-	if((buf = malloc(cols - START_COL)) == NULL){
-		return -1;
-	}
-	va_start(va,fmt);
-	vsnprintf(buf,cols - START_COL,fmt,va);
-	va_end(va);
-	ret = mvprintw(rows,START_COL,"%s",buf);
-	free(buf);
-	return ret;
-}
-
-// FIXME do stuff here, proof of concept skeleton currently
-static void *
-ncurses_input_thread(void *nil){
-	int ch;
-
-	if(!nil){
-		while((ch = getch()) != 'q' && ch != 'Q'){
-		switch(ch){
-			case KEY_UP: case 'k':
-				if(current_iface->prev){
-					current_iface = current_iface->prev;
-				}
-				break;
-			case KEY_DOWN: case 'j':
-				if(current_iface->next){
-					current_iface = current_iface->next;
-				}
-				break;
-			case 'h':
-				wstatus(pad,"there is no help here");
-				break;
-			default:
-				wstatus(pad,"unknown keypress");
-				// FIXME print 'unknown keypress 'h' for help' status
-				break;
-		}
-		}
-		raise(SIGINT);
-	}
-	pthread_exit(NULL);
-}
-
-static int
 draw_main_window(WINDOW *w,const char *name,const char *ver){
 	if(wcolor_set(w,BORDER_COLOR,NULL) != OK){
 		return -1;
@@ -136,10 +82,70 @@ draw_main_window(WINDOW *w,const char *name,const char *ver){
 	if(wcolor_set(w,0,NULL) != OK){
 		return -1;
 	}
-	if(pthread_create(&inputtid,NULL,ncurses_input_thread,NULL)){
+	return 0;
+}
+
+// NULL fmt clears the status bar
+static int
+wstatus(WINDOW *w,const char *fmt,...){
+	int rows,cols,ret;
+	va_list va;
+	char *buf;
+
+	// FIXME need set and reset attrs
+	getmaxyx(w,rows,cols);
+	if(fmt == NULL){
+		return draw_main_window(w,PROGNAME,VERSION);
+	}
+	if(cols <= START_COL){
 		return -1;
 	}
-	return 0;
+	if((buf = malloc(cols - START_COL)) == NULL){
+		return -1;
+	}
+	va_start(va,fmt);
+	vsnprintf(buf,cols - START_COL,fmt,va);
+	va_end(va);
+	ret = mvprintw(rows - 1,START_COL,"%s",buf);
+	free(buf);
+	if(ret == OK){
+		// FIXME whole screen isn't always appropriate
+		ret = prefresh(w,0,0,0,0,LINES,COLS);
+	}
+	return ret;
+}
+
+// FIXME do stuff here, proof of concept skeleton currently
+static void *
+ncurses_input_thread(void *nil){
+	int ch;
+
+	if(!nil){
+		while((ch = getch()) != 'q' && ch != 'Q'){
+		wstatus(pad,NULL);
+		switch(ch){
+			case KEY_UP: case 'k':
+				if(current_iface->prev){
+					current_iface = current_iface->prev;
+				}
+				break;
+			case KEY_DOWN: case 'j':
+				if(current_iface->next){
+					current_iface = current_iface->next;
+				}
+				break;
+			case 'h':
+				wstatus(pad,"there is no help here");
+				break;
+			default:
+				wstatus(pad,"unknown keypress");
+				// FIXME print 'unknown keypress 'h' for help' status
+				break;
+		}
+		}
+		raise(SIGINT);
+	}
+	pthread_exit(NULL);
 }
 
 // Cleanup which ought be performed even if we had a failure elsewhere, or
@@ -221,6 +227,10 @@ ncurses_setup(WINDOW **mainwin){
 	}
 	if(draw_main_window(w,PROGNAME,VERSION)){
 		fprintf(stderr,"Couldn't use ncurses\n");
+		goto err;
+	}
+	if(pthread_create(&inputtid,NULL,ncurses_input_thread,NULL)){
+		fprintf(stderr,"Couldn't create UI thread\n");
 		goto err;
 	}
 	return w;
