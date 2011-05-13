@@ -74,10 +74,6 @@ iface_box(WINDOW *w,const interface *i,const iface_state *is){
 	if(wcolor_set(w,hcolor,NULL)){
 		goto err;
 	}
-	if(wprintw(w,"%s",i->name) == ERR){
-		goto err;
-	}
-	/*
 	if(waddstr(w,i->name) == ERR){
 		goto err;
 	}
@@ -104,7 +100,6 @@ iface_box(WINDOW *w,const interface *i,const iface_state *is){
 			goto err;
 		}
 	}
-	*/
 	if(wcolor_set(w,bcolor,NULL)){
 		goto err;
 	}
