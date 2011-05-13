@@ -160,6 +160,7 @@ wstatus(WINDOW *w,const char *fmt,...){
 	va_list va;
 	char *buf;
 
+	// FIXME need lock the BFL!
 	// FIXME need set and reset attrs
 	getmaxyx(w,rows,cols);
 	if(fmt == NULL){
@@ -193,6 +194,7 @@ ncurses_input_thread(void *nil){
 		wstatus(pad,NULL);
 		switch(ch){
 			case KEY_UP: case 'k':
+				pthread_mutex_lock(&bfl);
 				if(current_iface->prev){
 					const iface_state *is = current_iface;
 					interface *i = iface_by_idx(is->ifacenum);
@@ -203,8 +205,10 @@ ncurses_input_thread(void *nil){
 					i = iface_by_idx(is->ifacenum);
 					iface_box(is->subpad,i,is);
 				}
+				pthread_mutex_unlock(&bfl);
 				break;
 			case KEY_DOWN: case 'j':
+				pthread_mutex_lock(&bfl);
 				if(current_iface->next){
 					const iface_state *is = current_iface;
 					interface *i = iface_by_idx(is->ifacenum);
@@ -215,6 +219,7 @@ ncurses_input_thread(void *nil){
 					i = iface_by_idx(is->ifacenum);
 					iface_box(is->subpad,i,is);
 				}
+				pthread_mutex_unlock(&bfl);
 				break;
 			case 'h':
 				wstatus(pad,"there is no help here");
@@ -261,6 +266,10 @@ ncurses_setup(WINDOW **mainwin){
 	}
 	if((w = newpad(LINES,COLS)) == NULL){
 		fprintf(stderr,"Couldn't initialize main pad\n");
+		goto err;
+	}
+	if(keypad(stdscr,TRUE) != OK){
+		fprintf(stderr,"Couldn't enable keypad input\n");
 		goto err;
 	}
 	if(cbreak() != OK){
