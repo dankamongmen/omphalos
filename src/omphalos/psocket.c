@@ -27,11 +27,11 @@ static const unsigned MAX_FRAME_SIZE = 1518; // FIXME get from device
 static const unsigned MMAP_BLOCK_COUNT = 32768; // FIXME do better
 
 // See packet(7) and Documentation/networking/packet_mmap.txt
-int packet_socket(unsigned protocol){
+int packet_socket(const omphalos_iface *pctx,unsigned protocol){
 	int fd;
 
 	if((fd = socket(AF_PACKET,SOCK_RAW,ntohs(protocol))) < 0){
-		fprintf(stderr,"Couldn't open packet socket (%s?)\n",strerror(errno));
+		pctx->diagnostic("Couldn't open packet socket (%s?)\n",strerror(errno));
 		return -1;
 	}
 	return fd;
@@ -339,7 +339,7 @@ int handle_packet_socket(const omphalos_ctx *pctx){
 	void *rxm;
 	size_t rs;
 
-	if((rfd = packet_socket(ETH_P_ALL)) < 0){
+	if((rfd = packet_socket(&pctx->iface,ETH_P_ALL)) < 0){
 		return -1;
 	}
 	if((rs = mmap_rx_psocket(rfd,&rxm,&rtpr)) == 0){

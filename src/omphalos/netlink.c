@@ -517,7 +517,7 @@ handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	}
 	iface->flags = ii->ifi_flags;
 	if(iface->fd < 0){
-		if((iface->fd = packet_socket(ETH_P_ALL)) < 0){
+		if((iface->fd = packet_socket(octx,ETH_P_ALL)) < 0){
 			return -1;
 		}
 		if((iface->ts = mmap_tx_psocket(iface->fd,ii->ifi_index,&iface->txm,&iface->ttpr)) == 0){

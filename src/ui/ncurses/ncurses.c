@@ -155,9 +155,8 @@ draw_main_window(WINDOW *w,const char *name,const char *ver){
 
 // NULL fmt clears the status bar
 static int
-wstatus(WINDOW *w,const char *fmt,...){
+wvstatus(WINDOW *w,const char *fmt,va_list va){
 	int rows,cols,ret;
-	va_list va;
 	char *buf;
 
 	if(fmt == NULL){
@@ -175,18 +174,24 @@ wstatus(WINDOW *w,const char *fmt,...){
 	if((buf = malloc(cols - START_COL)) == NULL){
 		return -1;
 	}
-	va_start(va,fmt);
 	vsnprintf(buf,cols - START_COL,fmt,va);
-	va_end(va);
 	ret = mvprintw(rows - 1,START_COL,"%s",buf);
-	free(buf);
 	if(ret == OK){
 		// FIXME whole screen isn't always appropriate
 		ret = prefresh(w,0,0,0,0,LINES,COLS);
 	}
-	if(ret != OK){
-		abort();
-	}
+	return ret;
+}
+
+// NULL fmt clears the status bar
+static int
+wstatus(WINDOW *w,const char *fmt,...){
+	va_list va;
+	int ret;
+
+	va_start(va,fmt);
+	ret = wvstatus(w,fmt,va);
+	va_end(va);
 	return ret;
 }
 
@@ -427,6 +432,15 @@ interface_removed_callback(const interface *i __attribute__ ((unused)),void *uns
 	pthread_mutex_unlock(&bfl);
 }
 
+static void
+diag_callback(const char *fmt,...){
+	va_list va;
+
+	va_start(va,fmt);
+	wvstatus(pad,fmt,va);
+	va_end(va);
+}
+
 int main(int argc,char * const *argv){
 	omphalos_ctx pctx;
 	WINDOW *w;
@@ -450,6 +464,7 @@ int main(int argc,char * const *argv){
 	pctx.iface.packet_read = packet_callback;
 	pctx.iface.iface_event = interface_callback;
 	pctx.iface.iface_removed = interface_removed_callback;
+	pctx.iface.diagnostic = diag_callback;
 	if(omphalos_init(&pctx)){
 		goto err;
 	}

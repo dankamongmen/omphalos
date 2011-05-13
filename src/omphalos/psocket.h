@@ -7,9 +7,10 @@ extern "C" {
 
 struct tpacket_req;
 struct omphalos_ctx;
+struct omphalos_iface;
 
 // Open a packet socket. Requires superuser or network admin capabilities.
-int packet_socket(unsigned);
+int packet_socket(const struct omphalos_iface *,unsigned);
 
 // Returns the size of the map, or 0 if the operation fails (in this case,
 // map will be set to MAP_FAILED).
