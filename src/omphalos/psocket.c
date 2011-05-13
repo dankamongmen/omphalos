@@ -31,7 +31,7 @@ int packet_socket(const omphalos_iface *pctx,unsigned protocol){
 	int fd;
 
 	if((fd = socket(AF_PACKET,SOCK_RAW,ntohs(protocol))) < 0){
-		pctx->diagnostic("Couldn't open packet socket (%s?)\n",strerror(errno));
+		pctx->diagnostic("Couldn't open packet socket (%s?)",strerror(errno));
 		return -1;
 	}
 	return fd;
@@ -286,7 +286,7 @@ handle_ring_packet(const omphalos_iface *octx,int fd,void *frame){
 		fprintf(stderr,"FUCK ME; THE RINGBUFFER'S FULL!\n");
 	}
 	++iface->frames;
-	handle_ethernet_packet(iface,(char *)frame + thdr->tp_mac,thdr->tp_len);
+	handle_ethernet_packet(octx,iface,(char *)frame + thdr->tp_mac,thdr->tp_len);
 	if(octx->packet_read){
 		octx->packet_read(iface,iface->opaque);
 	}

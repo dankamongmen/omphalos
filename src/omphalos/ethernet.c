@@ -6,11 +6,12 @@
 #include <linux/if_ether.h>
 #include <omphalos/hwaddrs.h>
 #include <omphalos/ethernet.h>
+#include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
 
-#include <stdio.h>
 static void
-handle_8021q(interface *i,const void *frame,size_t len){
+handle_8021q(const omphalos_iface *octx,interface *i,const void *frame,
+						size_t len){
 	const struct ethhdr *hdr = frame;
 	const unsigned char *type;
 	uint16_t proto;
@@ -19,8 +20,8 @@ handle_8021q(interface *i,const void *frame,size_t len){
 	
 	// l2s and l2d were already looked up; pass them in if we need 'em
 	if(len < sizeof(*hdr) + 4){
-		printf("%s malformed with %zu\n",__func__,len);
 		++i->malformed;
+		octx->diagnostic("%s malformed with %zu",__func__,len);
 		return;
 	}
 	type = ((const unsigned char *)frame + ETH_ALEN * 2 + 4);
@@ -40,19 +41,20 @@ handle_8021q(interface *i,const void *frame,size_t len){
 		if(proto <= 1500){
 			// FIXME handle IEEE 802.3
 		}else{
-			printf("%s %s noproto for 0x%x\n",__func__,i->name,proto);
 			++i->noprotocol;
+			octx->diagnostic("%s %s noproto for 0x%x",__func__,i->name,proto);
 		}
 	break;} }
 }
 
-void handle_ethernet_packet(interface *i,const void *frame,size_t len){
+void handle_ethernet_packet(const omphalos_iface *octx,interface *i,
+					const void *frame,size_t len){
 	const struct ethhdr *hdr = frame;
 	struct l2host *l2s,*l2d;
 
 	if(len < sizeof(*hdr)){
-		printf("%s malformed with %zu\n",__func__,len);
 		++i->malformed;
+		octx->diagnostic("%s malformed with %zu",__func__,len);
 		return;
 	}
 	if( (l2s = lookup_l2host(hdr->h_source,ETH_ALEN)) ){
@@ -75,13 +77,13 @@ void handle_ethernet_packet(interface *i,const void *frame,size_t len){
 					handle_eapol_packet(i,dgram,dlen);
 					break;
 				}case ETH_P_8021Q:{
-					handle_8021q(i,frame,len);
+					handle_8021q(octx,i,frame,len);
 					break;
 				}default:{
 					if(proto <= 1500){
 						// FIXME handle IEEE 802.3
 					}else{
-						printf("%s %s noproto for 0x%x\n",__func__,i->name,proto);
+						octx->diagnostic("%s %s noproto for 0x%x",__func__,i->name,proto);
 						++i->noprotocol;
 					}
 					break;

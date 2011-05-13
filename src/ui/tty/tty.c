@@ -84,6 +84,7 @@ diag_callback(const char *fmt,...){
 
 	va_start(va,fmt);
 	vfprintf(stderr,fmt,va);
+	fprintf(stderr,"\n");
 	va_end(va);
 }
 

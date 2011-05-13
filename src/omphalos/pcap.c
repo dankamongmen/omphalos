@@ -28,11 +28,11 @@ handle_pcap_ethernet(u_char *gi,const struct pcap_pkthdr *h,const u_char *bytes)
 
 	++iface->frames;
 	if(h->caplen != h->len){
-		fprintf(stderr,"Partial capture (%u/%ub)\n",h->caplen,h->len);
 		++iface->truncated;
+		pm->octx->diagnostic("Partial capture (%u/%ub)",h->caplen,h->len);
 		return;
 	}
-	handle_ethernet_packet(iface,bytes,h->len);
+	handle_ethernet_packet(pm->octx,iface,bytes,h->len);
 	if(pm->octx->packet_read){
 		pm->octx->packet_read(iface,iface->opaque);
 	}
@@ -53,7 +53,7 @@ handle_pcap_cooked(u_char *gi,const struct pcap_pkthdr *h,const u_char *bytes){
 
 	++iface->frames;
 	if(h->caplen != h->len){
-		fprintf(stderr,"Partial capture (%u/%ub)\n",h->caplen,h->len);
+		pm->octx->diagnostic("Partial capture (%u/%ub)",h->caplen,h->len);
 		++iface->truncated;
 		return;
 	}
