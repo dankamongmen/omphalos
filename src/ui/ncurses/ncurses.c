@@ -154,19 +154,15 @@ draw_main_window(WINDOW *w,const char *name,const char *ver){
 	return 0;
 }
 
-// NULL fmt clears the status bar
 static int
-wvstatus(WINDOW *w,const char *fmt,va_list va){
+wvstatus_locked(WINDOW *w,const char *fmt,va_list va){
 	int rows,cols,ret;
 	char *buf;
 
 	if(fmt == NULL){
-		pthread_mutex_lock(&bfl);
 		ret = draw_main_window(w,PROGNAME,VERSION);
-		pthread_mutex_unlock(&bfl);
 		return ret;
 	}
-	// FIXME need lock the BFL!
 	// FIXME need set and reset attrs
 	getmaxyx(w,rows,cols);
 	if(cols <= START_COL){
@@ -181,6 +177,17 @@ wvstatus(WINDOW *w,const char *fmt,va_list va){
 		// FIXME whole screen isn't always appropriate
 		ret = prefresh(w,0,0,0,0,LINES,COLS);
 	}
+	return ret;
+}
+
+// NULL fmt clears the status bar
+static int
+wvstatus(WINDOW *w,const char *fmt,va_list va){
+	int ret;
+
+	pthread_mutex_lock(&bfl);
+	ret = wvstatus_locked(w,fmt,va);
+	pthread_mutex_unlock(&bfl);
 	return ret;
 }
 
