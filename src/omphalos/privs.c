@@ -24,7 +24,7 @@ drop_privs(const char *name){
 		fprintf(stderr,"Couldn't setuid to %u (%s?)\n",pw->pw_uid,strerror(errno));
 		return -1;
 	}
-	if((cap = cap_get_pid(getpid())) == NULL){
+	if((cap = cap_get_proc()) == NULL){
 		return -1;
 	}
 	if(cap_set_flag(cap,CAP_EFFECTIVE,sizeof(caparray) / sizeof(*caparray),
