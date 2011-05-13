@@ -11,6 +11,14 @@ usage () { usageerr >&2 ; return 1 ; }
 
 [ $# -ge 1 ] || usage
 
-for i in "$@" ; do
-	setcap "= cap_net_admin,cap_net_raw=ep" "$i"
-done
+if SETCAP="`which setcap`" ; then
+	for i in "$@" ; do
+		"$SETCAP" "= cap_net_admin,cap_net_raw=ep" "$i"
+	done
+else
+	for i in "$@" ; do
+		chown root:root "$i"
+		chmod +s "$i"
+	done
+fi
+
