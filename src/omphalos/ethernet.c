@@ -38,7 +38,7 @@ handle_8021q(const omphalos_iface *octx,interface *i,const void *frame,
 	break;}case ETH_P_PAE:{
 		handle_eapol_packet(i,dgram,dlen);
 	break;}default:{
-		if(proto <= 1500){
+		if(proto <= ETH_DATA_LEN){
 			// FIXME handle IEEE 802.3
 		}else{
 			++i->noprotocol;
@@ -80,7 +80,7 @@ void handle_ethernet_packet(const omphalos_iface *octx,interface *i,
 					handle_8021q(octx,i,frame,len);
 					break;
 				}default:{
-					if(proto <= 1500){
+					if(proto <= ETH_DATA_LEN){
 						// FIXME handle IEEE 802.3
 					}else{
 						octx->diagnostic("%s %s noproto for 0x%x",__func__,i->name,proto);
