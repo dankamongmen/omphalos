@@ -74,7 +74,11 @@ iface_box(WINDOW *w,const interface *i,const iface_state *is){
 	if(wcolor_set(w,hcolor,NULL)){
 		goto err;
 	}
-	if(waddstr(w,i->name) != OK){
+	if(wprintw(w,"%s",i->name) == ERR){
+		goto err;
+	}
+	/*
+	if(waddstr(w,i->name) == ERR){
 		goto err;
 	}
 	if(strlen(i->drv.driver)){
@@ -100,6 +104,7 @@ iface_box(WINDOW *w,const interface *i,const iface_state *is){
 			goto err;
 		}
 	}
+	*/
 	if(wcolor_set(w,bcolor,NULL)){
 		goto err;
 	}
@@ -115,6 +120,7 @@ iface_box(WINDOW *w,const interface *i,const iface_state *is){
 	return 0;
 
 err:
+	abort();
 	return -1;
 }
 
@@ -214,7 +220,7 @@ ncurses_input_thread(void *nil){
 		switch(ch){
 			case KEY_UP: case 'k':
 				pthread_mutex_lock(&bfl);
-				if(current_iface->prev){
+				if(current_iface && current_iface->prev){
 					const iface_state *is = current_iface;
 					interface *i = iface_by_idx(is->ifacenum);
 
@@ -223,13 +229,13 @@ ncurses_input_thread(void *nil){
 					is = current_iface;
 					i = iface_by_idx(is->ifacenum);
 					iface_box(is->subpad,i,is);
+					prefresh(pad,0,0,0,0,LINES,COLS);
 				}
-				prefresh(pad,0,0,0,0,LINES,COLS);
 				pthread_mutex_unlock(&bfl);
 				break;
 			case KEY_DOWN: case 'j':
 				pthread_mutex_lock(&bfl);
-				if(current_iface->next){
+				if(current_iface && current_iface->next){
 					const iface_state *is = current_iface;
 					interface *i = iface_by_idx(is->ifacenum);
 
@@ -238,8 +244,8 @@ ncurses_input_thread(void *nil){
 					is = current_iface;
 					i = iface_by_idx(is->ifacenum);
 					iface_box(is->subpad,i,is);
+					prefresh(pad,0,0,0,0,LINES,COLS);
 				}
-				prefresh(pad,0,0,0,0,LINES,COLS);
 				pthread_mutex_unlock(&bfl);
 				break;
 			case 'h':
@@ -383,10 +389,11 @@ packet_callback(const interface *i __attribute__ ((unused)),void *unsafe){
 }
 
 static inline void *
-interface_cb_locked(const interface *i,iface_state *ret){
+interface_cb_locked(const interface *i,int inum,iface_state *ret){
 	if(ret == NULL){
 		if( (ret = malloc(sizeof(iface_state))) ){
 			ret->scrline = START_LINE + count_interface * (PAD_LINES + 1);
+			ret->ifacenum = inum;
 			if((ret->prev = current_iface) == NULL){
 				current_iface = ret;
 				ret->next = NULL;
@@ -420,11 +427,11 @@ interface_cb_locked(const interface *i,iface_state *ret){
 }
 
 static void *
-interface_callback(const interface *i,void *unsafe){
+interface_callback(const interface *i,int inum,void *unsafe){
 	void *r;
 
 	pthread_mutex_lock(&bfl);
-	r = interface_cb_locked(i,unsafe);
+	r = interface_cb_locked(i,inum,unsafe);
 	pthread_mutex_unlock(&bfl);
 	return r;
 }

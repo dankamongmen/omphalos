@@ -54,7 +54,8 @@ dump_output(FILE *fp){
 }
 
 static void *
-iface_event(const interface *i,void *unsafe __attribute__ ((unused))){
+iface_event(const interface *i,int inum __attribute__ ((unused)),
+			void *unsafe __attribute__ ((unused))){
 	print_iface(stdout,i);
 	return NULL;
 }

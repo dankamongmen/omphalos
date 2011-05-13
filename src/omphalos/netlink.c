@@ -529,7 +529,7 @@ handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 		}
 	}
 	if(octx->iface_event){
-		iface->opaque = octx->iface_event(iface,iface->opaque);
+		iface->opaque = octx->iface_event(iface,ii->ifi_index,iface->opaque);
 	}
 	return 0;
 }
