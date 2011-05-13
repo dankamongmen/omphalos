@@ -74,7 +74,7 @@ handle_igmp_packet(interface *i,const void *frame,size_t len){
 
 void handle_ipv4_packet(interface *i,const void *frame,size_t len){
 	const struct iphdr *ip = frame;
-	struct iphost *ips,*ipd;
+	//struct iphost *ips,*ipd;
 	unsigned hlen;
 
 	if(len < sizeof(*ip)){
@@ -98,8 +98,8 @@ void handle_ipv4_packet(interface *i,const void *frame,size_t len){
 		++i->malformed;
 		return;
 	}
-	ips = lookup_iphost(i,&ip->saddr);
-	ipd = lookup_iphost(i,&ip->daddr);
+	/*ips = lookup_iphost(i,&ip->saddr);
+	ipd = lookup_iphost(i,&ip->daddr);*/
 
 	const void *nhdr = (const unsigned char *)frame + hlen;
 	const size_t nlen = ntohs(ip->tot_len) - hlen;
