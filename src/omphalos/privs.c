@@ -24,11 +24,12 @@ drop_privs(const char *name){
 		fprintf(stderr,"Couldn't setuid to %u (%s?)\n",pw->pw_uid,strerror(errno));
 		return -1;
 	}
-	if((cap = cap_get_pid(getpid())) == NULL){
+	if((cap = cap_get_proc()) == NULL){
 		return -1;
 	}
+	// older cap_set_flag() is missing the const on its third argument :/
 	if(cap_set_flag(cap,CAP_EFFECTIVE,sizeof(caparray) / sizeof(*caparray),
-				caparray,CAP_SET)){
+				(cap_value_t *)caparray,CAP_SET)){
 		cap_free(cap);
 		return -1;
 	}
@@ -47,7 +48,7 @@ int handle_priv_drop(const char *name){
 	if(strlen(name) == 0){ // empty string disables permissions drop
 		return 0;
 	}
-	if((cap = cap_get_pid(getpid())) == NULL){
+	if((cap = cap_get_proc()) == NULL){
 		return -1;
 	}
 	if(cap_get_flag(cap,CAP_SETUID,CAP_EFFECTIVE,&val)){

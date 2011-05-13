@@ -1,4 +1,4 @@
-#include <bits/sockaddr.h>
+#include <sys/types.h>
 #include <linux/udp.h>
 #include <omphalos/udp.h>
 #include <omphalos/interface.h>

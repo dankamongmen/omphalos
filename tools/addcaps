@@ -5,13 +5,21 @@
 
 set -e
 set -o nounset
-set -o pipefail
 
 usageerr () { echo "usage: `basename $0` executable" ; }
 usage () { usageerr >&2 ; return 1 ; }
 
 [ $# -ge 1 ] || usage
 
-for i in "$@" ; do
-	setcap "= cap_net_admin,cap_net_raw=ep" "$i"
-done
+if SETCAP="`which setcap`" ; then
+	for i in "$@" ; do
+		"$SETCAP" "= cap_net_admin,cap_net_raw=ep" "$i"
+	done
+else
+	echo "Couldn't find the 'setcap' binary, using setuid..." >&2
+	for i in "$@" ; do
+		chown root:root "$i"
+		chmod +s "$i"
+	done
+fi
+

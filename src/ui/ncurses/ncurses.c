@@ -156,9 +156,8 @@ draw_main_window(WINDOW *w,const char *name,const char *ver){
 
 // NULL fmt clears the status bar
 static int
-wstatus(WINDOW *w,const char *fmt,...){
+wvstatus(WINDOW *w,const char *fmt,va_list va){
 	int rows,cols,ret;
-	va_list va;
 	char *buf;
 
 	if(fmt == NULL){
@@ -176,18 +175,24 @@ wstatus(WINDOW *w,const char *fmt,...){
 	if((buf = malloc(cols - START_COL)) == NULL){
 		return -1;
 	}
-	va_start(va,fmt);
 	vsnprintf(buf,cols - START_COL,fmt,va);
-	va_end(va);
 	ret = mvprintw(rows - 1,START_COL,"%s",buf);
-	free(buf);
 	if(ret == OK){
 		// FIXME whole screen isn't always appropriate
 		ret = prefresh(w,0,0,0,0,LINES,COLS);
 	}
-	if(ret != OK){
-		abort();
-	}
+	return ret;
+}
+
+// NULL fmt clears the status bar
+static int
+wstatus(WINDOW *w,const char *fmt,...){
+	va_list va;
+	int ret;
+
+	va_start(va,fmt);
+	ret = wvstatus(w,fmt,va);
+	va_end(va);
 	return ret;
 }
 
@@ -277,18 +282,6 @@ ncurses_setup(WINDOW **mainwin){
 		fprintf(stderr,"Couldn't initialize ncurses\n");
 		goto err;
 	}
-	if((w = newpad(LINES,COLS)) == NULL){
-		fprintf(stderr,"Couldn't initialize main pad\n");
-		goto err;
-	}
-	if(keypad(stdscr,TRUE) != OK){
-		fprintf(stderr,"Couldn't enable keypad input\n");
-		goto err;
-	}
-	if(cbreak() != OK){
-		fprintf(stderr,"Couldn't disable input buffering\n");
-		goto err;
-	}
 	if(noecho() != OK){
 		fprintf(stderr,"Couldn't disable input echoing\n");
 		goto err;
@@ -300,6 +293,17 @@ ncurses_setup(WINDOW **mainwin){
 	if(use_default_colors()){
 		fprintf(stderr,"Couldn't initialize ncurses colordefs\n");
 		goto err;
+	}
+	if((w = newpad(LINES,COLS)) == NULL){
+		fprintf(stderr,"Couldn't initialize main pad\n");
+		goto err;
+	}
+	if(cbreak() != OK){
+		fprintf(stderr,"Couldn't disable input buffering\n");
+		goto err;
+	}
+	if(keypad(stdscr,TRUE) != OK){
+		fprintf(stderr,"Warning: couldn't enable keypad input\n");
 	}
 	if(init_pair(BORDER_COLOR,COLOR_GREEN,-1) != OK){
 		fprintf(stderr,"Couldn't initialize ncurses colorpair\n");
@@ -342,6 +346,7 @@ ncurses_setup(WINDOW **mainwin){
 err:
 	mandatory_cleanup(*mainwin,w);
 	*mainwin = NULL;
+	fprintf(stderr,"Error while preparing ncurses\n");
 	return NULL;
 }
 
@@ -432,6 +437,15 @@ interface_removed_callback(const interface *i __attribute__ ((unused)),void *uns
 	pthread_mutex_unlock(&bfl);
 }
 
+static void
+diag_callback(const char *fmt,...){
+	va_list va;
+
+	va_start(va,fmt);
+	wvstatus(pad,fmt,va);
+	va_end(va);
+}
+
 int main(int argc,char * const *argv){
 	omphalos_ctx pctx;
 	WINDOW *w;
@@ -446,15 +460,16 @@ int main(int argc,char * const *argv){
 	}
 	glibc_version = gnu_get_libc_version();
 	glibc_release = gnu_get_libc_release();
-	if((pad = ncurses_setup(&w)) == NULL){
+	if(omphalos_setup(argc,argv,&pctx)){
 		return EXIT_FAILURE;
 	}
-	if(omphalos_setup(argc,argv,&pctx)){
+	if((pad = ncurses_setup(&w)) == NULL){
 		return EXIT_FAILURE;
 	}
 	pctx.iface.packet_read = packet_callback;
 	pctx.iface.iface_event = interface_callback;
 	pctx.iface.iface_removed = interface_removed_callback;
+	pctx.iface.diagnostic = diag_callback;
 	if(omphalos_init(&pctx)){
 		goto err;
 	}
