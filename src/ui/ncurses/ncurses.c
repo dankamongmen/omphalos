@@ -46,8 +46,76 @@ static WINDOW *pad;
 static pthread_t inputtid;
 static struct utsname sysuts;
 static unsigned count_interface;
-static const iface_state *current_iface;
+static iface_state *current_iface;
 static const char *glibc_version,*glibc_release;
+
+static int
+iface_box(WINDOW *w,const interface *i,const iface_state *is){
+	int bcolor,hcolor;
+	int attrs;
+
+	// FIXME shouldn't have to know IFF_UP out here
+	bcolor = (i->flags & IFF_UP) ? UBORDER_COLOR : DBORDER_COLOR;
+	hcolor = (i->flags & IFF_UP) ? UHEADING_COLOR : DHEADING_COLOR;
+	attrs = ((is == current_iface) ? A_REVERSE : 0) | A_BOLD;
+	if(wattron(w,attrs | COLOR_PAIR(bcolor)) != OK){
+		goto err;
+	}
+	if(box(w,0,0) != OK){
+		goto err;
+	}
+	if(wattroff(w,A_REVERSE)){
+		goto err;
+	}
+	if(mvwprintw(w,0,START_COL,"[") < 0){
+		goto err;
+	}
+	if(wcolor_set(w,hcolor,NULL)){
+		goto err;
+	}
+	if(waddstr(w,i->name) != OK){
+		goto err;
+	}
+	if(strlen(i->drv.driver)){
+		if(wprintw(w," (%s",i->drv.driver) != OK){
+			goto err;
+		}
+		if(strlen(i->drv.version)){
+			if(wprintw(w," %s",i->drv.version) != OK){
+				goto err;
+			}
+		}
+		if(strlen(i->drv.fw_version)){
+			if(wprintw(w," fw %s",i->drv.fw_version) != OK){
+				goto err;
+			}
+		}
+		if(waddch(w,')') != OK){
+			goto err;
+		}
+	}
+	if(strlen(i->drv.bus_info)){
+		if(wprintw(w," @ %s",i->drv.bus_info) != OK){
+			goto err;
+		}
+	}
+	if(wcolor_set(w,bcolor,NULL)){
+		goto err;
+	}
+	if(wprintw(w,"]") < 0){
+		goto err;
+	}
+	if(wattroff(w,attrs) != OK){
+		goto err;
+	}
+	if(wcolor_set(w,0,NULL) != OK){
+		goto err;
+	}
+	return 0;
+
+err:
+	return -1;
+}
 
 static int
 draw_main_window(WINDOW *w,const char *name,const char *ver){
@@ -126,12 +194,26 @@ ncurses_input_thread(void *nil){
 		switch(ch){
 			case KEY_UP: case 'k':
 				if(current_iface->prev){
+					const iface_state *is = current_iface;
+					interface *i = iface_by_idx(is->ifacenum);
+
 					current_iface = current_iface->prev;
+					iface_box(is->subpad,i,is);
+					is = current_iface;
+					i = iface_by_idx(is->ifacenum);
+					iface_box(is->subpad,i,is);
 				}
 				break;
 			case KEY_DOWN: case 'j':
 				if(current_iface->next){
+					const iface_state *is = current_iface;
+					interface *i = iface_by_idx(is->ifacenum);
+
 					current_iface = current_iface->next;
+					iface_box(is->subpad,i,is);
+					is = current_iface;
+					i = iface_by_idx(is->ifacenum);
+					iface_box(is->subpad,i,is);
 				}
 				break;
 			case 'h':
@@ -266,89 +348,22 @@ packet_callback(const interface *i __attribute__ ((unused)),void *unsafe){
 	pthread_mutex_unlock(&bfl);
 }
 
-static WINDOW *
-iface_box(WINDOW *parent,unsigned line,const interface *i,const iface_state *is){
-	int bcolor,hcolor;
-	WINDOW *w;
-	int attrs;
-
-	// FIXME shouldn't have to know IFF_UP out here
-	bcolor = (i->flags & IFF_UP) ? UBORDER_COLOR : DBORDER_COLOR;
-	hcolor = (i->flags & IFF_UP) ? UHEADING_COLOR : DHEADING_COLOR;
-	attrs = ((is == current_iface) ? A_REVERSE : 0) | A_BOLD;
-	// FIXME don't make this here or we can't redraw
-	if((w = subpad(parent,PAD_LINES,PAD_COLS,line,START_COL)) == NULL){
-		return NULL;
-	}
-	if(wattron(w,attrs | COLOR_PAIR(bcolor)) != OK){
-		goto err;
-	}
-	if(box(w,0,0) != OK){
-		goto err;
-	}
-	if(wattroff(w,A_REVERSE)){
-		goto err;
-	}
-	if(mvwprintw(w,0,START_COL,"[") < 0){
-		goto err;
-	}
-	if(wcolor_set(w,hcolor,NULL)){
-		goto err;
-	}
-	if(waddstr(w,i->name) != OK){
-		goto err;
-	}
-	if(strlen(i->drv.driver)){
-		if(wprintw(w," (%s",i->drv.driver) != OK){
-			goto err;
-		}
-		if(strlen(i->drv.version)){
-			if(wprintw(w," %s",i->drv.version) != OK){
-				goto err;
-			}
-		}
-		if(strlen(i->drv.fw_version)){
-			if(wprintw(w," fw %s",i->drv.fw_version) != OK){
-				goto err;
-			}
-		}
-		if(waddch(w,')') != OK){
-			goto err;
-		}
-	}
-	if(strlen(i->drv.bus_info)){
-		if(wprintw(w," @ %s",i->drv.bus_info) != OK){
-			goto err;
-		}
-	}
-	if(wcolor_set(w,bcolor,NULL)){
-		goto err;
-	}
-	if(wprintw(w,"]") < 0){
-		goto err;
-	}
-	if(wattroff(w,attrs) != OK){
-		goto err;
-	}
-	if(wcolor_set(w,0,NULL) != OK){
-		goto err;
-	}
-	return w;
-
-err:
-	delwin(w);
-	return NULL;
-}
-
 static inline void *
 interface_cb_locked(const interface *i,iface_state *ret){
 	if(ret == NULL){
 		if( (ret = malloc(sizeof(iface_state))) ){
 			ret->scrline = START_LINE + count_interface * (PAD_LINES + 1);
-			if(current_iface == NULL){
+			if((ret->prev = current_iface) == NULL){
 				current_iface = ret;
+				ret->next = NULL;
+			}else{
+				while(ret->prev->next){
+					ret->prev = ret->prev->next;
+				}
+				ret->prev->next = ret;
 			}
-			if( (ret->subpad = iface_box(pad,ret->scrline,i,ret)) ){
+			if( (ret->subpad = subpad(pad,PAD_LINES,PAD_COLS,ret->scrline,START_COL)) ){
+				iface_box(ret->subpad,i,ret);
 				if(i->flags & IFF_UP){
 					print_iface_state(i,ret);
 				}
@@ -358,6 +373,8 @@ interface_cb_locked(const interface *i,iface_state *ret){
 			}else{
 				if(current_iface == ret){
 					current_iface = NULL;
+				}else{
+					ret->prev->next = NULL;
 				}
 				free(ret);
 				ret = NULL;
