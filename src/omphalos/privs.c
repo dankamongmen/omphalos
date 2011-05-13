@@ -48,7 +48,7 @@ int handle_priv_drop(const char *name){
 	if(strlen(name) == 0){ // empty string disables permissions drop
 		return 0;
 	}
-	if((cap = cap_get_pid(getpid())) == NULL){
+	if((cap = cap_get_proc()) == NULL){
 		return -1;
 	}
 	if(cap_get_flag(cap,CAP_SETUID,CAP_EFFECTIVE,&val)){
