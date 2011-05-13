@@ -272,18 +272,6 @@ ncurses_setup(WINDOW **mainwin){
 		fprintf(stderr,"Couldn't initialize ncurses\n");
 		goto err;
 	}
-	if((w = newpad(LINES,COLS)) == NULL){
-		fprintf(stderr,"Couldn't initialize main pad\n");
-		goto err;
-	}
-	if(keypad(stdscr,TRUE) != OK){
-		fprintf(stderr,"Couldn't enable keypad input\n");
-		goto err;
-	}
-	if(cbreak() != OK){
-		fprintf(stderr,"Couldn't disable input buffering\n");
-		goto err;
-	}
 	if(noecho() != OK){
 		fprintf(stderr,"Couldn't disable input echoing\n");
 		goto err;
@@ -295,6 +283,17 @@ ncurses_setup(WINDOW **mainwin){
 	if(use_default_colors()){
 		fprintf(stderr,"Couldn't initialize ncurses colordefs\n");
 		goto err;
+	}
+	if((w = newpad(LINES,COLS)) == NULL){
+		fprintf(stderr,"Couldn't initialize main pad\n");
+		goto err;
+	}
+	if(cbreak() != OK){
+		fprintf(stderr,"Couldn't disable input buffering\n");
+		goto err;
+	}
+	if(keypad(stdscr,TRUE) != OK){
+		fprintf(stderr,"Warning: couldn't enable keypad input\n");
 	}
 	if(init_pair(BORDER_COLOR,COLOR_GREEN,-1) != OK){
 		fprintf(stderr,"Couldn't initialize ncurses colorpair\n");
@@ -337,6 +336,7 @@ ncurses_setup(WINDOW **mainwin){
 err:
 	mandatory_cleanup(*mainwin,w);
 	*mainwin = NULL;
+	fprintf(stderr,"Error while preparing ncurses\n");
 	return NULL;
 }
 
@@ -441,10 +441,10 @@ int main(int argc,char * const *argv){
 	}
 	glibc_version = gnu_get_libc_version();
 	glibc_release = gnu_get_libc_release();
-	if((pad = ncurses_setup(&w)) == NULL){
+	if(omphalos_setup(argc,argv,&pctx)){
 		return EXIT_FAILURE;
 	}
-	if(omphalos_setup(argc,argv,&pctx)){
+	if((pad = ncurses_setup(&w)) == NULL){
 		return EXIT_FAILURE;
 	}
 	pctx.iface.packet_read = packet_callback;
