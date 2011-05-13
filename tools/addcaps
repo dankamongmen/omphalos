@@ -5,7 +5,6 @@
 
 set -e
 set -o nounset
-set -o pipefail
 
 usageerr () { echo "usage: `basename $0` executable" ; }
 usage () { usageerr >&2 ; return 1 ; }
