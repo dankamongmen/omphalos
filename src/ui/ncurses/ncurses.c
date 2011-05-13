@@ -160,12 +160,15 @@ wstatus(WINDOW *w,const char *fmt,...){
 	va_list va;
 	char *buf;
 
+	if(fmt == NULL){
+		pthread_mutex_lock(&bfl);
+		ret = draw_main_window(w,PROGNAME,VERSION);
+		pthread_mutex_unlock(&bfl);
+		return ret;
+	}
 	// FIXME need lock the BFL!
 	// FIXME need set and reset attrs
 	getmaxyx(w,rows,cols);
-	if(fmt == NULL){
-		return draw_main_window(w,PROGNAME,VERSION);
-	}
 	if(cols <= START_COL){
 		return -1;
 	}
@@ -180,6 +183,9 @@ wstatus(WINDOW *w,const char *fmt,...){
 	if(ret == OK){
 		// FIXME whole screen isn't always appropriate
 		ret = prefresh(w,0,0,0,0,LINES,COLS);
+	}
+	if(ret != OK){
+		abort();
 	}
 	return ret;
 }
@@ -205,6 +211,7 @@ ncurses_input_thread(void *nil){
 					i = iface_by_idx(is->ifacenum);
 					iface_box(is->subpad,i,is);
 				}
+				prefresh(pad,0,0,0,0,LINES,COLS);
 				pthread_mutex_unlock(&bfl);
 				break;
 			case KEY_DOWN: case 'j':
@@ -219,6 +226,7 @@ ncurses_input_thread(void *nil){
 					i = iface_by_idx(is->ifacenum);
 					iface_box(is->subpad,i,is);
 				}
+				prefresh(pad,0,0,0,0,LINES,COLS);
 				pthread_mutex_unlock(&bfl);
 				break;
 			case 'h':
