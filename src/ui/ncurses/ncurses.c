@@ -27,7 +27,6 @@ typedef struct iface_state {
 	int ifacenum;			// iface number
 	int scrline;			// line within the containing pad
 	WINDOW *subpad;			// subpad
-	unsigned iface_position;	// overall order in pad
 	struct iface_state *next,*prev;
 } iface_state;
 
