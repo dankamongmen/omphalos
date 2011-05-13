@@ -16,6 +16,7 @@ if SETCAP="`which setcap`" ; then
 		"$SETCAP" "= cap_net_admin,cap_net_raw=ep" "$i"
 	done
 else
+	echo "Couldn't find the 'setcap' binary, using setuid..." >&2
 	for i in "$@" ; do
 		chown root:root "$i"
 		chmod +s "$i"
