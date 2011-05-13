@@ -1,4 +1,5 @@
 #include <errno.h>
+#include <stdarg.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <locale.h>
@@ -15,6 +16,21 @@
 #define PROGNAME "omphalos"	// FIXME
 #define VERSION  "0.98-pre"	// FIXME
 
+#define PAD_LINES 4
+#define PAD_COLS (COLS - START_COL * 2)
+#define START_LINE 2
+#define START_COL 2
+
+// Bind one of these state structures to each interface in the callback,
+// and also associate an iface with them via ifacenum (for UI actions).
+typedef struct iface_state {
+	int ifacenum;			// iface number
+	int scrline;			// line within the containing pad
+	WINDOW *subpad;			// subpad
+	unsigned iface_position;	// overall order in pad
+	struct iface_state *next,*prev;
+} iface_state;
+
 enum {
 	BORDER_COLOR = 1,
 	HEADING_COLOR = 2,
@@ -24,11 +40,37 @@ enum {
 	UHEADING_COLOR = 6,
 };
 
+// FIXME granularize things, make packet handler iret-like
+static pthread_mutex_t bfl = PTHREAD_MUTEX_INITIALIZER;
+
 static WINDOW *pad;
 static pthread_t inputtid;
 static struct utsname sysuts;
-static unsigned current_iface,count_interface;
+static unsigned count_interface;
+static const iface_state *current_iface;
 static const char *glibc_version,*glibc_release;
+
+static int
+wstatus(WINDOW *w,const char *fmt,...){
+	int rows,cols,ret;
+	va_list va;
+	char *buf;
+
+	// FIXME need set and reset attrs
+	getmaxyx(w,rows,cols);
+	if(cols <= START_COL){
+		return -1;
+	}
+	if((buf = malloc(cols - START_COL)) == NULL){
+		return -1;
+	}
+	va_start(va,fmt);
+	vsnprintf(buf,cols - START_COL,fmt,va);
+	va_end(va);
+	ret = mvprintw(rows,START_COL,"%s",buf);
+	free(buf);
+	return ret;
+}
 
 // FIXME do stuff here, proof of concept skeleton currently
 static void *
@@ -39,16 +81,21 @@ ncurses_input_thread(void *nil){
 		while((ch = getch()) != 'q' && ch != 'Q'){
 		switch(ch){
 			case KEY_UP: case 'k':
-				if(current_iface > 0){
-					--current_iface;
+				if(current_iface->prev){
+					current_iface = current_iface->prev;
 				}
 				break;
 			case KEY_DOWN: case 'j':
-				if(current_iface < count_interface){
-					++current_iface;
+				if(current_iface->next){
+					current_iface = current_iface->next;
 				}
 				break;
+			case 'h':
+				wstatus(pad,"there is no help here");
+				break;
 			default:
+				wstatus(pad,"unknown keypress");
+				// FIXME print 'unknown keypress 'h' for help' status
 				break;
 		}
 		}
@@ -185,22 +232,9 @@ err:
 	return NULL;
 }
 
-// Bind one of these state structures to each interface
-typedef struct iface_state {
-	int scrline;
-	WINDOW *subpad;
-	uintmax_t pkts;
-	unsigned iface_position;
-} iface_state;
-
-#define PAD_LINES 4
-#define PAD_COLS (COLS - START_COL * 2)
-#define START_LINE 2
-#define START_COL 2
-
 static int
 print_iface_state(const interface *i __attribute__ ((unused)),const iface_state *is){
-	if(mvwprintw(is->subpad,1,1,"pkts: %ju",is->pkts) != OK){
+	if(mvwprintw(is->subpad,1,1,"pkts: %ju",i->frames) != OK){
 		return -1;
 	}
 	if(prefresh(is->subpad,0,0,is->scrline,START_COL,is->scrline + PAD_LINES,START_COL + PAD_COLS) != OK){
@@ -209,14 +243,18 @@ print_iface_state(const interface *i __attribute__ ((unused)),const iface_state 
 	return 0;
 }
 
-static void
-packet_callback(const interface *i,void *unsafe){
-	iface_state *is = unsafe;
-
-	if(unsafe){
-		++is->pkts;
+static inline void
+packet_cb_locked(const interface *i,iface_state *is){
+	if(is){
 		print_iface_state(i,is);
 	}
+}
+
+static void
+packet_callback(const interface *i __attribute__ ((unused)),void *unsafe){
+	pthread_mutex_lock(&bfl);
+	packet_cb_locked(i,unsafe);
+	pthread_mutex_unlock(&bfl);
 }
 
 static WINDOW *
@@ -228,7 +266,8 @@ iface_box(WINDOW *parent,unsigned line,const interface *i,const iface_state *is)
 	// FIXME shouldn't have to know IFF_UP out here
 	bcolor = (i->flags & IFF_UP) ? UBORDER_COLOR : DBORDER_COLOR;
 	hcolor = (i->flags & IFF_UP) ? UHEADING_COLOR : DHEADING_COLOR;
-	attrs = ((is->iface_position == current_iface) ? A_REVERSE : 0) | A_BOLD;
+	attrs = ((is == current_iface) ? A_REVERSE : 0) | A_BOLD;
+	// FIXME don't make this here or we can't redraw
 	if((w = subpad(parent,PAD_LINES,PAD_COLS,line,START_COL)) == NULL){
 		return NULL;
 	}
@@ -292,25 +331,25 @@ err:
 	return NULL;
 }
 
-static void *
-interface_callback(const interface *i,void *unsafe){
-	iface_state *ret;
-
-	if((ret = unsafe) == NULL){
+static inline void *
+interface_cb_locked(const interface *i,iface_state *ret){
+	if(ret == NULL){
 		if( (ret = malloc(sizeof(iface_state))) ){
 			ret->scrline = START_LINE + count_interface * (PAD_LINES + 1);
-			ret->pkts = 0;
+			if(current_iface == NULL){
+				current_iface = ret;
+			}
 			if( (ret->subpad = iface_box(pad,ret->scrline,i,ret)) ){
 				if(i->flags & IFF_UP){
 					print_iface_state(i,ret);
 				}
-				ret->iface_position = ++count_interface;
+				++count_interface;
 				touchwin(pad);
 				prefresh(pad,0,0,0,0,LINES,COLS);
-				if(current_iface == 0){
-					current_iface = 1;
-				}
 			}else{
+				if(current_iface == ret){
+					current_iface = NULL;
+				}
 				free(ret);
 				ret = NULL;
 			}
@@ -320,14 +359,29 @@ interface_callback(const interface *i,void *unsafe){
 	return ret;
 }
 
-static void
-interface_removed_callback(const interface *i __attribute__ ((unused)),void *unsafe){
-	iface_state *is;
+static void *
+interface_callback(const interface *i,void *unsafe){
+	void *r;
 
-	if( (is = unsafe) ){
+	pthread_mutex_lock(&bfl);
+	r = interface_cb_locked(i,unsafe);
+	pthread_mutex_unlock(&bfl);
+	return r;
+}
+
+static inline void
+interface_removed_locked(iface_state *is){
+	if(is){
 		delwin(is->subpad);
 		free(is);
 	}
+}
+
+static void
+interface_removed_callback(const interface *i __attribute__ ((unused)),void *unsafe){
+	pthread_mutex_lock(&bfl);
+	interface_removed_locked(unsafe);
+	pthread_mutex_unlock(&bfl);
 }
 
 int main(int argc,char * const *argv){

@@ -34,7 +34,8 @@ and dispatch work.
 
 You can associate opaque state with an object passed to a callback by
 returning a pointer to that opaque state. Returning NULL will disassociate
-any attached opaque state.
+any attached opaque state. Don't keep a private store of things like
+interface data or network sessions; use the general accessors.
 
 =======================================
 Porting
