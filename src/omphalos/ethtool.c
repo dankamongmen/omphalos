@@ -33,5 +33,10 @@ int iface_driver_info(const char *name,struct ethtool_drvinfo *drv){
 		fprintf(stderr,"Couldn't close ethtool fd %d (%s?)\n",fd,strerror(errno));
 		return -1;
 	}
+	// Some return the empty string for no firmware, others "N/A".
+	// Normalize it here.
+	if(strcmp(drv->fw_version,"N/A") == 0){
+		drv->fw_version[0] = '\0';
+	}
 	return 0;
 }
