@@ -27,8 +27,9 @@ drop_privs(const char *name){
 	if((cap = cap_get_proc()) == NULL){
 		return -1;
 	}
+	// older cap_set_flag() is missing the const on its third argument :/
 	if(cap_set_flag(cap,CAP_EFFECTIVE,sizeof(caparray) / sizeof(*caparray),
-				caparray,CAP_SET)){
+				(cap_value_t *)caparray,CAP_SET)){
 		cap_free(cap);
 		return -1;
 	}
