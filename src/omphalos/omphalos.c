@@ -38,6 +38,9 @@ default_diagnostic(const char *fmt,...){
 	if(vfprintf(stderr,fmt,va) < 0){
 		abort();
 	}
+	if(fputc('\n',stderr) < 0){
+		abort();
+	}
 	va_end(va);
 }
 
@@ -102,6 +105,11 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 	if(pctx->user == NULL){
 		pctx->user = DEFAULT_USERNAME;
 	}
+	if(handle_priv_drop(pctx->user)){
+		fprintf(stderr,"Couldn't become user %s (%s?)\n",
+				pctx->user,strerror(errno));
+		return -1;
+	}
 	pctx->iface.diagnostic = default_diagnostic;
 	return 0;
 }
@@ -109,11 +117,6 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 int omphalos_init(const omphalos_ctx *pctx){
 	if(pctx->iface.diagnostic == NULL){
 		fprintf(stderr,"No diagnostic callback function defined, exiting\n");
-		return -1;
-	}
-	if(handle_priv_drop(pctx->user)){
-		pctx->iface.diagnostic("Couldn't become user %s (%s?)\n",
-				pctx->user,strerror(errno));
 		return -1;
 	}
 	if(pctx->pcapfn){
