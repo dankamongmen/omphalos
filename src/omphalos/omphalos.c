@@ -106,8 +106,6 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 	// Drop privileges (possibly requiring a setuid()), and mask
 	// cancellation signals, before creating other threads.
 	if(handle_priv_drop(user)){
-		fprintf(stderr,"Couldn't become user %s (%s?)\n",
-				user,strerror(errno));
 		return -1;
 	}
 	// We unmask the cancellation signals in the packet socket thread
