@@ -54,6 +54,7 @@ static const char *glibc_version,*glibc_release;
 static int
 iface_box(WINDOW *w,const interface *i,const iface_state *is){
 	int bcolor,hcolor;
+	size_t buslen;
 	int attrs;
 
 	// FIXME shouldn't have to know IFF_UP out here
@@ -96,27 +97,32 @@ iface_box(WINDOW *w,const interface *i,const iface_state *is){
 			goto err;
 		}
 	}
-	if(strlen(i->drv.bus_info)){
-		if(wprintw(w," @ %s",i->drv.bus_info) != OK){
-			goto err;
-		}
-	}
 	if(wcolor_set(w,bcolor,NULL)){
 		goto err;
 	}
 	if(wprintw(w,"]") < 0){
 		goto err;
 	}
-	if(wattroff(w,attrs) != OK){
+	if(wattron(w,attrs | COLOR_PAIR(hcolor))){
 		goto err;
 	}
+	if(wattroff(w,A_BOLD) != OK){
+		goto err;
+	}
+	if( (buslen = strlen(i->drv.bus_info)) ){
+		if(mvwprintw(w,PAD_LINES - 1,COLS - (buslen + 3 + START_COL),"%s",i->drv.bus_info) != OK){
+			goto err;
+		}
+	}
 	if(wcolor_set(w,0,NULL) != OK){
+		goto err;
+	}
+	if(wattroff(w,attrs) != OK){
 		goto err;
 	}
 	return 0;
 
 err:
-	abort();
 	return -1;
 }
 
