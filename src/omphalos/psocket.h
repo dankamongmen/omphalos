@@ -14,8 +14,10 @@ int packet_socket(const struct omphalos_iface *,unsigned);
 
 // Returns the size of the map, or 0 if the operation fails (in this case,
 // map will be set to MAP_FAILED).
-size_t mmap_rx_psocket(int,int,unsigned,void **,struct tpacket_req *);
-size_t mmap_tx_psocket(int,int,unsigned,void **,struct tpacket_req *);
+size_t mmap_rx_psocket(const struct omphalos_iface *,int,int,
+			unsigned,void **,struct tpacket_req *);
+size_t mmap_tx_psocket(const struct omphalos_iface *,int,int,
+			unsigned,void **,struct tpacket_req *);
 
 int ring_packet_loop(const struct omphalos_iface *,int,void *,
 				const struct tpacket_req *);

@@ -78,16 +78,12 @@ size_mmap_psocket(struct tpacket_req *treq,unsigned maxframe){
 }
 
 static size_t
-mmap_psocket(int op,int idx,int fd,unsigned maxframe,void **map,
-				struct tpacket_req *treq){
+mmap_psocket(const omphalos_iface *octx,int op,int idx,int fd,
+			unsigned maxframe,void **map,struct tpacket_req *treq){
 	size_t size;
 
 	*map = MAP_FAILED;
 	if((size = size_mmap_psocket(treq,maxframe)) == 0){
-		return 0;
-	}
-	if(setsockopt(fd,SOL_PACKET,op,treq,sizeof(*treq)) < 0){
-		fprintf(stderr,"Couldn't set socket option (%s?)\n",strerror(errno));
 		return 0;
 	}
 	if(idx >= 0){
@@ -98,15 +94,20 @@ mmap_psocket(int op,int idx,int fd,unsigned maxframe,void **map,
 		sll.sll_protocol = ETH_P_ALL;
 		sll.sll_ifindex = idx;
 		if(bind(fd,(struct sockaddr *)&sll,sizeof(sll)) < 0){
-			fprintf(stderr,"Couldn't bind idx %d (%s?)\n",idx,strerror(errno));
+			octx->diagnostic("Couldn't bind idx %d (%s?)",idx,strerror(errno));
 			return 0;
 		}
+		octx->diagnostic("FFFFFFFFFFFFUUUUUUUU %d",idx);
 	}else if(op == PACKET_TX_RING){
-		fprintf(stderr,"Invalid idx with op %d: %d\n",op,idx);
+		octx->diagnostic("Invalid idx with op %d: %d",op,idx);
 		return -1;
 	}
+	if(setsockopt(fd,SOL_PACKET,op,treq,sizeof(*treq)) < 0){
+		octx->diagnostic("Couldn't set socket option (%s?)",strerror(errno));
+		return 0;
+	}
 	if((*map = mmap(0,size,PROT_READ|PROT_WRITE,MAP_SHARED,fd,0)) == MAP_FAILED){
-		fprintf(stderr,"Couldn't mmap %zub (%s?)\n",size,strerror(errno));
+		octx->diagnostic("Couldn't mmap %zub (%s?)",size,strerror(errno));
 		return 0;
 	}
 	// FIXME MADV_HUGEPAGE support was dropped in 2.6.38.4, it seems.
@@ -118,9 +119,10 @@ mmap_psocket(int op,int idx,int fd,unsigned maxframe,void **map,
 	return size;
 }
 
-size_t mmap_tx_psocket(int fd,int idx,unsigned maxframe,void **map,
+size_t mmap_tx_psocket(const omphalos_iface *octx,int fd,int idx,
+				unsigned maxframe,void **map,
 				struct tpacket_req *treq){
-	return mmap_psocket(PACKET_TX_RING,idx,fd,maxframe,map,treq);
+	return mmap_psocket(octx,PACKET_TX_RING,idx,fd,maxframe,map,treq);
 }
 
 int unmap_psocket(void *map,size_t size){
@@ -332,8 +334,9 @@ int ring_packet_loop(const omphalos_iface *octx,int rfd,void *rxm,
 	return 0;
 }
 
-size_t mmap_rx_psocket(int fd,int idx,unsigned maxframe,void **map,struct tpacket_req *treq){
-	return mmap_psocket(PACKET_RX_RING,idx,fd,maxframe,map,treq);
+size_t mmap_rx_psocket(const omphalos_iface *octx,int fd,int idx,
+		unsigned maxframe,void **map,struct tpacket_req *treq){
+	return mmap_psocket(octx,PACKET_RX_RING,idx,fd,maxframe,map,treq);
 }
 
 int handle_packet_socket(const omphalos_ctx *pctx){

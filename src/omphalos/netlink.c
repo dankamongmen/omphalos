@@ -538,7 +538,7 @@ handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 		memset(&iface->drv,0,sizeof(iface->drv));
 	}
 	iface->flags = ii->ifi_flags;
-	if(iface->fd < 0){
+	if(iface->fd < 0 && (iface->flags & IFF_UP)){
 		psocket_marsh *pm;
 
 		if((pm = malloc(sizeof(*pm))) == NULL){
@@ -554,7 +554,7 @@ handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 			free(pm);
 			return -1;
 		}
-		if((iface->rs = mmap_rx_psocket(iface->rfd,ii->ifi_index,
+		if((iface->rs = mmap_rx_psocket(octx,iface->rfd,ii->ifi_index,
 					iface->mtu,&iface->rxm,&iface->rtpr)) == 0){
 			memset(&iface->rtpr,0,sizeof(iface->rtpr));
 			iface->rxm = NULL;
@@ -564,7 +564,7 @@ handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 			free(pm);
 			return -1;
 		}
-		if((iface->ts = mmap_tx_psocket(iface->fd,ii->ifi_index,
+		if((iface->ts = mmap_tx_psocket(octx,iface->fd,ii->ifi_index,
 					iface->mtu,&iface->txm,&iface->ttpr)) == 0){
 			memset(&iface->rtpr,0,sizeof(iface->rtpr));
 			memset(&iface->ttpr,0,sizeof(iface->ttpr));
