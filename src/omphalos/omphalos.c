@@ -8,6 +8,7 @@
 #include <signal.h>
 #include <sys/socket.h>
 #include <omphalos/pcap.h>
+#include <sys/capability.h>
 #include <omphalos/privs.h>
 #include <omphalos/hwaddrs.h>
 #include <omphalos/psocket.h>
@@ -62,6 +63,8 @@ mask_cancel_sigs(sigset_t *oldsigs){
 }
 
 int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
+	// FIXME maybe CAP_SETPCAP as well?
+	const cap_value_t caparray[] = { CAP_NET_ADMIN, CAP_NET_RAW, };
 	const char *user = NULL;
 	int opt;
 	
@@ -105,8 +108,14 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 	}
 	// Drop privileges (possibly requiring a setuid()), and mask
 	// cancellation signals, before creating other threads.
-	if(handle_priv_drop(user)){
-		return -1;
+	if(pctx->pcapfn){
+		if(handle_priv_drop(user,NULL,0)){
+			return -1;
+		}
+	}else{
+		if(handle_priv_drop(user,caparray,sizeof(caparray) / sizeof(*caparray))){
+			return -1;
+		}
 	}
 	// We unmask the cancellation signals in the packet socket thread
 	if(mask_cancel_sigs(NULL)){
