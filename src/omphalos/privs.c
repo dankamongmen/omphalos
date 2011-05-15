@@ -100,6 +100,9 @@ int handle_priv_drop(const char *name,const cap_value_t *caparray,unsigned n){
 	cap_flag_value_t val;
 	cap_t cap;
 
+	if((caparray && n == 0) || (!caparray && n)){
+		return -1;
+	}
 	if(!name || strlen(name) == 0){ // NULL, empty string disables permdrop
 		return 0;
 	}
