@@ -437,9 +437,28 @@ static void *
 psocket_thread(void *unsafe){
 	const psocket_marsh *pm = unsafe;
 
+	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE,NULL);
 	ring_packet_loop(pm->octx,pm->i,pm->i->rfd,pm->i->rxm,&pm->i->rtpr);
 	free(unsafe);
 	return NULL;
+}
+
+static int
+reap_thread(const omphalos_iface *octx,pthread_t tid){
+	void *ret;
+
+	if( (errno = pthread_cancel(tid)) ){
+		octx->diagnostic("Couldn't cancel netlink thread (%s?)",strerror(errno));
+	}
+	if( (errno = pthread_join(tid,&ret)) ){
+		octx->diagnostic("Couldn't join netlink thread (%s?)",strerror(errno));
+		return -1;
+	}
+	if(ret != PTHREAD_CANCELED){
+		octx->diagnostic("Thread returned error on exit (%s)",(char *)ret);
+		return -1;
+	}
+	return 0;
 }
 
 static int
@@ -597,8 +616,12 @@ handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 		pctx->iface.diagnostic("Couldn't close packet socket %d (%s?)",rfd,strerror(errno));
 		ret = -1;
 	}
-	// ret |= reap_thread(nltid);
 	*/
+	}else if(iface->fd >= 0 && !(iface->flags & IFF_UP)){
+		close(iface->rfd);
+		close(iface->fd);
+		reap_thread(octx,iface->tid);
+		iface->rfd = iface->fd = -1;
 	}
 	if(octx->iface_event){
 		iface->opaque = octx->iface_event(iface,ii->ifi_index,iface->opaque);

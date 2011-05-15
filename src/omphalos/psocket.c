@@ -235,24 +235,6 @@ netlink_thread(const omphalos_iface *octx){
 	return 0;
 }
 
-/*static int
-reap_thread(pthread_t tid){
-	void *ret;
-
-	if( (errno = pthread_cancel(tid)) ){
-		fprintf(stderr,"Couldn't cancel netlink thread (%s?)\n",strerror(errno));
-	}
-	if( (errno = pthread_join(tid,&ret)) ){
-		fprintf(stderr,"Couldn't join netlink thread (%s?)\n",strerror(errno));
-		return -1;
-	}
-	if(ret != PTHREAD_CANCELED){
-		fprintf(stderr,"Netlink thread returned error on exit (%s)\n",(char *)ret);
-		return -1;
-	}
-	return 0;
-}*/
-
 static void
 handle_ring_packet(const omphalos_iface *octx,interface *iface,int fd,void *frame){
 	struct tpacket_hdr *thdr = frame;
@@ -269,14 +251,13 @@ handle_ring_packet(const omphalos_iface *octx,interface *iface,int fd,void *fram
 			octx->diagnostic("Interrupted polling packet socket %d",fd);
 		}
 		if(events < 0){
-			if(!cancelled || errno != EINTR){
+			if(errno != EINTR){
 				octx->diagnostic("Error polling packet socket %d (%s?)",fd,strerror(errno));
+				pthread_exit(NULL);
 			}
-			return;
-		}
-		if(pfd[0].revents & POLLERR){
+		}else if(pfd[0].revents & POLLERR){
 			octx->diagnostic("Error polling packet socket %d",fd);
-			return;
+			pthread_exit(NULL);
 		}
 	}
 	sall = (struct sockaddr_ll *)((char *)frame + TPACKET_ALIGN(sizeof(*thdr)));
