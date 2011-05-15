@@ -28,9 +28,6 @@ typedef struct omphalos_ctx {
 	// the file, or to run until interrupted for packet sockets.
 	unsigned long count;
 
-	// Signal mask prior to our masking of SIGINT. FIXME remove this
-	sigset_t oldsigs;
-
 	omphalos_iface iface;
 } omphalos_ctx;
 

@@ -45,6 +45,8 @@ default_diagnostic(const char *fmt,...){
 	va_end(va);
 }
 
+// If we add any other signals to this list, be sure to update the signal
+// unmasking that goes on in the handling thread!
 static int
 mask_cancel_sigs(sigset_t *oldsigs){
 	sigset_t cancelsigs;
@@ -130,7 +132,7 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 		return -1;
 	}
 	// We unmask the cancellation signals in the packet socket thread
-	if(mask_cancel_sigs(&pctx->oldsigs)){
+	if(mask_cancel_sigs(NULL)){
 		return -1;
 	}
 	pctx->iface.diagnostic = default_diagnostic;

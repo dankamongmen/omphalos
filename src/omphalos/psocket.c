@@ -143,14 +143,38 @@ cancellation_signal_handler(int signo __attribute__ ((unused))){
 }
 
 static int
+restore_sighandler(const omphalos_iface *pctx){
+	struct sigaction sa = {
+		.sa_handler = SIG_DFL,
+		.sa_flags = SA_ONSTACK | SA_RESTART,
+	};
+
+	if(sigaction(SIGINT,&sa,NULL)){
+		pctx->diagnostic("Couldn't restore sighandler (%s?)",strerror(errno));
+		return -1;
+	}
+	return 0;
+}
+
+static int
 setup_sighandler(const omphalos_iface *pctx){
 	struct sigaction sa = {
 		.sa_handler = cancellation_signal_handler,
 		.sa_flags = SA_ONSTACK | SA_RESTART,
 	};
+	sigset_t csigs;
 
+	if(sigemptyset(&csigs) || sigaddset(&csigs,SIGINT)){
+		pctx->diagnostic("Couldn't prepare sigset (%s?)",strerror(errno));
+		return -1;
+	}
 	if(sigaction(SIGINT,&sa,NULL)){
-		pctx->diagnostic("Couldn't install sighandler (%s?)\n",strerror(errno));
+		pctx->diagnostic("Couldn't install sighandler (%s?)",strerror(errno));
+		return -1;
+	}
+	if(pthread_sigmask(SIG_UNBLOCK,&csigs,NULL)){
+		pctx->diagnostic("Couldn't unmask signals (%s?)",strerror(errno));
+		restore_sighandler(pctx);
 		return -1;
 	}
 	return 0;
@@ -343,7 +367,7 @@ int handle_packet_socket(const omphalos_ctx *pctx){
 	}
 	ntmarsh.octx = &pctx->iface;
 	if( (errno = pthread_create(&nltid,NULL,netlink_thread,&ntmarsh)) ){
-		fprintf(stderr,"Couldn't create netlink thread (%s?)\n",strerror(errno));
+		pctx->iface.diagnostic("Couldn't create netlink thread (%s?)",strerror(errno));
 		unmap_psocket(rxm,rs);
 		close(rfd);
 		return -1;
@@ -354,19 +378,13 @@ int handle_packet_socket(const omphalos_ctx *pctx){
 		close(rfd);
 		return -1;
 	}
-	if(pthread_sigmask(SIG_SETMASK,&pctx->oldsigs,NULL)){
-		fprintf(stderr,"Couldn't unmask signals (%s?)\n",strerror(errno));
-		reap_netlink_thread(nltid);
-		unmap_psocket(rxm,rs);
-		close(rfd);
-		return -1;
-	}
 	ret |= ring_packet_loop(&pctx->iface,pctx->count,rfd,rxm,&rtpr);
+	restore_sighandler(&pctx->iface);
 	if(unmap_psocket(rxm,rs)){
 		ret = -1;
 	}
 	if(close(rfd)){
-		fprintf(stderr,"Couldn't close packet socket %d (%s?)\n",rfd,strerror(errno));
+		pctx->iface.diagnostic("Couldn't close packet socket %d (%s?)",rfd,strerror(errno));
 		ret = -1;
 	}
 	ret |= reap_netlink_thread(nltid);
