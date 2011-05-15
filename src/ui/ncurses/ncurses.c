@@ -483,15 +483,15 @@ int main(int argc,char * const *argv){
 	pctx.iface.iface_removed = interface_removed_callback;
 	pctx.iface.diagnostic = diag_callback;
 	if(omphalos_init(&pctx)){
-		goto err;
+		int err = errno;
+
+		mandatory_cleanup(w,pad);
+		fprintf(stderr,"Error in omphalos_init() (%s?)\n",strerror(err));
+		return EXIT_FAILURE;
 	}
 	omphalos_cleanup(&pctx);
 	if(mandatory_cleanup(w,pad)){
 		return EXIT_FAILURE;
 	}
 	return EXIT_SUCCESS;
-
-err:
-	mandatory_cleanup(w,pad);
-	return EXIT_FAILURE;
 }
