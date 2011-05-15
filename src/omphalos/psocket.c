@@ -23,7 +23,6 @@
 #define PACKET_TX_RING 13
 #endif
 
-static const unsigned MAX_FRAME_SIZE = 1518; // FIXME get from device
 static const unsigned MMAP_BLOCK_COUNT = 32768; // FIXME do better
 
 // See packet(7) and Documentation/networking/packet_mmap.txt
@@ -62,10 +61,10 @@ get_block_size(unsigned fsize,unsigned *bsize){
 // Returns 0 on failure, otherwise size of the ringbuffer. On a failure,
 // contents of treq are unspecified.
 static size_t
-size_mmap_psocket(struct tpacket_req *treq){
+size_mmap_psocket(struct tpacket_req *treq,unsigned maxframe){
 	// Must be a multiple of TPACKET_ALIGNMENT, and the following must
 	// hold: TPACKET_HDRLEN <= tp_frame_size <= tp_block_size.
-	treq->tp_frame_size = TPACKET_ALIGN(TPACKET_HDRLEN + MAX_FRAME_SIZE);
+	treq->tp_frame_size = TPACKET_ALIGN(TPACKET_HDRLEN + maxframe);
 	if(get_block_size(treq->tp_frame_size,&treq->tp_block_size) < 0){
 		return 0;
 	}
@@ -78,11 +77,13 @@ size_mmap_psocket(struct tpacket_req *treq){
 	return treq->tp_block_nr * treq->tp_block_size;
 }
 
-size_t mmap_psocket(int op,int idx,int fd,void **map,struct tpacket_req *treq){
+static size_t
+mmap_psocket(int op,int idx,int fd,unsigned maxframe,void **map,
+				struct tpacket_req *treq){
 	size_t size;
 
 	*map = MAP_FAILED;
-	if((size = size_mmap_psocket(treq)) == 0){
+	if((size = size_mmap_psocket(treq,maxframe)) == 0){
 		return 0;
 	}
 	if(setsockopt(fd,SOL_PACKET,op,treq,sizeof(*treq)) < 0){
@@ -117,12 +118,9 @@ size_t mmap_psocket(int op,int idx,int fd,void **map,struct tpacket_req *treq){
 	return size;
 }
 
-size_t mmap_rx_psocket(int fd,void **map,struct tpacket_req *treq){
-	return mmap_psocket(PACKET_RX_RING,-1,fd,map,treq);
-}
-
-size_t mmap_tx_psocket(int fd,int idx,void **map,struct tpacket_req *treq){
-	return mmap_psocket(PACKET_TX_RING,idx,fd,map,treq);
+size_t mmap_tx_psocket(int fd,int idx,unsigned maxframe,void **map,
+				struct tpacket_req *treq){
+	return mmap_psocket(PACKET_TX_RING,idx,fd,maxframe,map,treq);
 }
 
 int unmap_psocket(void *map,size_t size){
@@ -330,6 +328,13 @@ ring_packet_loop(const omphalos_iface *octx,unsigned count,int rfd,
 	return 0;
 }
 
+static const unsigned MAX_FRAME_SIZE = 1518; // FIXME get from device
+
+static inline size_t
+mmap_rx_psocket(int fd,unsigned maxframe,void **map,struct tpacket_req *treq){
+	return mmap_psocket(PACKET_RX_RING,-1,fd,maxframe,map,treq);
+}
+
 int handle_packet_socket(const omphalos_ctx *pctx){
 	netlink_thread_marshal ntmarsh;
 	struct tpacket_req rtpr;
@@ -342,7 +347,7 @@ int handle_packet_socket(const omphalos_ctx *pctx){
 	if((rfd = packet_socket(&pctx->iface,ETH_P_ALL)) < 0){
 		return -1;
 	}
-	if((rs = mmap_rx_psocket(rfd,&rxm,&rtpr)) == 0){
+	if((rs = mmap_rx_psocket(rfd,MAX_FRAME_SIZE,&rxm,&rtpr)) == 0){
 		close(rfd);
 		return -1;
 	}

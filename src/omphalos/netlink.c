@@ -440,6 +440,8 @@ handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	}
 	rlen = nl->nlmsg_len - NLMSG_LENGTH(sizeof(*ii));
 	ra = (struct rtattr *)((char *)(NLMSG_DATA(nl)) + sizeof(*ii));
+	// FIXME this is all no good. error paths allow partial updates of
+	// the return interface and memory leaks...
 	while(RTA_OK(ra,rlen)){
 		switch(ra->rta_type){
 			case IFLA_ADDRESS:{
@@ -503,8 +505,13 @@ handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	if(rlen){
 		fprintf(stderr,"%d excess bytes on newlink message\n",rlen);
 	}
+	// FIXME memory leaks on failure paths, ahoy!
 	if(iface->name == NULL){
 		fprintf(stderr,"No name in new link message\n");
+		return -1;
+	}
+	if(iface->mtu == 0){
+		fprintf(stderr,"No MTU in new link message\n");
 		return -1;
 	}
 	iface->arptype = ii->ifi_type;
@@ -520,7 +527,8 @@ handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 		if((iface->fd = packet_socket(octx,ETH_P_ALL)) < 0){
 			return -1;
 		}
-		if((iface->ts = mmap_tx_psocket(iface->fd,ii->ifi_index,&iface->txm,&iface->ttpr)) == 0){
+		if((iface->ts = mmap_tx_psocket(iface->fd,ii->ifi_index,
+					iface->mtu,&iface->txm,&iface->ttpr)) == 0){
 			memset(&iface->ttpr,0,sizeof(iface->ttpr));
 			iface->txm = NULL;
 			close(iface->fd);
