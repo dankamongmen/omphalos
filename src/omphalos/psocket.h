@@ -5,6 +5,7 @@
 extern "C" {
 #endif
 
+struct interface;
 struct tpacket_req;
 struct omphalos_ctx;
 struct omphalos_iface;
@@ -19,8 +20,8 @@ size_t mmap_rx_psocket(const struct omphalos_iface *,int,int,
 size_t mmap_tx_psocket(const struct omphalos_iface *,int,int,
 			unsigned,void **,struct tpacket_req *);
 
-int ring_packet_loop(const struct omphalos_iface *,int,void *,
-				const struct tpacket_req *);
+int ring_packet_loop(const struct omphalos_iface *,struct interface *,
+			int,void *,const struct tpacket_req *);
 
 // map and size ought have been returned by mmap_*_psocket().
 int unmap_psocket(void *,size_t);

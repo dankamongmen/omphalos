@@ -430,14 +430,14 @@ handle_rtm_dellink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 
 typedef struct psocket_marsh {
 	const omphalos_iface *octx;
-	const interface *i;
+	interface *i;
 } psocket_marsh;
 
 static void *
 psocket_thread(void *unsafe){
 	const psocket_marsh *pm = unsafe;
 
-	ring_packet_loop(pm->octx,pm->i->rfd,pm->i->rxm,&pm->i->rtpr);
+	ring_packet_loop(pm->octx,pm->i,pm->i->rfd,pm->i->rxm,&pm->i->rtpr);
 	free(unsafe);
 	return NULL;
 }
