@@ -60,7 +60,7 @@ TTYOBJS:=$(filter $(OUT)/$(SRC)/ui/tty/%.o,$(COBJS))
 
 # Requires CAP_NET_ADMIN privileges bestowed upon the binary
 livetest: sudobless
-	$(OMPHALOS)-ncurses
+	$(OMPHALOS)-ncurses -u ''
 
 test: all $(TESTPCAPS)
 	for i in $(TESTPCAPS) ; do $(OMPHALOS)-tty -f $$i -u "" || exit 1 ; done
