@@ -409,13 +409,7 @@ interface_cb_locked(const interface *i,int inum,iface_state *ret){
 				ret->prev->next = ret;
 			}
 			if( (ret->subpad = subpad(pad,PAD_LINES,PAD_COLS,ret->scrline,START_COL)) ){
-				iface_box(ret->subpad,i,ret);
-				if(i->flags & IFF_UP){
-					print_iface_state(i,ret);
-				}
 				++count_interface;
-				touchwin(pad);
-				prefresh(pad,0,0,0,0,LINES,COLS);
 			}else{
 				if(current_iface == ret){
 					current_iface = NULL;
@@ -427,7 +421,14 @@ interface_cb_locked(const interface *i,int inum,iface_state *ret){
 			}
 		}
 	}
-	// FIXME otherwise, redraw to reflect interface status change
+	if(ret){
+		iface_box(ret->subpad,i,ret);
+		if(i->flags & IFF_UP){
+			print_iface_state(i,ret);
+		}
+		touchwin(pad);
+		prefresh(pad,0,0,0,0,LINES,COLS);
+	}
 	return ret;
 }
 
