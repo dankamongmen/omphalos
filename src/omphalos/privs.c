@@ -31,18 +31,6 @@ prepare_caps(const cap_value_t *caparray,unsigned n){
 		return -1;
 	}
 	if(n){
-		ourarray[0] = CAP_SETPCAP;
-
-		if(cap_set_flag(cap,CAP_EFFECTIVE,1,ourarray,CAP_SET)){
-			fprintf(stderr,"Couldn't prep e-capabilities (%s?)\n",strerror(errno));
-			cap_free(cap);
-			return -1;
-		}
-		if(cap_set_flag(cap,CAP_PERMITTED,1,ourarray,CAP_SET)){
-			fprintf(stderr,"Couldn't prep p-capabilities (%s?)\n",strerror(errno));
-			cap_free(cap);
-			return -1;
-		}
 		// older cap_set_flag() is missing the const on its third argument :/
 		if(cap_set_flag(cap,CAP_EFFECTIVE,n,(cap_value_t *)caparray,CAP_SET)){
 			fprintf(stderr,"Couldn't prep e-capabilities (%s?)\n",strerror(errno));
@@ -123,11 +111,6 @@ int handle_priv_drop(const char *name,const cap_value_t *caparray,unsigned n){
 	// that due to absence of CAP_SETPCAP, which confuses the user
 	if(cap_get_flag(cap,CAP_SETUID,CAP_EFFECTIVE,&val) || val != CAP_SET){
 		fprintf(stderr,"Don't have CAP_SETUID; won't change UID (try -u '')!\n");
-		cap_free(cap);
-		return -1;
-	}
-	if(cap_get_flag(cap,CAP_SETPCAP,CAP_EFFECTIVE,&val) || val != CAP_SET){
-		fprintf(stderr,"Don't have CAP_SETPCAP; won't change UID (try -u '')!\n");
 		cap_free(cap);
 		return -1;
 	}
