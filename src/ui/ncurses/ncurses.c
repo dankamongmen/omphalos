@@ -177,7 +177,8 @@ wvstatus_locked(WINDOW *w,const char *fmt,va_list va){
 	ret = mvprintw(rows - 1,START_COL,"%s",buf);
 	if(ret == OK){
 		// FIXME whole screen isn't always appropriate
-		ret = prefresh(w,0,0,0,0,LINES,COLS);
+		ret = prefresh(w,0,0,0,0,rows,cols);
+		refresh();
 	}
 	return ret;
 }
@@ -256,7 +257,7 @@ ncurses_input_thread(void *nil){
 				break;
 		}
 		}
-		wstatus(pad,"shutting down");
+		wstatus(pad,"%s","shutting down");
 		// we can't use raise() here, as that sends the signal only
 		// to ourselves, and we have it masked.
 		kill(getpid(),SIGINT);

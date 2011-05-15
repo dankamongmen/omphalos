@@ -8,10 +8,10 @@ extern "C" {
 struct omphalos_iface;
 
 int netlink_socket(void);
-int discover_addrs(int);
-int discover_links(int);
-int discover_routes(int);
-int discover_neighbors(int);
+int discover_addrs(const struct omphalos_iface *,int);
+int discover_links(const struct omphalos_iface *,int);
+int discover_routes(const struct omphalos_iface *,int);
+int discover_neighbors(const struct omphalos_iface *,int);
 int handle_netlink_event(const struct omphalos_iface *,int);
 
 #ifdef __cplusplus
