@@ -251,7 +251,7 @@ reap_thread(pthread_t tid){
 		return -1;
 	}
 	return 0;
-}
+}*/
 
 static void
 handle_ring_packet(const omphalos_iface *octx,int fd,void *frame){
@@ -268,32 +268,32 @@ handle_ring_packet(const omphalos_iface *octx,int fd,void *frame){
 		pfd[0].revents = 0;
 		pfd[0].events = POLLIN | POLLRDNORM | POLLERR;
 		while((events = poll(pfd,sizeof(pfd) / sizeof(*pfd),-1)) == 0){
-			fprintf(stderr,"Interrupted polling packet socket %d\n",fd);
+			octx->diagnostic("Interrupted polling packet socket %d",fd);
 		}
 		if(events < 0){
 			if(!cancelled || errno != EINTR){
-				fprintf(stderr,"Error polling packet socket %d (%s?)\n",fd,strerror(errno));
+				octx->diagnostic("Error polling packet socket %d (%s?)",fd,strerror(errno));
 			}
 			return;
 		}
 		if(pfd[0].revents & POLLERR){
-			fprintf(stderr,"Error polling packet socket %d\n",fd);
+			octx->diagnostic("Error polling packet socket %d",fd);
 			return;
 		}
 	}
 	sall = (struct sockaddr_ll *)((char *)frame + TPACKET_ALIGN(sizeof(*thdr)));
 	if((iface = iface_by_idx(sall->sll_ifindex)) == NULL){
-		fprintf(stderr,"Invalid interface index: %d\n",sall->sll_ifindex);
+		octx->diagnostic("Invalid interface index: %d",sall->sll_ifindex);
 		return;
 	}
 	if((thdr->tp_status & TP_STATUS_COPY) || thdr->tp_snaplen != thdr->tp_len){
-		fprintf(stderr,"Partial capture on %s (%d) (%u/%ub)\n",
+		octx->diagnostic("Partial capture on %s (%d) (%u/%ub)",
 				iface->name,sall->sll_ifindex,thdr->tp_snaplen,thdr->tp_len);
 		++iface->truncated;
 		return;
 	}
 	if(thdr->tp_status & TP_STATUS_LOSING){
-		fprintf(stderr,"FUCK ME; THE RINGBUFFER'S FULL!\n");
+		octx->diagnostic("FUCK ME; THE RINGBUFFER'S FULL!");
 	}
 	++iface->frames;
 	handle_ethernet_packet(octx,iface,(char *)frame + thdr->tp_mac,thdr->tp_len);
@@ -321,8 +321,7 @@ ssize_t inclen(unsigned *idx,const struct tpacket_req *treq){
 	return inc;
 }
 
-static inline int
-ring_packet_loop(const omphalos_iface *octx,int rfd,void *rxm,
+int ring_packet_loop(const omphalos_iface *octx,int rfd,void *rxm,
 				const struct tpacket_req *treq){
 	unsigned idx = 0;
 
@@ -332,7 +331,6 @@ ring_packet_loop(const omphalos_iface *octx,int rfd,void *rxm,
 	}
 	return 0;
 }
-*/
 
 size_t mmap_rx_psocket(int fd,int idx,unsigned maxframe,void **map,struct tpacket_req *treq){
 	return mmap_psocket(PACKET_RX_RING,idx,fd,maxframe,map,treq);

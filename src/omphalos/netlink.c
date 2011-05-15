@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <pthread.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -427,6 +428,20 @@ handle_rtm_dellink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	return 0;
 }
 
+typedef struct psocket_marsh {
+	const omphalos_iface *octx;
+	const interface *i;
+} psocket_marsh;
+
+static void *
+psocket_thread(void *unsafe){
+	const psocket_marsh *pm = unsafe;
+
+	ring_packet_loop(pm->octx,pm->i->rfd,pm->i->rxm,&pm->i->rtpr);
+	free(unsafe);
+	return NULL;
+}
+
 static int
 handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	const struct ifinfomsg *ii = NLMSG_DATA(nl);
@@ -524,12 +539,19 @@ handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	}
 	iface->flags = ii->ifi_flags;
 	if(iface->fd < 0){
+		psocket_marsh *pm;
+
+		if((pm = malloc(sizeof(*pm))) == NULL){
+			return -1;
+		}
 		if((iface->fd = packet_socket(octx,ETH_P_ALL)) < 0){
+			free(pm);
 			return -1;
 		}
 		if((iface->rfd = packet_socket(octx,ETH_P_ALL)) < 0){
 			close(iface->fd);
 			iface->fd = -1;
+			free(pm);
 			return -1;
 		}
 		if((iface->rs = mmap_rx_psocket(iface->rfd,ii->ifi_index,
@@ -539,6 +561,7 @@ handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 			close(iface->rfd);
 			close(iface->fd);
 			iface->rfd = iface->fd = -1;
+			free(pm);
 			return -1;
 		}
 		if((iface->ts = mmap_tx_psocket(iface->fd,ii->ifi_index,
@@ -550,11 +573,23 @@ handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 			close(iface->fd);
 			iface->rfd = iface->fd = -1;
 			iface->rs = 0;
+			free(pm);
+			return -1;
+		}
+		pm->octx = octx;
+		pm->i = iface;
+		if(pthread_create(&iface->tid,NULL,psocket_thread,pm)){
+			memset(&iface->rtpr,0,sizeof(iface->rtpr));
+			memset(&iface->ttpr,0,sizeof(iface->ttpr));
+			iface->rxm = iface->txm = NULL;
+			close(iface->rfd);
+			close(iface->fd);
+			iface->rfd = iface->fd = -1;
+			iface->rs = 0;
+			free(pm);
 			return -1;
 		}
 		/* FIXME
-		if(pthread_create(&iface->tid,
-	// ret |= ring_packet_loop(&pctx->iface,rfd,rxm,&rtpr);
 	if(unmap_psocket(rxm,rs)){
 		ret = -1;
 	}

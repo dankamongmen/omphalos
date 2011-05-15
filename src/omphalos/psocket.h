@@ -17,6 +17,9 @@ int packet_socket(const struct omphalos_iface *,unsigned);
 size_t mmap_rx_psocket(int,int,unsigned,void **,struct tpacket_req *);
 size_t mmap_tx_psocket(int,int,unsigned,void **,struct tpacket_req *);
 
+int ring_packet_loop(const struct omphalos_iface *,int,void *,
+				const struct tpacket_req *);
+
 // map and size ought have been returned by mmap_*_psocket().
 int unmap_psocket(void *,size_t);
 
