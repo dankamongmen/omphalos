@@ -325,20 +325,13 @@ ssize_t inclen(unsigned *idx,const struct tpacket_req *treq){
 }
 
 static inline int
-ring_packet_loop(const omphalos_iface *octx,unsigned count,int rfd,
-			void *rxm,const struct tpacket_req *treq){
+ring_packet_loop(const omphalos_iface *octx,int rfd,void *rxm,
+				const struct tpacket_req *treq){
 	unsigned idx = 0;
 
-	if(count){
-		while(count-- && !cancelled){
-			handle_ring_packet(octx,rfd,rxm);
-			rxm += inclen(&idx,treq);
-		}
-	}else{
-		while(!cancelled){
-			handle_ring_packet(octx,rfd,rxm);
-			rxm += inclen(&idx,treq);
-		}
+	while(!cancelled){
+		handle_ring_packet(octx,rfd,rxm);
+		rxm += inclen(&idx,treq);
 	}
 	return 0;
 }
@@ -378,7 +371,7 @@ int handle_packet_socket(const omphalos_ctx *pctx){
 		close(rfd);
 		return -1;
 	}
-	ret |= ring_packet_loop(&pctx->iface,pctx->count,rfd,rxm,&rtpr);
+	ret |= ring_packet_loop(&pctx->iface,rfd,rxm,&rtpr);
 	restore_sighandler(&pctx->iface);
 	if(unmap_psocket(rxm,rs)){
 		ret = -1;
