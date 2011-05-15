@@ -63,7 +63,7 @@ livetest: sudobless
 	$(OMPHALOS)-ncurses
 
 test: all $(TESTPCAPS)
-	for i in $(TESTPCAPS) ; do $(OMPHALOS)-tty -f $$i || exit 1 ; done
+	for i in $(TESTPCAPS) ; do $(OMPHALOS)-tty -f $$i -u "" || exit 1 ; done
 
 $(OMPHALOS)-ncurses: $(COREOBJS) $(NCURSESOBJS)
 	@mkdir -p $(@D)
