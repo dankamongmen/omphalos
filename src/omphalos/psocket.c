@@ -351,12 +351,6 @@ int handle_packet_socket(const omphalos_ctx *pctx){
 		close(rfd);
 		return -1;
 	}
-	if(handle_priv_drop(pctx->user)){
-		fprintf(stderr,"Couldn't become user %s (%s?)\n",pctx->user,strerror(errno));
-		unmap_psocket(rxm,rs);
-		close(rfd);
-		return -1;
-	}
 	// Before we create other threads, mask cancellation signals. We
 	// only want signals to be handled on the main input threads, so
 	// that we can locklessly test for cancellation.

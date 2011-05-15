@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <errno.h>
+#include <stdarg.h>
 #include <limits.h>
 #include <stdlib.h>
 #include <string.h>
@@ -28,6 +29,17 @@ usage(const char *arg0,int ret){
 	exit(ret);
 }
 
+
+static void
+default_diagnostic(const char *fmt,...){
+	va_list va;
+
+	va_start(va,fmt);
+	if(vfprintf(stderr,fmt,va) < 0){
+		abort();
+	}
+	va_end(va);
+}
 
 int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 	int opt;
@@ -90,15 +102,21 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 	if(pctx->user == NULL){
 		pctx->user = DEFAULT_USERNAME;
 	}
+	pctx->iface.diagnostic = default_diagnostic;
 	return 0;
 }
 
 int omphalos_init(const omphalos_ctx *pctx){
+	if(pctx->iface.diagnostic == NULL){
+		fprintf(stderr,"No diagnostic callback function defined, exiting\n");
+		return -1;
+	}
+	if(handle_priv_drop(pctx->user)){
+		pctx->iface.diagnostic("Couldn't become user %s (%s?)\n",
+				pctx->user,strerror(errno));
+		return -1;
+	}
 	if(pctx->pcapfn){
-		if(handle_priv_drop(pctx->user)){
-			fprintf(stderr,"Couldn't become user %s (%s?)\n",pctx->user,strerror(errno));
-			return -1;
-		}
 		if(handle_pcap_file(pctx)){
 			return -1;
 		}
