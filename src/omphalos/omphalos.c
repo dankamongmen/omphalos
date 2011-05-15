@@ -64,7 +64,7 @@ mask_cancel_sigs(sigset_t *oldsigs){
 
 int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 	// FIXME maybe CAP_SETPCAP as well?
-	const cap_value_t caparray[] = { CAP_NET_ADMIN, CAP_NET_RAW, };
+	const cap_value_t caparray[] = { CAP_NET_RAW, };
 	const char *user = NULL;
 	int opt;
 	
