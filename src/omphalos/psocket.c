@@ -141,6 +141,20 @@ static void
 cancellation_signal_handler(int signo __attribute__ ((unused))){
 	cancelled = 1;
 }
+
+static int
+setup_sighandler(const omphalos_iface *pctx){
+	struct sigaction sa = {
+		.sa_handler = cancellation_signal_handler,
+		.sa_flags = SA_ONSTACK | SA_RESTART,
+	};
+
+	if(sigaction(SIGINT,&sa,NULL)){
+		pctx->diagnostic("Couldn't install sighandler (%s?)\n",strerror(errno));
+		return -1;
+	}
+	return 0;
+}
 // End nasty signals-based cancellation.
 
 typedef struct netlink_thread_marshal {
@@ -213,29 +227,6 @@ reap_netlink_thread(pthread_t tid){
 	}
 	if(ret != PTHREAD_CANCELED){
 		fprintf(stderr,"Netlink thread returned error on exit (%s)\n",(char *)ret);
-		return -1;
-	}
-	return 0;
-}
-
-static int
-mask_cancel_sigs(sigset_t *oldsigs){
-	struct sigaction sa = {
-		.sa_handler = cancellation_signal_handler,
-		.sa_flags = SA_ONSTACK | SA_RESTART,
-	};
-	sigset_t cancelsigs;
-
-	if(sigemptyset(&cancelsigs) || sigaddset(&cancelsigs,SIGINT)){
-		fprintf(stderr,"Couldn't prep signals (%s?)\n",strerror(errno));
-		return -1;
-	}
-	if(sigprocmask(SIG_BLOCK,&cancelsigs,oldsigs)){
-		fprintf(stderr,"Couldn't mask signals (%s?)\n",strerror(errno));
-		return -1;
-	}
-	if(sigaction(SIGINT,&sa,NULL)){
-		fprintf(stderr,"Couldn't install sighandler (%s?)\n",strerror(errno));
 		return -1;
 	}
 	return 0;
@@ -338,7 +329,6 @@ mmap_rx_psocket(int fd,unsigned maxframe,void **map,struct tpacket_req *treq){
 int handle_packet_socket(const omphalos_ctx *pctx){
 	netlink_thread_marshal ntmarsh;
 	struct tpacket_req rtpr;
-	sigset_t oldsigs;
 	pthread_t nltid;
 	int rfd,ret = 0;
 	void *rxm;
@@ -351,14 +341,6 @@ int handle_packet_socket(const omphalos_ctx *pctx){
 		close(rfd);
 		return -1;
 	}
-	// Before we create other threads, mask cancellation signals. We
-	// only want signals to be handled on the main input threads, so
-	// that we can locklessly test for cancellation.
-	if(mask_cancel_sigs(&oldsigs)){
-		unmap_psocket(rxm,rs);
-		close(rfd);
-		return -1;
-	}
 	ntmarsh.octx = &pctx->iface;
 	if( (errno = pthread_create(&nltid,NULL,netlink_thread,&ntmarsh)) ){
 		fprintf(stderr,"Couldn't create netlink thread (%s?)\n",strerror(errno));
@@ -366,7 +348,13 @@ int handle_packet_socket(const omphalos_ctx *pctx){
 		close(rfd);
 		return -1;
 	}
-	if(pthread_sigmask(SIG_SETMASK,&oldsigs,NULL)){
+	if(setup_sighandler(&pctx->iface)){
+		reap_netlink_thread(nltid);
+		unmap_psocket(rxm,rs);
+		close(rfd);
+		return -1;
+	}
+	if(pthread_sigmask(SIG_SETMASK,&pctx->oldsigs,NULL)){
 		fprintf(stderr,"Couldn't unmask signals (%s?)\n",strerror(errno));
 		reap_netlink_thread(nltid);
 		unmap_psocket(rxm,rs);

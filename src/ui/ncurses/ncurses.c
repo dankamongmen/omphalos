@@ -1,5 +1,6 @@
 #include <errno.h>
 #include <ctype.h>
+#include <unistd.h>
 #include <stdarg.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -256,7 +257,9 @@ ncurses_input_thread(void *nil){
 		}
 		}
 		wstatus(pad,"shutting down");
-		raise(SIGINT);
+		// we can't use raise() here, as that sends the signal only
+		// to ourselves, and we have it masked.
+		kill(getpid(),SIGINT);
 	}
 	pthread_exit(NULL);
 }

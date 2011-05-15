@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <signal.h>
 #include <sys/socket.h>
 #include <omphalos/pcap.h>
 #include <omphalos/privs.h>
@@ -44,7 +45,23 @@ default_diagnostic(const char *fmt,...){
 	va_end(va);
 }
 
+static int
+mask_cancel_sigs(sigset_t *oldsigs){
+	sigset_t cancelsigs;
+
+	if(sigemptyset(&cancelsigs) || sigaddset(&cancelsigs,SIGINT)){
+		fprintf(stderr,"Couldn't prep signals (%s?)\n",strerror(errno));
+		return -1;
+	}
+	if(sigprocmask(SIG_BLOCK,&cancelsigs,oldsigs)){
+		fprintf(stderr,"Couldn't mask signals (%s?)\n",strerror(errno));
+		return -1;
+	}
+	return 0;
+}
+
 int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
+	const char *user = NULL;
 	int opt;
 	
 	memset(pctx,0,sizeof(*pctx));
@@ -79,11 +96,11 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 			pctx->pcapfn = optarg;
 			break;
 		}case 'u':{
-			if(pctx->user){
+			if(user){
 				fprintf(stderr,"Provided %c twice\n",opt);
 				usage(argv[0],-1);
 			}
-			pctx->user = optarg;
+			user = optarg;
 			break;
 		}case ':':{
 			fprintf(stderr,"Option requires argument: '%c'\n",optopt);
@@ -102,12 +119,18 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 	if(init_interfaces()){
 		return -1;
 	}
-	if(pctx->user == NULL){
-		pctx->user = DEFAULT_USERNAME;
+	if(user == NULL){
+		user = DEFAULT_USERNAME;
 	}
-	if(handle_priv_drop(pctx->user)){
+	// Drop privileges (possibly requiring a setuid()), and mask
+	// cancellation signals, before creating other threads.
+	if(handle_priv_drop(user)){
 		fprintf(stderr,"Couldn't become user %s (%s?)\n",
-				pctx->user,strerror(errno));
+				user,strerror(errno));
+		return -1;
+	}
+	// We unmask the cancellation signals in the packet socket thread
+	if(mask_cancel_sigs(&pctx->oldsigs)){
 		return -1;
 	}
 	pctx->iface.diagnostic = default_diagnostic;
