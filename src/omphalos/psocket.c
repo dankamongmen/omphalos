@@ -64,7 +64,7 @@ static size_t
 size_mmap_psocket(struct tpacket_req *treq,unsigned maxframe){
 	// Must be a multiple of TPACKET_ALIGNMENT, and the following must
 	// hold: TPACKET_HDRLEN <= tp_frame_size <= tp_block_size.
-	treq->tp_frame_size = TPACKET_ALIGN(TPACKET_HDRLEN + maxframe);
+	treq->tp_frame_size = TPACKET_ALIGN(TPACKET_HDRLEN + sizeof(struct tpacket_hdr) + maxframe);
 	if(get_block_size(treq->tp_frame_size,&treq->tp_block_size) < 0){
 		return 0;
 	}
@@ -91,13 +91,11 @@ mmap_psocket(const omphalos_iface *octx,int op,int idx,int fd,
 
 		memset(&sll,0,sizeof(sll));
 		sll.sll_family = AF_PACKET;
-		sll.sll_protocol = ETH_P_ALL;
 		sll.sll_ifindex = idx;
 		if(bind(fd,(struct sockaddr *)&sll,sizeof(sll)) < 0){
 			octx->diagnostic("Couldn't bind idx %d (%s?)",idx,strerror(errno));
 			return 0;
 		}
-		octx->diagnostic("FFFFFFFFFFFFUUUUUUUU %d",idx);
 	}else if(op == PACKET_TX_RING){
 		octx->diagnostic("Invalid idx with op %d: %d",op,idx);
 		return -1;
