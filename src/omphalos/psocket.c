@@ -90,7 +90,7 @@ mmap_psocket(int op,int idx,int fd,unsigned maxframe,void **map,
 		fprintf(stderr,"Couldn't set socket option (%s?)\n",strerror(errno));
 		return 0;
 	}
-	if(op == PACKET_TX_RING){
+	if(idx >= 0){
 		struct sockaddr_ll sll;
 
 		memset(&sll,0,sizeof(sll));
@@ -101,7 +101,7 @@ mmap_psocket(int op,int idx,int fd,unsigned maxframe,void **map,
 			fprintf(stderr,"Couldn't bind idx %d (%s?)\n",idx,strerror(errno));
 			return 0;
 		}
-	}else if(idx != -1){
+	}else if(op == PACKET_TX_RING){
 		fprintf(stderr,"Invalid idx with op %d: %d\n",op,idx);
 		return -1;
 	}
@@ -185,7 +185,7 @@ typedef struct netlink_thread_marshal {
 	const omphalos_iface *octx;
 } netlink_thread_marshal;
 
-static void *
+static int 
 netlink_thread(const omphalos_iface *octx){
 	struct pollfd pfd[1] = {
 		{
@@ -195,19 +195,19 @@ netlink_thread(const omphalos_iface *octx){
 	int events;
 
 	if((pfd[0].fd = netlink_socket()) < 0){
-		return NULL;
+		return -1;
 	}
 	if(discover_links(octx,pfd[0].fd) < 0){
 		close(pfd[0].fd);
-		return NULL;
+		return -1;
 	}
 	if(discover_routes(octx,pfd[0].fd) < 0){
 		close(pfd[0].fd);
-		return NULL;
+		return -1;
 	}
 	if(discover_neighbors(octx,pfd[0].fd) < 0){
 		close(pfd[0].fd);
-		return NULL;
+		return -1;
 	}
 	for(;;){
 		unsigned z;
@@ -334,41 +334,17 @@ ring_packet_loop(const omphalos_iface *octx,int rfd,void *rxm,
 }
 */
 
-static const unsigned MAX_FRAME_SIZE = 1518; // FIXME get from device
-
-static inline size_t
-mmap_rx_psocket(int fd,unsigned maxframe,void **map,struct tpacket_req *treq){
-	return mmap_psocket(PACKET_RX_RING,-1,fd,maxframe,map,treq);
+size_t mmap_rx_psocket(int fd,int idx,unsigned maxframe,void **map,struct tpacket_req *treq){
+	return mmap_psocket(PACKET_RX_RING,idx,fd,maxframe,map,treq);
 }
 
 int handle_packet_socket(const omphalos_ctx *pctx){
-	struct tpacket_req rtpr;
-	int rfd,ret = 0;
-	void *rxm;
-	size_t rs;
+	int ret;
 
-	if((rfd = packet_socket(&pctx->iface,ETH_P_ALL)) < 0){
-		return -1;
-	}
-	if((rs = mmap_rx_psocket(rfd,MAX_FRAME_SIZE,&rxm,&rtpr)) == 0){
-		close(rfd);
-		return -1;
-	}
 	if(setup_sighandler(&pctx->iface)){
-		unmap_psocket(rxm,rs);
-		close(rfd);
 		return -1;
 	}
-	netlink_thread(&pctx->iface);
-	// ret |= ring_packet_loop(&pctx->iface,rfd,rxm,&rtpr);
-	// restore_sighandler(&pctx->iface);
-	if(unmap_psocket(rxm,rs)){
-		ret = -1;
-	}
-	if(close(rfd)){
-		pctx->iface.diagnostic("Couldn't close packet socket %d (%s?)",rfd,strerror(errno));
-		ret = -1;
-	}
-	// ret |= reap_thread(nltid);
+	ret = netlink_thread(&pctx->iface);
+	ret |= restore_sighandler(&pctx->iface);
 	return ret;
 }

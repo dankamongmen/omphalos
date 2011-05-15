@@ -527,14 +527,43 @@ handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 		if((iface->fd = packet_socket(octx,ETH_P_ALL)) < 0){
 			return -1;
 		}
-		if((iface->ts = mmap_tx_psocket(iface->fd,ii->ifi_index,
-					iface->mtu,&iface->txm,&iface->ttpr)) == 0){
-			memset(&iface->ttpr,0,sizeof(iface->ttpr));
-			iface->txm = NULL;
+		if((iface->rfd = packet_socket(octx,ETH_P_ALL)) < 0){
 			close(iface->fd);
 			iface->fd = -1;
 			return -1;
 		}
+		if((iface->rs = mmap_rx_psocket(iface->rfd,ii->ifi_index,
+					iface->mtu,&iface->rxm,&iface->rtpr)) == 0){
+			memset(&iface->rtpr,0,sizeof(iface->rtpr));
+			iface->rxm = NULL;
+			close(iface->rfd);
+			close(iface->fd);
+			iface->rfd = iface->fd = -1;
+			return -1;
+		}
+		if((iface->ts = mmap_tx_psocket(iface->fd,ii->ifi_index,
+					iface->mtu,&iface->txm,&iface->ttpr)) == 0){
+			memset(&iface->rtpr,0,sizeof(iface->rtpr));
+			memset(&iface->ttpr,0,sizeof(iface->ttpr));
+			iface->rxm = iface->txm = NULL;
+			close(iface->rfd);
+			close(iface->fd);
+			iface->rfd = iface->fd = -1;
+			iface->rs = 0;
+			return -1;
+		}
+		/* FIXME
+		if(pthread_create(&iface->tid,
+	// ret |= ring_packet_loop(&pctx->iface,rfd,rxm,&rtpr);
+	if(unmap_psocket(rxm,rs)){
+		ret = -1;
+	}
+	if(close(rfd)){
+		pctx->iface.diagnostic("Couldn't close packet socket %d (%s?)",rfd,strerror(errno));
+		ret = -1;
+	}
+	// ret |= reap_thread(nltid);
+	*/
 	}
 	if(octx->iface_event){
 		iface->opaque = octx->iface_event(iface,ii->ifi_index,iface->opaque);

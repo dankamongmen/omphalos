@@ -19,7 +19,7 @@ int init_interfaces(void){
 	for(i = 0 ; i < sizeof(interfaces) / sizeof(*interfaces) ; ++i){
 		interface *iface = &interfaces[i];
 
-		iface->fd = -1;
+		iface->rfd = iface->fd = -1;
 	}
 	return 0;
 }
@@ -79,6 +79,9 @@ void free_iface(interface *i){
 	}
 	if(i->fd >= 0){
 		close(i->fd);
+	}
+	if(i->rfd >= 0){
+		close(i->rfd);
 	}
 	free(i->name);
 	free(i->addr);
