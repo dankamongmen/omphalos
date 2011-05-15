@@ -321,7 +321,7 @@ ncurses_setup(WINDOW **mainwin){
 		fprintf(stderr,"Couldn't initialize ncurses colorpair\n");
 		goto err;
 	}
-	if(init_pair(DBORDER_COLOR,COLOR_YELLOW,-1) != OK){
+	if(init_pair(DBORDER_COLOR,COLOR_WHITE,-1) != OK){
 		fprintf(stderr,"Couldn't initialize ncurses colorpair\n");
 		goto err;
 	}
