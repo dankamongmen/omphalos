@@ -282,14 +282,17 @@ handle_ring_packet(const omphalos_iface *octx,int fd,void *frame){
 		}
 	}
 	sall = (struct sockaddr_ll *)((char *)frame + TPACKET_ALIGN(sizeof(*thdr)));
+	// FIXME ought be able to remove this with per-iface rx buffers...
 	if((iface = iface_by_idx(sall->sll_ifindex)) == NULL){
 		octx->diagnostic("Invalid interface index: %d",sall->sll_ifindex);
+		thdr->tp_status = TP_STATUS_KERNEL; // return the frame
 		return;
 	}
 	if((thdr->tp_status & TP_STATUS_COPY) || thdr->tp_snaplen != thdr->tp_len){
 		octx->diagnostic("Partial capture on %s (%d) (%u/%ub)",
 				iface->name,sall->sll_ifindex,thdr->tp_snaplen,thdr->tp_len);
 		++iface->truncated;
+		thdr->tp_status = TP_STATUS_KERNEL; // return the frame
 		return;
 	}
 	if(thdr->tp_status & TP_STATUS_LOSING){
