@@ -9,6 +9,16 @@
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
 
+#define ETH_P_ECTP	0x9000	// Ethernet Configuration Test Protocol
+
+static void
+handle_ectp_packet(const omphalos_iface *octx __attribute__ ((unused)),
+			interface *i __attribute__ ((unused)),
+			const void *frame __attribute__ ((unused)),
+			size_t len __attribute__ ((unused))){
+	// FIXME
+}
+
 static void
 handle_8021q(const omphalos_iface *octx,interface *i,const void *frame,
 						size_t len){
@@ -37,6 +47,8 @@ handle_8021q(const omphalos_iface *octx,interface *i,const void *frame,
 		handle_ipv6_packet(i,dgram,dlen);
 	break;}case ETH_P_PAE:{
 		handle_eapol_packet(i,dgram,dlen);
+	break;}case ETH_P_ECTP:{
+		handle_ectp_packet(octx,i,dgram,dlen);
 	break;}default:{
 		if(proto <= 1500){
 			// FIXME handle IEEE 802.3
@@ -78,6 +90,9 @@ void handle_ethernet_packet(const omphalos_iface *octx,interface *i,
 					break;
 				}case ETH_P_8021Q:{
 					handle_8021q(octx,i,frame,len);
+					break;
+				}case ETH_P_ECTP:{
+					handle_ectp_packet(octx,i,dgram,dlen);
 					break;
 				}default:{
 					if(proto <= 1500){
