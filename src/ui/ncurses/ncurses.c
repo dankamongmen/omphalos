@@ -1,5 +1,6 @@
 #include <errno.h>
 #include <ctype.h>
+#include <unistd.h>
 #include <stdarg.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -53,6 +54,7 @@ static const char *glibc_version,*glibc_release;
 static int
 iface_box(WINDOW *w,const interface *i,const iface_state *is){
 	int bcolor,hcolor;
+	size_t buslen;
 	int attrs;
 
 	// FIXME shouldn't have to know IFF_UP out here
@@ -95,27 +97,32 @@ iface_box(WINDOW *w,const interface *i,const iface_state *is){
 			goto err;
 		}
 	}
-	if(strlen(i->drv.bus_info)){
-		if(wprintw(w," @ %s",i->drv.bus_info) != OK){
-			goto err;
-		}
-	}
 	if(wcolor_set(w,bcolor,NULL)){
 		goto err;
 	}
 	if(wprintw(w,"]") < 0){
 		goto err;
 	}
-	if(wattroff(w,attrs) != OK){
+	if(wattron(w,attrs | COLOR_PAIR(hcolor))){
 		goto err;
 	}
+	if(wattroff(w,A_BOLD) != OK){
+		goto err;
+	}
+	if( (buslen = strlen(i->drv.bus_info)) ){
+		if(mvwprintw(w,PAD_LINES - 1,COLS - (buslen + 3 + START_COL),"%s",i->drv.bus_info) != OK){
+			goto err;
+		}
+	}
 	if(wcolor_set(w,0,NULL) != OK){
+		goto err;
+	}
+	if(wattroff(w,attrs) != OK){
 		goto err;
 	}
 	return 0;
 
 err:
-	abort();
 	return -1;
 }
 
@@ -176,7 +183,7 @@ wvstatus_locked(WINDOW *w,const char *fmt,va_list va){
 	ret = mvprintw(rows - 1,START_COL,"%s",buf);
 	if(ret == OK){
 		// FIXME whole screen isn't always appropriate
-		if((ret = prefresh(w,0,0,0,0,LINES,COLS)) == OK){
+		if((ret = prefresh(w,0,0,0,0,rows,cols)) == OK){
 			ret = refresh(); // FIXME shouldn't be necessary?
 		}
 	}
@@ -257,8 +264,10 @@ ncurses_input_thread(void *nil){
 				break;
 		}
 		}
-		wstatus(pad,"shutting down");
-		raise(SIGINT);
+		wstatus(pad,"%s","shutting down");
+		// we can't use raise() here, as that sends the signal only
+		// to ourselves, and we have it masked.
+		kill(getpid(),SIGINT);
 	}
 	pthread_exit(NULL);
 }
@@ -323,7 +332,7 @@ ncurses_setup(WINDOW **mainwin){
 		fprintf(stderr,"Couldn't initialize ncurses colorpair\n");
 		goto err;
 	}
-	if(init_pair(DBORDER_COLOR,COLOR_YELLOW,-1) != OK){
+	if(init_pair(DBORDER_COLOR,COLOR_WHITE,-1) != OK){
 		fprintf(stderr,"Couldn't initialize ncurses colorpair\n");
 		goto err;
 	}
@@ -401,13 +410,7 @@ interface_cb_locked(const interface *i,int inum,iface_state *ret){
 				ret->prev->next = ret;
 			}
 			if( (ret->subpad = subpad(pad,PAD_LINES,PAD_COLS,ret->scrline,START_COL)) ){
-				iface_box(ret->subpad,i,ret);
-				if(i->flags & IFF_UP){
-					print_iface_state(i,ret);
-				}
 				++count_interface;
-				touchwin(pad);
-				prefresh(pad,0,0,0,0,LINES,COLS);
 			}else{
 				if(current_iface == ret){
 					current_iface = NULL;
@@ -419,7 +422,14 @@ interface_cb_locked(const interface *i,int inum,iface_state *ret){
 			}
 		}
 	}
-	// FIXME otherwise, redraw to reflect interface status change
+	if(ret){
+		iface_box(ret->subpad,i,ret);
+		if(i->flags & IFF_UP){
+			print_iface_state(i,ret);
+		}
+		touchwin(pad);
+		prefresh(pad,0,0,0,0,LINES,COLS);
+	}
 	return ret;
 }
 
@@ -482,15 +492,15 @@ int main(int argc,char * const *argv){
 	pctx.iface.iface_removed = interface_removed_callback;
 	pctx.iface.diagnostic = diag_callback;
 	if(omphalos_init(&pctx)){
-		goto err;
+		int err = errno;
+
+		mandatory_cleanup(w,pad);
+		fprintf(stderr,"Error in omphalos_init() (%s?)\n",strerror(err));
+		return EXIT_FAILURE;
 	}
 	omphalos_cleanup(&pctx);
 	if(mandatory_cleanup(w,pad)){
 		return EXIT_FAILURE;
 	}
 	return EXIT_SUCCESS;
-
-err:
-	mandatory_cleanup(w,pad);
-	return EXIT_FAILURE;
 }

@@ -24,12 +24,6 @@ typedef struct omphalos_iface {
 typedef struct omphalos_ctx {
 	// PCAP-format filename FIXME support multiple?
 	const char *pcapfn;
-	// Exit after processing this many packets. 0 for all packets in
-	// the file, or to run until interrupted for packet sockets.
-	unsigned long count;
-
-	// Username to setuid() to.
-	const char *user;
 
 	omphalos_iface iface;
 } omphalos_ctx;

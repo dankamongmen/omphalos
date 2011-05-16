@@ -23,7 +23,6 @@
 #define PACKET_TX_RING 13
 #endif
 
-static const unsigned MAX_FRAME_SIZE = 1518; // FIXME get from device
 static const unsigned MMAP_BLOCK_COUNT = 32768; // FIXME do better
 
 // See packet(7) and Documentation/networking/packet_mmap.txt
@@ -62,10 +61,10 @@ get_block_size(unsigned fsize,unsigned *bsize){
 // Returns 0 on failure, otherwise size of the ringbuffer. On a failure,
 // contents of treq are unspecified.
 static size_t
-size_mmap_psocket(struct tpacket_req *treq){
+size_mmap_psocket(struct tpacket_req *treq,unsigned maxframe){
 	// Must be a multiple of TPACKET_ALIGNMENT, and the following must
 	// hold: TPACKET_HDRLEN <= tp_frame_size <= tp_block_size.
-	treq->tp_frame_size = TPACKET_ALIGN(TPACKET_HDRLEN + MAX_FRAME_SIZE);
+	treq->tp_frame_size = TPACKET_ALIGN(TPACKET_HDRLEN + sizeof(struct tpacket_hdr) + maxframe);
 	if(get_block_size(treq->tp_frame_size,&treq->tp_block_size) < 0){
 		return 0;
 	}
@@ -78,34 +77,35 @@ size_mmap_psocket(struct tpacket_req *treq){
 	return treq->tp_block_nr * treq->tp_block_size;
 }
 
-size_t mmap_psocket(int op,int idx,int fd,void **map,struct tpacket_req *treq){
+static size_t
+mmap_psocket(const omphalos_iface *octx,int op,int idx,int fd,
+			unsigned maxframe,void **map,struct tpacket_req *treq){
 	size_t size;
 
 	*map = MAP_FAILED;
-	if((size = size_mmap_psocket(treq)) == 0){
+	if((size = size_mmap_psocket(treq,maxframe)) == 0){
 		return 0;
 	}
-	if(setsockopt(fd,SOL_PACKET,op,treq,sizeof(*treq)) < 0){
-		fprintf(stderr,"Couldn't set socket option (%s?)\n",strerror(errno));
-		return 0;
-	}
-	if(op == PACKET_TX_RING){
+	if(idx >= 0){
 		struct sockaddr_ll sll;
 
 		memset(&sll,0,sizeof(sll));
 		sll.sll_family = AF_PACKET;
-		sll.sll_protocol = ETH_P_ALL;
 		sll.sll_ifindex = idx;
 		if(bind(fd,(struct sockaddr *)&sll,sizeof(sll)) < 0){
-			fprintf(stderr,"Couldn't bind idx %d (%s?)\n",idx,strerror(errno));
+			octx->diagnostic("Couldn't bind idx %d (%s?)",idx,strerror(errno));
 			return 0;
 		}
-	}else if(idx != -1){
-		fprintf(stderr,"Invalid idx with op %d: %d\n",op,idx);
+	}else if(op == PACKET_TX_RING){
+		octx->diagnostic("Invalid idx with op %d: %d",op,idx);
 		return -1;
 	}
+	if(setsockopt(fd,SOL_PACKET,op,treq,sizeof(*treq)) < 0){
+		octx->diagnostic("Couldn't set socket option (%s?)",strerror(errno));
+		return 0;
+	}
 	if((*map = mmap(0,size,PROT_READ|PROT_WRITE,MAP_SHARED,fd,0)) == MAP_FAILED){
-		fprintf(stderr,"Couldn't mmap %zub (%s?)\n",size,strerror(errno));
+		octx->diagnostic("Couldn't mmap %zub (%s?)",size,strerror(errno));
 		return 0;
 	}
 	// FIXME MADV_HUGEPAGE support was dropped in 2.6.38.4, it seems.
@@ -117,12 +117,10 @@ size_t mmap_psocket(int op,int idx,int fd,void **map,struct tpacket_req *treq){
 	return size;
 }
 
-size_t mmap_rx_psocket(int fd,void **map,struct tpacket_req *treq){
-	return mmap_psocket(PACKET_RX_RING,-1,fd,map,treq);
-}
-
-size_t mmap_tx_psocket(int fd,int idx,void **map,struct tpacket_req *treq){
-	return mmap_psocket(PACKET_TX_RING,idx,fd,map,treq);
+size_t mmap_tx_psocket(const omphalos_iface *octx,int fd,int idx,
+				unsigned maxframe,void **map,
+				struct tpacket_req *treq){
+	return mmap_psocket(octx,PACKET_TX_RING,idx,fd,maxframe,map,treq);
 }
 
 int unmap_psocket(void *map,size_t size){
@@ -143,16 +141,52 @@ static void
 cancellation_signal_handler(int signo __attribute__ ((unused))){
 	cancelled = 1;
 }
+
+static int
+restore_sighandler(const omphalos_iface *pctx){
+	struct sigaction sa = {
+		.sa_handler = SIG_DFL,
+		.sa_flags = SA_ONSTACK | SA_RESTART,
+	};
+
+	if(sigaction(SIGINT,&sa,NULL)){
+		pctx->diagnostic("Couldn't restore sighandler (%s?)",strerror(errno));
+		return -1;
+	}
+	return 0;
+}
+
+static int
+setup_sighandler(const omphalos_iface *octx){
+	struct sigaction sa = {
+		.sa_handler = cancellation_signal_handler,
+		.sa_flags = SA_ONSTACK | SA_RESTART,
+	};
+	sigset_t csigs;
+
+	if(sigemptyset(&csigs) || sigaddset(&csigs,SIGINT)){
+		octx->diagnostic("Couldn't prepare sigset (%s?)",strerror(errno));
+		return -1;
+	}
+	if(sigaction(SIGINT,&sa,NULL)){
+		octx->diagnostic("Couldn't install sighandler (%s?)",strerror(errno));
+		return -1;
+	}
+	if(pthread_sigmask(SIG_UNBLOCK,&csigs,NULL)){
+		octx->diagnostic("Couldn't unmask signals (%s?)",strerror(errno));
+		restore_sighandler(octx);
+		return -1;
+	}
+	return 0;
+}
 // End nasty signals-based cancellation.
 
 typedef struct netlink_thread_marshal {
-	char errbuf[256];
 	const omphalos_iface *octx;
 } netlink_thread_marshal;
 
-static void *
-netlink_thread(void *v){
-	netlink_thread_marshal *ntmarsh = v;
+static int 
+netlink_thread(const omphalos_iface *octx){
 	struct pollfd pfd[1] = {
 		{
 			.events = POLLIN | POLLRDNORM | POLLERR,
@@ -160,100 +194,56 @@ netlink_thread(void *v){
 	};
 	int events;
 
-	// FIXME how do we ensure this is closed after we get cancelled?
 	if((pfd[0].fd = netlink_socket()) < 0){
-		return NULL;
+		return -1;
 	}
-	if(discover_links(pfd[0].fd) < 0){
+	if(discover_links(octx,pfd[0].fd) < 0){
 		close(pfd[0].fd);
-		return NULL;
+		return -1;
 	}
-	if(discover_routes(pfd[0].fd) < 0){
+	if(discover_routes(octx,pfd[0].fd) < 0){
 		close(pfd[0].fd);
-		return NULL;
+		return -1;
 	}
-	if(discover_neighbors(pfd[0].fd) < 0){
+	if(discover_neighbors(octx,pfd[0].fd) < 0){
 		close(pfd[0].fd);
-		return NULL;
+		return -1;
 	}
-	strcpy(ntmarsh->errbuf,"");
-	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE,NULL);
 	for(;;){
 		unsigned z;
 
 		errno = 0;
-		while((events = poll(pfd,sizeof(pfd) / sizeof(*pfd),-1)) <= 0){
-			fprintf(stderr,"Wakeup on netlink socket %d (%s?)\n",
-					pfd[0].fd,errno ? strerror(errno) : "spontaneous");
-			errno = 0;
-			// FIXME bail on terrible errors?
+		while((events = poll(pfd,sizeof(pfd) / sizeof(*pfd),-1)) == 0){
+			octx->diagnostic("Spontaneous wakeup on netlink socket %d",pfd[0].fd);
+		}
+		if(events < 0){
+			octx->diagnostic("Error polling netlink socket %d (%s?)",
+					pfd[0].fd,strerror(errno));
+			break;
 		}
 		for(z = 0 ; z < sizeof(pfd) / sizeof(*pfd) ; ++z){
 			if(pfd[z].revents & POLLERR){
-				snprintf(ntmarsh->errbuf,sizeof(ntmarsh->errbuf),
-					"Error polling netlink socket %d\n",pfd[z].fd);
-				break; // FIXME
+				octx->diagnostic("Error polling netlink socket %d\n",pfd[z].fd);
 			}else if(pfd[z].revents){
-				handle_netlink_event(ntmarsh->octx,pfd[z].fd);
+				handle_netlink_event(octx,pfd[z].fd);
 			}
 			pfd[z].revents = 0;
 		}
 	}
-	pthread_exit(ntmarsh->errbuf);
-}
-
-static int
-reap_netlink_thread(pthread_t tid){
-	void *ret;
-
-	if( (errno = pthread_cancel(tid)) ){
-		fprintf(stderr,"Couldn't cancel netlink thread (%s?)\n",strerror(errno));
-	}
-	if( (errno = pthread_join(tid,&ret)) ){
-		fprintf(stderr,"Couldn't join netlink thread (%s?)\n",strerror(errno));
-		return -1;
-	}
-	if(ret != PTHREAD_CANCELED){
-		fprintf(stderr,"Netlink thread returned error on exit (%s)\n",(char *)ret);
-		return -1;
-	}
-	return 0;
-}
-
-static int
-mask_cancel_sigs(sigset_t *oldsigs){
-	struct sigaction sa = {
-		.sa_handler = cancellation_signal_handler,
-		.sa_flags = SA_ONSTACK | SA_RESTART,
-	};
-	sigset_t cancelsigs;
-
-	if(sigemptyset(&cancelsigs) || sigaddset(&cancelsigs,SIGINT)){
-		fprintf(stderr,"Couldn't prep signals (%s?)\n",strerror(errno));
-		return -1;
-	}
-	if(sigprocmask(SIG_BLOCK,&cancelsigs,oldsigs)){
-		fprintf(stderr,"Couldn't mask signals (%s?)\n",strerror(errno));
-		return -1;
-	}
-	if(sigaction(SIGINT,&sa,NULL)){
-		fprintf(stderr,"Couldn't install sighandler (%s?)\n",strerror(errno));
-		return -1;
-	}
+	// FIXME reap packet socket threads...
+	close(pfd[0].fd);
 	return 0;
 }
 
 static void
-handle_ring_packet(const omphalos_iface *octx,int fd,void *frame){
+handle_ring_packet(const omphalos_iface *octx,interface *iface,int fd,void *frame){
 	struct tpacket_hdr *thdr = frame;
 	const struct sockaddr_ll *sall;
-	interface *iface;
 
 	while(thdr->tp_status == 0){
 		struct pollfd pfd[1];
 		int events;
 
-		// fprintf(stderr,"Packet not ready\n");
 		pfd[0].fd = fd;
 		pfd[0].revents = 0;
 		pfd[0].events = POLLIN | POLLRDNORM | POLLERR;
@@ -261,25 +251,21 @@ handle_ring_packet(const omphalos_iface *octx,int fd,void *frame){
 			octx->diagnostic("Interrupted polling packet socket %d",fd);
 		}
 		if(events < 0){
-			if(!cancelled || errno != EINTR){
+			if(errno != EINTR){
 				octx->diagnostic("Error polling packet socket %d (%s?)",fd,strerror(errno));
+				pthread_exit(NULL);
 			}
-			return;
-		}
-		if(pfd[0].revents & POLLERR){
+		}else if(pfd[0].revents & POLLERR){
 			octx->diagnostic("Error polling packet socket %d",fd);
-			return;
+			pthread_exit(NULL);
 		}
 	}
 	sall = (struct sockaddr_ll *)((char *)frame + TPACKET_ALIGN(sizeof(*thdr)));
-	if((iface = iface_by_idx(sall->sll_ifindex)) == NULL){
-		octx->diagnostic("Invalid interface index: %d",sall->sll_ifindex);
-		return;
-	}
 	if((thdr->tp_status & TP_STATUS_COPY) || thdr->tp_snaplen != thdr->tp_len){
 		octx->diagnostic("Partial capture on %s (%d) (%u/%ub)",
 				iface->name,sall->sll_ifindex,thdr->tp_snaplen,thdr->tp_len);
 		++iface->truncated;
+		thdr->tp_status = TP_STATUS_KERNEL; // return the frame
 		return;
 	}
 	if(thdr->tp_status & TP_STATUS_LOSING){
@@ -311,77 +297,29 @@ ssize_t inclen(unsigned *idx,const struct tpacket_req *treq){
 	return inc;
 }
 
-static inline int
-ring_packet_loop(const omphalos_iface *octx,unsigned count,int rfd,
+int ring_packet_loop(const omphalos_iface *octx,interface *i,int rfd,
 			void *rxm,const struct tpacket_req *treq){
 	unsigned idx = 0;
 
-	if(count){
-		while(count-- && !cancelled){
-			handle_ring_packet(octx,rfd,rxm);
-			rxm += inclen(&idx,treq);
-		}
-	}else{
-		while(!cancelled){
-			handle_ring_packet(octx,rfd,rxm);
-			rxm += inclen(&idx,treq);
-		}
+	while(!cancelled){
+		handle_ring_packet(octx,i,rfd,rxm);
+		rxm += inclen(&idx,treq);
 	}
 	return 0;
 }
 
-int handle_packet_socket(const omphalos_ctx *pctx){
-	netlink_thread_marshal ntmarsh;
-	struct tpacket_req rtpr;
-	sigset_t oldsigs;
-	pthread_t nltid;
-	int rfd,ret = 0;
-	void *rxm;
-	size_t rs;
+size_t mmap_rx_psocket(const omphalos_iface *octx,int fd,int idx,
+		unsigned maxframe,void **map,struct tpacket_req *treq){
+	return mmap_psocket(octx,PACKET_RX_RING,idx,fd,maxframe,map,treq);
+}
 
-	if((rfd = packet_socket(&pctx->iface,ETH_P_ALL)) < 0){
+int handle_packet_socket(const omphalos_ctx *pctx){
+	int ret;
+
+	if(setup_sighandler(&pctx->iface)){
 		return -1;
 	}
-	if((rs = mmap_rx_psocket(rfd,&rxm,&rtpr)) == 0){
-		close(rfd);
-		return -1;
-	}
-	if(handle_priv_drop(pctx->user)){
-		fprintf(stderr,"Couldn't become user %s (%s?)\n",pctx->user,strerror(errno));
-		unmap_psocket(rxm,rs);
-		close(rfd);
-		return -1;
-	}
-	// Before we create other threads, mask cancellation signals. We
-	// only want signals to be handled on the main input threads, so
-	// that we can locklessly test for cancellation.
-	if(mask_cancel_sigs(&oldsigs)){
-		unmap_psocket(rxm,rs);
-		close(rfd);
-		return -1;
-	}
-	ntmarsh.octx = &pctx->iface;
-	if( (errno = pthread_create(&nltid,NULL,netlink_thread,&ntmarsh)) ){
-		fprintf(stderr,"Couldn't create netlink thread (%s?)\n",strerror(errno));
-		unmap_psocket(rxm,rs);
-		close(rfd);
-		return -1;
-	}
-	if(pthread_sigmask(SIG_SETMASK,&oldsigs,NULL)){
-		fprintf(stderr,"Couldn't unmask signals (%s?)\n",strerror(errno));
-		reap_netlink_thread(nltid);
-		unmap_psocket(rxm,rs);
-		close(rfd);
-		return -1;
-	}
-	ret |= ring_packet_loop(&pctx->iface,pctx->count,rfd,rxm,&rtpr);
-	if(unmap_psocket(rxm,rs)){
-		ret = -1;
-	}
-	if(close(rfd)){
-		fprintf(stderr,"Couldn't close packet socket %d (%s?)\n",rfd,strerror(errno));
-		ret = -1;
-	}
-	ret |= reap_netlink_thread(nltid);
+	ret = netlink_thread(&pctx->iface);
+	ret |= restore_sighandler(&pctx->iface);
 	return ret;
 }

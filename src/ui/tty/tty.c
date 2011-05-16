@@ -78,16 +78,6 @@ wireless_event(const interface *i,unsigned cmd,void *unsafe __attribute__ ((unus
 	return NULL;
 }
 
-static void
-diag_callback(const char *fmt,...){
-	va_list va;
-
-	va_start(va,fmt);
-	vfprintf(stderr,fmt,va);
-	fprintf(stderr,"\n");
-	va_end(va);
-}
-
 int main(int argc,char * const *argv){
 	omphalos_ctx pctx;
 
@@ -98,7 +88,6 @@ int main(int argc,char * const *argv){
 	pctx.iface.iface_removed = iface_removed;
 	pctx.iface.neigh_event = neigh_event;
 	pctx.iface.wireless_event = wireless_event;
-	pctx.iface.diagnostic = diag_callback;
 	if(omphalos_init(&pctx)){
 		return EXIT_FAILURE;
 	}

@@ -37,6 +37,19 @@ returning a pointer to that opaque state. Returning NULL will disassociate
 any attached opaque state. Don't keep a private store of things like
 interface data or network sessions; use the general accessors.
 
+It's fine to create threads in your UI, but do not do it until after
+calling omphalos_setup(), since this drops permissions and sets up signal
+masking necessary for cancellation to function properly. If there are
+signals your UI threads must handle, mask them prior to calling
+omphalos_setup(), unmask them in the handling thread, and remask them prior
+to calling omphalos_init(). Masking them prior to calling omphalos_setup()
+is not currently necessary, but will be should it ever spawn threads.
+
+A diagnostic callback must be defined. omphalos_setup() will provide a
+default fprintf(stderr,...) callback; you can change it prior to calling
+omphalos_init(), but omphalos_init() will error out if it is set to NULL.
+There is not yet any means to manage diagnostic output in omphalos_setup().
+
 =======================================
 Porting
 =======================================

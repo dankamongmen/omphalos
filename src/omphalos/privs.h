@@ -5,7 +5,9 @@
 extern "C" {
 #endif
 
-int handle_priv_drop(const char *);
+#include <sys/capability.h>
+
+int handle_priv_drop(const char *,const cap_value_t *,unsigned);
 
 #ifdef __cplusplus
 }

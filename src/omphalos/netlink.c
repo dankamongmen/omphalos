@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <pthread.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -9,6 +10,7 @@
 #include <linux/netlink.h>
 #include <linux/version.h>
 #include <linux/rtnetlink.h>
+#include <omphalos/omphalos.h>
 
 int netlink_socket(void){
 	struct sockaddr_nl sa;
@@ -30,7 +32,7 @@ int netlink_socket(void){
 	return fd;
 }
 
-#define nldiscover(msg,famtype,famfield) do {\
+#define nldiscover(octx,msg,famtype,famfield) do {\
 	struct { struct nlmsghdr nh ; struct famtype m ; } req = { \
 		.nh = { .nlmsg_len = NLMSG_LENGTH(sizeof(req.m)), \
 			.nlmsg_flags = NLM_F_REQUEST | NLM_F_ACK | NLM_F_DUMP, \
@@ -38,26 +40,26 @@ int netlink_socket(void){
 		.m = { .famfield = AF_UNSPEC, }, }; \
 	int r; \
 	if((r = send(fd,&req,req.nh.nlmsg_len,0)) < 0){ \
-		fprintf(stderr,"Failure writing " #msg " to %d (%s?)\n",\
+		octx->diagnostic("Failure writing " #msg " to %d (%s?)",\
 				fd,strerror(errno)); \
 	} \
 	return r; \
 }while(0)
 
-int discover_addrs(int fd){
-	nldiscover(RTM_GETADDR,ifaddrmsg,ifa_family);
+int discover_addrs(const omphalos_iface *octx,int fd){
+	nldiscover(octx,RTM_GETADDR,ifaddrmsg,ifa_family);
 }
 
-int discover_links(int fd){
-	nldiscover(RTM_GETLINK,ifinfomsg,ifi_family);
+int discover_links(const omphalos_iface *octx,int fd){
+	nldiscover(octx,RTM_GETLINK,ifinfomsg,ifi_family);
 }
 
-int discover_neighbors(int fd){
-	nldiscover(RTM_GETNEIGH,ndmsg,ndm_family);
+int discover_neighbors(const omphalos_iface *octx,int fd){
+	nldiscover(octx,RTM_GETNEIGH,ndmsg,ndm_family);
 }
 
-int discover_routes(int fd){
-	nldiscover(RTM_GETROUTE,rtmsg,rtm_family);
+int discover_routes(const omphalos_iface *octx,int fd){
+	nldiscover(octx,RTM_GETROUTE,rtmsg,rtm_family);
 }
 
 /* This is all pretty omphalos-specific from here on out */
@@ -70,7 +72,6 @@ int discover_routes(int fd){
 #include <omphalos/ethtool.h>
 #include <omphalos/hwaddrs.h>
 #include <omphalos/psocket.h>
-#include <omphalos/omphalos.h>
 #include <omphalos/wireless.h>
 #include <omphalos/interface.h>
 
@@ -427,6 +428,39 @@ handle_rtm_dellink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	return 0;
 }
 
+typedef struct psocket_marsh {
+	const omphalos_iface *octx;
+	interface *i;
+} psocket_marsh;
+
+static void *
+psocket_thread(void *unsafe){
+	const psocket_marsh *pm = unsafe;
+
+	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE,NULL);
+	ring_packet_loop(pm->octx,pm->i,pm->i->rfd,pm->i->rxm,&pm->i->rtpr);
+	free(unsafe);
+	return NULL;
+}
+
+static int
+reap_thread(const omphalos_iface *octx,pthread_t tid){
+	void *ret;
+
+	if( (errno = pthread_cancel(tid)) ){
+		octx->diagnostic("Couldn't cancel netlink thread (%s?)",strerror(errno));
+	}
+	if( (errno = pthread_join(tid,&ret)) ){
+		octx->diagnostic("Couldn't join netlink thread (%s?)",strerror(errno));
+		return -1;
+	}
+	if(ret != PTHREAD_CANCELED){
+		octx->diagnostic("Thread returned error on exit (%s)",(char *)ret);
+		return -1;
+	}
+	return 0;
+}
+
 static int
 handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	const struct ifinfomsg *ii = NLMSG_DATA(nl);
@@ -440,6 +474,8 @@ handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	}
 	rlen = nl->nlmsg_len - NLMSG_LENGTH(sizeof(*ii));
 	ra = (struct rtattr *)((char *)(NLMSG_DATA(nl)) + sizeof(*ii));
+	// FIXME this is all no good. error paths allow partial updates of
+	// the return interface and memory leaks...
 	while(RTA_OK(ra,rlen)){
 		switch(ra->rta_type){
 			case IFLA_ADDRESS:{
@@ -503,8 +539,13 @@ handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	if(rlen){
 		fprintf(stderr,"%d excess bytes on newlink message\n",rlen);
 	}
+	// FIXME memory leaks on failure paths, ahoy!
 	if(iface->name == NULL){
 		fprintf(stderr,"No name in new link message\n");
+		return -1;
+	}
+	if(iface->mtu == 0){
+		fprintf(stderr,"No MTU in new link message\n");
 		return -1;
 	}
 	iface->arptype = ii->ifi_type;
@@ -516,17 +557,71 @@ handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 		memset(&iface->drv,0,sizeof(iface->drv));
 	}
 	iface->flags = ii->ifi_flags;
-	if(iface->fd < 0){
-		if((iface->fd = packet_socket(octx,ETH_P_ALL)) < 0){
+	if(iface->fd < 0 && (iface->flags & IFF_UP)){
+		psocket_marsh *pm;
+
+		if((pm = malloc(sizeof(*pm))) == NULL){
 			return -1;
 		}
-		if((iface->ts = mmap_tx_psocket(iface->fd,ii->ifi_index,&iface->txm,&iface->ttpr)) == 0){
-			memset(&iface->ttpr,0,sizeof(iface->ttpr));
-			iface->txm = NULL;
+		if((iface->fd = packet_socket(octx,ETH_P_ALL)) < 0){
+			free(pm);
+			return -1;
+		}
+		if((iface->rfd = packet_socket(octx,ETH_P_ALL)) < 0){
 			close(iface->fd);
 			iface->fd = -1;
+			free(pm);
 			return -1;
 		}
+		if((iface->rs = mmap_rx_psocket(octx,iface->rfd,ii->ifi_index,
+					iface->mtu,&iface->rxm,&iface->rtpr)) == 0){
+			memset(&iface->rtpr,0,sizeof(iface->rtpr));
+			iface->rxm = NULL;
+			close(iface->rfd);
+			close(iface->fd);
+			iface->rfd = iface->fd = -1;
+			free(pm);
+			return -1;
+		}
+		if((iface->ts = mmap_tx_psocket(octx,iface->fd,ii->ifi_index,
+					iface->mtu,&iface->txm,&iface->ttpr)) == 0){
+			memset(&iface->rtpr,0,sizeof(iface->rtpr));
+			memset(&iface->ttpr,0,sizeof(iface->ttpr));
+			iface->rxm = iface->txm = NULL;
+			close(iface->rfd);
+			close(iface->fd);
+			iface->rfd = iface->fd = -1;
+			iface->rs = 0;
+			free(pm);
+			return -1;
+		}
+		pm->octx = octx;
+		pm->i = iface;
+		if(pthread_create(&iface->tid,NULL,psocket_thread,pm)){
+			memset(&iface->rtpr,0,sizeof(iface->rtpr));
+			memset(&iface->ttpr,0,sizeof(iface->ttpr));
+			iface->rxm = iface->txm = NULL;
+			close(iface->rfd);
+			close(iface->fd);
+			iface->rfd = iface->fd = -1;
+			iface->rs = 0;
+			free(pm);
+			return -1;
+		}
+		/* FIXME
+	if(unmap_psocket(rxm,rs)){
+		ret = -1;
+	}
+	if(close(rfd)){
+		pctx->iface.diagnostic("Couldn't close packet socket %d (%s?)",rfd,strerror(errno));
+		ret = -1;
+	}
+	*/
+	}else if(iface->fd >= 0 && !(iface->flags & IFF_UP)){
+		close(iface->rfd);
+		close(iface->fd);
+		reap_thread(octx,iface->tid);
+		iface->rfd = iface->fd = -1;
 	}
 	if(octx->iface_event){
 		iface->opaque = octx->iface_event(iface,ii->ifi_index,iface->opaque);
@@ -535,9 +630,9 @@ handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 }
 
 static int
-handle_netlink_error(int fd,const struct nlmsgerr *nerr){
+handle_netlink_error(const omphalos_iface *octx,int fd,const struct nlmsgerr *nerr){
 	if(nerr->error == 0){
-		printf("ACK on netlink %d msgid %u type %u\n",
+		octx->diagnostic("ACK on netlink %d msgid %u type %u",
 			fd,nerr->msg.nlmsg_seq,nerr->msg.nlmsg_type);
 		// FIXME do we care?
 		return 0;
@@ -545,20 +640,20 @@ handle_netlink_error(int fd,const struct nlmsgerr *nerr){
 	if(-nerr->error == EAGAIN || -nerr->error == EBUSY){
 		switch(nerr->msg.nlmsg_type){
 		case RTM_GETLINK:{
-			return discover_links(fd);
+			return discover_links(octx,fd);
 		break;}case RTM_GETADDR:{
-			return discover_addrs(fd);
+			return discover_addrs(octx,fd);
 		break;}case RTM_GETROUTE:{
-			return discover_routes(fd);
+			return discover_routes(octx,fd);
 		break;}case RTM_GETNEIGH:{
-			return discover_neighbors(fd);
+			return discover_neighbors(octx,fd);
 		break;}default:{
-			fprintf(stderr,"Unknown msgtype in EAGAIN: %u\n",nerr->msg.nlmsg_type);
+			octx->diagnostic("Unknown msgtype in EAGAIN: %u",nerr->msg.nlmsg_type);
 			return -1;
 		break;}
 		}
 	}
-	fprintf(stderr,"Error message on netlink %d msgid %u type %u (%s?)\n",
+	octx->diagnostic("Error message on netlink %d msgid %u type %u (%s?)",
 		fd,nerr->msg.nlmsg_seq,nerr->msg.nlmsg_type,strerror(-nerr->error));
 	return -1;
 }
@@ -601,13 +696,13 @@ int handle_netlink_event(const omphalos_iface *octx,int fd){
 			break;}case RTM_DELADDR:{
 			break;}case NLMSG_DONE:{
 				if(!inmulti){
-					fprintf(stderr,"Warning: DONE outside multipart on %d\n",fd);
+					octx->diagnostic("Warning: DONE outside multipart on %d",fd);
 				}
 				inmulti = 0;
 			break;}case NLMSG_ERROR:{
-				res |= handle_netlink_error(fd,NLMSG_DATA(nh));
+				res |= handle_netlink_error(octx,fd,NLMSG_DATA(nh));
 			break;}default:{
-				fprintf(stderr,"Unknown netlink msgtype %u on %d\n",nh->nlmsg_type,fd);
+				octx->diagnostic("Unknown netlink msgtype %u on %d",nh->nlmsg_type,fd);
 				res = -1;
 			break;}}
 			// FIXME handle read data

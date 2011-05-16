@@ -16,7 +16,7 @@ ADDCAPS:=tools/addcaps
 UI:=ncurses tty
 BIN:=$(addprefix $(OMPHALOS)-,$(UI))
 
-CFLAGS+=-I$(SRC) -pthread -D_GNU_SOURCE -fpic -I$(SRC)/lib$(PROJ) -fvisibility=hidden -O2 -Wall -W -Werror -g
+CFLAGS+=-I$(SRC) -pthread -D_GNU_SOURCE -fpic -I$(SRC)/lib$(PROJ) -fstrict-aliasing -fvisibility=hidden -O2 -Wall -W -Wextra -Werror -g
 # FIXME doesn't work with gold, there we need:
 #GOLDLFLAGS+=-Wl,-O2,--enable-new-dtags,--as-needed,--warn-common
 LFLAGS+=-Wl,-O2,--default-symver,--enable-new-dtags,--as-needed,--warn-common
@@ -60,10 +60,10 @@ TTYOBJS:=$(filter $(OUT)/$(SRC)/ui/tty/%.o,$(COBJS))
 
 # Requires CAP_NET_ADMIN privileges bestowed upon the binary
 livetest: sudobless
-	$(OMPHALOS)-ncurses
+	$(OMPHALOS)-ncurses -u ''
 
 test: all $(TESTPCAPS)
-	for i in $(TESTPCAPS) ; do $(OMPHALOS)-tty -f $$i || exit 1 ; done
+	for i in $(TESTPCAPS) ; do $(OMPHALOS)-tty -f $$i -u "" || exit 1 ; done
 
 $(OMPHALOS)-ncurses: $(COREOBJS) $(NCURSESOBJS)
 	@mkdir -p $(@D)
