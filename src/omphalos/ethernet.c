@@ -30,11 +30,11 @@ handle_8021q(const omphalos_iface *octx,interface *i,const void *frame,
 	dlen = len - sizeof(*hdr) - 4;
 	switch(proto){
 	case ETH_P_IP:{
-		handle_ipv4_packet(i,dgram,dlen);
+		handle_ipv4_packet(octx,i,dgram,dlen);
 	break;}case ETH_P_ARP:{
 		handle_arp_packet(i,dgram,dlen);
 	break;}case ETH_P_IPV6:{
-		handle_ipv6_packet(i,dgram,dlen);
+		handle_ipv6_packet(octx,i,dgram,dlen);
 	break;}case ETH_P_PAE:{
 		handle_eapol_packet(i,dgram,dlen);
 	break;}default:{
@@ -65,13 +65,13 @@ void handle_ethernet_packet(const omphalos_iface *octx,interface *i,
 
 			switch(proto){
 				case ETH_P_IP:{
-					handle_ipv4_packet(i,dgram,dlen);
+					handle_ipv4_packet(octx,i,dgram,dlen);
 					break;
 				}case ETH_P_ARP:{
 					handle_arp_packet(i,dgram,dlen);
 					break;
 				}case ETH_P_IPV6:{
-					handle_ipv6_packet(i,dgram,dlen);
+					handle_ipv6_packet(octx,i,dgram,dlen);
 					break;
 				}case ETH_P_PAE:{
 					handle_eapol_packet(i,dgram,dlen);
@@ -83,8 +83,8 @@ void handle_ethernet_packet(const omphalos_iface *octx,interface *i,
 					if(proto <= ETH_DATA_LEN){
 						// FIXME handle IEEE 802.3
 					}else{
-						octx->diagnostic("%s %s noproto for 0x%x",__func__,i->name,proto);
 						++i->noprotocol;
+						octx->diagnostic("%s %s noproto for 0x%x",__func__,i->name,proto);
 					}
 					break;
 				}
