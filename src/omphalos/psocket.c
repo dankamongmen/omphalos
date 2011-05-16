@@ -258,32 +258,32 @@ handle_ring_packet(const omphalos_iface *octx,int fd,void *frame){
 		pfd[0].revents = 0;
 		pfd[0].events = POLLIN | POLLRDNORM | POLLERR;
 		while((events = poll(pfd,sizeof(pfd) / sizeof(*pfd),-1)) == 0){
-			fprintf(stderr,"Interrupted polling packet socket %d\n",fd);
+			octx->diagnostic("Interrupted polling packet socket %d",fd);
 		}
 		if(events < 0){
 			if(!cancelled || errno != EINTR){
-				fprintf(stderr,"Error polling packet socket %d (%s?)\n",fd,strerror(errno));
+				octx->diagnostic("Error polling packet socket %d (%s?)",fd,strerror(errno));
 			}
 			return;
 		}
 		if(pfd[0].revents & POLLERR){
-			fprintf(stderr,"Error polling packet socket %d\n",fd);
+			octx->diagnostic("Error polling packet socket %d",fd);
 			return;
 		}
 	}
 	sall = (struct sockaddr_ll *)((char *)frame + TPACKET_ALIGN(sizeof(*thdr)));
 	if((iface = iface_by_idx(sall->sll_ifindex)) == NULL){
-		fprintf(stderr,"Invalid interface index: %d\n",sall->sll_ifindex);
+		octx->diagnostic("Invalid interface index: %d",sall->sll_ifindex);
 		return;
 	}
 	if((thdr->tp_status & TP_STATUS_COPY) || thdr->tp_snaplen != thdr->tp_len){
-		fprintf(stderr,"Partial capture on %s (%d) (%u/%ub)\n",
+		octx->diagnostic("Partial capture on %s (%d) (%u/%ub)",
 				iface->name,sall->sll_ifindex,thdr->tp_snaplen,thdr->tp_len);
 		++iface->truncated;
 		return;
 	}
 	if(thdr->tp_status & TP_STATUS_LOSING){
-		fprintf(stderr,"FUCK ME; THE RINGBUFFER'S FULL!\n");
+		octx->diagnostic("FUCK ME; THE RINGBUFFER'S FULL!");
 	}
 	++iface->frames;
 	handle_ethernet_packet(octx,iface,(char *)frame + thdr->tp_mac,thdr->tp_len);
