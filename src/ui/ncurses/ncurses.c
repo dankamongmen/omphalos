@@ -169,14 +169,16 @@ wvstatus_locked(WINDOW *w,const char *fmt,va_list va){
 	if(cols <= START_COL){
 		return -1;
 	}
-	if((buf = malloc(cols - START_COL)) == NULL){
+	if((buf = malloc(cols - START_COL + 1)) == NULL){
 		return -1;
 	}
 	vsnprintf(buf,cols - START_COL,fmt,va);
 	ret = mvprintw(rows - 1,START_COL,"%s",buf);
 	if(ret == OK){
 		// FIXME whole screen isn't always appropriate
-		ret = prefresh(w,0,0,0,0,LINES,COLS);
+		if((ret = prefresh(w,0,0,0,0,LINES,COLS)) == OK){
+			ret = refresh(); // FIXME shouldn't be necessary?
+		}
 	}
 	return ret;
 }
