@@ -148,12 +148,14 @@ int print_l2hosts(FILE *fp){
 }
 
 int print_neigh(const interface *iface,const struct l2host *l2){
-	char str[INET6_ADDRSTRLEN];
+	char *hwaddr;
 	int n;
 
 	// FIXME need real family! inet_ntop(nd->ndm_family,l2->hwaddr,str,sizeof(str));
-	inet_ntop(AF_INET6,l2->hwaddr,str,sizeof(str));
-	n = printf("[%8s] neighbor %s\n",iface->name,str);
+	hwaddr = l2addrstr(l2->hwaddr,IFHWADDRLEN);
+
+	n = printf("[%8s] neighbor %s\n",iface->name,hwaddr);
+	free(hwaddr);
 	/* FIXME printf("[%8s] neighbor %s %s%s%s%s%s%s%s%s\n",iface->name,str,
 			nd->ndm_state & NUD_INCOMPLETE ? "INCOMPLETE" : "",
 			nd->ndm_state & NUD_REACHABLE ? "REACHABLE" : "",
