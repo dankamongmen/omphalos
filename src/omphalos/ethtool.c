@@ -39,7 +39,7 @@ int iface_driver_info(const char *name,struct ethtool_drvinfo *drv){
 		drv->fw_version[0] = '\0';
 	}
 	if(strcmp(drv->bus_info,"N/A") == 0){
-		drv->fw_version[0] = '\0';
+		drv->bus_info[0] = '\0';
 	}
 	return 0;
 }

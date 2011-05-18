@@ -171,6 +171,9 @@ wvstatus_locked(WINDOW *w,const char *fmt,va_list va){
 		ret = draw_main_window(w,PROGNAME,VERSION);
 		return ret;
 	}
+	if(beep()){
+		return -1;
+	}
 	// FIXME need set and reset attrs
 	getmaxyx(w,rows,cols);
 	if(cols <= START_COL){
