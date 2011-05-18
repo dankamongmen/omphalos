@@ -51,6 +51,34 @@ static unsigned count_interface;
 static iface_state *current_iface;
 static const char *glibc_version,*glibc_release;
 
+// Status bar at the bottom of the screen. Must be reallocated upon screen
+// resize and allocated based on initial screen at startup. Don't shrink
+// it; widening the window again should show the full message.
+static char *statusmsg;
+static int statuschars;	// True size, not necessarily what's available
+
+#define ANSITERM_COLS 80
+
+// Pass current number of columns
+static int
+setup_statusbar(int cols){
+	if(cols < 0){
+		return -1;
+	}else if(cols < ANSITERM_COLS){
+		cols = ANSITERM_COLS;
+	}
+	if(statuschars <= cols){
+		char *sm;
+
+		if((sm = realloc(statusmsg,cols + 1)) == NULL){
+			return -1;
+		}
+		statuschars = cols + 1;
+		statusmsg = sm;
+	}
+	return 0;
+}
+
 static int
 iface_box(WINDOW *w,const interface *i,const iface_state *is){
 	int bcolor,hcolor;
@@ -128,6 +156,12 @@ err:
 
 static int
 draw_main_window(WINDOW *w,const char *name,const char *ver){
+	int rows,cols;
+
+	getmaxyx(w,rows,cols);
+	if(setup_statusbar(cols)){
+		return -1;
+	}
 	if(wcolor_set(w,BORDER_COLOR,NULL) != OK){
 		return -1;
 	}
@@ -153,6 +187,15 @@ draw_main_window(WINDOW *w,const char *name,const char *ver){
 	if(wprintw(w,"]") < 0){
 		return -1;
 	}
+	if(wattron(w,A_BOLD | COLOR_PAIR(HEADING_COLOR)) != OK){
+		return -1;
+	}
+	if(mvprintw(rows - 1,START_COL,"%s",statusmsg) != OK){
+		return -1;
+	}
+	if(wattroff(w,A_BOLD | COLOR_PAIR(BORDER_COLOR)) != OK){
+		return -1;
+	}
 	if(prefresh(w,0,0,0,0,LINES,COLS)){
 		return -1;
 	}
@@ -164,33 +207,12 @@ draw_main_window(WINDOW *w,const char *name,const char *ver){
 
 static int
 wvstatus_locked(WINDOW *w,const char *fmt,va_list va){
-	int rows,cols,ret;
-	char *buf;
-
 	if(fmt == NULL){
-		ret = draw_main_window(w,PROGNAME,VERSION);
-		return ret;
+		statusmsg[0] = '\0';
+	}else{
+		vsnprintf(statusmsg,statuschars,fmt,va);
 	}
-	if(beep()){
-		return -1;
-	}
-	// FIXME need set and reset attrs
-	getmaxyx(w,rows,cols);
-	if(cols <= START_COL){
-		return -1;
-	}
-	if((buf = malloc(cols - START_COL + 1)) == NULL){
-		return -1;
-	}
-	vsnprintf(buf,cols - START_COL,fmt,va);
-	ret = mvprintw(rows - 1,START_COL,"%s",buf);
-	if(ret == OK){
-		// FIXME whole screen isn't always appropriate
-		if((ret = prefresh(w,0,0,0,0,rows,cols)) == OK){
-			ret = refresh(); // FIXME shouldn't be necessary?
-		}
-	}
-	return ret;
+	return draw_main_window(w,PROGNAME,VERSION);
 }
 
 // NULL fmt clears the status bar
@@ -201,6 +223,9 @@ wvstatus(WINDOW *w,const char *fmt,va_list va){
 	pthread_mutex_lock(&bfl);
 	ret = wvstatus_locked(w,fmt,va);
 	pthread_mutex_unlock(&bfl);
+	if(ret != OK){
+		abort();
+	}
 	return ret;
 }
 
@@ -223,7 +248,6 @@ ncurses_input_thread(void *nil){
 
 	if(!nil){
 		while((ch = getch()) != 'q' && ch != 'Q'){
-		wstatus(pad,NULL);
 		switch(ch){
 			case KEY_UP: case 'k':
 				pthread_mutex_lock(&bfl);
@@ -236,7 +260,7 @@ ncurses_input_thread(void *nil){
 					is = current_iface;
 					i = iface_by_idx(is->ifacenum);
 					iface_box(is->subpad,i,is);
-					prefresh(pad,0,0,0,0,LINES,COLS);
+					draw_main_window(pad,PROGNAME,VERSION);
 				}
 				pthread_mutex_unlock(&bfl);
 				break;
@@ -251,7 +275,7 @@ ncurses_input_thread(void *nil){
 					is = current_iface;
 					i = iface_by_idx(is->ifacenum);
 					iface_box(is->subpad,i,is);
-					prefresh(pad,0,0,0,0,LINES,COLS);
+					draw_main_window(pad,PROGNAME,VERSION);
 				}
 				pthread_mutex_unlock(&bfl);
 				break;
@@ -355,6 +379,10 @@ ncurses_setup(WINDOW **mainwin){
 		fprintf(stderr,"Couldn't disable cursor\n");
 		goto err;
 	}
+	if(setup_statusbar(COLS)){
+		fprintf(stderr,"Couldn't setup status bar\n");
+		goto err;
+	}
 	if(draw_main_window(w,PROGNAME,VERSION)){
 		fprintf(stderr,"Couldn't use ncurses\n");
 		goto err;
@@ -363,6 +391,7 @@ ncurses_setup(WINDOW **mainwin){
 		fprintf(stderr,"Couldn't create UI thread\n");
 		goto err;
 	}
+	// FIXME install SIGWINCH() handler...
 	return w;
 
 err:
@@ -450,6 +479,11 @@ static inline void
 interface_removed_locked(iface_state *is){
 	if(is){
 		delwin(is->subpad);
+		is->next->prev = is->prev;
+		is->prev->next = is->next;
+		if(is == current_iface){
+			current_iface = is->prev;
+		}
 		free(is);
 	}
 }
