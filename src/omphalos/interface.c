@@ -86,7 +86,7 @@ void free_iface(interface *i){
 	free(i->name);
 	free(i->addr);
 	memset(i,0,sizeof(*i));
-	i->fd = -1;
+	i->rfd = i->fd = -1;
 }
 
 void cleanup_interfaces(const omphalos_iface *pctx){
