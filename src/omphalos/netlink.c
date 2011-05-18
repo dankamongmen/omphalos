@@ -216,7 +216,9 @@ handle_rtm_delneigh(const omphalos_iface *octx,const struct nlmsghdr *nl){
 		if(octx->neigh_removed){
 			octx->neigh_removed(iface,l2,iface->opaque);
 		}
-		// FIXME and do what else with it?
+		// FIXME if we are removed prior to going down, we never
+		// reap the thread! needs be reaped from free_iface()...
+		free_iface(iface);
 	}
 	return 0;
 }
