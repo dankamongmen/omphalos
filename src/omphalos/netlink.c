@@ -482,7 +482,7 @@ handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 				char *addr;
 
 				if((addr = malloc(RTA_PAYLOAD(ra))) == NULL){
-					fprintf(stderr,"Address too long: %lu\n",RTA_PAYLOAD(ra));
+					octx->diagnostic("Address too long: %lu\n",RTA_PAYLOAD(ra));
 					return -1;
 				}
 				memcpy(addr,RTA_DATA(ra),RTA_PAYLOAD(ra));
@@ -494,19 +494,24 @@ handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 				char *name;
 
 				if((name = strdup(RTA_DATA(ra))) == NULL){
-					fprintf(stderr,"Name too long: %s\n",(char *)RTA_DATA(ra));
+					// FIXME probably unsafe..
+					octx->diagnostic("Name too long: %s\n",(char *)RTA_DATA(ra));
 					return -1;
 				}
 				free(iface->name);
 				iface->name = name;
 			break;}case IFLA_MTU:{
 				if(RTA_PAYLOAD(ra) != sizeof(int)){
-					fprintf(stderr,"Expected %zu MTU bytes, got %lu\n",
+					octx->diagnostic("Expected %zu MTU bytes, got %lu\n",
 							sizeof(int),RTA_PAYLOAD(ra));
 					break;
 				}
 				iface->mtu = *(int *)RTA_DATA(ra);
 			break;}case IFLA_LINK:{
+			break;}case IFLA_MASTER:{ // bridging event
+				octx->diagnostic("Bridging event on %s\n",iface->name);
+			break;}case IFLA_PROTINFO:{
+				octx->diagnostic("Protocol info message on %s\n",iface->name);
 			break;}case IFLA_TXQLEN:{
 			break;}case IFLA_MAP:{
 			break;}case IFLA_WEIGHT:{
@@ -531,21 +536,21 @@ handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 			break;}case IFLA_AF_SPEC:{
 #endif
 			break;}default:{
-				fprintf(stderr,"Unknown iflatype %u\n",ra->rta_type);
+				octx->diagnostic("Unknown iflatype %u\n",ra->rta_type);
 			break;}
 		}
 		ra = RTA_NEXT(ra,rlen);
 	}
 	if(rlen){
-		fprintf(stderr,"%d excess bytes on newlink message\n",rlen);
+		octx->diagnostic("%d excess bytes on newlink message\n",rlen);
 	}
 	// FIXME memory leaks on failure paths, ahoy!
 	if(iface->name == NULL){
-		fprintf(stderr,"No name in new link message\n");
+		octx->diagnostic("No name in new link message\n");
 		return -1;
 	}
 	if(iface->mtu == 0){
-		fprintf(stderr,"No MTU in new link message\n");
+		octx->diagnostic("No MTU in new link message\n");
 		return -1;
 	}
 	iface->arptype = ii->ifi_type;
