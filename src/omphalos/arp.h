@@ -8,8 +8,9 @@ extern "C" {
 #include <stddef.h>
 
 struct interface;
+struct omphalos_iface;
 
-void handle_arp_packet(struct interface *,const void *,size_t);
+void handle_arp_packet(const struct omphalos_iface *,struct interface *,const void *,size_t);
 
 #ifdef __cplusplus
 }
