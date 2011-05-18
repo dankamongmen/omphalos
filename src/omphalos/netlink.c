@@ -420,7 +420,7 @@ handle_rtm_dellink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	interface *iface;
 
 	if((iface = iface_by_idx(ii->ifi_index)) == NULL){
-		fprintf(stderr,"Invalid interface index: %d\n",ii->ifi_index);
+		octx->diagnostic("Invalid interface index: %d\n",ii->ifi_index);
 		return -1;
 	}
 	if(octx->iface_removed){
