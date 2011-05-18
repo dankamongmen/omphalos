@@ -2,10 +2,11 @@
 #include <linux/if_arp.h>
 #include <omphalos/arp.h>
 #include <asm/byteorder.h>
+#include <omphalos/omphalos.h>
 #include <omphalos/ethernet.h>
 #include <omphalos/interface.h>
 
-void handle_arp_packet(interface *i,const void *frame,size_t len){
+void handle_arp_packet(const omphalos_iface *octx,interface *i,const void *frame,size_t len){
 	const struct arphdr *ap = frame;
 
 	if(len < sizeof(*ap)){
@@ -13,9 +14,9 @@ void handle_arp_packet(interface *i,const void *frame,size_t len){
 		return;
 	}
 	if(check_ethernet_padup(len,sizeof(*ap) + ap->ar_hln * 2 + ap->ar_pln * 2)){
-		fprintf(stderr,"%s malformed expected %zu got %zu\n",
-			__func__,sizeof(*ap) + ap->ar_hln * 2 + ap->ar_pln * 2,len);
 		++i->malformed;
+		octx->diagnostic("%s malformed expected %zu got %zu\n",
+			__func__,sizeof(*ap) + ap->ar_hln * 2 + ap->ar_pln * 2,len);
 		return;
 	}
 	switch(ap->ar_op){
@@ -23,7 +24,7 @@ void handle_arp_packet(interface *i,const void *frame,size_t len){
 		// FIXME reply with ARP spoof...
 	break;}case __constant_ntohs(ARPOP_REPLY):{
 	break;}default:{
-		fprintf(stderr,"%s unknown op %u\n",__func__,ap->ar_op);
 		++i->noprotocol;
+		octx->diagnostic("%s unknown op %u\n",__func__,ap->ar_op);
 	break;}}
 }
