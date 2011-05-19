@@ -74,6 +74,9 @@ setup_statusbar(int cols){
 			return -1;
 		}
 		statuschars = cols + 1;
+		if(statusmsg == NULL){
+			sm[0] = '\0';
+		}
 		statusmsg = sm;
 	}
 	return 0;
