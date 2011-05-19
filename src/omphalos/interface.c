@@ -85,6 +85,7 @@ void free_iface(interface *i){
 	}
 	free(i->name);
 	free(i->addr);
+	cleanup_l2hosts(&i->l2hosts);
 	memset(i,0,sizeof(*i));
 	i->rfd = i->fd = -1;
 }

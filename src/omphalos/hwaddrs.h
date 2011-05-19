@@ -11,9 +11,9 @@ extern "C" {
 struct l2host;
 struct interface;
 
-struct l2host *lookup_l2host(const void *,size_t);
-void cleanup_l2hosts(void);
-int print_l2hosts(FILE *);
+struct l2host *lookup_l2host(struct l2host **,const void *,size_t);
+void cleanup_l2hosts(struct l2host **);
+int print_l2hosts(FILE *,const struct l2host *);
 char *l2addrstr(const void *,size_t);
 int print_neigh(const struct interface *,const struct l2host *);
 

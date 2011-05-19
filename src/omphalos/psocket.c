@@ -23,7 +23,7 @@
 #define PACKET_TX_RING 13
 #endif
 
-static const unsigned MMAP_BLOCK_COUNT = 32768; // FIXME do better
+static const unsigned MMAP_BLOCK_COUNT = 8192; // FIXME do better
 
 // See packet(7) and Documentation/networking/packet_mmap.txt
 int packet_socket(const omphalos_iface *pctx,unsigned protocol){

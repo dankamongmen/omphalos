@@ -139,7 +139,7 @@ handle_rtm_newneigh(const omphalos_iface *octx,const struct nlmsghdr *nl){
 		fprintf(stderr,"%d excess bytes on newlink message\n",rlen);
 	}
 	if(llen){
-		l2 = lookup_l2host(ll,sizeof(ll));
+		l2 = lookup_l2host(&iface->l2hosts,ll,sizeof(ll));
 		if(octx->neigh_event){
 			iface->opaque = octx->neigh_event(iface,l2,iface->opaque);
 		}
@@ -212,7 +212,7 @@ handle_rtm_delneigh(const omphalos_iface *octx,const struct nlmsghdr *nl){
 		fprintf(stderr,"%d excess bytes on newlink message\n",rlen);
 	}
 	if(llen){
-		l2 = lookup_l2host(ll,sizeof(ll));
+		l2 = lookup_l2host(&iface->l2hosts,ll,sizeof(ll));
 		if(octx->neigh_removed){
 			octx->neigh_removed(iface,l2,iface->opaque);
 		}

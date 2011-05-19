@@ -41,9 +41,6 @@ dump_output(FILE *fp){
 	if(print_stats(fp)){
 		return -1;
 	}
-	if(print_l2hosts(fp)){
-		return -1;
-	}
 	if(print_l3hosts(fp)){
 		return -1;
 	}

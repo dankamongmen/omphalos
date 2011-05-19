@@ -62,7 +62,7 @@ handle_pcap_cooked(u_char *gi,const struct pcap_pkthdr *h,const u_char *bytes){
 		++iface->malformed;
 		return;
 	}
-	if((l2s = lookup_l2host(sll->hwaddr,ntohs(sll->hwlen))) == NULL){
+	if((l2s = lookup_l2host(&iface->l2hosts,sll->hwaddr,ntohs(sll->hwlen))) == NULL){
 		return;
 	}
 	// proto is in network byte-order. rather than possibly switch it

@@ -145,6 +145,5 @@ int omphalos_init(const omphalos_ctx *pctx){
 void omphalos_cleanup(const omphalos_ctx *pctx){
 	cleanup_interfaces(&pctx->iface);
 	cleanup_pcap();
-	cleanup_l2hosts();
 	cleanup_l3hosts();
 }

@@ -54,6 +54,8 @@ typedef struct interface {
 	struct ip4route *ip4r;	// list of IPv4 routes
 	struct ip6route *ip6r;	// list of IPv6 routes
 
+	struct l2host *l2hosts;
+
 	void *opaque;		// opaque callback state
 } interface;
 

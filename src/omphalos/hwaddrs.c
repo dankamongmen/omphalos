@@ -14,9 +14,6 @@ typedef struct l2host {
 	struct l2host *next;
 } l2host;
 
-// FIXME support multiple zones, for different addrlens
-static l2host *etherlist;
-
 // FIXME replace internals with LRU acquisition...
 static inline l2host *
 create_l2host(const void *hwaddr,size_t addrlen){
@@ -34,41 +31,44 @@ create_l2host(const void *hwaddr,size_t addrlen){
 			free(hwstr);
 		}
 		memcpy(l2->hwaddr,hwaddr,addrlen);
-		l2->next = etherlist;
-		etherlist = l2;
 	}
 	return l2;
 }
 
+#include <assert.h>
 // FIXME strictly proof-of-concept. we'll want a trie- or hash-based
 // lookup, backed by an arena-allocated LRU, etc...
-l2host *lookup_l2host(const void *hwaddr,size_t addrlen){
+l2host *lookup_l2host(l2host **list,const void *hwaddr,size_t addrlen){
 	l2host *l2,**prev;
 
 	if(addrlen != IFHWADDRLEN){
 		fprintf(stderr,"Only 48-bit l2 addresses are supported\n");
 		return NULL;
 	}
-	for(prev = &etherlist ; (l2 = *prev) ; prev = &l2->next){
+	for(prev = list ; (l2 = *prev) ; prev = &l2->next){
 		if(memcmp(l2->hwaddr,hwaddr,addrlen) == 0){
 			*prev = l2->next;
-			l2->next = etherlist;
-			etherlist = l2;
+			l2->next = *list;
+			*list = l2;
 			return l2;
 		}
 	}
-	return create_l2host(hwaddr,addrlen);
+	if( (l2 = create_l2host(hwaddr,addrlen)) ){
+		l2->next = *list;
+		*list = l2;
+	}
+	return l2;
 }
 
-void cleanup_l2hosts(void){
+void cleanup_l2hosts(l2host **list){
 	l2host *l2,*tmp;
 
-	for(l2 = etherlist ; l2 ; l2 = tmp){
+	for(l2 = *list ; l2 ; l2 = tmp){
 		tmp = l2->next;
 		free(l2->hwaddr);
 		free(l2);
 	}
-	etherlist = NULL;
+	*list = NULL;
 }
 
 char *l2addrstr(const void *addr,size_t len){
@@ -100,10 +100,10 @@ categorize_ethaddr(const unsigned char *mac){
 	return RTN_UNICAST;
 }
 
-int print_l2hosts(FILE *fp){
+int print_l2hosts(FILE *fp,const l2host *list){
 	const l2host *l2;
 
-	if( (l2 = etherlist) ){
+	if( (l2 = list) ){
 		if(fprintf(fp,"<neighbors>") < 0){
 			return -1;
 		}

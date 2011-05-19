@@ -69,8 +69,8 @@ void handle_ethernet_packet(const omphalos_iface *octx,interface *i,
 		octx->diagnostic("%s malformed with %zu",__func__,len);
 		return;
 	}
-	if( (l2s = lookup_l2host(hdr->h_source,ETH_ALEN)) ){
-		if( (l2d = lookup_l2host(hdr->h_dest,ETH_ALEN)) ){
+	if( (l2s = lookup_l2host(&i->l2hosts,hdr->h_source,ETH_ALEN)) ){
+		if( (l2d = lookup_l2host(&i->l2hosts,hdr->h_dest,ETH_ALEN)) ){
 			const void *dgram = (const char *)frame + sizeof(*hdr);
 			uint16_t proto = ntohs(hdr->h_proto);
 			size_t dlen = len - sizeof(*hdr);
