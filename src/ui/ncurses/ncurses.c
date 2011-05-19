@@ -246,59 +246,57 @@ wstatus(WINDOW *w,const char *fmt,...){
 
 // FIXME do stuff here, proof of concept skeleton currently
 static void *
-ncurses_input_thread(void *nil){
+ncurses_input_thread(void *nil __attribute__ ((unused))){
 	int ch;
 
-	if(!nil){
-		while((ch = getch()) != 'q' && ch != 'Q'){
-		switch(ch){
-			case KEY_UP: case 'k':
-				pthread_mutex_lock(&bfl);
-				if(current_iface && current_iface->prev){
-					const iface_state *is = current_iface;
-					interface *i = iface_by_idx(is->ifacenum);
+	while((ch = getch()) != 'q' && ch != 'Q'){
+	switch(ch){
+		case KEY_UP: case 'k':
+			pthread_mutex_lock(&bfl);
+			if(current_iface && current_iface->prev){
+				const iface_state *is = current_iface;
+				interface *i = iface_by_idx(is->ifacenum);
 
-					current_iface = current_iface->prev;
-					iface_box(is->subpad,i,is);
-					is = current_iface;
-					i = iface_by_idx(is->ifacenum);
-					iface_box(is->subpad,i,is);
-					draw_main_window(pad,PROGNAME,VERSION);
-				}
-				pthread_mutex_unlock(&bfl);
-				break;
-			case KEY_DOWN: case 'j':
-				pthread_mutex_lock(&bfl);
-				if(current_iface && current_iface->next){
-					const iface_state *is = current_iface;
-					interface *i = iface_by_idx(is->ifacenum);
+				current_iface = current_iface->prev;
+				iface_box(is->subpad,i,is);
+				is = current_iface;
+				i = iface_by_idx(is->ifacenum);
+				iface_box(is->subpad,i,is);
+				draw_main_window(pad,PROGNAME,VERSION);
+			}
+			pthread_mutex_unlock(&bfl);
+			break;
+		case KEY_DOWN: case 'j':
+			pthread_mutex_lock(&bfl);
+			if(current_iface && current_iface->next){
+				const iface_state *is = current_iface;
+				interface *i = iface_by_idx(is->ifacenum);
 
-					current_iface = current_iface->next;
-					iface_box(is->subpad,i,is);
-					is = current_iface;
-					i = iface_by_idx(is->ifacenum);
-					iface_box(is->subpad,i,is);
-					draw_main_window(pad,PROGNAME,VERSION);
-				}
-				pthread_mutex_unlock(&bfl);
-				break;
-			case 'h':
-				wstatus(pad,"there is no help here"); // FIXME
-				break;
-			default:
-				if(isprint(ch)){
-					wstatus(pad,"unknown command '%c' ('h' for help)",ch);
-				}else{
-					wstatus(pad,"unknown scancode '%d' ('h' for help)",ch);
-				}
-				break;
-		}
-		}
-		wstatus(pad,"%s","shutting down");
-		// we can't use raise() here, as that sends the signal only
-		// to ourselves, and we have it masked.
-		kill(getpid(),SIGINT);
+				current_iface = current_iface->next;
+				iface_box(is->subpad,i,is);
+				is = current_iface;
+				i = iface_by_idx(is->ifacenum);
+				iface_box(is->subpad,i,is);
+				draw_main_window(pad,PROGNAME,VERSION);
+			}
+			pthread_mutex_unlock(&bfl);
+			break;
+		case 'h':
+			wstatus(pad,"there is no help here"); // FIXME
+			break;
+		default:
+			if(isprint(ch)){
+				wstatus(pad,"unknown command '%c' ('h' for help)",ch);
+			}else{
+				wstatus(pad,"unknown scancode '%d' ('h' for help)",ch);
+			}
+			break;
 	}
+	}
+	wstatus(pad,"%s","shutting down");
+	// we can't use raise() here, as that sends the signal only
+	// to ourselves, and we have it masked.
+	kill(getpid(),SIGINT);
 	pthread_exit(NULL);
 }
 
