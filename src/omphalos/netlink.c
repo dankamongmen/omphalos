@@ -216,9 +216,7 @@ handle_rtm_delneigh(const omphalos_iface *octx,const struct nlmsghdr *nl){
 		if(octx->neigh_removed){
 			octx->neigh_removed(iface,l2,iface->opaque);
 		}
-		// FIXME if we are removed prior to going down, we never
-		// reap the thread! needs be reaped from free_iface()...
-		free_iface(iface);
+		free_iface(octx,iface);
 	}
 	return 0;
 }
@@ -426,7 +424,7 @@ handle_rtm_dellink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	if(octx->iface_removed){
 		octx->iface_removed(iface,iface->opaque);
 	}
-	free_iface(iface);
+	free_iface(octx,iface);
 	return 0;
 }
 
@@ -445,15 +443,14 @@ psocket_thread(void *unsafe){
 	return NULL;
 }
 
-static int
-reap_thread(const omphalos_iface *octx,pthread_t tid){
+int reap_thread(const omphalos_iface *octx,pthread_t tid){
 	void *ret;
 
 	if( (errno = pthread_cancel(tid)) ){
-		octx->diagnostic("Couldn't cancel netlink thread (%s?)",strerror(errno));
+		octx->diagnostic("Couldn't cancel thread (%s?)",strerror(errno));
 	}
 	if( (errno = pthread_join(tid,&ret)) ){
-		octx->diagnostic("Couldn't join netlink thread (%s?)",strerror(errno));
+		octx->diagnostic("Couldn't join thread (%s?)",strerror(errno));
 		return -1;
 	}
 	if(ret != PTHREAD_CANCELED){
@@ -625,9 +622,9 @@ handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	}
 	*/
 	}else if(iface->fd >= 0 && !(iface->flags & IFF_UP)){
+		reap_thread(octx,iface->tid);
 		close(iface->rfd);
 		close(iface->fd);
-		reap_thread(octx,iface->tid);
 		iface->rfd = iface->fd = -1;
 	}
 	if(octx->iface_event){

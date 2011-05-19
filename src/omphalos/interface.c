@@ -6,6 +6,7 @@
 #include <linux/if_arp.h>
 #include <omphalos/util.h>
 #include <omphalos/hwaddrs.h>
+#include <omphalos/netlink.h>
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
 
@@ -64,7 +65,7 @@ char *hwaddrstr(const interface *i){
 	return l2addrstr(i->addr,i->addrlen);
 }
 
-void free_iface(interface *i){
+void free_iface(const omphalos_iface *octx,interface *i){
 	while(i->ip6r){
 		struct ip6route *r6 = i->ip6r->next;
 
@@ -78,6 +79,7 @@ void free_iface(interface *i){
 		i->ip4r = r4;
 	}
 	if(i->fd >= 0){
+		reap_thread(octx,i->tid);
 		close(i->fd);
 	}
 	if(i->rfd >= 0){
@@ -97,7 +99,7 @@ void cleanup_interfaces(const omphalos_iface *pctx){
 		if(interfaces[i].opaque && pctx->iface_removed){
 			pctx->iface_removed(&interfaces[i],interfaces[i].opaque);
 		}
-		free_iface(&interfaces[i]);
+		free_iface(pctx,&interfaces[i]);
 	}
 }
 

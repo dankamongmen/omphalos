@@ -63,7 +63,7 @@ int init_interfaces(void);
 interface *iface_by_idx(int);
 int print_iface_stats(FILE *,const interface *,interface *,const char *);
 char *hwaddrstr(const interface *);
-void free_iface(interface *);
+void free_iface(const struct omphalos_iface *,interface *);
 void cleanup_interfaces(const struct omphalos_iface *);
 int print_all_iface_stats(FILE *,interface *);
 int add_route4(interface *,const struct in_addr *,const struct in_addr *,

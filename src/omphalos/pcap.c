@@ -95,6 +95,7 @@ int handle_pcap_file(const omphalos_ctx *pctx){
 	pmarsh.i = &pcap_file_interface;
 	free(pmarsh.i->name);
 	memset(pmarsh.i,0,sizeof(*pmarsh.i));
+	pmarsh.i->fd = pmarsh.i->rfd = -1;
 	// FIXME set up remainder of interface as best we can...
 	if((pmarsh.i->name = strdup(pctx->pcapfn)) == NULL){
 		return -1;
@@ -141,6 +142,6 @@ int print_pcap_stats(FILE *fp,interface *agg){
 	return 0;
 }
 
-void cleanup_pcap(void){
-	free_iface(&pcap_file_interface);
+void cleanup_pcap(const omphalos_iface *octx){
+	free_iface(octx,&pcap_file_interface);
 }

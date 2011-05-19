@@ -9,10 +9,11 @@ extern "C" {
 
 struct interface;
 struct omphalos_ctx;
+struct omphalos_iface;
 
 int handle_pcap_file(const struct omphalos_ctx *);
 int print_pcap_stats(FILE *fp,struct interface *);
-void cleanup_pcap(void);
+void cleanup_pcap(const struct omphalos_iface *);
 
 #ifdef __cplusplus
 }

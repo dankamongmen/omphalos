@@ -279,9 +279,11 @@ handle_ring_packet(const omphalos_iface *octx,interface *iface,int fd,void *fram
 	thdr->tp_status = TP_STATUS_KERNEL; // return the frame
 }
 
+#include <assert.h>
 static inline
 ssize_t inclen(unsigned *idx,const struct tpacket_req *treq){
 	ssize_t inc = treq->tp_frame_size; // advance at least this much
+	assert(inc);
 	unsigned fperb = treq->tp_block_size / treq->tp_frame_size;
 
 	++*idx;
