@@ -440,6 +440,7 @@ interface_cb_locked(const interface *i,int inum,iface_state *ret){
 				while(ret->prev->next){
 					ret->prev = ret->prev->next;
 				}
+				ret->next = ret->prev->next;
 				ret->prev->next = ret;
 			}
 			if( (ret->subpad = subpad(pad,PAD_LINES,PAD_COLS,ret->scrline,START_COL)) ){
@@ -480,8 +481,12 @@ static inline void
 interface_removed_locked(iface_state *is){
 	if(is){
 		delwin(is->subpad);
-		is->next->prev = is->prev;
-		is->prev->next = is->next;
+		if(is->next){
+			is->next->prev = is->prev;
+		}
+		if(is->prev){
+			is->prev->next = is->next;
+		}
 		if(is == current_iface){
 			current_iface = is->prev;
 		}
