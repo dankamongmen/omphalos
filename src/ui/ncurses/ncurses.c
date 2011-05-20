@@ -76,7 +76,7 @@ setup_statusbar(int cols){
 		}
 		statuschars = cols + 1;
 		if(statusmsg == NULL){
-			sm[0] = '\0';
+			snprintf(sm,cols + 1,"initialized %s-ncurses",PROGNAME);
 		}
 		statusmsg = sm;
 	}
@@ -135,7 +135,25 @@ iface_box(WINDOW *w,const interface *i,const iface_state *is){
 	if(wprintw(w,"]") < 0){
 		goto err;
 	}
-	if(wattron(w,attrs | COLOR_PAIR(hcolor))){
+	if(wattron(w,attrs)){
+		goto err;
+	}
+	if(wattroff(w,A_REVERSE)){
+		goto err;
+	}
+	if(mvwprintw(w,PAD_LINES - 1,START_COL,"[") < 0){
+		goto err;
+	}
+	if(wcolor_set(w,hcolor,NULL)){
+		goto err;
+	}
+	if(wprintw(w,"mtu %d",i->mtu) != OK){
+		goto err;
+	}
+	if(wcolor_set(w,bcolor,NULL)){
+		goto err;
+	}
+	if(wprintw(w,"]") < 0){
 		goto err;
 	}
 	if(wattroff(w,A_BOLD) != OK){
@@ -155,6 +173,7 @@ iface_box(WINDOW *w,const interface *i,const iface_state *is){
 	return 0;
 
 err:
+	abort();
 	return -1;
 }
 
@@ -164,49 +183,53 @@ draw_main_window(WINDOW *w,const char *name,const char *ver){
 
 	getmaxyx(w,rows,cols);
 	if(setup_statusbar(cols)){
-		return -1;
+		goto err;
 	}
 	if(wcolor_set(w,BORDER_COLOR,NULL) != OK){
-		return -1;
+		goto err;
 	}
 	if(box(w,0,0) != OK){
-		return -1;
+		goto err;
 	}
 	if(mvwprintw(w,0,2,"[") < 0){
-		return -1;
+		goto err;
 	}
 	if(wattron(w,A_BOLD | COLOR_PAIR(HEADING_COLOR)) != OK){
-		return -1;
+		goto err;
 	}
 	if(wprintw(w,"%s %s on %s %s (libc %s-%s)",name,ver,sysuts.sysname,
 				sysuts.release,glibc_version,glibc_release) < 0){
-		return -1;
+		goto err;
 	}
 	if(wattroff(w,A_BOLD | COLOR_PAIR(HEADING_COLOR)) != OK){
-		return -1;
+		goto err;
 	}
 	if(wcolor_set(w,BORDER_COLOR,NULL) != OK){
-		return -1;
+		goto err;
 	}
 	if(wprintw(w,"]") < 0){
-		return -1;
+		goto err;
 	}
 	if(wattron(w,A_BOLD | COLOR_PAIR(HEADING_COLOR)) != OK){
-		return -1;
+		goto err;
 	}
-	if(mvprintw(rows - 1,START_COL,"%s",statusmsg) != OK){
-		return -1;
+	if(mvwprintw(w,rows - 1,START_COL,"%s",statusmsg) != OK){
+		goto err;
 	}
 	if(wattroff(w,A_BOLD | COLOR_PAIR(BORDER_COLOR)) != OK){
-		return -1;
-	}
-	if(prefresh(w,0,0,0,0,LINES,COLS)){
-		return -1;
+		goto err;
 	}
 	if(wcolor_set(w,0,NULL) != OK){
-		return -1;
+		goto err;
+	}
+	if(prefresh(w,0,0,0,0,rows,cols)){
+		goto err;
 	}
 	return 0;
+
+err:
+	abort();
+	return -1;
 }
 
 static int
@@ -227,9 +250,6 @@ wvstatus(WINDOW *w,const char *fmt,va_list va){
 	pthread_mutex_lock(&bfl);
 	ret = wvstatus_locked(w,fmt,va);
 	pthread_mutex_unlock(&bfl);
-	if(ret != OK){
-		abort();
-	}
 	return ret;
 }
 
@@ -323,6 +343,7 @@ mandatory_cleanup(WINDOW *w,WINDOW *pad){
 	if(endwin() != OK){
 		ret = -3;
 	}
+	pthread_mutex_unlock(&bfl);
 	switch(ret){
 	case -3: fprintf(stderr,"Couldn't end main window\n"); break;
 	case -2: fprintf(stderr,"Couldn't delete main window\n"); break;
@@ -330,7 +351,6 @@ mandatory_cleanup(WINDOW *w,WINDOW *pad){
 	case 0: break;
 	default: fprintf(stderr,"Couldn't cleanup ncurses\n"); break;
 	}
-	pthread_mutex_unlock(&bfl);
 	return ret;
 }
 
@@ -429,7 +449,9 @@ print_iface_state(const interface *i __attribute__ ((unused)),const iface_state 
 static inline void
 packet_cb_locked(const interface *i,iface_state *is){
 	if(is){
-		print_iface_state(i,is);
+		if(print_iface_state(i,is)){
+			abort();
+		}
 	}
 }
 
@@ -472,9 +494,8 @@ interface_cb_locked(const interface *i,int inum,iface_state *ret){
 	if(ret){
 		iface_box(ret->subpad,i,ret);
 		if(i->flags & IFF_UP){
-			print_iface_state(i,ret);
+			packet_cb_locked(i,ret);
 		}
-		touchwin(pad);
 		prefresh(pad,0,0,0,0,LINES,COLS);
 	}
 	return ret;
