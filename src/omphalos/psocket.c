@@ -37,20 +37,20 @@ int packet_socket(const omphalos_iface *pctx,unsigned protocol){
 }
 
 static int
-get_block_size(unsigned fsize,unsigned *bsize){
+get_block_size(const omphalos_iface *octx,unsigned fsize,unsigned *bsize){
 	int b;
 
 	// Ought be a power of two for performance. Must be a multiple of
 	// page size. Ought be a multiple of tp_frame_size for efficiency.
 	b = getpagesize();
 	if(b < 0){
-		fprintf(stderr,"Couldn't get page size (%s?)\n",strerror(errno));
+		octx->diagnostic("Couldn't get page size (%s?)",strerror(errno));
 		return -1;
 	}
 	*bsize = b;
 	while(*bsize < fsize){
 		if((*bsize << 1u) < *bsize){
-			fprintf(stderr,"No valid configurations found\n");
+			octx->diagnostic("No valid configurations found");
 			return -1;
 		}
 		*bsize <<= 1u;
@@ -61,11 +61,11 @@ get_block_size(unsigned fsize,unsigned *bsize){
 // Returns 0 on failure, otherwise size of the ringbuffer. On a failure,
 // contents of treq are unspecified.
 static size_t
-size_mmap_psocket(struct tpacket_req *treq,unsigned maxframe){
+size_mmap_psocket(const omphalos_iface *octx,struct tpacket_req *treq,unsigned maxframe){
 	// Must be a multiple of TPACKET_ALIGNMENT, and the following must
 	// hold: TPACKET_HDRLEN <= tp_frame_size <= tp_block_size.
 	treq->tp_frame_size = TPACKET_ALIGN(TPACKET_HDRLEN + sizeof(struct tpacket_hdr) + maxframe);
-	if(get_block_size(treq->tp_frame_size,&treq->tp_block_size) < 0){
+	if(get_block_size(octx,treq->tp_frame_size,&treq->tp_block_size) < 0){
 		return 0;
 	}
 	// Array of pointers to blocks, allocated via slab -- cannot be
@@ -83,7 +83,7 @@ mmap_psocket(const omphalos_iface *octx,int op,int idx,int fd,
 	size_t size;
 
 	*map = MAP_FAILED;
-	if((size = size_mmap_psocket(treq,maxframe)) == 0){
+	if((size = size_mmap_psocket(octx,treq,maxframe)) == 0){
 		return 0;
 	}
 	if(idx >= 0){
@@ -123,9 +123,9 @@ size_t mmap_tx_psocket(const omphalos_iface *octx,int fd,int idx,
 	return mmap_psocket(octx,PACKET_TX_RING,idx,fd,maxframe,map,treq);
 }
 
-int unmap_psocket(void *map,size_t size){
+int unmap_psocket(const omphalos_iface *octx,void *map,size_t size){
 	if(munmap(map,size)){
-		fprintf(stderr,"Couldn't unmap %zub ring buffer (%s?)\n",size,strerror(errno));
+		octx->diagnostic("Couldn't unmap %zub ring buffer (%s?)",size,strerror(errno));
 		return -1;
 	}
 	return 0;
