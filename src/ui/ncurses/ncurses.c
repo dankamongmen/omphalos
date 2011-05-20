@@ -1,5 +1,6 @@
 #include <errno.h>
 #include <ctype.h>
+#include <assert.h>
 #include <unistd.h>
 #include <stdarg.h>
 #include <stdint.h>
@@ -306,18 +307,30 @@ static int
 mandatory_cleanup(WINDOW *w,WINDOW *pad){
 	int ret = 0;
 
-	if(delwin(pad) != OK){
-		ret = -1;
+	pthread_mutex_lock(&bfl);
+	if(pad){
+		if(delwin(pad) != OK){
+			ret = -1;
+		}
+		pad = NULL;
 	}
-	if(delwin(w) != OK){
-		ret = -1;
+	if(w){
+		if(delwin(w) != OK){
+			ret = -2;
+		}
+		w = NULL;
 	}
 	if(endwin() != OK){
-		ret = -1;
+		ret = -3;
 	}
-	if(ret){
-		fprintf(stderr,"Couldn't cleanup ncurses\n");
+	switch(ret){
+	case -3: fprintf(stderr,"Couldn't end main window\n"); break;
+	case -2: fprintf(stderr,"Couldn't delete main window\n"); break;
+	case -1: fprintf(stderr,"Couldn't delete main pad\n"); break;
+	case 0: break;
+	default: fprintf(stderr,"Couldn't cleanup ncurses\n"); break;
 	}
+	pthread_mutex_unlock(&bfl);
 	return ret;
 }
 
@@ -491,6 +504,7 @@ interface_removed_locked(iface_state *is){
 			current_iface = is->prev;
 		}
 		free(is);
+		prefresh(pad,0,0,0,0,LINES,COLS);
 	}
 }
 
