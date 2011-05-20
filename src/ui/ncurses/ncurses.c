@@ -69,14 +69,22 @@ setup_statusbar(int cols){
 		cols = ANSITERM_COLS;
 	}
 	if(statuschars <= cols){
+		const size_t s = cols + 1;
 		char *sm;
 
-		if((sm = realloc(statusmsg,cols + 1)) == NULL){
+		if((sm = realloc(statusmsg,s)) == NULL){
 			return -1;
 		}
-		statuschars = cols + 1;
+		statuschars = s;
 		if(statusmsg == NULL){
-			snprintf(sm,cols + 1,"initialized %s-ncurses",PROGNAME);
+			time_t t = time(NULL);
+			struct tm tm;
+
+			if(localtime_r(&t,&tm)){
+				strftime(sm,s,"launched at %T",&tm);
+			}else{
+				sm[0] = '\0';
+			}
 		}
 		statusmsg = sm;
 	}
