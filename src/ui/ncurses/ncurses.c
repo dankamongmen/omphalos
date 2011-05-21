@@ -424,10 +424,22 @@ ncurses_setup(void){
 
 	if(initscr() == NULL){
 		fprintf(stderr,"Couldn't initialize ncurses\n");
+		return NULL;
+	}
+	if(cbreak() != OK){
+		fprintf(stderr,"Couldn't disable input buffering\n");
 		goto err;
 	}
 	if(noecho() != OK){
 		fprintf(stderr,"Couldn't disable input echoing\n");
+		goto err;
+	}
+	if(intrflush(stdscr,TRUE) != OK){
+		fprintf(stderr,"Couldn't set flush-on-interrupt\n");
+		goto err;
+	}
+	if(nonl() != OK){
+		fprintf(stderr,"Couldn't disable nl translation\n");
 		goto err;
 	}
 	if(start_color() != OK){
@@ -440,10 +452,6 @@ ncurses_setup(void){
 	}
 	if((w = newpad(LINES,COLS)) == NULL){
 		fprintf(stderr,"Couldn't initialize main pad\n");
-		goto err;
-	}
-	if(cbreak() != OK){
-		fprintf(stderr,"Couldn't disable input buffering\n");
 		goto err;
 	}
 	if(keypad(stdscr,TRUE) != OK){
