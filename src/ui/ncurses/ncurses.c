@@ -91,6 +91,12 @@ setup_statusbar(int cols){
 	return 0;
 }
 
+static inline int
+interface_up_p(const interface *i){
+	return (i->flags & IFF_UP);
+}
+
+// to be called only while ncurses lock is held
 static int
 iface_box(WINDOW *w,const interface *i,const iface_state *is){
 	int bcolor,hcolor;
@@ -98,8 +104,8 @@ iface_box(WINDOW *w,const interface *i,const iface_state *is){
 	int attrs;
 
 	// FIXME shouldn't have to know IFF_UP out here
-	bcolor = (i->flags & IFF_UP) ? UBORDER_COLOR : DBORDER_COLOR;
-	hcolor = (i->flags & IFF_UP) ? UHEADING_COLOR : DHEADING_COLOR;
+	bcolor = interface_up_p(i) ? UBORDER_COLOR : DBORDER_COLOR;
+	hcolor = interface_up_p(i) ? UHEADING_COLOR : DHEADING_COLOR;
 	attrs = ((is == current_iface) ? A_REVERSE : 0) | A_BOLD;
 	if(wattron(w,attrs | COLOR_PAIR(bcolor)) != OK){
 		goto err;
@@ -185,6 +191,7 @@ err:
 	return -1;
 }
 
+// to be called only while ncurses lock is held
 static int
 draw_main_window(WINDOW *w,const char *name,const char *ver){
 	int rows,cols;
@@ -263,6 +270,18 @@ wvstatus(WINDOW *w,const char *fmt,va_list va){
 
 // NULL fmt clears the status bar
 static int
+wstatus_locked(WINDOW *w,const char *fmt,...){
+	va_list va;
+	int ret;
+
+	va_start(va,fmt);
+	ret = wvstatus_locked(w,fmt,va);
+	va_end(va);
+	return ret;
+}
+
+// NULL fmt clears the status bar
+static int
 wstatus(WINDOW *w,const char *fmt,...){
 	va_list va;
 	int ret;
@@ -273,7 +292,56 @@ wstatus(WINDOW *w,const char *fmt,...){
 	return ret;
 }
 
-// FIXME do stuff here, proof of concept skeleton currently
+static void
+up_interface_locked(WINDOW *w){
+	const iface_state *is = current_iface;
+
+	if(is){
+		const interface *i = iface_by_idx(current_iface->ifacenum);
+
+		if(interface_up_p(i)){
+			wstatus_locked(w,"%s: interface already up",i->name);
+		}else{
+			// FIXME send request to bring iface up
+		}
+	}
+}
+
+static void
+use_next_iface_locked(WINDOW *w){
+	if(current_iface && current_iface->next){
+		const iface_state *is = current_iface;
+		interface *i = iface_by_idx(is->ifacenum);
+
+		current_iface = current_iface->next;
+		iface_box(is->subpad,i,is);
+		is = current_iface;
+		i = iface_by_idx(is->ifacenum);
+		iface_box(is->subpad,i,is);
+		draw_main_window(w,PROGNAME,VERSION);
+	}
+}
+
+static void
+use_prev_iface_locked(WINDOW *w){
+	if(current_iface && current_iface->prev){
+		const iface_state *is = current_iface;
+		interface *i = iface_by_idx(is->ifacenum);
+
+		current_iface = current_iface->prev;
+		iface_box(is->subpad,i,is);
+		is = current_iface;
+		i = iface_by_idx(is->ifacenum);
+		iface_box(is->subpad,i,is);
+		draw_main_window(w,PROGNAME,VERSION);
+	}
+}
+
+static void
+display_help_locked(WINDOW *w){
+	wstatus(w,"there is no help here"); // FIXME
+}
+
 static void *
 ncurses_input_thread(void *nil __attribute__ ((unused))){
 	int ch;
@@ -282,36 +350,23 @@ ncurses_input_thread(void *nil __attribute__ ((unused))){
 	switch(ch){
 		case KEY_UP: case 'k':
 			pthread_mutex_lock(&bfl);
-			if(current_iface && current_iface->prev){
-				const iface_state *is = current_iface;
-				interface *i = iface_by_idx(is->ifacenum);
-
-				current_iface = current_iface->prev;
-				iface_box(is->subpad,i,is);
-				is = current_iface;
-				i = iface_by_idx(is->ifacenum);
-				iface_box(is->subpad,i,is);
-				draw_main_window(pad,PROGNAME,VERSION);
-			}
+				use_prev_iface_locked(pad);
 			pthread_mutex_unlock(&bfl);
 			break;
 		case KEY_DOWN: case 'j':
 			pthread_mutex_lock(&bfl);
-			if(current_iface && current_iface->next){
-				const iface_state *is = current_iface;
-				interface *i = iface_by_idx(is->ifacenum);
-
-				current_iface = current_iface->next;
-				iface_box(is->subpad,i,is);
-				is = current_iface;
-				i = iface_by_idx(is->ifacenum);
-				iface_box(is->subpad,i,is);
-				draw_main_window(pad,PROGNAME,VERSION);
-			}
+				use_next_iface_locked(pad);
+			pthread_mutex_unlock(&bfl);
+			break;
+		case 'u':
+			pthread_mutex_lock(&bfl);
+				up_interface_locked(pad);
 			pthread_mutex_unlock(&bfl);
 			break;
 		case 'h':
-			wstatus(pad,"there is no help here"); // FIXME
+			pthread_mutex_lock(&bfl);
+				display_help_locked(pad);
+			pthread_mutex_unlock(&bfl);
 			break;
 		default:
 			if(isprint(ch)){
@@ -332,21 +387,21 @@ ncurses_input_thread(void *nil __attribute__ ((unused))){
 // Cleanup which ought be performed even if we had a failure elsewhere, or
 // indeed never started.
 static int
-mandatory_cleanup(WINDOW *w,WINDOW *pad){
+mandatory_cleanup(WINDOW **pad){
 	int ret = 0;
 
 	pthread_mutex_lock(&bfl);
-	if(pad){
-		if(delwin(pad) != OK){
+	if(*pad){
+		if(delwin(*pad) != OK){
 			ret = -1;
 		}
-		pad = NULL;
+		*pad = NULL;
 	}
-	if(w){
-		if(delwin(w) != OK){
+	if(stdscr){
+		if(delwin(stdscr) != OK){
 			ret = -2;
 		}
-		w = NULL;
+		stdscr = NULL;
 	}
 	if(endwin() != OK){
 		ret = -3;
@@ -363,10 +418,10 @@ mandatory_cleanup(WINDOW *w,WINDOW *pad){
 }
 
 static WINDOW *
-ncurses_setup(WINDOW **mainwin){
+ncurses_setup(void){
 	WINDOW *w = NULL;
 
-	if((*mainwin = initscr()) == NULL){
+	if(initscr() == NULL){
 		fprintf(stderr,"Couldn't initialize ncurses\n");
 		goto err;
 	}
@@ -437,8 +492,7 @@ ncurses_setup(WINDOW **mainwin){
 	return w;
 
 err:
-	mandatory_cleanup(*mainwin,w);
-	*mainwin = NULL;
+	mandatory_cleanup(&w);
 	fprintf(stderr,"Error while preparing ncurses\n");
 	return NULL;
 }
@@ -555,7 +609,6 @@ diag_callback(const char *fmt,...){
 
 int main(int argc,char * const *argv){
 	omphalos_ctx pctx;
-	WINDOW *w;
 
 	if(setlocale(LC_ALL,"") == NULL){
 		fprintf(stderr,"Couldn't initialize locale (%s?)\n",strerror(errno));
@@ -570,7 +623,7 @@ int main(int argc,char * const *argv){
 	if(omphalos_setup(argc,argv,&pctx)){
 		return EXIT_FAILURE;
 	}
-	if((pad = ncurses_setup(&w)) == NULL){
+	if((pad = ncurses_setup()) == NULL){
 		return EXIT_FAILURE;
 	}
 	pctx.iface.packet_read = packet_callback;
@@ -580,12 +633,12 @@ int main(int argc,char * const *argv){
 	if(omphalos_init(&pctx)){
 		int err = errno;
 
-		mandatory_cleanup(w,pad);
+		mandatory_cleanup(&pad);
 		fprintf(stderr,"Error in omphalos_init() (%s?)\n",strerror(err));
 		return EXIT_FAILURE;
 	}
 	omphalos_cleanup(&pctx);
-	if(mandatory_cleanup(w,pad)){
+	if(mandatory_cleanup(&pad)){
 		return EXIT_FAILURE;
 	}
 	return EXIT_SUCCESS;
