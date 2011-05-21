@@ -343,41 +343,42 @@ display_help_locked(WINDOW *w){
 }
 
 static void *
-ncurses_input_thread(void *nil __attribute__ ((unused))){
+ncurses_input_thread(void *unsafe_pad){
+	WINDOW *w = unsafe_pad;
 	int ch;
 
 	while((ch = getch()) != 'q' && ch != 'Q'){
 	switch(ch){
 		case KEY_UP: case 'k':
 			pthread_mutex_lock(&bfl);
-				use_prev_iface_locked(pad);
+				use_prev_iface_locked(w);
 			pthread_mutex_unlock(&bfl);
 			break;
 		case KEY_DOWN: case 'j':
 			pthread_mutex_lock(&bfl);
-				use_next_iface_locked(pad);
+				use_next_iface_locked(w);
 			pthread_mutex_unlock(&bfl);
 			break;
 		case 'u':
 			pthread_mutex_lock(&bfl);
-				up_interface_locked(pad);
+				up_interface_locked(w);
 			pthread_mutex_unlock(&bfl);
 			break;
 		case 'h':
 			pthread_mutex_lock(&bfl);
-				display_help_locked(pad);
+				display_help_locked(w);
 			pthread_mutex_unlock(&bfl);
 			break;
 		default:
 			if(isprint(ch)){
-				wstatus(pad,"unknown command '%c' ('h' for help)",ch);
+				wstatus(w,"unknown command '%c' ('h' for help)",ch);
 			}else{
-				wstatus(pad,"unknown scancode '%d' ('h' for help)",ch);
+				wstatus(w,"unknown scancode '%d' ('h' for help)",ch);
 			}
 			break;
 	}
 	}
-	wstatus(pad,"%s","shutting down");
+	wstatus(w,"%s","shutting down");
 	// we can't use raise() here, as that sends the signal only
 	// to ourselves, and we have it masked.
 	kill(getpid(),SIGINT);
@@ -387,15 +388,15 @@ ncurses_input_thread(void *nil __attribute__ ((unused))){
 // Cleanup which ought be performed even if we had a failure elsewhere, or
 // indeed never started.
 static int
-mandatory_cleanup(WINDOW **pad){
+mandatory_cleanup(WINDOW **w){
 	int ret = 0;
 
 	pthread_mutex_lock(&bfl);
-	if(*pad){
-		if(delwin(*pad) != OK){
+	if(*w){
+		if(delwin(*w) != OK){
 			ret = -1;
 		}
-		*pad = NULL;
+		*w = NULL;
 	}
 	if(stdscr){
 		if(delwin(stdscr) != OK){
@@ -484,7 +485,7 @@ ncurses_setup(void){
 		fprintf(stderr,"Couldn't use ncurses\n");
 		goto err;
 	}
-	if(pthread_create(&inputtid,NULL,ncurses_input_thread,NULL)){
+	if(pthread_create(&inputtid,NULL,ncurses_input_thread,w)){
 		fprintf(stderr,"Couldn't create UI thread\n");
 		goto err;
 	}
