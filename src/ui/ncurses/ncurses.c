@@ -412,7 +412,7 @@ use_next_iface_locked(WINDOW *w){
 		is = current_iface;
 		i = iface_by_idx(is->ifacenum);
 		iface_box(is->subpad,i,is);
-		draw_main_window(w,PROGNAME,VERSION);
+		prefresh(w,0,0,0,0,LINES,COLS);
 	}
 }
 
@@ -427,7 +427,7 @@ use_prev_iface_locked(WINDOW *w){
 		is = current_iface;
 		i = iface_by_idx(is->ifacenum);
 		iface_box(is->subpad,i,is);
-		draw_main_window(w,PROGNAME,VERSION);
+		prefresh(w,0,0,0,0,LINES,COLS);
 	}
 }
 
