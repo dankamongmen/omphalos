@@ -90,5 +90,9 @@ int iface_wireless_info(const omphalos_iface *octx,const char *name,wireless_inf
 	}
 	ip = &req.u.bitrate;
 	wi->bitrate = ip->value;
+	if(get_wireless_extension(octx,name,SIOCGIWMODE,&req)){
+		return -1;
+	}
+	wi->mode = req.u.mode;
 	return 0;
 }

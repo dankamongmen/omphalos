@@ -28,7 +28,8 @@ typedef struct ip6route {
 } ip6route;
 
 typedef struct wireless_info {
-	int bitrate;
+	unsigned bitrate;
+	unsigned mode;
 } wireless_info;
 
 typedef struct interface {

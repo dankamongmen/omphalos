@@ -13,7 +13,17 @@
 #include <pthread.h>
 #include <sys/socket.h>
 #include <linux/if.h>
+
+// The wireless extensions headers are not so fantastic. This workaround comes
+// to us courtesy of Jean II in iwlib.h. Ugh.
+#ifndef __user
+#define __user
+#endif
+#include <asm/types.h>
+#include <wireless.h>
+
 #include <sys/utsname.h>
+#include <linux/nl80211.h>
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
 #include <gnu/libc-version.h>
@@ -135,7 +145,25 @@ duplexstr(unsigned dplx){
 		case DUPLEX_HALF: return "half"; break;
 		default: break;
 	}
-	return NULL;
+	return "";
+}
+
+static const char *
+modestr(unsigned dplx){
+	switch(dplx){
+		case NL80211_IFTYPE_UNSPECIFIED: return "auto"; break;
+		case NL80211_IFTYPE_ADHOC: return "adhoc"; break;
+		case NL80211_IFTYPE_STATION: return "managed"; break;
+		case NL80211_IFTYPE_AP: return "ap"; break;
+		case NL80211_IFTYPE_AP_VLAN: return "apvlan"; break;
+		case NL80211_IFTYPE_WDS: return "wds"; break;
+		case NL80211_IFTYPE_MONITOR: return "monitor"; break;
+		case NL80211_IFTYPE_MESH_POINT: return "mesh"; break;
+		case NL80211_IFTYPE_P2P_CLIENT: return "p2pclient"; break;
+		case NL80211_IFTYPE_P2P_GO: return "p2pgo"; break;
+		default: break;
+	}
+	return "";
 }
 
 // to be called only while ncurses lock is held
@@ -225,7 +253,7 @@ iface_box(WINDOW *w,const interface *i,const iface_state *is){
 				goto err;
 			}
 		}else if(i->settings_valid == SETTINGS_VALID_WEXT){
-			if(wprintw(w," (%uMb)",i->wireless.bitrate / 1000000) == ERR){
+			if(wprintw(w," (%uMb %s)",i->wireless.bitrate / 1000000u,modestr(i->wireless.mode)) == ERR){
 				goto err;
 			}
 		}
