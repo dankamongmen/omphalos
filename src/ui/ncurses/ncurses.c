@@ -44,7 +44,7 @@ enum {
 };
 
 // FIXME granularize things, make packet handler iret-like
-static pthread_mutex_t bfl = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t bfl = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
 
 static WINDOW *pad;
 static pthread_t inputtid;
@@ -345,12 +345,17 @@ get_current_iface(void){
 }
 
 static void
-toggle_promisc_locked(WINDOW *w){
+toggle_promisc_locked(const omphalos_iface *octx,WINDOW *w){
 	const interface *i = get_current_iface();
 
 	if(i){
-		wstatus_locked(w,"promisc doesn't work yet");
-		// FIXME toggle promiscuity
+		if(interface_promisc_p(i)){
+			disable_promiscuity(octx,i);
+			wstatus_locked(w,"Disabled promiscuity on %s",i->name);
+		}else{
+			enable_promiscuity(octx,i);
+			wstatus_locked(w,"Enabled promiscuity on %s",i->name);
+		}
 	}
 }
 
@@ -427,10 +432,17 @@ done:
 	return NULL;
 }
 
+struct ncurses_input_marshal {
+	WINDOW *w;
+	const omphalos_iface *octx;
+};
+
 static void *
-ncurses_input_thread(void *unsafe_pad){
-	WINDOW *w = unsafe_pad;
+ncurses_input_thread(void *unsafe_marsh){
+	struct ncurses_input_marshal *nim = unsafe_marsh;
+	const omphalos_iface *octx = nim->octx;
 	WINDOW *help = NULL;
+	WINDOW *w = nim->w;
 	int ch;
 
 	while((ch = getch()) != 'q' && ch != 'Q'){
@@ -447,7 +459,7 @@ ncurses_input_thread(void *unsafe_pad){
 			break;
 		case 'p':
 			pthread_mutex_lock(&bfl);
-				toggle_promisc_locked(w);
+				toggle_promisc_locked(octx,w);
 			pthread_mutex_unlock(&bfl);
 			break;
 		case 'u':
@@ -515,7 +527,8 @@ mandatory_cleanup(WINDOW **w){
 }
 
 static WINDOW *
-ncurses_setup(void){
+ncurses_setup(const omphalos_iface *octx){
+	struct ncurses_input_marshal *nim;
 	WINDOW *w = NULL;
 
 	if(initscr() == NULL){
@@ -589,8 +602,14 @@ ncurses_setup(void){
 		fprintf(stderr,"Couldn't use ncurses\n");
 		goto err;
 	}
-	if(pthread_create(&inputtid,NULL,ncurses_input_thread,w)){
+	if((nim = malloc(sizeof(*nim))) == NULL){
+		goto err;
+	}
+	nim->octx = octx;
+	nim->w = w;
+	if(pthread_create(&inputtid,NULL,ncurses_input_thread,nim)){
 		fprintf(stderr,"Couldn't create UI thread\n");
+		free(nim);
 		goto err;
 	}
 	// FIXME install SIGWINCH() handler...
@@ -733,13 +752,13 @@ int main(int argc,char * const *argv){
 	if(omphalos_setup(argc,argv,&pctx)){
 		return EXIT_FAILURE;
 	}
-	if((pad = ncurses_setup()) == NULL){
-		return EXIT_FAILURE;
-	}
 	pctx.iface.packet_read = packet_callback;
 	pctx.iface.iface_event = interface_callback;
 	pctx.iface.iface_removed = interface_removed_callback;
 	pctx.iface.diagnostic = diag_callback;
+	if((pad = ncurses_setup(&pctx.iface)) == NULL){
+		return EXIT_FAILURE;
+	}
 	if(omphalos_init(&pctx)){
 		int err = errno;
 

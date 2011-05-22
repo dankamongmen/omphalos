@@ -276,7 +276,7 @@ iface_promiscuous_p(const interface *i){
 	return (i->flags & IFF_PROMISC);
 }
 
-int enable_promiscuity(const omphalos_iface *octx,interface *i){
+int enable_promiscuity(const omphalos_iface *octx,const interface *i){
 	if(!iface_promiscuous_p(i)){
 		struct packet_mreq mreq;
 		int fd;
@@ -301,7 +301,7 @@ int enable_promiscuity(const omphalos_iface *octx,interface *i){
 	return 0;
 }
 
-int disable_promiscuity(const omphalos_iface *octx,interface *i){
+int disable_promiscuity(const omphalos_iface *octx,const interface *i){
 	if(iface_promiscuous_p(i)){
 		struct packet_mreq mreq;
 		int fd;
