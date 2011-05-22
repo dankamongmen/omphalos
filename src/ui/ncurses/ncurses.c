@@ -228,10 +228,10 @@ draw_main_window(WINDOW *w,const char *name,const char *ver){
 	if(wattron(w,A_BOLD | COLOR_PAIR(HEADING_COLOR)) != OK){
 		goto err;
 	}
-	// This is safe, since addstr() doesn't interpret format strings
-	if(mvwaddstr(w,rows - 1,START_COL,statusmsg) != OK){
-		goto err;
-	}
+	// addstr() doesn't interpret format strings, so this is safe. It will
+	// fail, however, if the string can't fit on the window, which will for
+	// instance happen if there's an embedded newline.
+	mvwaddstr(w,rows - 1,START_COL,statusmsg);
 	if(wattroff(w,A_BOLD | COLOR_PAIR(BORDER_COLOR)) != OK){
 		goto err;
 	}
@@ -354,18 +354,7 @@ use_prev_iface_locked(WINDOW *w){
 	}
 }
 
-/*static void
-block_on_popup(WINDOW *w){
-	int ch = 'A';
-
-	pthread_mutex_unlock(&bfl);
-	//while((ch = wgetch(w)) != 'q' && ch != 'Q'){
-		wstatus(w,"what the hell is %c",ch);
-	//}
-	pthread_mutex_lock(&bfl);
-}*/
-
-static void
+static WINDOW *
 display_help_locked(WINDOW *w){
 	int rows,cols;
 	WINDOW *hpad;
@@ -373,7 +362,7 @@ display_help_locked(WINDOW *w){
 	getmaxyx(w,rows,cols);
 	if((hpad = subpad(w,rows - START_COL * 4,cols - START_COL * 4,
 					START_COL * 2,START_COL * 2)) == NULL){
-		return;
+		return NULL;
 	}
 	if(wcolor_set(hpad,BORDER_COLOR,NULL) != OK){
 		goto done;
@@ -387,15 +376,18 @@ display_help_locked(WINDOW *w){
 		goto done;
 	}*/
 	prefresh(pad,0,0,0,0,rows,cols);
-	//block_on_popup(hpad);
+
+	return hpad;
 
 done:
 	delwin(hpad);
+	return NULL;
 }
 
 static void *
 ncurses_input_thread(void *unsafe_pad){
 	WINDOW *w = unsafe_pad;
+	WINDOW *help = NULL;
 	int ch;
 
 	while((ch = getch()) != 'q' && ch != 'Q'){
@@ -422,7 +414,12 @@ ncurses_input_thread(void *unsafe_pad){
 			break;
 		case 'h':
 			pthread_mutex_lock(&bfl);
-				display_help_locked(w);
+			if(help){
+				delwin(help);
+				help = NULL;
+			}else{
+				help = display_help_locked(w);
+			}
 			pthread_mutex_unlock(&bfl);
 			break;
 		default:
