@@ -207,7 +207,10 @@ iface_box(WINDOW *w,const interface *i,const iface_state *is){
 			if(iface_optstr(w,"no carrier",hcolor,bcolor)){
 				goto err;
 			}
-		}else{
+		}else if(i->settings_valid){
+			if(wprintw(w," (%u)",i->settings.duplex) == ERR){
+				goto err;
+			}
 		}
 	}else{
 		if(iface_optstr(w,"down",hcolor,bcolor)){

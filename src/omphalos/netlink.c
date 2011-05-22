@@ -575,16 +575,15 @@ handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 		return -1;
 	}
 	iface->arptype = ii->ifi_type;
-	if(!(ii->ifi_flags & IFF_LOOPBACK)){
-		if(iface_driver_info(octx,iface->name,&iface->drv)){
-			return -1;
-		}
-		if(iface_ethtool_info(octx,iface->name,&iface->settings)){
-			return -1;
-		}
-	}else{
+	// These can fail for a given interface if it lacks ethtool
+	// support, including many wireless cards and loopback.
+	if(iface_driver_info(octx,iface->name,&iface->drv)){
 		memset(&iface->drv,0,sizeof(iface->drv));
-		memset(&iface->settings,0,sizeof(iface->settings));
+	}
+	if(iface_ethtool_info(octx,iface->name,&iface->settings)){
+		iface->settings_valid = 0;
+	}else{
+		iface->settings_valid = 1;
 	}
 	iface->flags = ii->ifi_flags;
 	if(iface->fd < 0 && (iface->flags & IFF_UP)){
