@@ -88,7 +88,7 @@ handle_rtm_newneigh(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	void *ad;
 
 	if((iface = iface_by_idx(nd->ndm_ifindex)) == NULL){
-		fprintf(stderr,"Invalid interface index: %d\n",nd->ndm_ifindex);
+		octx->diagnostic("Invalid interface index: %d",nd->ndm_ifindex);
 		return -1;
 	}
 	switch(nd->ndm_family){
@@ -102,7 +102,7 @@ handle_rtm_newneigh(const omphalos_iface *octx,const struct nlmsghdr *nl){
 		flen = 0;
 	break;} }
 	if(flen == 0){
-		fprintf(stderr,"Unknown route family %u\n",nd->ndm_family);
+		octx->diagnostic("Unknown route family %u",nd->ndm_family);
 		return -1;
 	}
 	llen = 0;
@@ -112,7 +112,7 @@ handle_rtm_newneigh(const omphalos_iface *octx,const struct nlmsghdr *nl){
 		switch(ra->rta_type){
 		case NDA_DST:{
 			if(RTA_PAYLOAD(ra) != flen){
-				fprintf(stderr,"Expected %zu nw bytes, got %lu\n",
+				octx->diagnostic("Expected %zu nw bytes, got %lu",
 						flen,RTA_PAYLOAD(ra));
 				break;
 			}
@@ -121,7 +121,7 @@ handle_rtm_newneigh(const omphalos_iface *octx,const struct nlmsghdr *nl){
 			llen = RTA_PAYLOAD(ra);
 			if(llen){
 				if(llen != sizeof(ll)){
-					fprintf(stderr,"Expected %zu ll bytes, got %d\n",
+					octx->diagnostic("Expected %zu ll bytes, got %d",
 						sizeof(ll),llen);
 					llen = 0;
 					break;
@@ -131,12 +131,12 @@ handle_rtm_newneigh(const omphalos_iface *octx,const struct nlmsghdr *nl){
 		break;}case NDA_CACHEINFO:{
 		break;}case NDA_PROBES:{
 		break;}default:{
-			fprintf(stderr,"Unknown ndatype %u\n",ra->rta_type);
+			octx->diagnostic("Unknown ndatype %u",ra->rta_type);
 		break;}}
 		ra = RTA_NEXT(ra,rlen);
 	}
 	if(rlen){
-		fprintf(stderr,"%d excess bytes on newlink message\n",rlen);
+		octx->diagnostic("%d excess bytes on newlink message",rlen);
 	}
 	if(llen){
 		l2 = lookup_l2host(&iface->l2hosts,ll,sizeof(ll));
@@ -161,7 +161,7 @@ handle_rtm_delneigh(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	void *ad;
 
 	if((iface = iface_by_idx(nd->ndm_ifindex)) == NULL){
-		fprintf(stderr,"Invalid interface index: %d\n",nd->ndm_ifindex);
+		octx->diagnostic("Invalid interface index: %d",nd->ndm_ifindex);
 		return -1;
 	}
 	switch(nd->ndm_family){
@@ -175,7 +175,7 @@ handle_rtm_delneigh(const omphalos_iface *octx,const struct nlmsghdr *nl){
 		flen = 0;
 	break;} }
 	if(flen == 0){
-		fprintf(stderr,"Unknown route family %u\n",nd->ndm_family);
+		octx->diagnostic("Unknown route family %u",nd->ndm_family);
 		return -1;
 	}
 	llen = 0;
@@ -185,7 +185,7 @@ handle_rtm_delneigh(const omphalos_iface *octx,const struct nlmsghdr *nl){
 		switch(ra->rta_type){
 		case NDA_DST:{
 			if(RTA_PAYLOAD(ra) != flen){
-				fprintf(stderr,"Expected %zu nw bytes, got %lu\n",
+				octx->diagnostic("Expected %zu nw bytes, got %lu",
 						flen,RTA_PAYLOAD(ra));
 				break;
 			}
@@ -194,7 +194,7 @@ handle_rtm_delneigh(const omphalos_iface *octx,const struct nlmsghdr *nl){
 			llen = RTA_PAYLOAD(ra);
 			if(llen){
 				if(llen != sizeof(ll)){
-					fprintf(stderr,"Expected %zu ll bytes, got %d\n",
+					octx->diagnostic("Expected %zu ll bytes, got %d",
 						sizeof(ll),llen);
 					llen = 0;
 					break;
@@ -204,12 +204,12 @@ handle_rtm_delneigh(const omphalos_iface *octx,const struct nlmsghdr *nl){
 		break;}case NDA_CACHEINFO:{
 		break;}case NDA_PROBES:{
 		break;}default:{
-			fprintf(stderr,"Unknown ndatype %u\n",ra->rta_type);
+			octx->diagnostic("Unknown ndatype %u",ra->rta_type);
 		break;}}
 		ra = RTA_NEXT(ra,rlen);
 	}
 	if(rlen){
-		fprintf(stderr,"%d excess bytes on newlink message\n",rlen);
+		octx->diagnostic("%d excess bytes on newlink message",rlen);
 	}
 	if(llen){
 		l2 = lookup_l2host(&iface->l2hosts,ll,sizeof(ll));
@@ -227,7 +227,6 @@ handle_rtm_delroute(const struct nlmsghdr *nl){
 	struct rtattr *ra;
 	int rlen;
 
-	printf("ROUTE DELETED\n");
 	rlen = nl->nlmsg_len - NLMSG_LENGTH(sizeof(*rt));
 	ra = (struct rtattr *)((char *)(NLMSG_DATA(nl)) + sizeof(*rt));
 	while(RTA_OK(ra,rlen)){
@@ -418,7 +417,7 @@ handle_rtm_dellink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	interface *iface;
 
 	if((iface = iface_by_idx(ii->ifi_index)) == NULL){
-		octx->diagnostic("Invalid interface index: %d\n",ii->ifi_index);
+		octx->diagnostic("Invalid interface index: %d",ii->ifi_index);
 		return -1;
 	}
 	if(octx->iface_removed){
@@ -468,7 +467,7 @@ handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	int rlen;
 
 	if((iface = iface_by_idx(ii->ifi_index)) == NULL){
-		fprintf(stderr,"Invalid interface index: %d\n",ii->ifi_index);
+		octx->diagnostic("Invalid interface index: %d",ii->ifi_index);
 		return -1;
 	}
 	rlen = nl->nlmsg_len - NLMSG_LENGTH(sizeof(*ii));
@@ -481,7 +480,7 @@ handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 				char *addr;
 
 				if((addr = malloc(RTA_PAYLOAD(ra))) == NULL){
-					octx->diagnostic("Address too long: %lu\n",RTA_PAYLOAD(ra));
+					octx->diagnostic("Address too long: %lu",RTA_PAYLOAD(ra));
 					return -1;
 				}
 				memcpy(addr,RTA_DATA(ra),RTA_PAYLOAD(ra));
@@ -494,23 +493,23 @@ handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 
 				if((name = strdup(RTA_DATA(ra))) == NULL){
 					// FIXME probably unsafe..
-					octx->diagnostic("Name too long: %s\n",(char *)RTA_DATA(ra));
+					octx->diagnostic("Name too long: %s",(char *)RTA_DATA(ra));
 					return -1;
 				}
 				free(iface->name);
 				iface->name = name;
 			break;}case IFLA_MTU:{
 				if(RTA_PAYLOAD(ra) != sizeof(int)){
-					octx->diagnostic("Expected %zu MTU bytes, got %lu\n",
+					octx->diagnostic("Expected %zu MTU bytes, got %lu",
 							sizeof(int),RTA_PAYLOAD(ra));
 					break;
 				}
 				iface->mtu = *(int *)RTA_DATA(ra);
 			break;}case IFLA_LINK:{
 			break;}case IFLA_MASTER:{ // bridging event
-				octx->diagnostic("Bridging event on %s\n",iface->name);
+				octx->diagnostic("Bridging event on %s",iface->name);
 			break;}case IFLA_PROTINFO:{
-				octx->diagnostic("Protocol info message on %s\n",iface->name);
+				octx->diagnostic("Protocol info message on %s",iface->name);
 			break;}case IFLA_TXQLEN:{
 			break;}case IFLA_MAP:{
 			break;}case IFLA_WEIGHT:{
@@ -538,21 +537,22 @@ handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 			break;}case IFLA_GROUP:{
 #endif
 			break;}default:{
-				octx->diagnostic("Unknown iflatype %u\n",ra->rta_type);
+				octx->diagnostic("Unknown iflatype %u on %s",
+						ra->rta_type,iface->name);
 			break;}
 		}
 		ra = RTA_NEXT(ra,rlen);
 	}
 	if(rlen){
-		octx->diagnostic("%d excess bytes on newlink message\n",rlen);
+		octx->diagnostic("%d excess bytes on newlink message",rlen);
 	}
 	// FIXME memory leaks on failure paths, ahoy!
 	if(iface->name == NULL){
-		octx->diagnostic("No name in new link message\n");
+		octx->diagnostic("No name in new link message");
 		return -1;
 	}
 	if(iface->mtu == 0){
-		octx->diagnostic("No MTU in new link message\n");
+		octx->diagnostic("No MTU in new link message");
 		return -1;
 	}
 	iface->arptype = ii->ifi_type;
@@ -716,15 +716,15 @@ int handle_netlink_event(const omphalos_iface *octx,int fd){
 		}
 	}
 	if(inmulti){
-		fprintf(stderr,"Warning: unterminated multipart on %d\n",fd);
+		octx->diagnostic("Warning: unterminated multipart on %d",fd);
 		res = -1;
 	}
 	if(r < 0 && errno != EAGAIN){
-		fprintf(stderr,"Error reading netlink socket %d (%s?)\n",
+		octx->diagnostic("Error reading netlink socket %d (%s?)",
 				fd,strerror(errno));
 		res = -1;
 	}else if(r == 0){
-		fprintf(stderr,"EOF on netlink socket %d\n",fd);
+		octx->diagnostic("EOF on netlink socket %d",fd);
 		// FIXME reopen...?
 		res = -1;
 	}
