@@ -273,49 +273,18 @@ const char *lookup_arptype(unsigned arphrd){
 	return NULL;
 }
 
-static inline int
-iface_promiscuous_p(const interface *i){
-	return (i->flags & IFF_PROMISC);
-}
-
 int enable_promiscuity(const omphalos_iface *octx,const interface *i){
-	if(!iface_promiscuous_p(i)){
-		struct packet_mreq mreq;
-		struct ifreq ifr;
-		int fd;
+	int fd;
 
-		if((fd = packet_socket(octx,ETH_P_ALL)) < 0){
-			return -1;
-		}
-		memset(&mreq,0,sizeof(mreq));
-		mreq.mr_ifindex = iface_get_idx(i);
-		mreq.mr_type = PACKET_MR_PROMISC;
-		if(setsockopt(fd,SOL_PACKET,PACKET_ADD_MEMBERSHIP,&mreq,sizeof(mreq))){
-			octx->diagnostic("setsockopt() failure on %s (%s?)",i->name,strerror(errno));
-			close(fd);
-			return -1;
-		}
-		memset(&ifr,0,sizeof(ifr));
-		strcpy(ifr.ifr_name,i->name);
-		ifr.ifr_flags = i->flags | IFF_PROMISC;
-		if(ioctl(fd,SIOCSIFFLAGS,&ifr)){
-			octx->diagnostic("ioctl() failure on %s (%s?)",i->name,strerror(errno));
-			close(fd);
-			return -1;
-		}
-		if(close(fd)){
-			return -1;
-		}
-		if((fd = netlink_socket(octx)) < 0){
-			return -1;
-		}
-		if(iplink_modify(octx,fd,mreq.mr_ifindex,IFF_PROMISC,IFF_PROMISC)){
-			close(fd);
-			return -1;
-		}
-		if(close(fd)){
-			return -1;
-		}
+	if((fd = netlink_socket(octx)) < 0){
+		return -1;
+	}
+	if(iplink_modify(octx,fd,iface_get_idx(i),IFF_PROMISC,IFF_PROMISC)){
+		close(fd);
+		return -1;
+	}
+	if(close(fd)){
+		return -1;
 	}
 	// FIXME we're not necessarily in promiscuous mode yet...flags won't
 	// even be updated until we get the confirming netlink message. ought
@@ -324,43 +293,18 @@ int enable_promiscuity(const omphalos_iface *octx,const interface *i){
 }
 
 int disable_promiscuity(const omphalos_iface *octx,const interface *i){
-	if(iface_promiscuous_p(i)){
-		struct packet_mreq mreq;
-		struct ifreq ifr;
-		int fd;
+	int fd;
 
-		if((fd = packet_socket(octx,ETH_P_ALL)) < 0){
-			return -1;
-		}
-		memset(&mreq,0,sizeof(mreq));
-		mreq.mr_ifindex = iface_get_idx(i);
-		mreq.mr_type = PACKET_MR_PROMISC;
-		if(setsockopt(fd,SOL_PACKET,PACKET_DROP_MEMBERSHIP,&mreq,sizeof(mreq))){
-			octx->diagnostic("setsockopt() failure on %s (%s?)",i->name,strerror(errno));
-			close(fd);
-			return -1;
-		}
-		memset(&ifr,0,sizeof(ifr));
-		strcpy(ifr.ifr_name,i->name);
-		ifr.ifr_flags = i->flags & ~IFF_PROMISC;
-		if(ioctl(fd,SIOCSIFFLAGS,&ifr)){
-			octx->diagnostic("ioctl() failure on %s (%s?)",i->name,strerror(errno));
-			close(fd);
-			return -1;
-		}
-		if(close(fd)){
-			return -1;
-		}
-		if((fd = netlink_socket(octx)) < 0){
-			return -1;
-		}
-		if(iplink_modify(octx,fd,mreq.mr_ifindex,0,IFF_PROMISC)){
-			close(fd);
-			return -1;
-		}
-		if(close(fd)){
-			return -1;
-		}
+	if((fd = netlink_socket(octx)) < 0){
+		return -1;
+	}
+	if(iplink_modify(octx,fd,iface_get_idx(i),0,IFF_PROMISC)){
+		close(fd);
+		return -1;
+	}
+	if(close(fd)){
+		octx->diagnostic("couldn't close netlink socket %d (%s?)",fd,strerror(errno));
+		return -1;
 	}
 	// FIXME we're not necessarily out of promiscuous mode yet...i->flags
 	// won't even be updated until we get the confirming netlink message.
