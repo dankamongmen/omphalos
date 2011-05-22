@@ -225,7 +225,7 @@ iface_box(WINDOW *w,const interface *i,const iface_state *is){
 				goto err;
 			}
 		}else if(i->settings_valid == SETTINGS_VALID_WEXT){
-			if(wprintw(w," (%uMb)",i->wireless.bitrate) == ERR){
+			if(wprintw(w," (%uMb)",i->wireless.bitrate / 1000000) == ERR){
 				goto err;
 			}
 		}

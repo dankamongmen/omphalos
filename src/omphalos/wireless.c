@@ -77,6 +77,7 @@ get_wireless_extension(const omphalos_iface *octx,const char *name,int cmd,struc
 }
 
 int iface_wireless_info(const omphalos_iface *octx,const char *name,wireless_info *wi){
+	const struct iw_param *ip;
 	struct iwreq req;
 
 	memset(wi,0,sizeof(*wi));
@@ -87,5 +88,7 @@ int iface_wireless_info(const omphalos_iface *octx,const char *name,wireless_inf
 	if(get_wireless_extension(octx,name,SIOCGIWRATE,&req)){
 		return -1;
 	}
+	ip = &req.u.bitrate;
+	wi->bitrate = ip->value;
 	return 0;
 }
