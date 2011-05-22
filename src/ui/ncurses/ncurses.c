@@ -1,3 +1,4 @@
+#include <panel.h>
 #include <errno.h>
 #include <ctype.h>
 #include <assert.h>
@@ -430,38 +431,61 @@ use_prev_iface_locked(WINDOW *w){
 	}
 }
 
-static WINDOW *
-display_help_locked(WINDOW *w){
+// FIXME we ought precreate the help screen, and show/hide it rather than
+// creating and destroying it every time.
+struct panel_state {
+	PANEL *p;
+	WINDOW *w;
+};
+
+static void
+hide_help_locked(WINDOW *w,struct panel_state *ps){
+	hide_panel(ps->p);
+	del_panel(ps->p);
+	ps->p = NULL;
+	delwin(ps->w);
+	ps->w = NULL;
+	update_panels();
+	draw_main_window(w,PROGNAME,VERSION);
+	doupdate();
+}
+
+static void
+display_help_locked(WINDOW *mainw,struct panel_state *ps){
 	int rows,cols;
-	WINDOW *hpad;
 
-	getmaxyx(w,rows,cols);
-	if((hpad = subpad(w,rows - START_COL * 4,cols - START_COL * 4,
-					START_COL * 2,START_COL * 2)) == NULL){
-		return NULL;
-	}
-	if(wcolor_set(hpad,BORDER_COLOR,NULL) != OK){
+	ps->p = NULL;
+	getmaxyx(mainw,rows,cols);
+	if((ps->w = newwin(rows,cols,0,0)) == NULL){
 		goto done;
 	}
-	if(box(hpad,0,0) != OK){
+	if((ps->p = new_panel(ps->w)) == NULL){
 		goto done;
 	}
-	wstatus_locked(hpad,"there is no help here"); // FIXME
-	/*if(prefresh(hpad,0,0,START_COL * 2,START_COL * 2,rows - START_COL * 2,
-			cols - START_COL * 2) != OK){
+	if(wcolor_set(ps->w,BORDER_COLOR,NULL) != OK){
 		goto done;
-	}*/
-	prefresh(pad,0,0,0,0,rows,cols);
-
-	return hpad;
+	}
+	if(box(ps->w,0,0) != OK){
+		goto done;
+	}
+	update_panels();
+	if(doupdate() == ERR){
+		goto done;
+	}
+	return;
 
 done:
-	delwin(hpad);
-	return NULL;
+	if(ps->p){
+		hide_panel(ps->p);
+		del_panel(ps->p);
+	}
+	delwin(ps->w);
+	memset(ps,0,sizeof(*ps));
 }
 
 struct ncurses_input_marshal {
 	WINDOW *w;
+	PANEL *p;
 	const omphalos_iface *octx;
 };
 
@@ -469,10 +493,11 @@ static void *
 ncurses_input_thread(void *unsafe_marsh){
 	struct ncurses_input_marshal *nim = unsafe_marsh;
 	const omphalos_iface *octx = nim->octx;
-	WINDOW *help = NULL;
+	struct panel_state help;
 	WINDOW *w = nim->w;
 	int ch;
 
+	memset(&help,0,sizeof(help));
 	while((ch = getch()) != 'q' && ch != 'Q'){
 	switch(ch){
 		case KEY_UP: case 'k':
@@ -497,11 +522,10 @@ ncurses_input_thread(void *unsafe_marsh){
 			break;
 		case 'h':
 			pthread_mutex_lock(&bfl);
-			if(help){
-				delwin(help);
-				help = NULL;
+			if(help.w){
+				hide_help_locked(w,&help);
 			}else{
-				help = display_help_locked(w);
+				display_help_locked(w,&help);
 			}
 			pthread_mutex_unlock(&bfl);
 			break;
@@ -524,10 +548,16 @@ ncurses_input_thread(void *unsafe_marsh){
 // Cleanup which ought be performed even if we had a failure elsewhere, or
 // indeed never started.
 static int
-mandatory_cleanup(WINDOW **w){
+mandatory_cleanup(WINDOW **w,PANEL **p){
 	int ret = 0;
 
 	pthread_mutex_lock(&bfl);
+	if(*p){
+		if(del_panel(*p) == ERR){
+			ret = -4;
+		}
+		*p = NULL;
+	}
 	if(*w){
 		if(delwin(*w) != OK){
 			ret = -1;
@@ -545,6 +575,7 @@ mandatory_cleanup(WINDOW **w){
 	}
 	pthread_mutex_unlock(&bfl);
 	switch(ret){
+	case -4: fprintf(stderr,"Couldn't destroy main panel\n"); break;
 	case -3: fprintf(stderr,"Couldn't end main window\n"); break;
 	case -2: fprintf(stderr,"Couldn't delete main window\n"); break;
 	case -1: fprintf(stderr,"Couldn't delete main pad\n"); break;
@@ -555,79 +586,83 @@ mandatory_cleanup(WINDOW **w){
 }
 
 static WINDOW *
-ncurses_setup(const omphalos_iface *octx){
+ncurses_setup(const omphalos_iface *octx,PANEL **panel){
 	struct ncurses_input_marshal *nim;
+	const char *errstr = NULL;
 	WINDOW *w = NULL;
+	PANEL *p = NULL;
 
 	if(initscr() == NULL){
 		fprintf(stderr,"Couldn't initialize ncurses\n");
 		return NULL;
 	}
 	if(cbreak() != OK){
-		fprintf(stderr,"Couldn't disable input buffering\n");
+		errstr = "Couldn't disable input buffering\n";
 		goto err;
 	}
 	if(noecho() != OK){
-		fprintf(stderr,"Couldn't disable input echoing\n");
+		errstr = "Couldn't disable input echoing\n";
 		goto err;
 	}
 	if(intrflush(stdscr,TRUE) != OK){
-		fprintf(stderr,"Couldn't set flush-on-interrupt\n");
+		errstr = "Couldn't set flush-on-interrupt\n";
 		goto err;
 	}
 	if(nonl() != OK){
-		fprintf(stderr,"Couldn't disable nl translation\n");
+		errstr = "Couldn't disable nl translation\n";
 		goto err;
 	}
 	if(start_color() != OK){
-		fprintf(stderr,"Couldn't initialize ncurses color\n");
+		errstr = "Couldn't initialize ncurses color\n";
 		goto err;
 	}
 	if(use_default_colors()){
-		fprintf(stderr,"Couldn't initialize ncurses colordefs\n");
+		errstr = "Couldn't initialize ncurses colordefs\n";
 		goto err;
 	}
 	if((w = newpad(LINES,COLS)) == NULL){
-		fprintf(stderr,"Couldn't initialize main pad\n");
+		errstr = "Couldn't initialize main pad\n";
 		goto err;
 	}
-	if(keypad(stdscr,TRUE) != OK){
-		fprintf(stderr,"Warning: couldn't enable keypad input\n");
+	if((p = new_panel(stdscr)) == NULL){
+		errstr = "Couldn't initialize main panel\n";
+		goto err;
 	}
+	keypad(stdscr,TRUE);
 	if(init_pair(BORDER_COLOR,COLOR_GREEN,-1) != OK){
-		fprintf(stderr,"Couldn't initialize ncurses colorpair\n");
+		errstr = "Couldn't initialize ncurses colorpair\n";
 		goto err;
 	}
 	if(init_pair(HEADING_COLOR,COLOR_YELLOW,-1) != OK){
-		fprintf(stderr,"Couldn't initialize ncurses colorpair\n");
+		errstr = "Couldn't initialize ncurses colorpair\n";
 		goto err;
 	}
 	if(init_pair(DBORDER_COLOR,COLOR_WHITE,-1) != OK){
-		fprintf(stderr,"Couldn't initialize ncurses colorpair\n");
+		errstr = "Couldn't initialize ncurses colorpair\n";
 		goto err;
 	}
 	if(init_pair(DHEADING_COLOR,COLOR_WHITE,-1) != OK){
-		fprintf(stderr,"Couldn't initialize ncurses colorpair\n");
+		errstr = "Couldn't initialize ncurses colorpair\n";
 		goto err;
 	}
 	if(init_pair(UBORDER_COLOR,COLOR_YELLOW,-1) != OK){
-		fprintf(stderr,"Couldn't initialize ncurses colorpair\n");
+		errstr = "Couldn't initialize ncurses colorpair\n";
 		goto err;
 	}
 	if(init_pair(UHEADING_COLOR,COLOR_GREEN,-1) != OK){
-		fprintf(stderr,"Couldn't initialize ncurses colorpair\n");
+		errstr = "Couldn't initialize ncurses colorpair\n";
 		goto err;
 	}
 	if(curs_set(0) == ERR){
-		fprintf(stderr,"Couldn't disable cursor\n");
+		errstr = "Couldn't disable cursor\n";
 		goto err;
 	}
 	if(setup_statusbar(COLS)){
-		fprintf(stderr,"Couldn't setup status bar\n");
+		errstr = "Couldn't setup status bar\n";
 		goto err;
 	}
 	if(draw_main_window(w,PROGNAME,VERSION)){
-		fprintf(stderr,"Couldn't use ncurses\n");
+		errstr = "Couldn't use ncurses\n";
 		goto err;
 	}
 	if((nim = malloc(sizeof(*nim))) == NULL){
@@ -635,17 +670,19 @@ ncurses_setup(const omphalos_iface *octx){
 	}
 	nim->octx = octx;
 	nim->w = w;
+	nim->p = p;
 	if(pthread_create(&inputtid,NULL,ncurses_input_thread,nim)){
-		fprintf(stderr,"Couldn't create UI thread\n");
+		errstr = "Couldn't create UI thread\n";
 		free(nim);
 		goto err;
 	}
 	// FIXME install SIGWINCH() handler...
+	*panel = p;
 	return w;
 
 err:
-	mandatory_cleanup(&w);
-	fprintf(stderr,"Error while preparing ncurses\n");
+	mandatory_cleanup(&w,&p);
+	fprintf(stderr,"%s",errstr);
 	return NULL;
 }
 
@@ -766,6 +803,7 @@ diag_callback(const char *fmt,...){
 
 int main(int argc,char * const *argv){
 	omphalos_ctx pctx;
+	PANEL *panel;
 
 	if(setlocale(LC_ALL,"") == NULL){
 		fprintf(stderr,"Couldn't initialize locale (%s?)\n",strerror(errno));
@@ -784,18 +822,18 @@ int main(int argc,char * const *argv){
 	pctx.iface.iface_event = interface_callback;
 	pctx.iface.iface_removed = interface_removed_callback;
 	pctx.iface.diagnostic = diag_callback;
-	if((pad = ncurses_setup(&pctx.iface)) == NULL){
+	if((pad = ncurses_setup(&pctx.iface,&panel)) == NULL){
 		return EXIT_FAILURE;
 	}
 	if(omphalos_init(&pctx)){
 		int err = errno;
 
-		mandatory_cleanup(&pad);
+		mandatory_cleanup(&pad,&panel);
 		fprintf(stderr,"Error in omphalos_init() (%s?)\n",strerror(err));
 		return EXIT_FAILURE;
 	}
 	omphalos_cleanup(&pctx);
-	if(mandatory_cleanup(&pad)){
+	if(mandatory_cleanup(&pad,&panel)){
 		return EXIT_FAILURE;
 	}
 	return EXIT_SUCCESS;

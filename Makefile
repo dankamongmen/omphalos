@@ -69,7 +69,7 @@ test: all $(TESTPCAPS)
 
 $(OMPHALOS)-ncurses: $(COREOBJS) $(NCURSESOBJS)
 	@mkdir -p $(@D)
-	$(CC) $(CFLAGS) -o $@ $^ $(LFLAGS) -lncurses
+	$(CC) $(CFLAGS) -o $@ $^ $(LFLAGS) -lpanel -lncurses
 
 $(OMPHALOS)-tty: $(COREOBJS) $(TTYOBJS)
 	@mkdir -p $(@D)
