@@ -8,9 +8,10 @@
 #include <locale.h>
 #include <string.h>
 #include <signal.h>
-#include <net/if.h>
 #include <ncurses.h>
 #include <pthread.h>
+#include <sys/socket.h>
+#include <linux/if.h>
 #include <sys/utsname.h>
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
@@ -95,6 +96,11 @@ setup_statusbar(int cols){
 static inline int
 interface_up_p(const interface *i){
 	return (i->flags & IFF_UP);
+}
+
+static inline int
+interface_carrier_p(const interface *i){
+	return (i->flags & IFF_LOWER_UP);
 }
 
 static inline int
@@ -197,10 +203,18 @@ iface_box(WINDOW *w,const interface *i,const iface_state *is){
 		if(iface_optstr(w,"up",hcolor,bcolor)){
 			goto err;
 		}
+		if(!interface_carrier_p(i)){
+			if(iface_optstr(w,"no carrier",hcolor,bcolor)){
+				goto err;
+			}
+		}else{
+		}
 	}else{
 		if(iface_optstr(w,"down",hcolor,bcolor)){
 			goto err;
 		}
+		// FIXME find out whether carrier is meaningful for down
+		// interfaces (i've not seen one)
 	}
 	if(interface_promisc_p(i)){
 		if(iface_optstr(w,"promisc",hcolor,bcolor)){
@@ -217,7 +231,8 @@ iface_box(WINDOW *w,const interface *i,const iface_state *is){
 		goto err;
 	}
 	if( (buslen = strlen(i->drv.bus_info)) ){
-		if(mvwprintw(w,PAD_LINES - 1,COLS - (buslen + 3 + START_COL),"%s",i->drv.bus_info) != OK){
+		if(mvwprintw(w,PAD_LINES - 1,COLS - (buslen + 3 + START_COL),
+					"%s",i->drv.bus_info) != OK){
 			goto err;
 		}
 	}

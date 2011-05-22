@@ -49,6 +49,7 @@ typedef struct interface {
 	size_t ts;		// TX packet ring size in bytes
 	struct tpacket_req ttpr;// TX packet ring descriptor
 	struct ethtool_drvinfo drv;	// ethtool driver info
+	struct ethtool_cmd settings;	// ethtool settings info
 	// Other interfaces might also offer routes to these same
 	// destinations -- they must not be considered unique!
 	struct ip4route *ip4r;	// list of IPv4 routes

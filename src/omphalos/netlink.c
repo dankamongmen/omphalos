@@ -576,11 +576,15 @@ handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	}
 	iface->arptype = ii->ifi_type;
 	if(!(ii->ifi_flags & IFF_LOOPBACK)){
-		if(iface_driver_info(iface->name,&iface->drv)){
+		if(iface_driver_info(octx,iface->name,&iface->drv)){
+			return -1;
+		}
+		if(iface_ethtool_info(octx,iface->name,&iface->settings)){
 			return -1;
 		}
 	}else{
 		memset(&iface->drv,0,sizeof(iface->drv));
+		memset(&iface->settings,0,sizeof(iface->settings));
 	}
 	iface->flags = ii->ifi_flags;
 	if(iface->fd < 0 && (iface->flags & IFF_UP)){

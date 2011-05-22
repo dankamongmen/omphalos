@@ -8,29 +8,39 @@
 #include <linux/sockios.h>
 #include <linux/ethtool.h>
 #include <omphalos/ethtool.h>
+#include <omphalos/omphalos.h>
 
-int iface_driver_info(const char *name,struct ethtool_drvinfo *drv){
+static inline int
+ethtool_cmd(const omphalos_iface *octx,const char *name,void *unsafe){
 	struct ifreq ifr;
 	int fd;
 
-	memset(&ifr,0,sizeof(&ifr));
 	if(strlen(name) >= sizeof(ifr.ifr_name)){
+		octx->diagnostic("Bad name: %s",name);
 		return -1;
 	}
+	memset(&ifr,0,sizeof(&ifr));
 	strcpy(ifr.ifr_name,name);
-	ifr.ifr_data = (caddr_t)drv;
-	drv->cmd = ETHTOOL_GDRVINFO;
+	ifr.ifr_data = unsafe;
 	if((fd = socket(AF_INET,SOCK_DGRAM,0)) < 0){
-		fprintf(stderr,"Couldn't open ethtool fd (%s?)\n",strerror(errno));
+		octx->diagnostic("Couldn't open ethtool fd (%s?)",strerror(errno));
 		return -1;
 	}
 	if(ioctl(fd,SIOCETHTOOL,&ifr)){
-		fprintf(stderr,"Couldn't get driver info for %s (%s?)\n",name,strerror(errno));
+		octx->diagnostic("Couldn't get driver info for %s (%s?)",name,strerror(errno));
 		close(fd);
 		return -1;
 	}
 	if(close(fd)){
-		fprintf(stderr,"Couldn't close ethtool fd %d (%s?)\n",fd,strerror(errno));
+		octx->diagnostic("Couldn't close ethtool fd %d (%s?)",fd,strerror(errno));
+		return -1;
+	}
+	return 0;
+}
+
+int iface_driver_info(const omphalos_iface *octx,const char *name,struct ethtool_drvinfo *drv){
+	drv->cmd = ETHTOOL_GDRVINFO;
+	if(ethtool_cmd(octx,name,drv)){
 		return -1;
 	}
 	// Some return the empty string for firmware / bus, others "N/A".
@@ -40,6 +50,14 @@ int iface_driver_info(const char *name,struct ethtool_drvinfo *drv){
 	}
 	if(strcmp(drv->bus_info,"N/A") == 0){
 		drv->bus_info[0] = '\0';
+	}
+	return 0;
+}
+
+int iface_ethtool_info(const omphalos_iface *octx,const char *name,struct ethtool_cmd *info){
+	info->cmd = ETHTOOL_GSET;
+	if(ethtool_cmd(octx,name,info)){
+		return -1;
 	}
 	return 0;
 }
