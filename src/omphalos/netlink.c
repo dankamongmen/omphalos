@@ -615,15 +615,6 @@ handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 			free(pm);
 			return -1;
 		}
-		/* FIXME
-	if(unmap_psocket(rxm,rs)){
-		ret = -1;
-	}
-	if(close(rfd)){
-		pctx->iface.diagnostic("Couldn't close packet socket %d (%s?)",rfd,strerror(errno));
-		ret = -1;
-	}
-	*/
 	}else if(iface->fd >= 0 && !(iface->flags & IFF_UP)){
 		reap_thread(octx,iface->tid);
 		close(iface->rfd);

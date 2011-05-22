@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <linux/if_arp.h>
 #include <omphalos/util.h>
@@ -279,6 +280,7 @@ iface_promiscuous_p(const interface *i){
 int enable_promiscuity(const omphalos_iface *octx,const interface *i){
 	if(!iface_promiscuous_p(i)){
 		struct packet_mreq mreq;
+		struct ifreq ifr;
 		int fd;
 
 		if((fd = packet_socket(octx,ETH_P_ALL)) < 0){
@@ -288,6 +290,13 @@ int enable_promiscuity(const omphalos_iface *octx,const interface *i){
 		mreq.mr_ifindex = iface_get_idx(i);
 		mreq.mr_type = PACKET_MR_PROMISC;
 		if(setsockopt(fd,SOL_PACKET,PACKET_ADD_MEMBERSHIP,&mreq,sizeof(mreq))){
+			close(fd);
+			return -1;
+		}
+		memset(&ifr,0,sizeof(ifr));
+		strcpy(ifr.ifr_name,i->name);
+		ifr.ifr_flags = i->flags | IFF_PROMISC;
+		if(ioctl(fd,SIOCSIFFLAGS,&ifr)){
 			close(fd);
 			return -1;
 		}
@@ -304,6 +313,7 @@ int enable_promiscuity(const omphalos_iface *octx,const interface *i){
 int disable_promiscuity(const omphalos_iface *octx,const interface *i){
 	if(iface_promiscuous_p(i)){
 		struct packet_mreq mreq;
+		struct ifreq ifr;
 		int fd;
 
 		if((fd = packet_socket(octx,ETH_P_ALL)) < 0){
@@ -313,6 +323,13 @@ int disable_promiscuity(const omphalos_iface *octx,const interface *i){
 		mreq.mr_ifindex = iface_get_idx(i);
 		mreq.mr_type = PACKET_MR_PROMISC;
 		if(setsockopt(fd,SOL_PACKET,PACKET_DROP_MEMBERSHIP,&mreq,sizeof(mreq))){
+			close(fd);
+			return -1;
+		}
+		memset(&ifr,0,sizeof(ifr));
+		strcpy(ifr.ifr_name,i->name);
+		ifr.ifr_flags = i->flags & ~IFF_PROMISC;
+		if(ioctl(fd,SIOCSIFFLAGS,&ifr)){
 			close(fd);
 			return -1;
 		}
