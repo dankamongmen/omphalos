@@ -37,12 +37,14 @@ typedef struct iface_state {
 } iface_state;
 
 enum {
-	BORDER_COLOR = 1,
-	HEADING_COLOR = 2,
-	DBORDER_COLOR = 3,
-	DHEADING_COLOR = 4,
-	UBORDER_COLOR = 5,
-	UHEADING_COLOR = 6,
+	BORDER_COLOR = 1,		// main window
+	HEADING_COLOR,
+	DBORDER_COLOR,			// down interfaces
+	DHEADING_COLOR,
+	UBORDER_COLOR,			// up interfaces
+	UHEADING_COLOR,
+	PBORDER_COLOR,			// popups
+	PHEADING_COLOR,
 };
 
 // FIXME granularize things, make packet handler iret-like
@@ -450,37 +452,56 @@ hide_help_locked(WINDOW *w,struct panel_state *ps){
 	doupdate();
 }
 
-static void
+static int
 display_help_locked(WINDOW *mainw,struct panel_state *ps){
-	int rows,cols;
+	int rows,cols,startrow;
 
-	ps->p = NULL;
+	memset(ps,0,sizeof(*ps));
 	getmaxyx(mainw,rows,cols);
-	if((ps->w = newwin(rows,cols,0,0)) == NULL){
-		goto done;
+	startrow = START_LINE + 1 + ((PAD_LINES + 1) * 4);
+	if(rows <= startrow){
+		abort();goto done;
+	}
+	if(cols < START_COL * 2 + 1){
+		abort();goto done;
+	}
+	if((ps->w = newwin(rows - (startrow + 1),cols - START_COL * 2,startrow,START_COL)) == NULL){
+		abort();goto done;
 	}
 	if((ps->p = new_panel(ps->w)) == NULL){
-		goto done;
+		abort();goto done;
 	}
-	if(wcolor_set(ps->w,BORDER_COLOR,NULL) != OK){
-		goto done;
+	if(wattron(ps->w,A_BOLD) == ERR){
+		abort();goto done;
+	}
+	if(wcolor_set(ps->w,PBORDER_COLOR,NULL) != OK){
+		abort();goto done;
 	}
 	if(box(ps->w,0,0) != OK){
-		goto done;
+		abort();goto done;
+	}
+	if(wcolor_set(ps->w,PHEADING_COLOR,NULL) != OK){
+		abort();goto done;
+	}
+	if(mvwprintw(ps->w,0,START_COL * 2,"press 'h' to dismiss help") == ERR){
+		abort();goto done;
 	}
 	update_panels();
 	if(doupdate() == ERR){
-		goto done;
+		abort();goto done;
 	}
-	return;
+	return 0;
 
 done:
 	if(ps->p){
 		hide_panel(ps->p);
 		del_panel(ps->p);
 	}
-	delwin(ps->w);
+	if(ps->w){
+		delwin(ps->w);
+	}
 	memset(ps,0,sizeof(*ps));
+	return -1;
 }
 
 struct ncurses_input_marshal {
@@ -488,6 +509,24 @@ struct ncurses_input_marshal {
 	PANEL *p;
 	const omphalos_iface *octx;
 };
+
+// input handler while the help screen is active
+static int
+help_input(void){
+	int ch;
+
+	while((ch = getch()) != 'q' && ch != 'Q' && ch !='h'){
+		switch(ch){
+			case KEY_UP: case 'k':
+				// FIXME scroll up
+				break;
+			case KEY_DOWN: case 'j':
+				// FIXME scroll down
+				break;
+		}
+	}
+	return ch;
+}
 
 static void *
 ncurses_input_thread(void *unsafe_marsh){
@@ -520,16 +559,22 @@ ncurses_input_thread(void *unsafe_marsh){
 				up_interface_locked(w);
 			pthread_mutex_unlock(&bfl);
 			break;
-		case 'h':
+		case 'h':{
+			int r;
 			pthread_mutex_lock(&bfl);
-			if(help.w){
-				hide_help_locked(w,&help);
-			}else{
-				display_help_locked(w,&help);
-			}
+				r = display_help_locked(w,&help);
 			pthread_mutex_unlock(&bfl);
+			if(r == 0){
+				ch = help_input();
+				pthread_mutex_lock(&bfl);
+					hide_help_locked(w,&help);
+				pthread_mutex_unlock(&bfl);
+				if(ch == 'q' || ch == 'Q'){
+					goto breakout;
+				}
+			}
 			break;
-		default:
+		}default:
 			if(isprint(ch)){
 				wstatus(w,"unknown command '%c' ('h' for help)",ch);
 			}else{
@@ -538,6 +583,7 @@ ncurses_input_thread(void *unsafe_marsh){
 			break;
 	}
 	}
+breakout:
 	wstatus(w,"%s","shutting down");
 	// we can't use raise() here, as that sends the signal only
 	// to ourselves, and we have it masked.
@@ -650,6 +696,14 @@ ncurses_setup(const omphalos_iface *octx,PANEL **panel){
 		goto err;
 	}
 	if(init_pair(UHEADING_COLOR,COLOR_GREEN,-1) != OK){
+		errstr = "Couldn't initialize ncurses colorpair\n";
+		goto err;
+	}
+	if(init_pair(PBORDER_COLOR,COLOR_CYAN,-1) != OK){
+		errstr = "Couldn't initialize ncurses colorpair\n";
+		goto err;
+	}
+	if(init_pair(PHEADING_COLOR,COLOR_RED,-1) != OK){
 		errstr = "Couldn't initialize ncurses colorpair\n";
 		goto err;
 	}

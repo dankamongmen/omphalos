@@ -1,3 +1,7 @@
+#include <errno.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <linux/wireless.h>
 #include <omphalos/wireless.h>
@@ -7,7 +11,7 @@
 int handle_wireless_event(const omphalos_iface *octx,interface *i,
 				const struct iw_event *iw,size_t len){
 	if(len < IW_EV_LCP_LEN){
-		fprintf(stderr,"Wireless msg too short on %s (%zu)\n",i->name,len);
+		octx->diagnostic("Wireless msg too short on %s (%zu)",i->name,len);
 		return -1;
 	}
 	switch(iw->cmd){
@@ -18,7 +22,7 @@ int handle_wireless_event(const omphalos_iface *octx,interface *i,
 	break;}case IWEVASSOCRESPIE:{
 		// FIXME handle IE reassociation results
 	break;}default:{
-		fprintf(stderr,"\t   Unknown wireless event on %s: 0x%x\n",i->name,iw->cmd);
+		octx->diagnostic("Unknown wireless event on %s: 0x%x",i->name,iw->cmd);
 		return -1;
 	} }
 	if(octx->wireless_event){
@@ -45,4 +49,43 @@ int print_wireless_event(FILE *fp,const interface *i,unsigned cmd){
 		break;
 	} }
 	return n;
+}
+
+static inline int
+get_wireless_extension(const omphalos_iface *octx,const char *name,int cmd,struct iwreq *req){
+	int fd;
+
+	if((fd = socket(AF_INET,SOCK_DGRAM,0)) < 0){
+		octx->diagnostic("Couldn't get a socket (%s?)",strerror(errno));
+		return -1;
+	}
+	if(strlen(name) >= sizeof(req->ifr_name)){
+		octx->diagnostic("Name too long: %s",name);
+		close(fd);
+		return -1;
+	}
+	if(ioctl(fd,cmd,req)){
+		octx->diagnostic("ioctl() failed (%s?)",strerror(errno));
+		close(fd);
+		return -1;
+	}
+	if(close(fd)){
+		octx->diagnostic("Couldn't close socket (%s?)",strerror(errno));
+		return -1;
+	}
+	return 0;
+}
+
+int iface_wireless_info(const omphalos_iface *octx,const char *name,wireless_info *wi){
+	struct iwreq req;
+
+	memset(wi,0,sizeof(*wi));
+	memset(&req,0,sizeof(req));
+	if(get_wireless_extension(octx,name,SIOCGIWNAME,&req)){
+		return -1;
+	}
+	if(get_wireless_extension(octx,name,SIOCGIWRATE,&req)){
+		return -1;
+	}
+	return 0;
 }
