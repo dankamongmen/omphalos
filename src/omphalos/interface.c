@@ -7,6 +7,7 @@
 #include <omphalos/util.h>
 #include <omphalos/hwaddrs.h>
 #include <omphalos/netlink.h>
+#include <omphalos/psocket.h>
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
 
@@ -52,6 +53,12 @@ int print_iface_stats(FILE *fp,const interface *i,interface *agg,const char *dec
 	return 0;
 }
 #undef STAT
+
+// not valid unless the interface came from the interfaces[] array!
+static unsigned
+iface_get_idx(const interface *i){
+	return i - interfaces;
+}
 
 // we wouldn't naturally want to use signed integers, but that's the api...
 interface *iface_by_idx(int idx){
@@ -262,4 +269,59 @@ const char *lookup_arptype(unsigned arphrd){
 		}
 	}
 	return NULL;
+}
+
+static inline int
+iface_promiscuous_p(const interface *i){
+	return (i->flags & IFF_PROMISC);
+}
+
+int enable_promiscuity(const omphalos_iface *octx,interface *i){
+	if(!iface_promiscuous_p(i)){
+		struct packet_mreq mreq;
+		int fd;
+
+		if((fd = packet_socket(octx,ETH_P_ALL)) < 0){
+			return -1;
+		}
+		memset(&mreq,0,sizeof(mreq));
+		mreq.mr_ifindex = iface_get_idx(i);
+		mreq.mr_type = PACKET_MR_PROMISC;
+		if(setsockopt(fd,SOL_PACKET,PACKET_ADD_MEMBERSHIP,&mreq,sizeof(mreq))){
+			close(fd);
+			return -1;
+		}
+		if(close(fd)){
+			return -1;
+		}
+	}
+	// FIXME we're not necessarily in promiscuous mode yet...flags won't
+	// even be updated until we get the confirming netlink message. ought
+	// we block on that message? spin on interrogation?
+	return 0;
+}
+
+int disable_promiscuity(const omphalos_iface *octx,interface *i){
+	if(iface_promiscuous_p(i)){
+		struct packet_mreq mreq;
+		int fd;
+
+		if((fd = packet_socket(octx,ETH_P_ALL)) < 0){
+			return -1;
+		}
+		memset(&mreq,0,sizeof(mreq));
+		mreq.mr_ifindex = iface_get_idx(i);
+		mreq.mr_type = PACKET_MR_PROMISC;
+		if(setsockopt(fd,SOL_PACKET,PACKET_DROP_MEMBERSHIP,&mreq,sizeof(mreq))){
+			close(fd);
+			return -1;
+		}
+		if(close(fd)){
+			return -1;
+		}
+	}
+	// FIXME we're not necessarily out of promiscuous mode yet...i->flags
+	// won't even be updated until we get the confirming netlink message.
+	// ought we block on that message? spin on interrogation?
+	return 0;
 }

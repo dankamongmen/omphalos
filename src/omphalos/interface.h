@@ -79,6 +79,9 @@ int is_local6(const interface *,const struct in6_addr *);
 
 const char *lookup_arptype(unsigned);
 
+int enable_promiscuity(const struct omphalos_iface *,interface *);
+int disable_promiscuity(const struct omphalos_iface *,interface *);
+
 #ifdef __cplusplus
 }
 #endif
