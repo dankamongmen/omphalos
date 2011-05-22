@@ -22,12 +22,12 @@
 #include <omphalos/interface.h>
 
 
-int netlink_socket(void){
+int netlink_socket(const omphalos_iface *octx){
 	struct sockaddr_nl sa;
 	int fd;
 
 	if((fd = socket(AF_NETLINK,SOCK_RAW,NETLINK_ROUTE)) < 0){
-		fprintf(stderr,"Couldn't open NETLINK_ROUTE socket (%s?)\n",strerror(errno));
+		octx->diagnostic("Couldn't open NETLINK_ROUTE socket (%s?)",strerror(errno));
 		return -1;
 	}
 	memset(&sa,0,sizeof(sa));
@@ -35,7 +35,7 @@ int netlink_socket(void){
 	sa.nl_groups = RTNLGRP_NOTIFY | RTNLGRP_LINK | RTNLGRP_NEIGH |
 			RTNLGRP_IPV4_ROUTE | RTNLGRP_IPV6_ROUTE;
 	if(bind(fd,(const struct sockaddr *)&sa,sizeof(sa))){
-		fprintf(stderr,"Couldn't bind NETLINK_ROUTE socket %d (%s?)\n",fd,strerror(errno));
+		octx->diagnostic("Couldn't bind NETLINK_ROUTE socket %d (%s?)",fd,strerror(errno));
 		close(fd);
 		return -1;
 	}

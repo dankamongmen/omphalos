@@ -303,6 +303,16 @@ int enable_promiscuity(const omphalos_iface *octx,const interface *i){
 		if(close(fd)){
 			return -1;
 		}
+		if((fd = netlink_socket(octx)) < 0){
+			return -1;
+		}
+		if(iplink_modify(octx,fd,mreq.mr_ifindex,IFF_PROMISC,IFF_PROMISC)){
+			close(fd);
+			return -1;
+		}
+		if(close(fd)){
+			return -1;
+		}
 	}
 	// FIXME we're not necessarily in promiscuous mode yet...flags won't
 	// even be updated until we get the confirming netlink message. ought
@@ -330,6 +340,16 @@ int disable_promiscuity(const omphalos_iface *octx,const interface *i){
 		strcpy(ifr.ifr_name,i->name);
 		ifr.ifr_flags = i->flags & ~IFF_PROMISC;
 		if(ioctl(fd,SIOCSIFFLAGS,&ifr)){
+			close(fd);
+			return -1;
+		}
+		if(close(fd)){
+			return -1;
+		}
+		if((fd = netlink_socket(octx)) < 0){
+			return -1;
+		}
+		if(iplink_modify(octx,fd,mreq.mr_ifindex,0,IFF_PROMISC)){
 			close(fd);
 			return -1;
 		}

@@ -194,7 +194,7 @@ netlink_thread(const omphalos_iface *octx){
 	};
 	int events;
 
-	if((pfd[0].fd = netlink_socket()) < 0){
+	if((pfd[0].fd = netlink_socket(octx)) < 0){
 		return -1;
 	}
 	if(discover_links(octx,pfd[0].fd) < 0){
@@ -230,7 +230,6 @@ netlink_thread(const omphalos_iface *octx){
 			pfd[z].revents = 0;
 		}
 	}
-	// FIXME reap packet socket threads...
 	close(pfd[0].fd);
 	return 0;
 }

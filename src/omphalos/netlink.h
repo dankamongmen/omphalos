@@ -9,7 +9,7 @@ extern "C" {
 
 struct omphalos_iface;
 
-int netlink_socket(void);
+int netlink_socket(const struct omphalos_iface *);
 
 int discover_addrs(const struct omphalos_iface *,int);
 int discover_links(const struct omphalos_iface *,int);
