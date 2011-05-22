@@ -2,15 +2,25 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <stdlib.h>
 #include <pthread.h>
+#include <sys/uio.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <net/ethernet.h>
+#include <linux/if_arp.h>
 #include <linux/if_addr.h>
 #include <linux/netlink.h>
 #include <linux/version.h>
 #include <linux/rtnetlink.h>
 #include <omphalos/omphalos.h>
+#include <omphalos/ethtool.h>
+#include <omphalos/hwaddrs.h>
+#include <omphalos/psocket.h>
+#include <omphalos/wireless.h>
+#include <omphalos/interface.h>
+
 
 int netlink_socket(void){
 	struct sockaddr_nl sa;
@@ -62,18 +72,28 @@ int discover_routes(const omphalos_iface *octx,int fd){
 	nldiscover(octx,RTM_GETROUTE,rtmsg,rtm_family);
 }
 
-/* This is all pretty omphalos-specific from here on out */
-#include <stdlib.h>
-#include <sys/uio.h>
-#include <net/ethernet.h>
-#include <linux/if_arp.h>
-#include <linux/netlink.h>
-#include <linux/rtnetlink.h>
-#include <omphalos/ethtool.h>
-#include <omphalos/hwaddrs.h>
-#include <omphalos/psocket.h>
-#include <omphalos/wireless.h>
-#include <omphalos/interface.h>
+int iplink_modify(const omphalos_iface *octx,int fd,int idx,unsigned flags,
+					unsigned mask){
+	struct {
+		struct nlmsghdr n;
+		struct ifinfomsg i;
+		char buf[1024]; // FIXME ugh
+	} req;
+
+	memset(&req,0,sizeof(req));
+	req.n.nlmsg_len = NLMSG_LENGTH(sizeof(req.i));
+	req.n.nlmsg_flags = NLM_F_REQUEST;
+	req.n.nlmsg_type = RTM_NEWLINK;
+	req.i.ifi_index = idx;
+	req.i.ifi_flags = flags;
+	req.i.ifi_change = mask;
+	if(send(fd,&req,req.n.nlmsg_len,0) < 0){
+		octx->diagnostic("Failure writing RTM_NEWLINK to %d (%s?)",
+				fd,strerror(errno));
+		return -1;
+	}
+	return 0;
+}
 
 static int
 handle_rtm_newneigh(const omphalos_iface *octx,const struct nlmsghdr *nl){
