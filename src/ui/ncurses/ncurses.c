@@ -97,6 +97,28 @@ interface_up_p(const interface *i){
 	return (i->flags & IFF_UP);
 }
 
+static inline int
+interface_promisc_p(const interface *i){
+	return (i->flags & IFF_PROMISC);
+}
+
+static int
+iface_optstr(WINDOW *w,const char *str,int hcolor,int bcolor){
+	if(wcolor_set(w,bcolor,NULL) != OK){
+		return -1;
+	}
+	if(waddch(w,'|') == ERR){
+		return -1;
+	}
+	if(wcolor_set(w,hcolor,NULL) != OK){
+		return -1;
+	}
+	if(waddstr(w,str) == ERR){
+		return -1;
+	}
+	return 0;
+}
+
 // to be called only while ncurses lock is held
 static int
 iface_box(WINDOW *w,const interface *i,const iface_state *is){
@@ -170,6 +192,20 @@ iface_box(WINDOW *w,const interface *i,const iface_state *is){
 	}
 	if(wprintw(w,"mtu %d",i->mtu) != OK){
 		goto err;
+	}
+	if(interface_up_p(i)){
+		if(iface_optstr(w,"up",hcolor,bcolor)){
+			goto err;
+		}
+	}else{
+		if(iface_optstr(w,"down",hcolor,bcolor)){
+			goto err;
+		}
+	}
+	if(interface_promisc_p(i)){
+		if(iface_optstr(w,"promisc",hcolor,bcolor)){
+			goto err;
+		}
 	}
 	if(wcolor_set(w,bcolor,NULL)){
 		goto err;
