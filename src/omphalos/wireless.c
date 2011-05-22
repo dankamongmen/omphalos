@@ -55,17 +55,17 @@ static inline int
 get_wireless_extension(const omphalos_iface *octx,const char *name,int cmd,struct iwreq *req){
 	int fd;
 
+	if(strlen(name) >= sizeof(req->ifr_name)){
+		octx->diagnostic("Name too long: %s",name);
+		return -1;
+	}
 	if((fd = socket(AF_INET,SOCK_DGRAM,0)) < 0){
 		octx->diagnostic("Couldn't get a socket (%s?)",strerror(errno));
 		return -1;
 	}
-	if(strlen(name) >= sizeof(req->ifr_name)){
-		octx->diagnostic("Name too long: %s",name);
-		close(fd);
-		return -1;
-	}
+	strcpy(req->ifr_name,name);
 	if(ioctl(fd,cmd,req)){
-		octx->diagnostic("ioctl() failed (%s?)",strerror(errno));
+		//octx->diagnostic("ioctl() failed (%s?)",strerror(errno));
 		close(fd);
 		return -1;
 	}

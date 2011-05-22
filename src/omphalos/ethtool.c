@@ -27,7 +27,7 @@ ethtool_cmd(const omphalos_iface *octx,const char *name,void *unsafe){
 		return -1;
 	}
 	if(ioctl(fd,SIOCETHTOOL,&ifr)){
-		octx->diagnostic("Couldn't get driver info for %s (%s?)",name,strerror(errno));
+		// octx->diagnostic("Couldn't get driver info for %s (%s?)",name,strerror(errno));
 		close(fd);
 		return -1;
 	}

@@ -220,8 +220,12 @@ iface_box(WINDOW *w,const interface *i,const iface_state *is){
 			if(iface_optstr(w,"no carrier",hcolor,bcolor)){
 				goto err;
 			}
-		}else if(i->settings_valid){
+		}else if(i->settings_valid == SETTINGS_VALID_ETHTOOL){
 			if(wprintw(w," (%uMb %s)",i->settings.speed,duplexstr(i->settings.duplex)) == ERR){
+				goto err;
+			}
+		}else if(i->settings_valid == SETTINGS_VALID_WEXT){
+			if(wprintw(w," (%uMb)",i->wireless.bitrate) == ERR){
 				goto err;
 			}
 		}
