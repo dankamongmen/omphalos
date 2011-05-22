@@ -23,6 +23,7 @@
 #include <wireless.h>
 
 #include <sys/utsname.h>
+#include <linux/version.h>
 #include <linux/nl80211.h>
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
@@ -159,8 +160,10 @@ modestr(unsigned dplx){
 		case NL80211_IFTYPE_WDS: return "wds"; break;
 		case NL80211_IFTYPE_MONITOR: return "monitor"; break;
 		case NL80211_IFTYPE_MESH_POINT: return "mesh"; break;
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,38)
 		case NL80211_IFTYPE_P2P_CLIENT: return "p2pclient"; break;
 		case NL80211_IFTYPE_P2P_GO: return "p2pgo"; break;
+#endif
 		default: break;
 	}
 	return "";
