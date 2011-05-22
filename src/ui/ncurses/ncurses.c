@@ -350,11 +350,11 @@ toggle_promisc_locked(const omphalos_iface *octx,WINDOW *w){
 
 	if(i){
 		if(interface_promisc_p(i)){
+			wstatus_locked(w,"Disabling promiscuity on %s",i->name);
 			disable_promiscuity(octx,i);
-			wstatus_locked(w,"Disabled promiscuity on %s",i->name);
 		}else{
+			wstatus_locked(w,"Enabling promiscuity on %s",i->name);
 			enable_promiscuity(octx,i);
-			wstatus_locked(w,"Enabled promiscuity on %s",i->name);
 		}
 	}
 }

@@ -77,7 +77,6 @@ int iplink_modify(const omphalos_iface *octx,int fd,int idx,unsigned flags,
 	struct {
 		struct nlmsghdr n;
 		struct ifinfomsg i;
-		char buf[1024]; // FIXME ugh
 	} req;
 
 	memset(&req,0,sizeof(req));

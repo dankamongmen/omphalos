@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -290,6 +291,7 @@ int enable_promiscuity(const omphalos_iface *octx,const interface *i){
 		mreq.mr_ifindex = iface_get_idx(i);
 		mreq.mr_type = PACKET_MR_PROMISC;
 		if(setsockopt(fd,SOL_PACKET,PACKET_ADD_MEMBERSHIP,&mreq,sizeof(mreq))){
+			octx->diagnostic("setsockopt() failure on %s (%s?)",i->name,strerror(errno));
 			close(fd);
 			return -1;
 		}
@@ -297,6 +299,7 @@ int enable_promiscuity(const omphalos_iface *octx,const interface *i){
 		strcpy(ifr.ifr_name,i->name);
 		ifr.ifr_flags = i->flags | IFF_PROMISC;
 		if(ioctl(fd,SIOCSIFFLAGS,&ifr)){
+			octx->diagnostic("ioctl() failure on %s (%s?)",i->name,strerror(errno));
 			close(fd);
 			return -1;
 		}
@@ -333,6 +336,7 @@ int disable_promiscuity(const omphalos_iface *octx,const interface *i){
 		mreq.mr_ifindex = iface_get_idx(i);
 		mreq.mr_type = PACKET_MR_PROMISC;
 		if(setsockopt(fd,SOL_PACKET,PACKET_DROP_MEMBERSHIP,&mreq,sizeof(mreq))){
+			octx->diagnostic("setsockopt() failure on %s (%s?)",i->name,strerror(errno));
 			close(fd);
 			return -1;
 		}
@@ -340,6 +344,7 @@ int disable_promiscuity(const omphalos_iface *octx,const interface *i){
 		strcpy(ifr.ifr_name,i->name);
 		ifr.ifr_flags = i->flags & ~IFF_PROMISC;
 		if(ioctl(fd,SIOCSIFFLAGS,&ifr)){
+			octx->diagnostic("ioctl() failure on %s (%s?)",i->name,strerror(errno));
 			close(fd);
 			return -1;
 		}
