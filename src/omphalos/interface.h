@@ -77,8 +77,7 @@ int del_route6(interface *,const struct in6_addr *,unsigned);
 int is_local4(const interface *,uint32_t);
 int is_local6(const interface *,const struct in6_addr *);
 
-// FIXME ought generate string
-int print_iface(FILE *,const interface *);
+const char *lookup_arptype(unsigned);
 
 #ifdef __cplusplus
 }
