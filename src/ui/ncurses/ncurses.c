@@ -30,6 +30,7 @@ typedef struct iface_state {
 	int ifacenum;			// iface number
 	int scrline;			// line within the containing pad
 	WINDOW *subpad;			// subpad
+	const char *typestr;		// looked up using iface->arptype
 	struct iface_state *next,*prev;
 } iface_state;
 
@@ -125,8 +126,14 @@ iface_box(WINDOW *w,const interface *i,const iface_state *is){
 	if(waddstr(w,i->name) == ERR){
 		goto err;
 	}
+	if(wprintw(w," (%s",is->typestr) != OK){
+		goto err;
+	}
 	if(strlen(i->drv.driver)){
-		if(wprintw(w," (%s",i->drv.driver) != OK){
+		if(waddch(w,' ') == ERR){
+			goto err;
+		}
+		if(waddstr(w,i->drv.driver) == ERR){
 			goto err;
 		}
 		if(strlen(i->drv.version)){
@@ -139,9 +146,9 @@ iface_box(WINDOW *w,const interface *i,const iface_state *is){
 				goto err;
 			}
 		}
-		if(waddch(w,')') != OK){
-			goto err;
-		}
+	}
+	if(waddch(w,')') != OK){
+		goto err;
 	}
 	if(wcolor_set(w,bcolor,NULL)){
 		goto err;
@@ -589,29 +596,34 @@ packet_callback(const interface *i __attribute__ ((unused)),void *unsafe){
 static inline void *
 interface_cb_locked(const interface *i,int inum,iface_state *ret){
 	if(ret == NULL){
-		if( (ret = malloc(sizeof(iface_state))) ){
-			ret->scrline = START_LINE + count_interface * (PAD_LINES + 1);
-			ret->ifacenum = inum;
-			if((ret->prev = current_iface) == NULL){
-				current_iface = ret;
-				ret->next = NULL;
-			}else{
-				while(ret->prev->next){
-					ret->prev = ret->prev->next;
-				}
-				ret->next = ret->prev->next;
-				ret->prev->next = ret;
-			}
-			if( (ret->subpad = subpad(pad,PAD_LINES,PAD_COLS,ret->scrline,START_COL)) ){
-				++count_interface;
-			}else{
-				if(current_iface == ret){
-					current_iface = NULL;
+		const char *tstr;
+
+		if( (tstr = lookup_arptype(i->arptype)) ){
+			if( (ret = malloc(sizeof(iface_state))) ){
+				ret->typestr = tstr;
+				ret->scrline = START_LINE + count_interface * (PAD_LINES + 1);
+				ret->ifacenum = inum;
+				if((ret->prev = current_iface) == NULL){
+					current_iface = ret;
+					ret->next = NULL;
 				}else{
-					ret->prev->next = NULL;
+					while(ret->prev->next){
+						ret->prev = ret->prev->next;
+					}
+					ret->next = ret->prev->next;
+					ret->prev->next = ret;
 				}
-				free(ret);
-				ret = NULL;
+				if( (ret->subpad = subpad(pad,PAD_LINES,PAD_COLS,ret->scrline,START_COL)) ){
+					++count_interface;
+				}else{
+					if(current_iface == ret){
+						current_iface = NULL;
+					}else{
+						ret->prev->next = NULL;
+					}
+					free(ret);
+					ret = NULL;
+				}
 			}
 		}
 	}
