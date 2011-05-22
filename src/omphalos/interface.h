@@ -27,6 +27,10 @@ typedef struct ip6route {
 	struct ip6route *next;
 } ip6route;
 
+typedef struct wireless_info {
+	int bitrate;
+} wireless_info;
+
 typedef struct interface {
 	uintmax_t frames;	// Statistics
 	uintmax_t malformed;
@@ -49,8 +53,14 @@ typedef struct interface {
 	size_t ts;		// TX packet ring size in bytes
 	struct tpacket_req ttpr;// TX packet ring descriptor
 	struct ethtool_drvinfo drv;	// ethtool driver info
-	int settings_valid;	// set if the settings field can be trusted
+	enum {
+		SETTINGS_INVALID,
+		SETTINGS_VALID_ETHTOOL,
+		SETTINGS_VALID_WEXT,
+	} settings_valid;	// set if the settings field can be trusted
+	// FIXME combine these into a union, as they're exclusive
 	struct ethtool_cmd settings;	// ethtool settings info
+	struct wireless_info wireless;	// wireless extensions info
 	// Other interfaces might also offer routes to these same
 	// destinations -- they must not be considered unique!
 	struct ip4route *ip4r;	// list of IPv4 routes

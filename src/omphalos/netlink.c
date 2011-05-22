@@ -581,9 +581,13 @@ handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 		memset(&iface->drv,0,sizeof(iface->drv));
 	}
 	if(iface_ethtool_info(octx,iface->name,&iface->settings)){
-		iface->settings_valid = 0;
+		if(iface_wireless_info(octx,iface->name,&iface->wireless)){
+			iface->settings_valid = SETTINGS_INVALID;
+		}else{
+			iface->settings_valid = SETTINGS_VALID_WEXT;
+		}
 	}else{
-		iface->settings_valid = 1;
+		iface->settings_valid = SETTINGS_VALID_ETHTOOL;
 	}
 	iface->flags = ii->ifi_flags;
 	if(iface->fd < 0 && (iface->flags & IFF_UP)){
