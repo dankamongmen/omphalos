@@ -228,7 +228,8 @@ draw_main_window(WINDOW *w,const char *name,const char *ver){
 	if(wattron(w,A_BOLD | COLOR_PAIR(HEADING_COLOR)) != OK){
 		goto err;
 	}
-	if(mvwprintw(w,rows - 1,START_COL,"%s",statusmsg) != OK){
+	// This is safe, since addstr() doesn't interpret format strings
+	if(mvwaddstr(w,rows - 1,START_COL,statusmsg) != OK){
 		goto err;
 	}
 	if(wattroff(w,A_BOLD | COLOR_PAIR(BORDER_COLOR)) != OK){
@@ -292,13 +293,29 @@ wstatus(WINDOW *w,const char *fmt,...){
 	return ret;
 }
 
+static const interface *
+get_current_iface(void){
+	if(current_iface){
+		return iface_by_idx(current_iface->ifacenum);
+	}
+	return NULL;
+}
+
+static void
+toggle_promisc_locked(WINDOW *w){
+	const interface *i = get_current_iface();
+
+	if(i){
+		wstatus_locked(w,"promisc doesn't work yet");
+		// FIXME toggle promiscuity
+	}
+}
+
 static void
 up_interface_locked(WINDOW *w){
-	const iface_state *is = current_iface;
+	const interface *i = get_current_iface();
 
-	if(is){
-		const interface *i = iface_by_idx(current_iface->ifacenum);
-
+	if(i){
 		if(interface_up_p(i)){
 			wstatus_locked(w,"%s: interface already up",i->name);
 		}else{
@@ -337,9 +354,43 @@ use_prev_iface_locked(WINDOW *w){
 	}
 }
 
+/*static void
+block_on_popup(WINDOW *w){
+	int ch = 'A';
+
+	pthread_mutex_unlock(&bfl);
+	//while((ch = wgetch(w)) != 'q' && ch != 'Q'){
+		wstatus(w,"what the hell is %c",ch);
+	//}
+	pthread_mutex_lock(&bfl);
+}*/
+
 static void
 display_help_locked(WINDOW *w){
-	wstatus(w,"there is no help here"); // FIXME
+	int rows,cols;
+	WINDOW *hpad;
+
+	getmaxyx(w,rows,cols);
+	if((hpad = subpad(w,rows - START_COL * 4,cols - START_COL * 4,
+					START_COL * 2,START_COL * 2)) == NULL){
+		return;
+	}
+	if(wcolor_set(hpad,BORDER_COLOR,NULL) != OK){
+		goto done;
+	}
+	if(box(hpad,0,0) != OK){
+		goto done;
+	}
+	wstatus_locked(hpad,"there is no help here"); // FIXME
+	/*if(prefresh(hpad,0,0,START_COL * 2,START_COL * 2,rows - START_COL * 2,
+			cols - START_COL * 2) != OK){
+		goto done;
+	}*/
+	prefresh(pad,0,0,0,0,rows,cols);
+	//block_on_popup(hpad);
+
+done:
+	delwin(hpad);
 }
 
 static void *
@@ -357,6 +408,11 @@ ncurses_input_thread(void *unsafe_pad){
 		case KEY_DOWN: case 'j':
 			pthread_mutex_lock(&bfl);
 				use_next_iface_locked(w);
+			pthread_mutex_unlock(&bfl);
+			break;
+		case 'p':
+			pthread_mutex_lock(&bfl);
+				toggle_promisc_locked(w);
 			pthread_mutex_unlock(&bfl);
 			break;
 		case 'u':
