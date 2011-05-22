@@ -125,6 +125,16 @@ iface_optstr(WINDOW *w,const char *str,int hcolor,int bcolor){
 	return 0;
 }
 
+static const char *
+duplexstr(unsigned dplx){
+	switch(dplx){
+		case DUPLEX_FULL: return "full"; break;
+		case DUPLEX_HALF: return "half"; break;
+		default: break;
+	}
+	return NULL;
+}
+
 // to be called only while ncurses lock is held
 static int
 iface_box(WINDOW *w,const interface *i,const iface_state *is){
@@ -190,7 +200,7 @@ iface_box(WINDOW *w,const interface *i,const iface_state *is){
 	if(wattroff(w,A_REVERSE)){
 		goto err;
 	}
-	if(mvwprintw(w,PAD_LINES - 1,START_COL,"[") < 0){
+	if(mvwprintw(w,PAD_LINES - 1,START_COL * 2,"[") < 0){
 		goto err;
 	}
 	if(wcolor_set(w,hcolor,NULL)){
@@ -208,7 +218,7 @@ iface_box(WINDOW *w,const interface *i,const iface_state *is){
 				goto err;
 			}
 		}else if(i->settings_valid){
-			if(wprintw(w," (%u)",i->settings.duplex) == ERR){
+			if(wprintw(w," (%uMb %s)",i->settings.speed,duplexstr(i->settings.duplex)) == ERR){
 				goto err;
 			}
 		}
