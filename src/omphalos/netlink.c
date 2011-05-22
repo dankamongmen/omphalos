@@ -534,6 +534,9 @@ handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 			break;}case IFLA_PORT_SELF:{
 			break;}case IFLA_AF_SPEC:{
 #endif
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,38)
+			break;}case IFLA_GROUP:{
+#endif
 			break;}default:{
 				octx->diagnostic("Unknown iflatype %u\n",ra->rta_type);
 			break;}
