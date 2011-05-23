@@ -169,6 +169,7 @@ modestr(unsigned dplx){
 	return "";
 }
 
+#define ERREXIT abort() ; goto err
 // to be called only while ncurses lock is held
 static int
 iface_box(WINDOW *w,const interface *i,const iface_state *is){
@@ -181,122 +182,121 @@ iface_box(WINDOW *w,const interface *i,const iface_state *is){
 	hcolor = interface_up_p(i) ? UHEADING_COLOR : DHEADING_COLOR;
 	attrs = ((is == current_iface) ? A_REVERSE : 0) | A_BOLD;
 	if(wattron(w,attrs | COLOR_PAIR(bcolor)) != OK){
-		goto err;
+		ERREXIT;
 	}
 	if(box(w,0,0) != OK){
-		goto err;
+		ERREXIT;
 	}
 	if(wattroff(w,A_REVERSE)){
-		goto err;
+		ERREXIT;
 	}
 	if(mvwprintw(w,0,START_COL,"[") < 0){
-		goto err;
+		ERREXIT;
 	}
 	if(wcolor_set(w,hcolor,NULL)){
-		goto err;
+		ERREXIT;
 	}
 	if(waddstr(w,i->name) == ERR){
-		goto err;
+		ERREXIT;
 	}
 	if(wprintw(w," (%s",is->typestr) != OK){
-		goto err;
+		ERREXIT;
 	}
 	if(strlen(i->drv.driver)){
 		if(waddch(w,' ') == ERR){
-			goto err;
+			ERREXIT;
 		}
 		if(waddstr(w,i->drv.driver) == ERR){
-			goto err;
+			ERREXIT;
 		}
 		if(strlen(i->drv.version)){
 			if(wprintw(w," %s",i->drv.version) != OK){
-				goto err;
+				ERREXIT;
 			}
 		}
 		if(strlen(i->drv.fw_version)){
 			if(wprintw(w," fw %s",i->drv.fw_version) != OK){
-				goto err;
+				ERREXIT;
 			}
 		}
 	}
 	if(waddch(w,')') != OK){
-		goto err;
+		ERREXIT;
 	}
 	if(wcolor_set(w,bcolor,NULL)){
-		goto err;
+		ERREXIT;
 	}
 	if(wprintw(w,"]") < 0){
-		goto err;
+		ERREXIT;
 	}
 	if(wattron(w,attrs)){
-		goto err;
+		ERREXIT;
 	}
 	if(wattroff(w,A_REVERSE)){
-		goto err;
+		ERREXIT;
 	}
 	if(mvwprintw(w,PAD_LINES - 1,START_COL * 2,"[") < 0){
-		goto err;
+		ERREXIT;
 	}
 	if(wcolor_set(w,hcolor,NULL)){
-		goto err;
+		ERREXIT;
 	}
 	if(wprintw(w,"mtu %d",i->mtu) != OK){
-		goto err;
+		ERREXIT;
 	}
 	if(interface_up_p(i)){
 		if(iface_optstr(w,"up",hcolor,bcolor)){
-			goto err;
+			ERREXIT;
 		}
 		if(!interface_carrier_p(i)){
 			if(iface_optstr(w,"no carrier",hcolor,bcolor)){
-				goto err;
+				ERREXIT;
 			}
 		}else if(i->settings_valid == SETTINGS_VALID_ETHTOOL){
 			if(wprintw(w," (%uMb %s)",i->settings.speed,duplexstr(i->settings.duplex)) == ERR){
-				goto err;
+				ERREXIT;
 			}
 		}else if(i->settings_valid == SETTINGS_VALID_WEXT){
 			if(wprintw(w," (%uMb %s)",i->wireless.bitrate / 1000000u,modestr(i->wireless.mode)) == ERR){
-				goto err;
+				ERREXIT;
 			}
 		}
 	}else{
 		if(iface_optstr(w,"down",hcolor,bcolor)){
-			goto err;
+			ERREXIT;
 		}
 		// FIXME find out whether carrier is meaningful for down
 		// interfaces (i've not seen one)
 	}
 	if(interface_promisc_p(i)){
 		if(iface_optstr(w,"promisc",hcolor,bcolor)){
-			goto err;
+			ERREXIT;
 		}
 	}
 	if(wcolor_set(w,bcolor,NULL)){
-		goto err;
+		ERREXIT;
 	}
 	if(wprintw(w,"]") < 0){
-		goto err;
+		ERREXIT;
 	}
 	if(wattroff(w,A_BOLD) != OK){
-		goto err;
+		ERREXIT;
 	}
 	if( (buslen = strlen(i->drv.bus_info)) ){
 		if(mvwprintw(w,PAD_LINES - 1,COLS - (buslen + 3 + START_COL),
 					"%s",i->drv.bus_info) != OK){
-			goto err;
+			ERREXIT;
 		}
 	}
 	if(wcolor_set(w,0,NULL) != OK){
-		goto err;
+		ERREXIT;
 	}
 	if(wattroff(w,attrs) != OK){
-		goto err;
+		ERREXIT;
 	}
 	return 0;
 
 err:
-	abort();
 	return -1;
 }
 
@@ -307,53 +307,52 @@ draw_main_window(WINDOW *w,const char *name,const char *ver){
 
 	getmaxyx(w,rows,cols);
 	if(setup_statusbar(cols)){
-		goto err;
+		ERREXIT;
 	}
 	if(wcolor_set(w,BORDER_COLOR,NULL) != OK){
-		goto err;
+		ERREXIT;
 	}
 	if(box(w,0,0) != OK){
-		goto err;
+		ERREXIT;
 	}
 	if(mvwprintw(w,0,2,"[") < 0){
-		goto err;
+		ERREXIT;
 	}
 	if(wattron(w,A_BOLD | COLOR_PAIR(HEADING_COLOR)) != OK){
-		goto err;
+		ERREXIT;
 	}
 	if(wprintw(w,"%s %s on %s %s (libc %s-%s)",name,ver,sysuts.sysname,
 				sysuts.release,glibc_version,glibc_release) < 0){
-		goto err;
+		ERREXIT;
 	}
 	if(wattroff(w,A_BOLD | COLOR_PAIR(HEADING_COLOR)) != OK){
-		goto err;
+		ERREXIT;
 	}
 	if(wcolor_set(w,BORDER_COLOR,NULL) != OK){
-		goto err;
+		ERREXIT;
 	}
 	if(wprintw(w,"]") < 0){
-		goto err;
+		ERREXIT;
 	}
 	if(wattron(w,A_BOLD | COLOR_PAIR(HEADING_COLOR)) != OK){
-		goto err;
+		ERREXIT;
 	}
 	// addstr() doesn't interpret format strings, so this is safe. It will
 	// fail, however, if the string can't fit on the window, which will for
 	// instance happen if there's an embedded newline.
 	mvwaddstr(w,rows - 1,START_COL,statusmsg);
 	if(wattroff(w,A_BOLD | COLOR_PAIR(BORDER_COLOR)) != OK){
-		goto err;
+		ERREXIT;
 	}
 	if(wcolor_set(w,0,NULL) != OK){
-		goto err;
+		ERREXIT;
 	}
 	if(prefresh(w,0,0,0,0,rows,cols)){
-		goto err;
+		ERREXIT;
 	}
 	return 0;
 
 err:
-	abort();
 	return -1;
 }
 
