@@ -21,6 +21,9 @@ libiw, libpcap and libcap are used at both build and runtime.
 Omphalos currently only builds or runs on a Linux kernel with PACKET_MMAP
 sockets. Packet transmission requires at least a 2.6.29 kernel.
 
+The ncurses UI requires libncursesw (ncurses with wide character support),
+and libpanel (distributed with SVR4 curses and ncurses).
+
 ===================================================================
 II. Building and installation
 ===================================================================
