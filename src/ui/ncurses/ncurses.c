@@ -1,4 +1,3 @@
-#include <panel.h>
 #include <errno.h>
 #include <ctype.h>
 #include <assert.h>
@@ -9,7 +8,6 @@
 #include <locale.h>
 #include <string.h>
 #include <signal.h>
-#include <ncurses.h>
 #include <pthread.h>
 #include <sys/socket.h>
 #include <linux/if.h>
@@ -25,6 +23,8 @@
 #include <sys/utsname.h>
 #include <linux/version.h>
 #include <linux/nl80211.h>
+#include <ncursesw/panel.h>
+#include <ncursesw/ncurses.h>
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
 #include <gnu/libc-version.h>
@@ -56,6 +56,7 @@ enum {
 	UHEADING_COLOR,
 	PBORDER_COLOR,			// popups
 	PHEADING_COLOR,
+	BULKTEXT_COLOR,			// bulk text (help)
 };
 
 // FIXME granularize things, make packet handler iret-like
@@ -487,6 +488,42 @@ hide_help_locked(WINDOW *w,struct panel_state *ps){
 }
 
 static int
+helpstrs(WINDOW *hw,int row,int col){
+	const wchar_t *helps[] = {
+		L"'k'/'↑' (up arrow): move up",
+		L"'j'/'↓' (down arrow): move down",
+		L"'P': preferences",
+		L"       configure persistent or temporary program settings",
+		L"'n': network configuration",
+		L"       configure addresses, routes, bridges, and wireless",
+		L"'a': attack configuration",
+		L"       configure addresses, routes, bridges, and wireless",
+		L"'j': hijack configuration",
+		L"       configure fake APs, rogue DHCP/DNS, and ARP MitM",
+		L"'d': defense configuration",
+		L"       define authoritative configurations to enforce",
+		L"'S': secrets database",
+		L"       export pilfered passwords, cookies, and identifying data",
+		L"'p': toggle promiscuity",
+		L"'s': toggle sniffing, bringing up interface if down",
+		L"'v': view detailed interface statistics",
+		L"'m': change device MAC",
+		L"'u': change device MTU",
+		L"'h': toggle this help display",
+		L"'q': quit",
+		NULL
+	},*hs;
+	unsigned z;
+
+	for(z = 0 ; (hs = helps[z]) ; ++z){
+		if(mvwaddwstr(hw,row + z,col,hs) == ERR){
+			return -1;
+		}
+	}
+	return 0;
+}
+
+static int
 display_help_locked(WINDOW *mainw,struct panel_state *ps){
 	int rows,cols,startrow;
 
@@ -494,39 +531,51 @@ display_help_locked(WINDOW *mainw,struct panel_state *ps){
 	getmaxyx(mainw,rows,cols);
 	startrow = START_LINE + 1 + ((PAD_LINES + 1) * 4);
 	if(rows <= startrow){
-		abort();goto done;
+		ERREXIT;
 	}
 	if(cols < START_COL * 2 + 1){
-		abort();goto done;
+		ERREXIT;
 	}
-	if((ps->w = newwin(rows - (startrow + 1),cols - START_COL * 2,startrow,START_COL)) == NULL){
-		abort();goto done;
+	if((ps->w = newwin(rows - (startrow + START_LINE),cols - START_COL * 2,startrow,START_COL)) == NULL){
+		ERREXIT;
 	}
 	if((ps->p = new_panel(ps->w)) == NULL){
-		abort();goto done;
+		ERREXIT;
 	}
 	if(wattron(ps->w,A_BOLD) == ERR){
-		abort();goto done;
+		ERREXIT;
 	}
 	if(wcolor_set(ps->w,PBORDER_COLOR,NULL) != OK){
-		abort();goto done;
+		ERREXIT;
 	}
 	if(box(ps->w,0,0) != OK){
-		abort();goto done;
+		ERREXIT;
+	}
+	if(wattroff(ps->w,A_BOLD) == ERR){
+		ERREXIT;
 	}
 	if(wcolor_set(ps->w,PHEADING_COLOR,NULL) != OK){
-		abort();goto done;
+		ERREXIT;
 	}
 	if(mvwprintw(ps->w,0,START_COL * 2,"press 'h' to dismiss help") == ERR){
-		abort();goto done;
+		ERREXIT;
+	}
+	if(mvwaddwstr(ps->w,rows - (startrow + START_LINE + 1),START_COL * 20,L"copyright © 2011 nick black") == ERR){
+		ERREXIT;
+	}
+	if(wcolor_set(ps->w,BULKTEXT_COLOR,NULL) != OK){
+		ERREXIT;
+	}
+	if(helpstrs(ps->w,3,START_COL)){
+		ERREXIT;
 	}
 	update_panels();
 	if(doupdate() == ERR){
-		abort();goto done;
+		ERREXIT;
 	}
 	return 0;
 
-done:
+err:
 	if(ps->p){
 		hide_panel(ps->p);
 		del_panel(ps->p);
@@ -738,6 +787,10 @@ ncurses_setup(const omphalos_iface *octx,PANEL **panel){
 		goto err;
 	}
 	if(init_pair(PHEADING_COLOR,COLOR_RED,-1) != OK){
+		errstr = "Couldn't initialize ncurses colorpair\n";
+		goto err;
+	}
+	if(init_pair(BULKTEXT_COLOR,COLOR_WHITE,-1) != OK){
 		errstr = "Couldn't initialize ncurses colorpair\n";
 		goto err;
 	}

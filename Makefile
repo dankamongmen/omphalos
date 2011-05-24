@@ -16,8 +16,8 @@ ADDCAPS:=tools/addcaps
 UI:=ncurses tty
 BIN:=$(addprefix $(OMPHALOS)-,$(UI))
 
-CFLAGS+=-I$(SRC) -pthread -D_GNU_SOURCE -fpic -I$(SRC)/lib$(PROJ) -O2 -fstrict-aliasing -fvisibility=hidden -Wall -W -Wextra -Werror
-DBCFLAGS+=-I$(SRC) -pthread -D_GNU_SOURCE -fpic -I$(SRC)/lib$(PROJ) -fstrict-aliasing -fvisibility=hidden -Wall -W -Wextra -Werror -g -ggdb
+CFLAGS+=-I$(SRC) -D_XOPEN_SOURCE_EXTENDED -pthread -D_GNU_SOURCE -fpic -I$(SRC)/lib$(PROJ) -O2 -fstrict-aliasing -fvisibility=hidden -Wall -W -Wextra -Werror
+DBCFLAGS+=-I$(SRC) -D_XOPEN_SOURCE_EXTENDED=1 -pthread -D_GNU_SOURCE -fpic -I$(SRC)/lib$(PROJ) -fstrict-aliasing -fvisibility=hidden -Wall -W -Wextra -Werror -g -ggdb
 CFLAGS:=$(DBCFLAGS)
 # FIXME doesn't work with gold, there we need:
 #GOLDLFLAGS+=-Wl,-O2,--enable-new-dtags,--as-needed,--warn-common
@@ -69,7 +69,7 @@ test: all $(TESTPCAPS)
 
 $(OMPHALOS)-ncurses: $(COREOBJS) $(NCURSESOBJS)
 	@mkdir -p $(@D)
-	$(CC) $(CFLAGS) -o $@ $^ $(LFLAGS) -lpanel -lncurses
+	$(CC) $(CFLAGS) -o $@ $^ $(LFLAGS) -lpanel -lncursesw
 
 $(OMPHALOS)-tty: $(COREOBJS) $(TTYOBJS)
 	@mkdir -p $(@D)
