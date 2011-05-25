@@ -170,7 +170,7 @@ modestr(unsigned dplx){
 	return "";
 }
 
-#define ERREXIT abort() ; goto err
+#define ERREXIT endwin() ; fprintf(stderr,"ncurses failure|%s|%d\n",__func__,__LINE__); abort() ; goto err
 // to be called only while ncurses lock is held
 static int
 iface_box(WINDOW *w,const interface *i,const iface_state *is){
@@ -487,32 +487,34 @@ hide_help_locked(WINDOW *w,struct panel_state *ps){
 	doupdate();
 }
 
+static const wchar_t *helps[] = {
+	L"'k'/'↑' (up arrow): move up",
+	L"'j'/'↓' (down arrow): move down",
+	L"'P': preferences",
+	L"       configure persistent or temporary program settings",
+	L"'n': network configuration",
+	L"       configure addresses, routes, bridges, and wireless",
+	L"'a': attack configuration",
+	L"       configure addresses, routes, bridges, and wireless",
+	L"'j': hijack configuration",
+	L"       configure fake APs, rogue DHCP/DNS, and ARP MitM",
+	L"'d': defense configuration",
+	L"       define authoritative configurations to enforce",
+	L"'S': secrets database",
+	L"       export pilfered passwords, cookies, and identifying data",
+	L"'p': toggle promiscuity",
+	L"'s': toggle sniffing, bringing up interface if down",
+	L"'v': view detailed interface statistics",
+	L"'m': change device MAC",
+	L"'u': change device MTU",
+	L"'h': toggle this help display",
+	L"'q': quit",
+	NULL
+};
+
 static int
 helpstrs(WINDOW *hw,int row,int col){
-	const wchar_t *helps[] = {
-		L"'k'/'↑' (up arrow): move up",
-		L"'j'/'↓' (down arrow): move down",
-		L"'P': preferences",
-		L"       configure persistent or temporary program settings",
-		L"'n': network configuration",
-		L"       configure addresses, routes, bridges, and wireless",
-		L"'a': attack configuration",
-		L"       configure addresses, routes, bridges, and wireless",
-		L"'j': hijack configuration",
-		L"       configure fake APs, rogue DHCP/DNS, and ARP MitM",
-		L"'d': defense configuration",
-		L"       define authoritative configurations to enforce",
-		L"'S': secrets database",
-		L"       export pilfered passwords, cookies, and identifying data",
-		L"'p': toggle promiscuity",
-		L"'s': toggle sniffing, bringing up interface if down",
-		L"'v': view detailed interface statistics",
-		L"'m': change device MAC",
-		L"'u': change device MTU",
-		L"'h': toggle this help display",
-		L"'q': quit",
-		NULL
-	},*hs;
+	const wchar_t *hs;
 	unsigned z;
 
 	for(z = 0 ; (hs = helps[z]) ; ++z){
@@ -525,11 +527,15 @@ helpstrs(WINDOW *hw,int row,int col){
 
 static int
 display_help_locked(WINDOW *mainw,struct panel_state *ps){
+	// The NULL doesn't count as a row
+	const int helprows = sizeof(helps) / sizeof(*helps) - 1;
 	int rows,cols,startrow;
 
 	memset(ps,0,sizeof(*ps));
 	getmaxyx(mainw,rows,cols);
-	startrow = START_LINE + 1 + ((PAD_LINES + 1) * 4);
+	// Space for the status bar + gap, bottom bar + gap,
+	// and top bar + gap
+	startrow = rows - (START_LINE * 3 + helprows);
 	if(rows <= startrow){
 		ERREXIT;
 	}
@@ -566,7 +572,7 @@ display_help_locked(WINDOW *mainw,struct panel_state *ps){
 	if(wcolor_set(ps->w,BULKTEXT_COLOR,NULL) != OK){
 		ERREXIT;
 	}
-	if(helpstrs(ps->w,3,START_COL)){
+	if(helpstrs(ps->w,START_LINE,START_COL)){
 		ERREXIT;
 	}
 	update_panels();
