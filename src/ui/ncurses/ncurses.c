@@ -527,22 +527,26 @@ helpstrs(WINDOW *hw,int row,int col){
 
 static int
 display_help_locked(WINDOW *mainw,struct panel_state *ps){
+	const wchar_t crightstr[] = L"copyright © 2011 nick black";
+	const int crightlen = wcslen(crightstr);
 	// The NULL doesn't count as a row
 	const int helprows = sizeof(helps) / sizeof(*helps) - 1;
 	int rows,cols,startrow;
 
 	memset(ps,0,sizeof(*ps));
 	getmaxyx(mainw,rows,cols);
+	if(cols < crightlen + START_COL * 2){
+		ERREXIT;
+	}
 	// Space for the status bar + gap, bottom bar + gap,
 	// and top bar + gap
 	startrow = rows - (START_LINE * 3 + helprows);
 	if(rows <= startrow){
 		ERREXIT;
 	}
-	if(cols < START_COL * 2 + 1){
-		ERREXIT;
-	}
-	if((ps->w = newwin(rows - (startrow + START_LINE),cols - START_COL * 2,startrow,START_COL)) == NULL){
+	rows -= startrow + START_LINE;
+	cols -= START_COL * 2;
+	if((ps->w = newwin(rows,cols,startrow,START_COL)) == NULL){
 		ERREXIT;
 	}
 	if((ps->p = new_panel(ps->w)) == NULL){
@@ -566,7 +570,7 @@ display_help_locked(WINDOW *mainw,struct panel_state *ps){
 	if(mvwprintw(ps->w,0,START_COL * 2,"press 'h' to dismiss help") == ERR){
 		ERREXIT;
 	}
-	if(mvwaddwstr(ps->w,rows - (startrow + START_LINE + 1),START_COL * 20,L"copyright © 2011 nick black") == ERR){
+	if(mvwaddwstr(ps->w,rows - 1,cols - (crightlen + START_COL * 2),crightstr) == ERR){
 		ERREXIT;
 	}
 	if(wcolor_set(ps->w,BULKTEXT_COLOR,NULL) != OK){
