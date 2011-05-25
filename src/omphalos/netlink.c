@@ -241,7 +241,7 @@ handle_rtm_delneigh(const omphalos_iface *octx,const struct nlmsghdr *nl){
 }
 
 static int
-handle_rtm_delroute(const struct nlmsghdr *nl){
+handle_rtm_delroute(const struct omphalos_iface *octx,const struct nlmsghdr *nl){
 	const struct rtmsg *rt = NLMSG_DATA(nl);
 	struct rtattr *ra;
 	int rlen;
@@ -255,13 +255,13 @@ handle_rtm_delroute(const struct nlmsghdr *nl){
 		break;}case RTA_IIF:{
 		break;}case RTA_OIF:{
 		break;}default:{
-			fprintf(stderr,"Unknown rtatype %u\n",ra->rta_type);
+			octx->diagnostic("Unknown rtatype %u",ra->rta_type);
 			break;
 		break;}}
 		ra = RTA_NEXT(ra,rlen);
 	}
 	if(rlen){
-		fprintf(stderr,"%d excess bytes on newlink message\n",rlen);
+		octx->diagnostic("%d excess bytes on newlink message",rlen);
 	}
 	return 0;
 }
@@ -273,7 +273,7 @@ typedef struct route {
 } route;
 
 static int
-handle_rtm_newroute(const struct nlmsghdr *nl){
+handle_rtm_newroute(const struct omphalos_iface *octx,const struct nlmsghdr *nl){
 	const struct rtmsg *rt = NLMSG_DATA(nl);
 	struct rtattr *ra;
 	int rlen,iif,oif;
@@ -300,7 +300,7 @@ handle_rtm_newroute(const struct nlmsghdr *nl){
 	break;} }
 	r.maskbits = rt->rtm_dst_len;
 	if(flen == 0 || flen > sizeof(r.sss.__ss_padding)){
-		fprintf(stderr,"Unknown route family %u\n",rt->rtm_family);
+		octx->diagnostic("Unknown route family %u",rt->rtm_family);
 		return -1;
 	}
 	rlen = nl->nlmsg_len - NLMSG_LENGTH(sizeof(*rt));
@@ -309,35 +309,35 @@ handle_rtm_newroute(const struct nlmsghdr *nl){
 		switch(ra->rta_type){
 		case RTA_DST:{
 			if(RTA_PAYLOAD(ra) != flen){
-				fprintf(stderr,"Expected %zu src bytes, got %lu\n",
+				octx->diagnostic("Expected %zu src bytes, got %lu",
 						flen,RTA_PAYLOAD(ra));
 				break;
 			}
 			memcpy(ad,RTA_DATA(ra),flen);
 		break;}case RTA_SRC:{
 			if(RTA_PAYLOAD(ra) != flen){
-				fprintf(stderr,"Expected %zu src bytes, got %lu\n",
+				octx->diagnostic("Expected %zu src bytes, got %lu",
 						flen,RTA_PAYLOAD(ra));
 				break;
 			}
 			memcpy(as,RTA_DATA(ra),flen);
 		break;}case RTA_IIF:{
 			if(RTA_PAYLOAD(ra) != sizeof(int)){
-				fprintf(stderr,"Expected %zu iface bytes, got %lu\n",
+				octx->diagnostic("Expected %zu iface bytes, got %lu",
 						sizeof(int),RTA_PAYLOAD(ra));
 				break;
 			}
 			iif = *(int *)RTA_DATA(ra);
 		break;}case RTA_OIF:{
 			if(RTA_PAYLOAD(ra) != sizeof(int)){
-				fprintf(stderr,"Expected %zu iface bytes, got %lu\n",
+				octx->diagnostic("Expected %zu iface bytes, got %lu",
 						sizeof(int),RTA_PAYLOAD(ra));
 				break;
 			}
 			oif = *(int *)RTA_DATA(ra);
 		break;}case RTA_GATEWAY:{
 			if(RTA_PAYLOAD(ra) != flen){
-				fprintf(stderr,"Expected %zu gw bytes, got %lu\n",
+				octx->diagnostic("Expected %zu gw bytes, got %lu",
 						flen,RTA_PAYLOAD(ra));
 				break;
 			}
@@ -356,19 +356,19 @@ handle_rtm_newroute(const struct nlmsghdr *nl){
 		break;}case RTA_MARK:{
 #endif
 		break;}default:{
-			fprintf(stderr,"Unknown rtatype %u\n",ra->rta_type);
+			octx->diagnostic("Unknown rtatype %u",ra->rta_type);
 		break;}}
 		ra = RTA_NEXT(ra,rlen);
 	}
 	if(rlen){
-		fprintf(stderr,"%d excess bytes on newlink message\n",rlen);
+		octx->diagnostic("%d excess bytes on newlink message",rlen);
 	}
 	if(oif > -1){
 		if((iface = iface_by_idx(oif)) == NULL){
 			goto err;
 		}
 	}else{
-		fprintf(stderr,"No output interface for route\n");
+		octx->diagnostic("No output interface for route");
 		goto err;
 	}
 	if(r.family == AF_INET){
@@ -713,9 +713,9 @@ int handle_netlink_event(const omphalos_iface *octx,int fd){
 			break;}case RTM_DELNEIGH:{
 				res |= handle_rtm_delneigh(octx,nh);
 			break;}case RTM_NEWROUTE:{
-				res |= handle_rtm_newroute(nh);
+				res |= handle_rtm_newroute(octx,nh);
 			break;}case RTM_DELROUTE:{
-				res |= handle_rtm_delroute(nh);
+				res |= handle_rtm_delroute(octx,nh);
 			break;}case RTM_NEWADDR:{
 			break;}case RTM_DELADDR:{
 			break;}case NLMSG_DONE:{
