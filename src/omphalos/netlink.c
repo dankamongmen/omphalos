@@ -368,7 +368,7 @@ handle_rtm_newroute(const struct omphalos_iface *octx,const struct nlmsghdr *nl)
 			goto err;
 		}
 	}else{
-		octx->diagnostic("No output interface for route");
+		// blackhole routes typically have no output interface
 		goto err;
 	}
 	if(r.family == AF_INET){
