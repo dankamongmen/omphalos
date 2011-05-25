@@ -42,6 +42,7 @@
 typedef struct iface_state {
 	int ifacenum;			// iface number
 	int scrline;			// line within the containing pad
+	int sniffing;			// do we want to sniff?
 	WINDOW *subpad;			// subpad
 	const char *typestr;		// looked up using iface->arptype
 	struct iface_state *next,*prev;
@@ -76,6 +77,15 @@ static char *statusmsg;
 static int statuschars;	// True size, not necessarily what's available
 
 #define ANSITERM_COLS 80
+
+static inline int
+start_screen_update(void){
+	int ret = 0;
+
+	//ret = wnoutrefresh(w);
+	update_panels();
+	return ret;
+}
 
 // Pass current number of columns
 static int
@@ -348,9 +358,15 @@ draw_main_window(WINDOW *w,const char *name,const char *ver){
 	if(wcolor_set(w,0,NULL) != OK){
 		ERREXIT;
 	}
-	if(prefresh(w,0,0,0,0,rows,cols)){
+	if(start_screen_update() == ERR){
 		ERREXIT;
 	}
+	if(doupdate() == ERR){
+		ERREXIT;
+	}
+	/*if(prefresh(w,0,0,0,0,rows,cols)){
+		ERREXIT;
+	}*/
 	return 0;
 
 err:
@@ -426,14 +442,13 @@ toggle_promisc_locked(const omphalos_iface *octx,WINDOW *w){
 }
 
 static void
-up_interface_locked(WINDOW *w){
+sniff_interface_locked(WINDOW *w){
 	const interface *i = get_current_iface();
 
 	if(i){
-		if(interface_up_p(i)){
-			wstatus_locked(w,"%s: interface already up",i->name);
-		}else{
+		if(!interface_up_p(i)){
 			// FIXME send request to bring iface up
+			wstatus_locked(w,"Bringing up %s...",i->name);
 		}
 	}
 }
@@ -449,7 +464,11 @@ use_next_iface_locked(WINDOW *w){
 		is = current_iface;
 		i = iface_by_idx(is->ifacenum);
 		iface_box(is->subpad,i,is);
-		prefresh(w,0,0,0,0,LINES,COLS);
+		start_screen_update();
+		//wnoutrefresh(is->subpad);
+		touchwin(w);
+		doupdate();
+		//prefresh(w,0,0,0,0,LINES,COLS);
 	}
 }
 
@@ -464,7 +483,11 @@ use_prev_iface_locked(WINDOW *w){
 		is = current_iface;
 		i = iface_by_idx(is->ifacenum);
 		iface_box(is->subpad,i,is);
-		prefresh(w,0,0,0,0,LINES,COLS);
+		start_screen_update();
+		//wnoutrefresh(is->subpad);
+		touchwin(w);
+		doupdate();
+		//prefresh(w,0,0,0,0,LINES,COLS);
 	}
 }
 
@@ -482,7 +505,7 @@ hide_help_locked(WINDOW *w,struct panel_state *ps){
 	ps->p = NULL;
 	delwin(ps->w);
 	ps->w = NULL;
-	update_panels();
+	start_screen_update();
 	draw_main_window(w,PROGNAME,VERSION);
 	doupdate();
 }
@@ -579,7 +602,9 @@ display_help_locked(WINDOW *mainw,struct panel_state *ps){
 	if(helpstrs(ps->w,START_LINE,START_COL)){
 		ERREXIT;
 	}
-	update_panels();
+	if(start_screen_update() == ERR){
+		ERREXIT;
+	}
 	if(doupdate() == ERR){
 		ERREXIT;
 	}
@@ -602,24 +627,6 @@ struct ncurses_input_marshal {
 	PANEL *p;
 	const omphalos_iface *octx;
 };
-
-// input handler while the help screen is active
-static int
-help_input(void){
-	int ch;
-
-	while((ch = getch()) != 'q' && ch != 'Q' && ch !='h'){
-		switch(ch){
-			case KEY_UP: case 'k':
-				// FIXME scroll up
-				break;
-			case KEY_DOWN: case 'j':
-				// FIXME scroll down
-				break;
-		}
-	}
-	return ch;
-}
 
 static void *
 ncurses_input_thread(void *unsafe_marsh){
@@ -647,36 +654,33 @@ ncurses_input_thread(void *unsafe_marsh){
 				toggle_promisc_locked(octx,w);
 			pthread_mutex_unlock(&bfl);
 			break;
-		case 'u':
+		case 's':
 			pthread_mutex_lock(&bfl);
-				up_interface_locked(w);
+				sniff_interface_locked(w);
 			pthread_mutex_unlock(&bfl);
 			break;
 		case 'h':{
-			int r;
-			pthread_mutex_lock(&bfl);
-				r = display_help_locked(w,&help);
-			pthread_mutex_unlock(&bfl);
-			if(r == 0){
-				ch = help_input();
+			if(help.w){
 				pthread_mutex_lock(&bfl);
 					hide_help_locked(w,&help);
 				pthread_mutex_unlock(&bfl);
-				if(ch == 'q' || ch == 'Q'){
-					goto breakout;
-				}
-			}
-			break;
-		}default:
-			if(isprint(ch)){
-				wstatus(w,"unknown command '%c' ('h' for help)",ch);
 			}else{
-				wstatus(w,"unknown scancode '%d' ('h' for help)",ch);
+				pthread_mutex_lock(&bfl);
+					display_help_locked(w,&help);
+				pthread_mutex_unlock(&bfl);
 			}
 			break;
+		}default:{
+			const char *hstr = help.w ? "('h' for help)" : "";
+			if(isprint(ch)){
+				wstatus(w,"unknown command '%c'%s",ch,hstr);
+			}else{
+				wstatus(w,"unknown scancode '%d'%s",ch,hstr);
+			}
+			break;
+		}
 	}
 	}
-breakout:
 	wstatus(w,"%s","shutting down");
 	// we can't use raise() here, as that sends the signal only
 	// to ourselves, and we have it masked.
@@ -759,10 +763,12 @@ ncurses_setup(const omphalos_iface *octx,PANEL **panel){
 		errstr = "Couldn't initialize ncurses colordefs\n";
 		goto err;
 	}
-	if((w = newpad(LINES,COLS)) == NULL){
+	w = stdscr;
+	/*if((w = newpad(LINES,COLS)) == NULL){
 		errstr = "Couldn't initialize main pad\n";
 		goto err;
 	}
+	*/
 	if((p = new_panel(stdscr)) == NULL){
 		errstr = "Couldn't initialize main panel\n";
 		goto err;
@@ -842,9 +848,14 @@ print_iface_state(const interface *i __attribute__ ((unused)),const iface_state 
 	if(mvwprintw(is->subpad,1,1,"pkts: %ju",i->frames) != OK){
 		return -1;
 	}
+	if(doupdate() == ERR){
+		return -1;
+	}
+	/*
 	if(prefresh(is->subpad,0,0,is->scrline,START_COL,is->scrline + PAD_LINES,START_COL + PAD_COLS) != OK){
 		return -1;
 	}
+	*/
 	return 0;
 }
 
@@ -884,7 +895,7 @@ interface_cb_locked(const interface *i,int inum,iface_state *ret){
 					ret->next = ret->prev->next;
 					ret->prev->next = ret;
 				}
-				if( (ret->subpad = subpad(pad,PAD_LINES,PAD_COLS,ret->scrline,START_COL)) ){
+				if( (ret->subpad = subwin(pad,PAD_LINES,PAD_COLS,ret->scrline,START_COL)) ){
 					++count_interface;
 				}else{
 					if(current_iface == ret){
@@ -903,7 +914,12 @@ interface_cb_locked(const interface *i,int inum,iface_state *ret){
 		if(i->flags & IFF_UP){
 			packet_cb_locked(i,ret);
 		}
-		prefresh(pad,0,0,0,0,LINES,COLS);
+		start_screen_update();
+		/*wnoutrefresh(ret->subpad);
+		wnoutrefresh(stdscr);*/
+		touchwin(stdscr);
+		doupdate();
+		//prefresh(pad,0,0,0,0,LINES,COLS);
 	}
 	return ret;
 }
@@ -932,7 +948,8 @@ interface_removed_locked(iface_state *is){
 			current_iface = is->prev;
 		}
 		free(is);
-		prefresh(pad,0,0,0,0,LINES,COLS);
+		doupdate();
+		//prefresh(pad,0,0,0,0,LINES,COLS);
 	}
 }
 
