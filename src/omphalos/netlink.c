@@ -13,12 +13,13 @@
 #include <linux/if_addr.h>
 #include <linux/netlink.h>
 #include <linux/version.h>
+#include <omphalos/sysfs.h>
 #include <linux/rtnetlink.h>
-#include <omphalos/omphalos.h>
 #include <omphalos/ethtool.h>
 #include <omphalos/hwaddrs.h>
 #include <omphalos/psocket.h>
 #include <omphalos/wireless.h>
+#include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
 
 
@@ -579,6 +580,9 @@ handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	// support, including many wireless cards and loopback.
 	if(iface_driver_info(octx,iface->name,&iface->drv)){
 		memset(&iface->drv,0,sizeof(iface->drv));
+		iface->busname = NULL;
+	}else{
+		iface->busname = lookup_bus(iface->drv.bus_info);
 	}
 	if(iface_ethtool_info(octx,iface->name,&iface->settings)){
 		if(iface_wireless_info(octx,iface->name,&iface->wireless)){

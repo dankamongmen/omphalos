@@ -294,7 +294,13 @@ iface_box(WINDOW *w,const interface *i,const iface_state *is){
 		ERREXIT;
 	}
 	if( (buslen = strlen(i->drv.bus_info)) ){
-		if(mvwprintw(w,PAD_LINES - 1,COLS - (buslen + 3 + START_COL),
+		if(i->busname){
+			buslen += strlen(i->busname) + 1;
+			if(mvwprintw(w,PAD_LINES - 1,COLS - (buslen + 3 + START_COL),
+					"%s:%s",i->busname,i->drv.bus_info) != OK){
+				ERREXIT;
+			}
+		}else if(mvwprintw(w,PAD_LINES - 1,COLS - (buslen + 3 + START_COL),
 					"%s",i->drv.bus_info) != OK){
 			ERREXIT;
 		}

@@ -11,7 +11,7 @@
 #include <omphalos/omphalos.h>
 
 static inline int
-ethtool_cmd(const omphalos_iface *octx,const char *name,void *unsafe){
+ethtool_docmd(const omphalos_iface *octx,const char *name,void *unsafe){
 	struct ifreq ifr;
 	int fd;
 
@@ -40,7 +40,7 @@ ethtool_cmd(const omphalos_iface *octx,const char *name,void *unsafe){
 
 int iface_driver_info(const omphalos_iface *octx,const char *name,struct ethtool_drvinfo *drv){
 	drv->cmd = ETHTOOL_GDRVINFO;
-	if(ethtool_cmd(octx,name,drv)){
+	if(ethtool_docmd(octx,name,drv)){
 		return -1;
 	}
 	// Some return the empty string for firmware / bus, others "N/A".
@@ -56,7 +56,7 @@ int iface_driver_info(const omphalos_iface *octx,const char *name,struct ethtool
 
 int iface_ethtool_info(const omphalos_iface *octx,const char *name,struct ethtool_cmd *info){
 	info->cmd = ETHTOOL_GSET;
-	if(ethtool_cmd(octx,name,info)){
+	if(ethtool_docmd(octx,name,info)){
 		return -1;
 	}
 	return 0;
