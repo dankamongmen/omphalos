@@ -80,11 +80,23 @@ static int statuschars;	// True size, not necessarily what's available
 
 static inline int
 start_screen_update(void){
-	int ret = 0;
+	int ret = OK;
 
 	//ret = wnoutrefresh(w);
 	update_panels();
 	return ret;
+}
+
+static inline int
+finish_screen_update(void){
+	touchwin(stdscr);
+	if(doupdate() == ERR){
+		return ERR;
+	}
+	/*if(prefresh(w,0,0,0,0,rows,cols)){
+		ERREXIT;
+	}*/
+	return OK;
 }
 
 // Pass current number of columns
@@ -367,12 +379,9 @@ draw_main_window(WINDOW *w,const char *name,const char *ver){
 	if(start_screen_update() == ERR){
 		ERREXIT;
 	}
-	if(doupdate() == ERR){
+	if(finish_screen_update() == ERR){
 		ERREXIT;
 	}
-	/*if(prefresh(w,0,0,0,0,rows,cols)){
-		ERREXIT;
-	}*/
 	return 0;
 
 err:
@@ -460,7 +469,7 @@ sniff_interface_locked(WINDOW *w){
 }
 
 static void
-use_next_iface_locked(WINDOW *w){
+use_next_iface_locked(void){
 	if(current_iface && current_iface->next){
 		const iface_state *is = current_iface;
 		interface *i = iface_by_idx(is->ifacenum);
@@ -471,15 +480,12 @@ use_next_iface_locked(WINDOW *w){
 		i = iface_by_idx(is->ifacenum);
 		iface_box(is->subpad,i,is);
 		start_screen_update();
-		//wnoutrefresh(is->subpad);
-		touchwin(w);
-		doupdate();
-		//prefresh(w,0,0,0,0,LINES,COLS);
+		finish_screen_update();
 	}
 }
 
 static void
-use_prev_iface_locked(WINDOW *w){
+use_prev_iface_locked(void){
 	if(current_iface && current_iface->prev){
 		const iface_state *is = current_iface;
 		interface *i = iface_by_idx(is->ifacenum);
@@ -490,10 +496,7 @@ use_prev_iface_locked(WINDOW *w){
 		i = iface_by_idx(is->ifacenum);
 		iface_box(is->subpad,i,is);
 		start_screen_update();
-		//wnoutrefresh(is->subpad);
-		touchwin(w);
-		doupdate();
-		//prefresh(w,0,0,0,0,LINES,COLS);
+		finish_screen_update();
 	}
 }
 
@@ -513,7 +516,7 @@ hide_help_locked(WINDOW *w,struct panel_state *ps){
 	ps->w = NULL;
 	start_screen_update();
 	draw_main_window(w,PROGNAME,VERSION);
-	doupdate();
+	finish_screen_update();
 }
 
 static const wchar_t *helps[] = {
@@ -533,7 +536,7 @@ static const wchar_t *helps[] = {
 	L"       export pilfered passwords, cookies, and identifying data",
 	L"'p': toggle promiscuity",
 	L"'s': toggle sniffing, bringing up interface if down",
-	L"'v': view detailed interface statistics",
+	L"'v': view detailed interface info/statistics",
 	L"'m': change device MAC",
 	L"'u': change device MTU",
 	L"'h': toggle this help display",
@@ -647,12 +650,12 @@ ncurses_input_thread(void *unsafe_marsh){
 	switch(ch){
 		case KEY_UP: case 'k':
 			pthread_mutex_lock(&bfl);
-				use_prev_iface_locked(w);
+				use_prev_iface_locked();
 			pthread_mutex_unlock(&bfl);
 			break;
 		case KEY_DOWN: case 'j':
 			pthread_mutex_lock(&bfl);
-				use_next_iface_locked(w);
+				use_next_iface_locked();
 			pthread_mutex_unlock(&bfl);
 			break;
 		case 'p':
@@ -854,14 +857,12 @@ print_iface_state(const interface *i __attribute__ ((unused)),const iface_state 
 	if(mvwprintw(is->subpad,1,1,"pkts: %ju",i->frames) != OK){
 		return -1;
 	}
-	if(doupdate() == ERR){
+	if(start_screen_update() == ERR){
 		return -1;
 	}
-	/*
-	if(prefresh(is->subpad,0,0,is->scrline,START_COL,is->scrline + PAD_LINES,START_COL + PAD_COLS) != OK){
+	if(finish_screen_update() == ERR){
 		return -1;
 	}
-	*/
 	return 0;
 }
 
@@ -921,11 +922,7 @@ interface_cb_locked(const interface *i,int inum,iface_state *ret){
 			packet_cb_locked(i,ret);
 		}
 		start_screen_update();
-		/*wnoutrefresh(ret->subpad);
-		wnoutrefresh(stdscr);*/
-		touchwin(stdscr);
-		doupdate();
-		//prefresh(pad,0,0,0,0,LINES,COLS);
+		finish_screen_update();
 	}
 	return ret;
 }
