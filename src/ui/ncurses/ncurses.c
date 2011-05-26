@@ -470,7 +470,7 @@ sniff_interface_locked(WINDOW *w){
 
 static void
 use_next_iface_locked(void){
-	if(current_iface && current_iface->next){
+	if(current_iface && current_iface->next != current_iface){
 		const iface_state *is = current_iface;
 		interface *i = iface_by_idx(is->ifacenum);
 
@@ -486,7 +486,7 @@ use_next_iface_locked(void){
 
 static void
 use_prev_iface_locked(void){
-	if(current_iface && current_iface->prev){
+	if(current_iface && current_iface->prev != current_iface){
 		const iface_state *is = current_iface;
 		interface *i = iface_by_idx(is->ifacenum);
 
@@ -893,13 +893,15 @@ interface_cb_locked(const interface *i,int inum,iface_state *ret){
 				ret->scrline = START_LINE + count_interface * (PAD_LINES + 1);
 				ret->ifacenum = inum;
 				if((ret->prev = current_iface) == NULL){
-					current_iface = ret;
-					ret->next = NULL;
+					current_iface = ret->prev = ret->next = ret;
 				}else{
-					while(ret->prev->next){
+					// The order on screen must match the list order, so splice it onto
+					// the end. We might be anywhere, so use absolute coords (scrline).
+					while(ret->prev->next->scrline > ret->prev->scrline){
 						ret->prev = ret->prev->next;
 					}
 					ret->next = ret->prev->next;
+					ret->next->prev = ret;
 					ret->prev->next = ret;
 				}
 				if( (ret->subpad = subwin(pad,PAD_LINES,PAD_COLS,ret->scrline,START_COL)) &&
@@ -910,7 +912,8 @@ interface_cb_locked(const interface *i,int inum,iface_state *ret){
 					if(current_iface == ret){
 						current_iface = NULL;
 					}else{
-						ret->prev->next = NULL;
+						ret->next->prev = ret->prev;
+						ret->prev->next = ret->next;
 					}
 					free(ret);
 					ret = NULL;
@@ -944,14 +947,14 @@ interface_removed_locked(iface_state *is){
 	if(is){
 		del_panel(is->panel);
 		delwin(is->subpad);
-		if(is->next){
+		if(is->next != is){
 			is->next->prev = is->prev;
-		}
-		if(is->prev){
 			is->prev->next = is->next;
-		}
-		if(is == current_iface){
-			current_iface = is->prev;
+			if(is == current_iface){
+				current_iface = is->prev;
+			}
+		}else{
+			current_iface = NULL;
 		}
 		free(is);
 		start_screen_update();
