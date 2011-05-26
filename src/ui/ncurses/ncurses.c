@@ -44,6 +44,7 @@ typedef struct iface_state {
 	int scrline;			// line within the containing pad
 	int sniffing;			// do we want to sniff?
 	WINDOW *subpad;			// subpad
+	PANEL *panel;			// panel
 	const char *typestr;		// looked up using iface->arptype
 	struct iface_state *next,*prev;
 } iface_state;
@@ -89,7 +90,6 @@ start_screen_update(void){
 
 static inline int
 finish_screen_update(void){
-	touchwin(stdscr);
 	if(doupdate() == ERR){
 		return ERR;
 	}
@@ -614,7 +614,7 @@ display_help_locked(WINDOW *mainw,struct panel_state *ps){
 	if(start_screen_update() == ERR){
 		ERREXIT;
 	}
-	if(doupdate() == ERR){
+	if(finish_screen_update() == ERR){
 		ERREXIT;
 	}
 	return 0;
@@ -902,9 +902,11 @@ interface_cb_locked(const interface *i,int inum,iface_state *ret){
 					ret->next = ret->prev->next;
 					ret->prev->next = ret;
 				}
-				if( (ret->subpad = subwin(pad,PAD_LINES,PAD_COLS,ret->scrline,START_COL)) ){
+				if( (ret->subpad = subwin(pad,PAD_LINES,PAD_COLS,ret->scrline,START_COL)) &&
+						(ret->panel = new_panel(ret->subpad)) ){
 					++count_interface;
 				}else{
+					delwin(ret->subpad);
 					if(current_iface == ret){
 						current_iface = NULL;
 					}else{
@@ -940,6 +942,7 @@ interface_callback(const interface *i,int inum,void *unsafe){
 static inline void
 interface_removed_locked(iface_state *is){
 	if(is){
+		del_panel(is->panel);
 		delwin(is->subpad);
 		if(is->next){
 			is->next->prev = is->prev;
@@ -951,8 +954,8 @@ interface_removed_locked(iface_state *is){
 			current_iface = is->prev;
 		}
 		free(is);
-		doupdate();
-		//prefresh(pad,0,0,0,0,LINES,COLS);
+		start_screen_update();
+		finish_screen_update();
 	}
 }
 
