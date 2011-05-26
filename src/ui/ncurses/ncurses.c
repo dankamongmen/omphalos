@@ -680,7 +680,7 @@ ncurses_input_thread(void *unsafe_marsh){
 			}
 			break;
 		}default:{
-			const char *hstr = help.w ? "('h' for help)" : "";
+			const char *hstr = help.w ? " ('h' for help)" : "";
 			if(isprint(ch)){
 				wstatus(w,"unknown command '%c'%s",ch,hstr);
 			}else{
