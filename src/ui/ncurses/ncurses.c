@@ -508,7 +508,7 @@ struct panel_state {
 };
 
 static void
-hide_help_locked(WINDOW *w,struct panel_state *ps){
+hide_panel_locked(WINDOW *w,struct panel_state *ps){
 	hide_panel(ps->p);
 	del_panel(ps->p);
 	ps->p = NULL;
@@ -557,6 +557,90 @@ helpstrs(WINDOW *hw,int row,int col){
 	return 0;
 }
 
+// Can leak resources on failure -- caller must free window/panel on error
+static int
+new_display_panel(struct panel_state *ps,int rows,int cols,int srow,int scol){
+	if((ps->w = newwin(rows,cols,srow,scol)) == NULL){
+		ERREXIT;
+	}
+	if((ps->p = new_panel(ps->w)) == NULL){
+		ERREXIT;
+	}
+	if(wattron(ps->w,A_BOLD) == ERR){
+		ERREXIT;
+	}
+	if(wcolor_set(ps->w,PBORDER_COLOR,NULL) != OK){
+		ERREXIT;
+	}
+	if(box(ps->w,0,0) != OK){
+		ERREXIT;
+	}
+	if(wattroff(ps->w,A_BOLD) == ERR){
+		ERREXIT;
+	}
+	return OK;
+
+err:
+	return ERR;
+}
+
+#define DETAILS_ROWS 8 // FIXME
+static int
+display_details_locked(WINDOW *mainw,struct panel_state *ps){
+	// The NULL doesn't count as a row
+	int rows,cols,startrow;
+
+	memset(ps,0,sizeof(*ps));
+	getmaxyx(mainw,rows,cols);
+	if(cols < START_COL * 2 + 1){
+		ERREXIT;
+	}
+	// Space for the status bar + gap, bottom bar + gap,
+	// and top bar + gap
+	startrow = rows - (START_LINE * 3 + DETAILS_ROWS);
+	if(rows <= startrow){
+		ERREXIT;
+	}
+	rows -= startrow + START_LINE;
+	cols -= START_COL * 2;
+	if(new_display_panel(ps,rows,cols,startrow,START_COL)){
+		ERREXIT;
+	}
+	if(wcolor_set(ps->w,PHEADING_COLOR,NULL) != OK){
+		ERREXIT;
+	}
+	if(mvwprintw(ps->w,0,START_COL * 2,"press 'v' to dismiss details") == ERR){
+		ERREXIT;
+	}
+	/*if(mvwaddwstr(ps->w,rows - 1,cols - (crightlen + START_COL * 2),crightstr) == ERR){
+		ERREXIT;
+	}
+	if(wcolor_set(ps->w,BULKTEXT_COLOR,NULL) != OK){
+		ERREXIT;
+	}
+	if(helpstrs(ps->w,START_LINE,START_COL)){
+		ERREXIT;
+	}*/
+	if(start_screen_update() == ERR){
+		ERREXIT;
+	}
+	if(finish_screen_update() == ERR){
+		ERREXIT;
+	}
+	return 0;
+
+err:
+	if(ps->p){
+		hide_panel(ps->p);
+		del_panel(ps->p);
+	}
+	if(ps->w){
+		delwin(ps->w);
+	}
+	memset(ps,0,sizeof(*ps));
+	return -1;
+}
+
 static int
 display_help_locked(WINDOW *mainw,struct panel_state *ps){
 	const wchar_t crightstr[] = L"copyright © 2011 nick black";
@@ -578,22 +662,7 @@ display_help_locked(WINDOW *mainw,struct panel_state *ps){
 	}
 	rows -= startrow + START_LINE;
 	cols -= START_COL * 2;
-	if((ps->w = newwin(rows,cols,startrow,START_COL)) == NULL){
-		ERREXIT;
-	}
-	if((ps->p = new_panel(ps->w)) == NULL){
-		ERREXIT;
-	}
-	if(wattron(ps->w,A_BOLD) == ERR){
-		ERREXIT;
-	}
-	if(wcolor_set(ps->w,PBORDER_COLOR,NULL) != OK){
-		ERREXIT;
-	}
-	if(box(ps->w,0,0) != OK){
-		ERREXIT;
-	}
-	if(wattroff(ps->w,A_BOLD) == ERR){
+	if(new_display_panel(ps,rows,cols,startrow,START_COL)){
 		ERREXIT;
 	}
 	if(wcolor_set(ps->w,PHEADING_COLOR,NULL) != OK){
@@ -641,11 +710,12 @@ static void *
 ncurses_input_thread(void *unsafe_marsh){
 	struct ncurses_input_marshal *nim = unsafe_marsh;
 	const omphalos_iface *octx = nim->octx;
-	struct panel_state help;
+	struct panel_state help,details;
 	WINDOW *w = nim->w;
 	int ch;
 
 	memset(&help,0,sizeof(help));
+	memset(&details,0,sizeof(details));
 	while((ch = getch()) != 'q' && ch != 'Q'){
 	switch(ch){
 		case KEY_UP: case 'k':
@@ -668,16 +738,23 @@ ncurses_input_thread(void *unsafe_marsh){
 				sniff_interface_locked(w);
 			pthread_mutex_unlock(&bfl);
 			break;
-		case 'h':{
-			if(help.w){
-				pthread_mutex_lock(&bfl);
-					hide_help_locked(w,&help);
-				pthread_mutex_unlock(&bfl);
+		case 'v':{
+			pthread_mutex_lock(&bfl);
+			if(details.w){
+				hide_panel_locked(w,&details);
 			}else{
-				pthread_mutex_lock(&bfl);
-					display_help_locked(w,&help);
-				pthread_mutex_unlock(&bfl);
+				display_details_locked(w,&details);
 			}
+			pthread_mutex_unlock(&bfl);
+			break;
+		}case 'h':{
+			pthread_mutex_lock(&bfl);
+			if(help.w){
+				hide_panel_locked(w,&help);
+			}else{
+				display_help_locked(w,&help);
+			}
+			pthread_mutex_unlock(&bfl);
 			break;
 		}default:{
 			const char *hstr = help.w ? " ('h' for help)" : "";
