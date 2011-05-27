@@ -236,7 +236,6 @@ handle_rtm_delneigh(const omphalos_iface *octx,const struct nlmsghdr *nl){
 		if(octx->neigh_removed){
 			octx->neigh_removed(iface,l2,iface->opaque);
 		}
-		free_iface(octx,iface);
 	}
 	return 0;
 }
