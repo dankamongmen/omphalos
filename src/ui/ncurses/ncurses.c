@@ -509,14 +509,16 @@ struct panel_state {
 
 static void
 hide_panel_locked(WINDOW *w,struct panel_state *ps){
-	hide_panel(ps->p);
-	del_panel(ps->p);
-	ps->p = NULL;
-	delwin(ps->w);
-	ps->w = NULL;
-	start_screen_update();
-	draw_main_window(w,PROGNAME,VERSION);
-	finish_screen_update();
+	if(ps){
+		hide_panel(ps->p);
+		del_panel(ps->p);
+		ps->p = NULL;
+		delwin(ps->w);
+		ps->w = NULL;
+		start_screen_update();
+		draw_main_window(w,PROGNAME,VERSION);
+		finish_screen_update();
+	}
 }
 
 static const wchar_t *helps[] = {
@@ -614,15 +616,6 @@ display_details_locked(WINDOW *mainw,struct panel_state *ps){
 	if(mvwprintw(ps->w,0,START_COL * 2,"press 'v' to dismiss details") == ERR){
 		ERREXIT;
 	}
-	/*if(mvwaddwstr(ps->w,rows - 1,cols - (crightlen + START_COL * 2),crightstr) == ERR){
-		ERREXIT;
-	}
-	if(wcolor_set(ps->w,BULKTEXT_COLOR,NULL) != OK){
-		ERREXIT;
-	}
-	if(helpstrs(ps->w,START_LINE,START_COL)){
-		ERREXIT;
-	}*/
 	if(start_screen_update() == ERR){
 		ERREXIT;
 	}
@@ -711,11 +704,12 @@ struct ncurses_input_marshal {
 static void *
 ncurses_input_thread(void *unsafe_marsh){
 	struct ncurses_input_marshal *nim = unsafe_marsh;
+	struct panel_state help,details,*active;
 	const omphalos_iface *octx = nim->octx;
-	struct panel_state help,details;
 	WINDOW *w = nim->w;
 	int ch;
 
+	active = NULL; // No subpanels initially
 	memset(&help,0,sizeof(help));
 	memset(&details,0,sizeof(details));
 	while((ch = getch()) != 'q' && ch != 'Q'){
@@ -744,8 +738,11 @@ ncurses_input_thread(void *unsafe_marsh){
 			pthread_mutex_lock(&bfl);
 			if(details.w){
 				hide_panel_locked(w,&details);
+				active = NULL;
 			}else{
-				display_details_locked(w,&details);
+				hide_panel_locked(w,active);
+				active = (display_details_locked(w,&details) == OK)
+					? &details : NULL;
 			}
 			pthread_mutex_unlock(&bfl);
 			break;
@@ -753,8 +750,11 @@ ncurses_input_thread(void *unsafe_marsh){
 			pthread_mutex_lock(&bfl);
 			if(help.w){
 				hide_panel_locked(w,&help);
+				active = NULL;
 			}else{
-				display_help_locked(w,&help);
+				hide_panel_locked(w,active);
+				active = (display_help_locked(w,&help) == OK)
+					? &help : NULL;
 			}
 			pthread_mutex_unlock(&bfl);
 			break;
