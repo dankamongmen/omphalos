@@ -273,6 +273,44 @@ const char *lookup_arptype(unsigned arphrd){
 	return NULL;
 }
 
+int up_interface(const omphalos_iface *octx,const interface *i){
+	int fd;
+
+	if((fd = netlink_socket(octx)) < 0){
+		return -1;
+	}
+	if(iplink_modify(octx,fd,iface_get_idx(i),IFF_UP,IFF_UP)){
+		close(fd);
+		return -1;
+	}
+	if(close(fd)){
+		return -1;
+	}
+	// FIXME we're not necessarily up yet...flags won't even be updated
+	// until we get the confirming netlink message. ought we block on that
+	// message? spin on interrogation?
+	return 0;
+}
+
+int down_interface(const omphalos_iface *octx,const interface *i){
+	int fd;
+
+	if((fd = netlink_socket(octx)) < 0){
+		return -1;
+	}
+	if(iplink_modify(octx,fd,iface_get_idx(i),0,IFF_UP)){
+		close(fd);
+		return -1;
+	}
+	if(close(fd)){
+		return -1;
+	}
+	// FIXME we're not necessarily down yet...flags won't even be updated
+	// until we get the confirming netlink message. ought we block on that
+	// message? spin on interrogation?
+	return 0;
+}
+
 int enable_promiscuity(const omphalos_iface *octx,const interface *i){
 	int fd;
 

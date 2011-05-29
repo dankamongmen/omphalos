@@ -95,6 +95,8 @@ const char *lookup_arptype(unsigned);
 
 int enable_promiscuity(const struct omphalos_iface *,const interface *);
 int disable_promiscuity(const struct omphalos_iface *,const interface *);
+int up_interface(const struct omphalos_iface *,const interface *);
+int down_interface(const struct omphalos_iface *,const interface *);
 
 #ifdef __cplusplus
 }

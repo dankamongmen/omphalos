@@ -131,6 +131,11 @@ setup_statusbar(int cols){
 }
 
 static inline int
+interface_sniffing_p(const interface *i){
+	return (i->rfd >= 0);
+}
+
+static inline int
 interface_up_p(const interface *i){
 	return (i->flags & IFF_UP);
 }
@@ -457,13 +462,29 @@ toggle_promisc_locked(const omphalos_iface *octx,WINDOW *w){
 }
 
 static void
-sniff_interface_locked(WINDOW *w){
+sniff_interface_locked(const omphalos_iface *octx,WINDOW *w){
 	const interface *i = get_current_iface();
 
 	if(i){
-		if(!interface_up_p(i)){
-			// FIXME send request to bring iface up
-			wstatus_locked(w,"Bringing up %s...",i->name);
+		if(!interface_sniffing_p(i)){
+			if(!interface_up_p(i)){
+				wstatus_locked(w,"Bringing up %s...",i->name);
+				up_interface(octx,i);
+			}
+		}else{
+			// FIXME send request to stop sniffing
+		}
+	}
+}
+
+static void
+down_interface_locked(const omphalos_iface *octx,WINDOW *w){
+	const interface *i = get_current_iface();
+
+	if(i){
+		if(interface_up_p(i)){
+			wstatus_locked(w,"Bringing down %s...",i->name);
+			down_interface(octx,i);
 		}
 	}
 }
@@ -540,6 +561,7 @@ static const wchar_t *helps[] = {
 	L"       configure algorithm stepdown, WEP/WPA cracking, SSL MitM",
 	L"'p': toggle promiscuity",
 	L"'s': toggle sniffing, bringing up interface if down",
+	L"'d': bring down device",
 	L"'v': view detailed interface info/statistics",
 	L"'m': change device MAC",
 	L"'u': change device MTU",
@@ -729,9 +751,14 @@ ncurses_input_thread(void *unsafe_marsh){
 				toggle_promisc_locked(octx,w);
 			pthread_mutex_unlock(&bfl);
 			break;
+		case 'd':
+			pthread_mutex_lock(&bfl);
+				down_interface_locked(octx,w);
+			pthread_mutex_unlock(&bfl);
+			break;
 		case 's':
 			pthread_mutex_lock(&bfl);
-				sniff_interface_locked(w);
+				sniff_interface_locked(octx,w);
 			pthread_mutex_unlock(&bfl);
 			break;
 		case 'v':{
