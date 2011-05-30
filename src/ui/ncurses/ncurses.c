@@ -983,8 +983,8 @@ interface_callback(const interface *i,int inum,void *unsafe){
 static inline void
 interface_removed_locked(iface_state *is){
 	if(is){
-		del_panel(is->panel);
 		werase(is->subwin);
+		del_panel(is->panel);
 		delwin(is->subwin);
 		if(is->next != is){
 			is->next->prev = is->prev;
