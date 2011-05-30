@@ -465,7 +465,7 @@ int reap_thread(const omphalos_iface *octx,pthread_t tid){
 	void *ret;
 
 	if( (errno = pthread_cancel(tid)) ){
-		octx->diagnostic("Couldn't cancel thread (%s?)",strerror(errno));
+		//octx->diagnostic("Couldn't cancel thread (%s?)",strerror(errno));
 	}
 	if( (errno = pthread_join(tid,&ret)) ){
 		octx->diagnostic("Couldn't join thread (%s?)",strerror(errno));
