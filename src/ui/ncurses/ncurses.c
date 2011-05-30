@@ -586,28 +586,13 @@ helpstrs(WINDOW *hw,int row,int col){
 // Can leak resources on failure -- caller must free window/panel on error
 static int
 new_display_panel(struct panel_state *ps,int rows,int cols,int srow,int scol){
-	if((ps->w = newwin(rows,cols,srow,scol)) == NULL){
-		ERREXIT;
-	}
-	if((ps->p = new_panel(ps->w)) == NULL){
-		ERREXIT;
-	}
-	if(wattron(ps->w,A_BOLD) == ERR){
-		ERREXIT;
-	}
-	if(wcolor_set(ps->w,PBORDER_COLOR,NULL) != OK){
-		ERREXIT;
-	}
-	if(box(ps->w,0,0) != OK){
-		ERREXIT;
-	}
-	if(wattroff(ps->w,A_BOLD) == ERR){
-		ERREXIT;
-	}
+	assert((ps->w = newwin(rows,cols,srow,scol)) != NULL);
+	assert((ps->p = new_panel(ps->w)) != NULL);
+	assert(wattron(ps->w,A_BOLD) != ERR);
+	assert(wcolor_set(ps->w,PBORDER_COLOR,NULL) == OK);
+	assert(box(ps->w,0,0) == OK);
+	assert(wattroff(ps->w,A_BOLD) != ERR);
 	return OK;
-
-err:
-	return ERR;
 }
 
 #define DETAILS_ROWS 8 // FIXME
@@ -632,18 +617,10 @@ display_details_locked(WINDOW *mainw,struct panel_state *ps){
 	if(new_display_panel(ps,rows,cols,startrow,START_COL)){
 		ERREXIT;
 	}
-	if(wcolor_set(ps->w,PHEADING_COLOR,NULL) != OK){
-		ERREXIT;
-	}
-	if(mvwprintw(ps->w,0,START_COL * 2,"press 'v' to dismiss details") == ERR){
-		ERREXIT;
-	}
-	if(start_screen_update() == ERR){
-		ERREXIT;
-	}
-	if(finish_screen_update() == ERR){
-		ERREXIT;
-	}
+	assert(wcolor_set(ps->w,PHEADING_COLOR,NULL) == OK);
+	assert(mvwprintw(ps->w,0,START_COL * 2,"press 'v' to dismiss details") != ERR);
+	assert(start_screen_update() != ERR);
+	assert(finish_screen_update() != ERR);
 	return 0;
 
 err:
