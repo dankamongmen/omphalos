@@ -252,11 +252,13 @@ handle_ring_packet(const omphalos_iface *octx,interface *iface,int fd,void *fram
 		if(events < 0){
 			if(errno != EINTR){
 				octx->diagnostic("Error polling packet socket %d (%s?)",fd,strerror(errno));
-				pthread_exit(NULL);
+				cancelled = 1;
+				return;
 			}
 		}else if(pfd[0].revents & POLLERR){
 			octx->diagnostic("Error polling packet socket %d",fd);
-			pthread_exit(NULL);
+			cancelled = 1;
+			return;
 		}
 	}
 	sall = (struct sockaddr_ll *)((char *)frame + TPACKET_ALIGN(sizeof(*thdr)));

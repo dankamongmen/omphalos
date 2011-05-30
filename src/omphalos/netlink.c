@@ -472,7 +472,7 @@ int reap_thread(const omphalos_iface *octx,pthread_t tid){
 		return -1;
 	}
 	if(ret != PTHREAD_CANCELED){
-		octx->diagnostic("Thread returned error on exit (%s)",(char *)ret);
+		//octx->diagnostic("Thread returned error on exit (%s)",(char *)ret);
 		return -1;
 	}
 	return 0;
