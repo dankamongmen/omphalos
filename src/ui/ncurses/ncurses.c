@@ -718,11 +718,11 @@ ncurses_input_thread(void *unsafe_marsh){
 			pthread_mutex_unlock(&bfl);
 			break;
 		}default:{
-			const char *hstr = help.w ? " ('h' for help)" : "";
+			const char *hstr = !help.w ? " ('h' for help)" : "";
 			if(isprint(ch)){
 				wstatus(w,"unknown command '%c'%s",ch,hstr);
 			}else{
-				wstatus(w,"unknown scancode '%d'%s",ch,hstr);
+				wstatus(w,"unknown scancode %d%s",ch,hstr);
 			}
 			break;
 		}
