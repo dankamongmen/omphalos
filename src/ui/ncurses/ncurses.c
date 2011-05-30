@@ -83,7 +83,6 @@ static inline int
 start_screen_update(void){
 	int ret = OK;
 
-	//ret = wnoutrefresh(w);
 	update_panels();
 	return ret;
 }
@@ -93,9 +92,6 @@ finish_screen_update(void){
 	if(doupdate() == ERR){
 		return ERR;
 	}
-	/*if(prefresh(w,0,0,0,0,rows,cols)){
-		ERREXIT;
-	}*/
 	return OK;
 }
 
@@ -209,69 +205,31 @@ iface_box(WINDOW *w,const interface *i,const iface_state *is){
 	bcolor = interface_up_p(i) ? UBORDER_COLOR : DBORDER_COLOR;
 	hcolor = interface_up_p(i) ? UHEADING_COLOR : DHEADING_COLOR;
 	attrs = ((is == current_iface) ? A_REVERSE : 0) | A_BOLD;
-	if(wattron(w,attrs | COLOR_PAIR(bcolor)) != OK){
-		ERREXIT;
-	}
-	if(box(w,0,0) != OK){
-		ERREXIT;
-	}
-	if(wattroff(w,A_REVERSE)){
-		ERREXIT;
-	}
-	if(mvwprintw(w,0,START_COL,"[") < 0){
-		ERREXIT;
-	}
-	if(wcolor_set(w,hcolor,NULL)){
-		ERREXIT;
-	}
-	if(waddstr(w,i->name) == ERR){
-		ERREXIT;
-	}
-	if(wprintw(w," (%s",is->typestr) != OK){
-		ERREXIT;
-	}
+	assert(wattron(w,attrs | COLOR_PAIR(bcolor)) == OK);
+	assert(box(w,0,0) == OK);
+	assert(wattroff(w,A_REVERSE) == OK);
+	assert(mvwprintw(w,0,START_COL,"[") != ERR);
+	assert(wcolor_set(w,hcolor,NULL) == OK);
+	assert(waddstr(w,i->name) != ERR);
+	assert(wprintw(w," (%s",is->typestr) != ERR);
 	if(strlen(i->drv.driver)){
-		if(waddch(w,' ') == ERR){
-			ERREXIT;
-		}
-		if(waddstr(w,i->drv.driver) == ERR){
-			ERREXIT;
-		}
+		assert(waddch(w,' ') != ERR);
+		assert(waddstr(w,i->drv.driver) != ERR);
 		if(strlen(i->drv.version)){
-			if(wprintw(w," %s",i->drv.version) != OK){
-				ERREXIT;
-			}
+			assert(wprintw(w," %s",i->drv.version) != ERR);
 		}
 		if(strlen(i->drv.fw_version)){
-			if(wprintw(w," fw %s",i->drv.fw_version) != OK){
-				ERREXIT;
-			}
+			assert(wprintw(w," fw %s",i->drv.fw_version) != ERR);
 		}
 	}
-	if(waddch(w,')') != OK){
-		ERREXIT;
-	}
-	if(wcolor_set(w,bcolor,NULL)){
-		ERREXIT;
-	}
-	if(wprintw(w,"]") < 0){
-		ERREXIT;
-	}
-	if(wattron(w,attrs)){
-		ERREXIT;
-	}
-	if(wattroff(w,A_REVERSE)){
-		ERREXIT;
-	}
-	if(mvwprintw(w,PAD_LINES - 1,START_COL * 2,"[") < 0){
-		ERREXIT;
-	}
-	if(wcolor_set(w,hcolor,NULL)){
-		ERREXIT;
-	}
-	if(wprintw(w,"mtu %d",i->mtu) != OK){
-		ERREXIT;
-	}
+	assert(waddch(w,')') != ERR);
+	assert(wcolor_set(w,bcolor,NULL) != ERR);
+	assert(wprintw(w,"]") != ERR);
+	assert(wattron(w,attrs) != ERR);
+	assert(wattroff(w,A_REVERSE) != ERR);
+	assert(mvwprintw(w,PAD_LINES - 1,START_COL * 2,"[") != ERR);
+	assert(wcolor_set(w,hcolor,NULL) != ERR);
+	assert(wprintw(w,"mtu %d",i->mtu) != ERR);
 	if(interface_up_p(i)){
 		if(iface_optstr(w,"up",hcolor,bcolor)){
 			ERREXIT;
@@ -663,21 +621,13 @@ display_help_locked(WINDOW *mainw,struct panel_state *ps){
 	if(new_display_panel(ps,rows,cols,startrow,START_COL)){
 		ERREXIT;
 	}
-	if(wcolor_set(ps->w,PHEADING_COLOR,NULL) != OK){
-		ERREXIT;
-	}
-	if(mvwprintw(ps->w,0,START_COL * 2,"press 'h' to dismiss help") == ERR){
-		ERREXIT;
-	}
-	if(mvwaddwstr(ps->w,rows - 1,cols - (crightlen + START_COL * 2),crightstr) == ERR){
-		ERREXIT;
-	}
-	if(wcolor_set(ps->w,BULKTEXT_COLOR,NULL) != OK){
-		ERREXIT;
-	}
+	assert(wcolor_set(ps->w,PHEADING_COLOR,NULL) == OK);
+	assert(mvwprintw(ps->w,0,START_COL * 2,"press 'h' to dismiss help") != ERR);
+	assert(mvwaddwstr(ps->w,rows - 1,cols - (crightlen + START_COL * 2),crightstr) != ERR);
+	assert(wcolor_set(ps->w,BULKTEXT_COLOR,NULL) == OK);
 	if(helpstrs(ps->w,START_LINE,START_COL,rows - START_LINE * 2)){
 		// FIXME need to support scrolling!
-		//ERREXIT;
+		ERREXIT;
 	}
 	if(start_screen_update() == ERR){
 		ERREXIT;
