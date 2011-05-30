@@ -43,7 +43,7 @@ typedef struct iface_state {
 	int ifacenum;			// iface number
 	int scrline;			// line within the containing pad
 	int sniffing;			// do we want to sniff?
-	WINDOW *subpad;			// subpad
+	WINDOW *subwin;			// subwin
 	PANEL *panel;			// panel
 	const char *typestr;		// looked up using iface->arptype
 	struct iface_state *next,*prev;
@@ -496,10 +496,10 @@ use_next_iface_locked(void){
 		interface *i = iface_by_idx(is->ifacenum);
 
 		current_iface = current_iface->next;
-		iface_box(is->subpad,i,is);
+		iface_box(is->subwin,i,is);
 		is = current_iface;
 		i = iface_by_idx(is->ifacenum);
-		iface_box(is->subpad,i,is);
+		iface_box(is->subwin,i,is);
 		start_screen_update();
 		finish_screen_update();
 	}
@@ -512,10 +512,10 @@ use_prev_iface_locked(void){
 		interface *i = iface_by_idx(is->ifacenum);
 
 		current_iface = current_iface->prev;
-		iface_box(is->subpad,i,is);
+		iface_box(is->subwin,i,is);
 		is = current_iface;
 		i = iface_by_idx(is->ifacenum);
-		iface_box(is->subpad,i,is);
+		iface_box(is->subwin,i,is);
 		start_screen_update();
 		finish_screen_update();
 	}
@@ -543,8 +543,8 @@ hide_panel_locked(WINDOW *w,struct panel_state *ps){
 }
 
 static const wchar_t *helps[] = {
-	L"'k'/'↑' (up arrow): move up",
-	L"'j'/'↓' (down arrow): move down",
+	L"'k'/'↑' (up arrow): previous interface",
+	L"'j'/'↓' (down arrow): next interface",
 	L"'P': preferences",
 	L"       configure persistent or temporary program settings",
 	L"'n': network configuration",
@@ -570,12 +570,13 @@ static const wchar_t *helps[] = {
 	NULL
 };
 
+// FIXME need to support scrolling through the list
 static int
-helpstrs(WINDOW *hw,int row,int col){
+helpstrs(WINDOW *hw,int row,int col,int rows){
 	const wchar_t *hs;
-	unsigned z;
+	int z;
 
-	for(z = 0 ; (hs = helps[z]) ; ++z){
+	for(z = 0 ; (hs = helps[z]) && z < rows ; ++z){
 		if(mvwaddwstr(hw,row + z,col,hs) == ERR){
 			return -1;
 		}
@@ -648,12 +649,15 @@ display_help_locked(WINDOW *mainw,struct panel_state *ps){
 	if(cols < crightlen + START_COL * 2){
 		ERREXIT;
 	}
-	// Space for the status bar + gap, bottom bar + gap,
-	// and top bar + gap
+	// Optimally, we get space for the status bar + gap, bottom bar + gap,
+	// and top bar + gap. We might get less.
 	startrow = rows - (START_LINE * 3 + helprows);
-	if(rows <= startrow){
-		ERREXIT;
+	// Need to support scrolling for this to work! FIXME
+	if(startrow <= START_LINE + PAD_LINES + 1){
+		startrow = START_LINE + PAD_LINES + 1;
 	}
+	// We get all the rows from startrow to the last two.
+	assert(startrow + START_LINE < rows);
 	rows -= startrow + START_LINE;
 	cols -= START_COL * 2;
 	if(new_display_panel(ps,rows,cols,startrow,START_COL)){
@@ -671,8 +675,9 @@ display_help_locked(WINDOW *mainw,struct panel_state *ps){
 	if(wcolor_set(ps->w,BULKTEXT_COLOR,NULL) != OK){
 		ERREXIT;
 	}
-	if(helpstrs(ps->w,START_LINE,START_COL)){
-		ERREXIT;
+	if(helpstrs(ps->w,START_LINE,START_COL,rows - START_LINE * 2)){
+		// FIXME need to support scrolling!
+		//ERREXIT;
 	}
 	if(start_screen_update() == ERR){
 		ERREXIT;
@@ -937,7 +942,7 @@ err:
 
 static int
 print_iface_state(const interface *i __attribute__ ((unused)),const iface_state *is){
-	if(mvwprintw(is->subpad,1,1,"pkts: %ju",i->frames) != OK){
+	if(mvwprintw(is->subwin,1,1,"pkts: %ju",i->frames) != OK){
 		return -1;
 	}
 	if(start_screen_update() == ERR){
@@ -987,11 +992,11 @@ interface_cb_locked(const interface *i,int inum,iface_state *ret){
 					ret->next->prev = ret;
 					ret->prev->next = ret;
 				}
-				if( (ret->subpad = subwin(pad,PAD_LINES,PAD_COLS,ret->scrline,START_COL)) &&
-						(ret->panel = new_panel(ret->subpad)) ){
+				if( (ret->subwin = subwin(pad,PAD_LINES,PAD_COLS,ret->scrline,START_COL)) &&
+						(ret->panel = new_panel(ret->subwin)) ){
 					++count_interface;
 				}else{
-					delwin(ret->subpad);
+					delwin(ret->subwin);
 					if(current_iface == ret){
 						current_iface = NULL;
 					}else{
@@ -1005,7 +1010,7 @@ interface_cb_locked(const interface *i,int inum,iface_state *ret){
 		}
 	}
 	if(ret){
-		iface_box(ret->subpad,i,ret);
+		iface_box(ret->subwin,i,ret);
 		if(i->flags & IFF_UP){
 			packet_cb_locked(i,ret);
 		}
@@ -1029,7 +1034,7 @@ static inline void
 interface_removed_locked(iface_state *is){
 	if(is){
 		del_panel(is->panel);
-		delwin(is->subpad);
+		delwin(is->subwin);
 		if(is->next != is){
 			is->next->prev = is->prev;
 			is->prev->next = is->next;
