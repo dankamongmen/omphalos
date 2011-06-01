@@ -678,6 +678,13 @@ ncurses_input_thread(void *unsafe_marsh){
 				use_next_iface_locked();
 			pthread_mutex_unlock(&bfl);
 			break;
+		case 12: // Ctrl-L FIXME
+			pthread_mutex_lock(&bfl);
+				start_screen_update();
+				redrawwin(w);
+				finish_screen_update();
+			pthread_mutex_unlock(&bfl);
+			break;
 		case 'p':
 			pthread_mutex_lock(&bfl);
 				toggle_promisc_locked(octx,w);
