@@ -12,6 +12,7 @@ PROJ:=omphalos
 TAGS:=$(OUT)/tags
 OMPHALOS:=$(OUT)/$(PROJ)/$(PROJ)
 ADDCAPS:=tools/addcaps
+SETUPCORE:=tools/setupcores
 
 UI:=ncurses tty
 BIN:=$(addprefix $(OMPHALOS)-,$(UI))
@@ -96,8 +97,9 @@ clean:
 bless: all
 	$(ADDCAPS) $(BIN)
 
-sudobless: test
+sudobless: test $(ADDCAPS) $(SETUPCORE)
 	sudo $(ADDCAPS) $(BIN)
+	sudo $(SETUPCORE)
 
 install: all doc
 	@mkdir -p $(PREFIX)/lib
