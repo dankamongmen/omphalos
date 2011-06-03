@@ -60,9 +60,10 @@ typedef struct interface {
 		SETTINGS_VALID_ETHTOOL,
 		SETTINGS_VALID_WEXT,
 	} settings_valid;	// set if the settings field can be trusted
-	// FIXME combine these into a union, as they're exclusive
-	struct ethtool_cmd settings;	// ethtool settings info
-	struct wireless_info wireless;	// wireless extensions info
+	union {
+		struct ethtool_cmd ethtool;	// ethtool settings info
+		struct wireless_info wext;	// wireless extensions info
+	} settings;
 	// Other interfaces might also offer routes to these same
 	// destinations -- they must not be considered unique!
 	struct ip4route *ip4r;	// list of IPv4 routes

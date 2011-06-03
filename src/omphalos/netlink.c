@@ -479,6 +479,38 @@ int reap_thread(const omphalos_iface *octx,pthread_t tid){
 }
 
 static int
+prepare_packet_sockets(const omphalos_iface *octx,interface *iface,int idx){
+	psocket_marsh *pm;
+
+	if( (pm = malloc(sizeof(*pm))) ){
+		if((iface->fd = packet_socket(octx,ETH_P_ALL)) >= 0){
+			if((iface->rfd = packet_socket(octx,ETH_P_ALL)) >= 0){
+				if( (iface->rs = mmap_rx_psocket(octx,iface->rfd,idx,
+						iface->mtu,&iface->rxm,&iface->rtpr)) ){
+					if( (iface->ts = mmap_tx_psocket(octx,iface->fd,idx,
+							iface->mtu,&iface->txm,&iface->ttpr)) ){
+						pm->octx = octx;
+						pm->i = iface;
+						if(pthread_create(&iface->tid,NULL,psocket_thread,pm) == 0){
+							return 0;
+						}
+					}
+				}
+				close(iface->rfd); // munmaps
+			}
+			close(iface->fd); // munmaps
+		}
+		free(pm);
+	}
+	iface->rfd = iface->fd = -1;
+	memset(&iface->rtpr,0,sizeof(iface->rtpr));
+	memset(&iface->ttpr,0,sizeof(iface->ttpr));
+	iface->rxm = iface->txm = NULL;
+	iface->rs = 0;
+	return -1;
+}
+
+static int
 handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	const struct ifinfomsg *ii = NLMSG_DATA(nl);
 	const struct rtattr *ra;
@@ -571,7 +603,7 @@ handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 		return -1;
 	}
 	if(iface->mtu == 0){
-		octx->diagnostic("No MTU in new link message");
+		octx->diagnostic("No MTU in new link message for %s",iface->name);
 		return -1;
 	}
 	iface->arptype = ii->ifi_type;
@@ -583,66 +615,17 @@ handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	}else{
 		iface->busname = lookup_bus(iface->drv.bus_info);
 	}
-	if(iface_ethtool_info(octx,iface->name,&iface->settings)){
-		if(iface_wireless_info(octx,iface->name,&iface->wireless)){
-			iface->settings_valid = SETTINGS_INVALID;
-		}else{
-			iface->settings_valid = SETTINGS_VALID_WEXT;
-		}
-	}else{
+	if(iface_ethtool_info(octx,iface->name,&iface->settings.ethtool) == 0){
 		iface->settings_valid = SETTINGS_VALID_ETHTOOL;
+	}else if(iface_wireless_info(octx,iface->name,&iface->settings.wext)){
+		iface->settings_valid = SETTINGS_VALID_WEXT;
+	}else{
+		iface->settings_valid = SETTINGS_INVALID;
 	}
 	iface->flags = ii->ifi_flags;
 	if(iface->fd < 0 && (iface->flags & IFF_UP)){
-		psocket_marsh *pm;
-
-		if((pm = malloc(sizeof(*pm))) == NULL){
-			return -1;
-		}
-		if((iface->fd = packet_socket(octx,ETH_P_ALL)) < 0){
-			free(pm);
-			return -1;
-		}
-		if((iface->rfd = packet_socket(octx,ETH_P_ALL)) < 0){
-			close(iface->fd);
-			iface->fd = -1;
-			free(pm);
-			return -1;
-		}
-		if((iface->rs = mmap_rx_psocket(octx,iface->rfd,ii->ifi_index,
-					iface->mtu,&iface->rxm,&iface->rtpr)) == 0){
-			memset(&iface->rtpr,0,sizeof(iface->rtpr));
-			iface->rxm = NULL;
-			close(iface->rfd);
-			close(iface->fd);
-			iface->rfd = iface->fd = -1;
-			free(pm);
-			return -1;
-		}
-		if((iface->ts = mmap_tx_psocket(octx,iface->fd,ii->ifi_index,
-					iface->mtu,&iface->txm,&iface->ttpr)) == 0){
-			memset(&iface->rtpr,0,sizeof(iface->rtpr));
-			memset(&iface->ttpr,0,sizeof(iface->ttpr));
-			iface->rxm = iface->txm = NULL;
-			close(iface->rfd);
-			close(iface->fd);
-			iface->rfd = iface->fd = -1;
-			iface->rs = 0;
-			free(pm);
-			return -1;
-		}
-		pm->octx = octx;
-		pm->i = iface;
-		if(pthread_create(&iface->tid,NULL,psocket_thread,pm)){
-			memset(&iface->rtpr,0,sizeof(iface->rtpr));
-			memset(&iface->ttpr,0,sizeof(iface->ttpr));
-			iface->rxm = iface->txm = NULL;
-			close(iface->rfd);
-			close(iface->fd);
-			iface->rfd = iface->fd = -1;
-			iface->rs = 0;
-			free(pm);
-			return -1;
+		if(prepare_packet_sockets(octx,iface,ii->ifi_index)){
+			octx->diagnostic("Couldn't open packet sockets on %s",iface->name);
 		}
 	}else if(iface->fd >= 0 && !(iface->flags & IFF_UP)){
 		reap_thread(octx,iface->tid);

@@ -239,11 +239,11 @@ iface_box(WINDOW *w,const interface *i,const iface_state *is){
 				ERREXIT;
 			}
 		}else if(i->settings_valid == SETTINGS_VALID_ETHTOOL){
-			if(wprintw(w," (%uMb %s)",i->settings.speed,duplexstr(i->settings.duplex)) == ERR){
+			if(wprintw(w," (%uMb %s)",i->settings.ethtool.speed,duplexstr(i->settings.ethtool.duplex)) == ERR){
 				ERREXIT;
 			}
 		}else if(i->settings_valid == SETTINGS_VALID_WEXT){
-			if(wprintw(w," (%uMb %s)",i->wireless.bitrate / 1000000u,modestr(i->wireless.mode)) == ERR){
+			if(wprintw(w," (%uMb %s)",i->settings.wext.bitrate / 1000000u,modestr(i->settings.wext.mode)) == ERR){
 				ERREXIT;
 			}
 		}
