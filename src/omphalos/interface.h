@@ -33,10 +33,15 @@ typedef struct wireless_info {
 } wireless_info;
 
 typedef struct interface {
-	uintmax_t frames;	// Statistics
-	uintmax_t malformed;
-	uintmax_t truncated;
-	uintmax_t noprotocol;
+	uintmax_t frames;		// Frames received on the interface
+	uintmax_t malformed;		// Packet had malformed L2 -- L4 headers
+	uintmax_t truncated;		// Packet didn't fit in ringbuffer frame
+	uintmax_t truncated_recovered;	// We were able to recvfrom() the packet
+	uintmax_t noprotocol;		// Packets without protocol handler
+
+	// For recvfrom()ing truncated packets (see PACKET_COPY_THRESH sockopt)
+	void *truncbuf;
+	size_t truncbuflen;
 
 	unsigned arptype;	// from rtnetlink(7) ifi_type
 	unsigned flags;		// from rtnetlink(7) ifi_flags
