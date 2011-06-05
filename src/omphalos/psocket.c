@@ -111,7 +111,7 @@ mmap_psocket(const omphalos_iface *octx,int op,int idx,int fd,
 	// FIXME MADV_HUGEPAGE support was dropped in 2.6.38.4, it seems.
 #ifdef MADV_HUGEPAGE
 	if(madvise(*map,size,MADV_HUGEPAGE)){
-		//fprintf(stderr,"Couldn't advise hugepages for %zu (%s?)\n",size,strerror(errno));
+		//octx->diagnostic("Couldn't advise hugepages for %zu (%s?)",size,strerror(errno));
 	}
 #endif
 	return size;
@@ -313,7 +313,19 @@ int ring_packet_loop(const omphalos_iface *octx,interface *i,int rfd,
 
 size_t mmap_rx_psocket(const omphalos_iface *octx,int fd,int idx,
 		unsigned maxframe,void **map,struct tpacket_req *treq){
-	return mmap_psocket(octx,PACKET_RX_RING,idx,fd,maxframe,map,treq);
+	size_t ret;
+	int thresh;
+
+	ret = mmap_psocket(octx,PACKET_RX_RING,idx,fd,maxframe,map,treq);
+	if(ret == 0){
+		return 0;
+	}
+	thresh = 1;
+	if(setsockopt(fd,SOL_PACKET,PACKET_COPY_THRESH,&thresh,sizeof(thresh))){
+		unmap_psocket(octx,*map,ret);
+		return -1;
+	}
+	return ret;
 }
 
 int handle_packet_socket(const omphalos_ctx *pctx){
