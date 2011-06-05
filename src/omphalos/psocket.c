@@ -1,23 +1,21 @@
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
+#include <signal.h>
 #include <unistd.h>
+#include <pthread.h>
+#include <sys/poll.h>
 #include <sys/mman.h>
 #include <sys/socket.h>
 #include <linux/if_arp.h>
-#include <linux/if_packet.h>
-#include <omphalos/psocket.h>
-#include <omphalos/interface.h>
-
-/* The remainder of this file is pretty omphalos-specific. It doesn't
- * belong here if this ever becomes a library. */
-#include <signal.h>
-#include <pthread.h>
-#include <sys/poll.h>
 #include <omphalos/privs.h>
+#include <linux/if_packet.h>
 #include <omphalos/netlink.h>
+#include <omphalos/psocket.h>
 #include <omphalos/omphalos.h>
 #include <omphalos/ethernet.h>
+#include <omphalos/interface.h>
 
 #ifndef PACKET_TX_RING
 #define PACKET_TX_RING 13
@@ -235,13 +233,19 @@ netlink_thread(const omphalos_iface *octx){
 }
 
 static int
-recover_truncated_packet(const omphalos_iface *octx,interface *iface,int fd){
+recover_truncated_packet(const omphalos_iface *octx,interface *iface,int fd,unsigned tlen){
 	int r;
 
-	if(iface->truncbuflen == 0){
-		return -1;
+	if(iface->truncbuflen < tlen){
+		void **tmp;
+
+		if((tmp = realloc(iface->truncbuf,tlen)) == NULL){
+			return -1;
+		}
+		iface->truncbuf = tmp;
+		iface->truncbuflen = tlen;
 	}
-	if((r = recvfrom(fd,iface->truncbuf,iface->truncbuflen,0,NULL,0)) <= 0){
+	if((r = recvfrom(fd,iface->truncbuf,iface->truncbuflen,MSG_DONTWAIT,NULL,0)) <= 0){
 		octx->diagnostic("Error in recvfrom(%s): %s",iface->name,strerror(errno));
 		return r;
 	}
@@ -282,7 +286,7 @@ handle_ring_packet(const omphalos_iface *octx,interface *iface,int fd,void *fram
 	}
 	if((thdr->tp_status & TP_STATUS_COPY) || thdr->tp_snaplen != thdr->tp_len){
 		++iface->truncated;
-		if((len = recover_truncated_packet(octx,iface,fd)) <= 0){
+		if((len = recover_truncated_packet(octx,iface,fd,thdr->tp_len)) <= 0){
 			octx->diagnostic("Partial capture on %s (%u/%ub)",
 				iface->name,thdr->tp_snaplen,thdr->tp_len);
 			frame = (char *)frame + thdr->tp_mac;
