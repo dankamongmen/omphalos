@@ -900,7 +900,7 @@ packet_cb_locked(const interface *i,iface_state *is){
 
 		timersub(&i->lastseen,&is->lastprinted,&tdiff);
 		udiff = timerusec(&tdiff);
-		if(udiff < 50000){ // At most one update every 50ms
+		if(udiff < 16667){ // At most one update every 1/60s
 			if(!is->alarmset){
 				// FIXME register the alarm
 				is->alarmset = 1;
