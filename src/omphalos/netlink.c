@@ -617,7 +617,7 @@ handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	}
 	if(iface_ethtool_info(octx,iface->name,&iface->settings.ethtool) == 0){
 		iface->settings_valid = SETTINGS_VALID_ETHTOOL;
-	}else if(iface_wireless_info(octx,iface->name,&iface->settings.wext)){
+	}else if(iface_wireless_info(octx,iface->name,&iface->settings.wext) == 0){
 		iface->settings_valid = SETTINGS_VALID_WEXT;
 	}else{
 		iface->settings_valid = SETTINGS_INVALID;
