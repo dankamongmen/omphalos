@@ -8,7 +8,7 @@ struct eapolhdr {
 	uint8_t version;
 	uint8_t type;
 	uint16_t len;
-} eapolhdr;
+};
 
 #define EAPOL_DATA	0
 #define EAPOL_START	1
