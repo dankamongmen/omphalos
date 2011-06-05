@@ -280,6 +280,8 @@ handle_ring_packet(const omphalos_iface *octx,interface *iface,int fd,void *fram
 		}
 	}
 	++iface->frames;
+	iface->lastseen.tv_sec = thdr->tp_sec;
+	iface->lastseen.tv_usec = thdr->tp_usec;
 	if(thdr->tp_status & TP_STATUS_LOSING){
 		octx->diagnostic("FUCK ME; THE RINGBUFFER'S FULL!");
 		// update statistics via sockopt() FIXME

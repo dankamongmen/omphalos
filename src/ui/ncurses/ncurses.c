@@ -8,7 +8,9 @@
 #include <locale.h>
 #include <string.h>
 #include <signal.h>
+#include <limits.h>
 #include <pthread.h>
+#include <sys/time.h>
 #include <sys/socket.h>
 #include <linux/if.h>
 
@@ -864,12 +866,22 @@ err:
 	return NULL;
 }
 
+static inline unsigned long
+timerusec(const struct timeval *tv){
+	return tv->tv_sec * 1000000 + tv->tv_usec;
+}
+
 static int
 print_iface_state(const interface *i,const iface_state *is){
-	assert(mvwprintw(is->subwin,1,1,"pkts: %ju\ttruncs: %ju\trecovered: %ju",
+	unsigned long secexist;
+	struct timeval tdiff;
+
+	timersub(&i->lastseen,&i->firstseen,&tdiff);
+	secexist = timerusec(&tdiff);
+	assert(mvwprintw(is->subwin,1,1 + START_COL * 2,"pkts: %ju\ttruncs: %ju\trecovered: %ju",
 				i->frames,i->truncated,i->truncated_recovered) != ERR);
-	assert(mvwprintw(is->subwin,2,1,"bytes: %ju",
-				i->bytes) != ERR);
+	assert(mvwprintw(is->subwin,2,1 + START_COL * 2,"bytes: %ju (%jub/s)",
+				i->bytes,i->bytes * 1000000 * CHAR_BIT / secexist) != ERR);
 	assert(start_screen_update() != ERR);
 	assert(finish_screen_update() != ERR);
 	return 0;

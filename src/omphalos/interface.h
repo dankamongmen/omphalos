@@ -40,6 +40,9 @@ typedef struct interface {
 	uintmax_t noprotocol;		// Packets without protocol handler
 	uintmax_t bytes;		// Total bytes sniffed
 
+	struct timeval firstseen;	// Interface registration time
+	struct timeval lastseen;	// Last time we saw a packet/event here
+
 	// For recvfrom()ing truncated packets (see PACKET_COPY_THRESH sockopt)
 	void *truncbuf;
 	size_t truncbuflen;

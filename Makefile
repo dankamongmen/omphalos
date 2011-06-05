@@ -17,7 +17,7 @@ SETUPCORE:=tools/setupcores
 UI:=ncurses tty
 BIN:=$(addprefix $(OMPHALOS)-,$(UI))
 
-DFLAGS:=-D_FILE_OFFSET_BITS=64 -D_XOPEN_SOURCE_EXTENDED -D_GNU_SOURCE 
+DFLAGS:=-D_FILE_OFFSET_BITS=64 -D_XOPEN_SOURCE_EXTENDED -D_GNU_SOURCE
 CFLAGS+=$(DFLAGS) -pthread -I$(SRC) -fpic -fstrict-aliasing -fvisibility=hidden -Wall -W -Wextra -Werror -O2
 DBCFLAGS+=$(DFLAGS) -pthread -I$(SRC) -fpic -fstrict-aliasing -fvisibility=hidden -Wall -W -Wextra -Werror -g -ggdb
 CFLAGS:=$(DBCFLAGS)
