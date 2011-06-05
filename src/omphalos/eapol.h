@@ -8,8 +8,10 @@ extern "C" {
 #include <stddef.h>
 
 struct interface;
+struct omphalos_iface;
 
-void handle_eapol_packet(struct interface *,const void *,size_t);
+void handle_eapol_packet(const struct omphalos_iface *,struct interface *,
+					const void *,size_t);
 
 #ifdef __cplusplus
 }

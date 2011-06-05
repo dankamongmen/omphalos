@@ -48,6 +48,8 @@ typedef struct iface_state {
 	WINDOW *subwin;			// subwin
 	PANEL *panel;			// panel
 	const char *typestr;		// looked up using iface->arptype
+	struct timeval lastprinted;	// last time we printed the iface
+	int alarmset;			// alarm set for UI update?
 	struct iface_state *next,*prev;
 } iface_state;
 
@@ -883,15 +885,15 @@ timerusec(const struct timeval *tv){
 
 static int
 print_iface_state(const interface *i,const iface_state *is){
-	unsigned long secexist;
+	unsigned long usecexist;
 	struct timeval tdiff;
 
 	timersub(&i->lastseen,&i->firstseen,&tdiff);
-	secexist = timerusec(&tdiff);
+	usecexist = timerusec(&tdiff);
 	assert(mvwprintw(is->subwin,1,1 + START_COL * 2,"pkts: %ju\ttruncs: %ju\trecovered: %ju",
 				i->frames,i->truncated,i->truncated_recovered) != ERR);
 	assert(mvwprintw(is->subwin,2,1 + START_COL * 2,"bytes: %ju (%jub/s)",
-				i->bytes,i->bytes * 1000000 * CHAR_BIT / secexist) != ERR);
+				i->bytes,i->bytes * 1000000 * CHAR_BIT / usecexist) != ERR);
 	assert(start_screen_update() != ERR);
 	assert(finish_screen_update() != ERR);
 	return 0;
@@ -900,12 +902,25 @@ print_iface_state(const interface *i,const iface_state *is){
 static inline void
 packet_cb_locked(const interface *i,iface_state *is){
 	if(is){
+		struct timeval tdiff;
+		unsigned long udiff;
+
+		timersub(&i->lastseen,&is->lastprinted,&tdiff);
+		udiff = timerusec(&tdiff);
+		if(udiff < 16667){ // At most one update every 1/60s
+			if(!is->alarmset){
+				// FIXME register the alarm
+				is->alarmset = 1;
+			}
+			return;
+		}
+		is->lastprinted = i->lastseen;
 		print_iface_state(i,is);
 	}
 }
 
 static void
-packet_callback(const interface *i __attribute__ ((unused)),void *unsafe){
+packet_callback(const interface *i,void *unsafe){
 	pthread_mutex_lock(&bfl);
 	packet_cb_locked(i,unsafe);
 	pthread_mutex_unlock(&bfl);

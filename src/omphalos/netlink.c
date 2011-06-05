@@ -385,7 +385,7 @@ handle_rtm_newroute(const struct omphalos_iface *octx,const struct nlmsghdr *nl)
 	{
 		char str[INET6_ADDRSTRLEN];
 		inet_ntop(rt->rtm_family,ad,str,sizeof(str));
-	printf("[%8s] route to %s/%u %s\n",iface->name,str,r.maskbits,
+	octx->diagnostic("[%8s] route to %s/%u %s\n",iface->name,str,r.maskbits,
 			rt->rtm_type == RTN_LOCAL ? "(local)" :
 			rt->rtm_type == RTN_BROADCAST ? "(broadcast)" :
 			rt->rtm_type == RTN_UNREACHABLE ? "(unreachable)" :
@@ -404,29 +404,29 @@ err:
 }
 
 /*static int
-handle_rtm_deladdr(const struct nlmsghdr *nl){
+handle_rtm_deladdr(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	const struct ifaddrmsg *ia = NLMSG_DATA(nl);
 	interface *iface;
 
 	if((iface = iface_by_idx(ia->ifa_index)) == NULL){
-		fprintf(stderr,"Invalid interface index: %d\n",ia->ifa_index);
+		octx->diagnostic("Invalid interface index: %d\n",ia->ifa_index);
 		return -1;
 	}
-	printf("[%8s] ADDRESS DELETED\n",iface->name);
+	octx->diagnostic("[%8s] ADDRESS DELETED\n",iface->name);
 	// FIXME
 	return 0;
 }
 
 static int
-handle_rtm_newaddr(const struct nlmsghdr *nl){
+handle_rtm_newaddr(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	const struct ifaddrmsg *ia = NLMSG_DATA(nl);
 	interface *iface;
 
 	if((iface = iface_by_idx(ia->ifa_index)) == NULL){
-		fprintf(stderr,"Invalid interface index: %d\n",ia->ifa_index);
+		octx->diagnostic("Invalid interface index: %d\n",ia->ifa_index);
 		return -1;
 	}
-	printf("[%8s] ADDRESS ADDED\n",iface->name);
+	octx->diagnostic("[%8s] ADDRESS ADDED\n",iface->name);
 	// FIXME
 	return 0;
 }*/
@@ -690,7 +690,7 @@ int handle_netlink_event(const omphalos_iface *octx,int fd){
 		// NLMSG_LENGTH sanity checks enforced via NLMSG_OK() and
 		// _NEXT() -- we needn't check amount read within the loop
 		for(nh = (struct nlmsghdr *)buf ; NLMSG_OK(nh,(unsigned)r) ; nh = NLMSG_NEXT(nh,r)){
-			//printf("MSG TYPE %d\n",(int)nh->nlmsg_type);
+			//octx->diagnostic("MSG TYPE %d\n",(int)nh->nlmsg_type);
 			if(nh->nlmsg_flags & NLM_F_MULTI){
 				inmulti = 1;
 			}

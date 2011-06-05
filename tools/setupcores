@@ -2,5 +2,8 @@
 
 set -e
 
-ulimit -c unlimited
-echo 1 | sudo tee /proc/sys/fs/suid_dumpable
+if ! ulimit -c | grep unlimited > /dev/null ; then
+	echo "Need run 'ulimit -c unlimited'!"
+	exit 1
+fi
+echo 1 | sudo tee /proc/sys/fs/suid_dumpable > /dev/null
