@@ -39,11 +39,11 @@ void handle_ipv6_packet(const omphalos_iface *octx,interface *i,
 }
 
 static void
-handle_tcp_packet(interface *i,const void *frame,size_t len){
+handle_tcp_packet(const omphalos_iface *octx,interface *i,const void *frame,size_t len){
 	const struct tcphdr *tcp = frame;
 
 	if(len < sizeof(*tcp)){
-		printf("%s malformed with %zu\n",__func__,len);
+		octx->diagnostic("%s malformed with %zu",__func__,len);
 		++i->malformed;
 		return;
 	}
@@ -51,11 +51,11 @@ handle_tcp_packet(interface *i,const void *frame,size_t len){
 }
 
 static void
-handle_icmp_packet(interface *i,const void *frame,size_t len){
+handle_icmp_packet(const omphalos_iface *octx,interface *i,const void *frame,size_t len){
 	const struct icmphdr *icmp = frame;
 
 	if(len < sizeof(*icmp)){
-		printf("%s malformed with %zu\n",__func__,len);
+		octx->diagnostic("%s malformed with %zu",__func__,len);
 		++i->malformed;
 		return;
 	}
@@ -63,11 +63,11 @@ handle_icmp_packet(interface *i,const void *frame,size_t len){
 }
 
 static void
-handle_igmp_packet(interface *i,const void *frame,size_t len){
+handle_igmp_packet(const omphalos_iface *octx,interface *i,const void *frame,size_t len){
 	const struct igmphdr *igmp = frame;
 
 	if(len < sizeof(*igmp)){
-		printf("%s malformed with %zu\n",__func__,len);
+		octx->diagnostic("%s malformed with %zu",__func__,len);
 		++i->malformed;
 		return;
 	}
@@ -109,13 +109,13 @@ void handle_ipv4_packet(const omphalos_iface *octx,interface *i,
 
 	switch(ip->protocol){
 	case IPPROTO_TCP:{
-		handle_tcp_packet(i,nhdr,nlen);
+		handle_tcp_packet(octx,i,nhdr,nlen);
 	break; }case IPPROTO_UDP:{
-		handle_udp_packet(i,nhdr,nlen);
+		handle_udp_packet(octx,i,nhdr,nlen);
 	break; }case IPPROTO_ICMP:{
-		handle_icmp_packet(i,nhdr,nlen);
+		handle_icmp_packet(octx,i,nhdr,nlen);
 	break; }case IPPROTO_IGMP:{
-		handle_igmp_packet(i,nhdr,nlen);
+		handle_igmp_packet(octx,i,nhdr,nlen);
 	break; }default:{
 		++i->noprotocol;
 		octx->diagnostic("%s noproto for %u",__func__,ip->protocol);
