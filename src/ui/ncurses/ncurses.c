@@ -485,6 +485,7 @@ hide_panel_locked(WINDOW *w,struct panel_state *ps){
 static const wchar_t *helps[] = {
 	L"'k'/'↑' (up arrow): previous interface",
 	L"'j'/'↓' (down arrow): next interface",
+	L"Ctrl + 'L': redraw the screen",
 	L"'P': preferences",
 	L"       configure persistent or temporary program settings",
 	L"'n': network configuration",
@@ -873,25 +874,18 @@ err:
 }
 
 static int
-print_iface_state(const interface *i __attribute__ ((unused)),const iface_state *is){
-	if(mvwprintw(is->subwin,1,1,"pkts: %ju",i->frames) != OK){
-		return -1;
-	}
-	if(start_screen_update() == ERR){
-		return -1;
-	}
-	if(finish_screen_update() == ERR){
-		return -1;
-	}
+print_iface_state(const interface *i,const iface_state *is){
+	assert(mvwprintw(is->subwin,1,1,"pkts: %ju\ttruncs: %ju\trecovered: %ju",
+				i->frames,i->truncated,i->truncated_recovered) != ERR);
+	assert(start_screen_update() != ERR);
+	assert(finish_screen_update() != ERR);
 	return 0;
 }
 
 static inline void
 packet_cb_locked(const interface *i,iface_state *is){
 	if(is){
-		if(print_iface_state(i,is)){
-			abort();
-		}
+		print_iface_state(i,is);
 	}
 }
 
