@@ -35,7 +35,7 @@
 #define PAD_LINES 4
 #define PAD_COLS (COLS - START_COL * 2)
 #define START_LINE 2
-#define START_COL 2
+#define START_COL 1
 
 // Bind one of these state structures to each interface in the callback,
 // and also associate an iface with them via ifacenum (for UI actions).
@@ -253,25 +253,16 @@ iface_box(WINDOW *w,const interface *i,const iface_state *is){
 	if( (buslen = strlen(i->drv.bus_info)) ){
 		if(i->busname){
 			buslen += strlen(i->busname) + 1;
-			if(mvwprintw(w,PAD_LINES - 1,COLS - (buslen + 3 + START_COL),
-					"%s:%s",i->busname,i->drv.bus_info) != OK){
-				ERREXIT;
-			}
-		}else if(mvwprintw(w,PAD_LINES - 1,COLS - (buslen + 3 + START_COL),
-					"%s",i->drv.bus_info) != OK){
-			ERREXIT;
+			assert(mvwprintw(w,PAD_LINES - 1,COLS - (buslen + 3 + START_COL),
+					"%s:%s",i->busname,i->drv.bus_info) != ERR);
+		}else{
+			assert(mvwprintw(w,PAD_LINES - 1,COLS - (buslen + 3 + START_COL),
+					"%s",i->drv.bus_info) != ERR);
 		}
 	}
-	if(wcolor_set(w,0,NULL) != OK){
-		ERREXIT;
-	}
-	if(wattroff(w,attrs) != OK){
-		ERREXIT;
-	}
+	assert(wcolor_set(w,0,NULL) != ERR);
+	assert(wattroff(w,attrs) != ERR);
 	return 0;
-
-err:
-	return -1;
 }
 
 // to be called only while ncurses lock is held
@@ -314,7 +305,7 @@ draw_main_window(WINDOW *w,const char *name,const char *ver){
 	// addstr() doesn't interpret format strings, so this is safe. It will
 	// fail, however, if the string can't fit on the window, which will for
 	// instance happen if there's an embedded newline.
-	mvwaddstr(w,rows - 1,START_COL,statusmsg);
+	mvwaddstr(w,rows - 1,START_COL * 2,statusmsg);
 	if(wattroff(w,A_BOLD | COLOR_PAIR(BORDER_COLOR)) != OK){
 		ERREXIT;
 	}
