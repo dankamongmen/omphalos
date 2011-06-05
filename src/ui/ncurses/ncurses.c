@@ -149,18 +149,18 @@ interface_promisc_p(const interface *i){
 static int
 iface_optstr(WINDOW *w,const char *str,int hcolor,int bcolor){
 	if(wcolor_set(w,bcolor,NULL) != OK){
-		return -1;
+		return ERR;
 	}
 	if(waddch(w,'|') == ERR){
-		return -1;
+		return ERR;
 	}
 	if(wcolor_set(w,hcolor,NULL) != OK){
-		return -1;
+		return ERR;
 	}
 	if(waddstr(w,str) == ERR){
-		return -1;
+		return ERR;
 	}
-	return 0;
+	return OK;
 }
 
 static const char *
@@ -231,43 +231,25 @@ iface_box(WINDOW *w,const interface *i,const iface_state *is){
 	assert(wcolor_set(w,hcolor,NULL) != ERR);
 	assert(wprintw(w,"mtu %d",i->mtu) != ERR);
 	if(interface_up_p(i)){
-		if(iface_optstr(w,"up",hcolor,bcolor)){
-			ERREXIT;
-		}
+		assert(iface_optstr(w,"up",hcolor,bcolor) != ERR);
 		if(!interface_carrier_p(i)){
-			if(iface_optstr(w,"no carrier",hcolor,bcolor)){
-				ERREXIT;
-			}
+			assert(waddstr(w," (no carrier)") != ERR);
 		}else if(i->settings_valid == SETTINGS_VALID_ETHTOOL){
-			if(wprintw(w," (%uMb %s)",i->settings.ethtool.speed,duplexstr(i->settings.ethtool.duplex)) == ERR){
-				ERREXIT;
-			}
+			assert(wprintw(w," (%uMb %s)",i->settings.ethtool.speed,duplexstr(i->settings.ethtool.duplex)) != ERR);
 		}else if(i->settings_valid == SETTINGS_VALID_WEXT){
-			if(wprintw(w," (%uMb %s)",i->settings.wext.bitrate / 1000000u,modestr(i->settings.wext.mode)) == ERR){
-				ERREXIT;
-			}
+			assert(wprintw(w," (%uMb %s)",i->settings.wext.bitrate / 1000000u,modestr(i->settings.wext.mode)) != ERR);
 		}
 	}else{
-		if(iface_optstr(w,"down",hcolor,bcolor)){
-			ERREXIT;
-		}
+		assert(iface_optstr(w,"down",hcolor,bcolor) != ERR);
 		// FIXME find out whether carrier is meaningful for down
 		// interfaces (i've not seen one)
 	}
 	if(interface_promisc_p(i)){
-		if(iface_optstr(w,"promisc",hcolor,bcolor)){
-			ERREXIT;
-		}
+		assert(iface_optstr(w,"promisc",hcolor,bcolor) != ERR);
 	}
-	if(wcolor_set(w,bcolor,NULL)){
-		ERREXIT;
-	}
-	if(wprintw(w,"]") < 0){
-		ERREXIT;
-	}
-	if(wattroff(w,A_BOLD) != OK){
-		ERREXIT;
-	}
+	assert(wcolor_set(w,bcolor,NULL) != ERR);
+	assert(wprintw(w,"]") != ERR);
+	assert(wattroff(w,A_BOLD) != ERR);
 	if( (buslen = strlen(i->drv.bus_info)) ){
 		if(i->busname){
 			buslen += strlen(i->busname) + 1;
