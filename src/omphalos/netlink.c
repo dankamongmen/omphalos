@@ -619,6 +619,7 @@ handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	}else{
 		iface->busname = lookup_bus(iface->drv.bus_info);
 	}
+	iface_offload_info(octx,iface->name,&iface->offload,&iface->offloadmask);
 	if(iface_ethtool_info(octx,iface->name,&iface->settings.ethtool) == 0){
 		iface->settings_valid = SETTINGS_VALID_ETHTOOL;
 	}else if(iface_wireless_info(octx,iface->name,&iface->settings.wext) == 0){

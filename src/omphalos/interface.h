@@ -63,6 +63,8 @@ typedef struct interface {
 	size_t ts;		// TX packet ring size in bytes
 	struct tpacket_req ttpr;// TX packet ring descriptor
 	struct ethtool_drvinfo drv;	// ethtool driver info
+	unsigned offload;	// offloading settings
+	unsigned offloadmask;	// which offloading settings are valid
 	const char *busname;	// "pci", "usb" etc (from sysfs/bus/)
 	enum {
 		SETTINGS_INVALID,

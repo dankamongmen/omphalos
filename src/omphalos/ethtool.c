@@ -21,7 +21,7 @@ ethtool_docmd(const omphalos_iface *octx,const char *name,void *unsafe){
 	}
 	memset(&ifr,0,sizeof(&ifr));
 	strcpy(ifr.ifr_name,name);
-	ifr.ifr_data = unsafe;
+	ifr.ifr_data = (caddr_t)unsafe;
 	if((fd = socket(AF_INET,SOCK_DGRAM,0)) < 0){
 		octx->diagnostic("Couldn't open ethtool fd (%s?)",strerror(errno));
 		return -1;
@@ -69,31 +69,31 @@ static const struct offload_info {
 	{
 		.desc = "RX checksum offload",
 		.mask = RX_CSUM_OFFLOAD,
-		.op = ETHTOOL_SRXCSUM,
+		.op = ETHTOOL_GRXCSUM,
 	},{
 		.desc = "TX checksum offload",
 		.mask = TX_CSUM_OFFLOAD,
-		.op = ETHTOOL_STXCSUM,
+		.op = ETHTOOL_GTXCSUM,
 	},{
 		.desc = "Scatter/gather I/O",
 		.mask = ETH_SCATTER_GATHER,
-		.op = ETHTOOL_SSG,
+		.op = ETHTOOL_GSG,
 	},{
 		.desc = "TCP segmentation offload",
 		.mask = TCP_SEG_OFFLOAD,
-		.op = ETHTOOL_STSO,
+		.op = ETHTOOL_GTSO,
 	},{
 		.desc = "UDP large TX offload",
 		.mask = UDP_LARGETX_OFFLOAD,
-		.op = ETHTOOL_SUFO,
+		.op = ETHTOOL_GUFO,
 	},{
 		.desc = "Generic segmentation offload",
 		.mask = GEN_SEG_OFFLOAD,
-		.op = ETHTOOL_SGSO,
+		.op = ETHTOOL_GGSO,
 	},{
 		.desc = "Generic large RX offload",
 		.mask = GEN_LARGERX_OFFLOAD,
-		.op = ETHTOOL_SGRO,
+		.op = ETHTOOL_GGRO,
 	},
 	{ .desc = NULL, .mask = 0, .op = 0, }
 };
