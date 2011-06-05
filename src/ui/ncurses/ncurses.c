@@ -877,6 +877,8 @@ static int
 print_iface_state(const interface *i,const iface_state *is){
 	assert(mvwprintw(is->subwin,1,1,"pkts: %ju\ttruncs: %ju\trecovered: %ju",
 				i->frames,i->truncated,i->truncated_recovered) != ERR);
+	assert(mvwprintw(is->subwin,2,1,"bytes: %ju",
+				i->bytes) != ERR);
 	assert(start_screen_update() != ERR);
 	assert(finish_screen_update() != ERR);
 	return 0;

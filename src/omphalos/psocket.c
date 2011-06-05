@@ -299,6 +299,7 @@ handle_ring_packet(const omphalos_iface *octx,interface *iface,int fd,void *fram
 		frame = (char *)frame + thdr->tp_mac;
 		len = thdr->tp_len;
 	}
+	iface->bytes += len;
 	handle_ethernet_packet(octx,iface,frame,len);
 	if(octx->packet_read){
 		octx->packet_read(iface,iface->opaque);

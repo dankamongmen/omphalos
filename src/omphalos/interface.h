@@ -38,6 +38,7 @@ typedef struct interface {
 	uintmax_t truncated;		// Packet didn't fit in ringbuffer frame
 	uintmax_t truncated_recovered;	// We were able to recvfrom() the packet
 	uintmax_t noprotocol;		// Packets without protocol handler
+	uintmax_t bytes;		// Total bytes sniffed
 
 	// For recvfrom()ing truncated packets (see PACKET_COPY_THRESH sockopt)
 	void *truncbuf;
