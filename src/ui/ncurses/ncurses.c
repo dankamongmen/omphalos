@@ -8,7 +8,9 @@
 #include <locale.h>
 #include <string.h>
 #include <signal.h>
+#include <limits.h>
 #include <pthread.h>
+#include <sys/time.h>
 #include <sys/socket.h>
 #include <linux/if.h>
 
@@ -35,7 +37,7 @@
 #define PAD_LINES 4
 #define PAD_COLS (COLS - START_COL * 2)
 #define START_LINE 2
-#define START_COL 2
+#define START_COL 1
 
 // Bind one of these state structures to each interface in the callback,
 // and also associate an iface with them via ifacenum (for UI actions).
@@ -149,18 +151,18 @@ interface_promisc_p(const interface *i){
 static int
 iface_optstr(WINDOW *w,const char *str,int hcolor,int bcolor){
 	if(wcolor_set(w,bcolor,NULL) != OK){
-		return -1;
+		return ERR;
 	}
 	if(waddch(w,'|') == ERR){
-		return -1;
+		return ERR;
 	}
 	if(wcolor_set(w,hcolor,NULL) != OK){
-		return -1;
+		return ERR;
 	}
 	if(waddstr(w,str) == ERR){
-		return -1;
+		return ERR;
 	}
-	return 0;
+	return OK;
 }
 
 static const char *
@@ -231,65 +233,38 @@ iface_box(WINDOW *w,const interface *i,const iface_state *is){
 	assert(wcolor_set(w,hcolor,NULL) != ERR);
 	assert(wprintw(w,"mtu %d",i->mtu) != ERR);
 	if(interface_up_p(i)){
-		if(iface_optstr(w,"up",hcolor,bcolor)){
-			ERREXIT;
-		}
+		assert(iface_optstr(w,"up",hcolor,bcolor) != ERR);
 		if(!interface_carrier_p(i)){
-			if(iface_optstr(w,"no carrier",hcolor,bcolor)){
-				ERREXIT;
-			}
+			assert(waddstr(w," (no carrier)") != ERR);
 		}else if(i->settings_valid == SETTINGS_VALID_ETHTOOL){
-			if(wprintw(w," (%uMb %s)",i->settings.ethtool.speed,duplexstr(i->settings.ethtool.duplex)) == ERR){
-				ERREXIT;
-			}
+			assert(wprintw(w," (%uMb %s)",i->settings.ethtool.speed,duplexstr(i->settings.ethtool.duplex)) != ERR);
 		}else if(i->settings_valid == SETTINGS_VALID_WEXT){
-			if(wprintw(w," (%uMb %s)",i->settings.wext.bitrate / 1000000u,modestr(i->settings.wext.mode)) == ERR){
-				ERREXIT;
-			}
+			assert(wprintw(w," (%uMb %s)",i->settings.wext.bitrate / 1000000u,modestr(i->settings.wext.mode)) != ERR);
 		}
 	}else{
-		if(iface_optstr(w,"down",hcolor,bcolor)){
-			ERREXIT;
-		}
+		assert(iface_optstr(w,"down",hcolor,bcolor) != ERR);
 		// FIXME find out whether carrier is meaningful for down
 		// interfaces (i've not seen one)
 	}
 	if(interface_promisc_p(i)){
-		if(iface_optstr(w,"promisc",hcolor,bcolor)){
-			ERREXIT;
-		}
+		assert(iface_optstr(w,"promisc",hcolor,bcolor) != ERR);
 	}
-	if(wcolor_set(w,bcolor,NULL)){
-		ERREXIT;
-	}
-	if(wprintw(w,"]") < 0){
-		ERREXIT;
-	}
-	if(wattroff(w,A_BOLD) != OK){
-		ERREXIT;
-	}
+	assert(wcolor_set(w,bcolor,NULL) != ERR);
+	assert(wprintw(w,"]") != ERR);
+	assert(wattroff(w,A_BOLD) != ERR);
 	if( (buslen = strlen(i->drv.bus_info)) ){
 		if(i->busname){
 			buslen += strlen(i->busname) + 1;
-			if(mvwprintw(w,PAD_LINES - 1,COLS - (buslen + 3 + START_COL),
-					"%s:%s",i->busname,i->drv.bus_info) != OK){
-				ERREXIT;
-			}
-		}else if(mvwprintw(w,PAD_LINES - 1,COLS - (buslen + 3 + START_COL),
-					"%s",i->drv.bus_info) != OK){
-			ERREXIT;
+			assert(mvwprintw(w,PAD_LINES - 1,COLS - (buslen + 3 + START_COL),
+					"%s:%s",i->busname,i->drv.bus_info) != ERR);
+		}else{
+			assert(mvwprintw(w,PAD_LINES - 1,COLS - (buslen + 3 + START_COL),
+					"%s",i->drv.bus_info) != ERR);
 		}
 	}
-	if(wcolor_set(w,0,NULL) != OK){
-		ERREXIT;
-	}
-	if(wattroff(w,attrs) != OK){
-		ERREXIT;
-	}
+	assert(wcolor_set(w,0,NULL) != ERR);
+	assert(wattroff(w,attrs) != ERR);
 	return 0;
-
-err:
-	return -1;
 }
 
 // to be called only while ncurses lock is held
@@ -332,7 +307,7 @@ draw_main_window(WINDOW *w,const char *name,const char *ver){
 	// addstr() doesn't interpret format strings, so this is safe. It will
 	// fail, however, if the string can't fit on the window, which will for
 	// instance happen if there's an embedded newline.
-	mvwaddstr(w,rows - 1,START_COL,statusmsg);
+	mvwaddstr(w,rows - 1,START_COL * 2,statusmsg);
 	if(wattroff(w,A_BOLD | COLOR_PAIR(BORDER_COLOR)) != OK){
 		ERREXIT;
 	}
@@ -503,6 +478,7 @@ hide_panel_locked(WINDOW *w,struct panel_state *ps){
 static const wchar_t *helps[] = {
 	L"'k'/'↑' (up arrow): previous interface",
 	L"'j'/'↓' (down arrow): next interface",
+	L"Ctrl + 'L': redraw the screen",
 	L"'P': preferences",
 	L"       configure persistent or temporary program settings",
 	L"'n': network configuration",
@@ -897,26 +873,31 @@ err:
 	return NULL;
 }
 
+static inline unsigned long
+timerusec(const struct timeval *tv){
+	return tv->tv_sec * 1000000 + tv->tv_usec;
+}
+
 static int
-print_iface_state(const interface *i __attribute__ ((unused)),const iface_state *is){
-	if(mvwprintw(is->subwin,1,1,"pkts: %ju",i->frames) != OK){
-		return -1;
-	}
-	if(start_screen_update() == ERR){
-		return -1;
-	}
-	if(finish_screen_update() == ERR){
-		return -1;
-	}
+print_iface_state(const interface *i,const iface_state *is){
+	unsigned long secexist;
+	struct timeval tdiff;
+
+	timersub(&i->lastseen,&i->firstseen,&tdiff);
+	secexist = timerusec(&tdiff);
+	assert(mvwprintw(is->subwin,1,1 + START_COL * 2,"pkts: %ju\ttruncs: %ju\trecovered: %ju",
+				i->frames,i->truncated,i->truncated_recovered) != ERR);
+	assert(mvwprintw(is->subwin,2,1 + START_COL * 2,"bytes: %ju (%jub/s)",
+				i->bytes,i->bytes * 1000000 * CHAR_BIT / secexist) != ERR);
+	assert(start_screen_update() != ERR);
+	assert(finish_screen_update() != ERR);
 	return 0;
 }
 
 static inline void
 packet_cb_locked(const interface *i,iface_state *is){
 	if(is){
-		if(print_iface_state(i,is)){
-			abort();
-		}
+		print_iface_state(i,is);
 	}
 }
 

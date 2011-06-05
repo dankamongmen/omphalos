@@ -94,6 +94,7 @@ void free_iface(const omphalos_iface *octx,interface *i){
 	if(i->rfd >= 0){
 		close(i->rfd);
 	}
+	free(i->truncbuf);
 	free(i->name);
 	free(i->addr);
 	cleanup_l2hosts(&i->l2hosts);

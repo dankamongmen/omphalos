@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <sys/uio.h>
+#include <sys/time.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -520,6 +521,9 @@ handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	if((iface = iface_by_idx(ii->ifi_index)) == NULL){
 		octx->diagnostic("Invalid interface index: %d",ii->ifi_index);
 		return -1;
+	}
+	if(iface->name == NULL){
+		gettimeofday(&iface->firstseen,NULL);
 	}
 	rlen = nl->nlmsg_len - NLMSG_LENGTH(sizeof(*ii));
 	ra = (struct rtattr *)((char *)(NLMSG_DATA(nl)) + sizeof(*ii));

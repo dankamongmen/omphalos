@@ -1,23 +1,21 @@
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
+#include <signal.h>
 #include <unistd.h>
+#include <pthread.h>
+#include <sys/poll.h>
 #include <sys/mman.h>
 #include <sys/socket.h>
 #include <linux/if_arp.h>
-#include <linux/if_packet.h>
-#include <omphalos/psocket.h>
-#include <omphalos/interface.h>
-
-/* The remainder of this file is pretty omphalos-specific. It doesn't
- * belong here if this ever becomes a library. */
-#include <signal.h>
-#include <pthread.h>
-#include <sys/poll.h>
 #include <omphalos/privs.h>
+#include <linux/if_packet.h>
 #include <omphalos/netlink.h>
+#include <omphalos/psocket.h>
 #include <omphalos/omphalos.h>
 #include <omphalos/ethernet.h>
+#include <omphalos/interface.h>
 
 #ifndef PACKET_TX_RING
 #define PACKET_TX_RING 13
@@ -111,7 +109,7 @@ mmap_psocket(const omphalos_iface *octx,int op,int idx,int fd,
 	// FIXME MADV_HUGEPAGE support was dropped in 2.6.38.4, it seems.
 #ifdef MADV_HUGEPAGE
 	if(madvise(*map,size,MADV_HUGEPAGE)){
-		//fprintf(stderr,"Couldn't advise hugepages for %zu (%s?)\n",size,strerror(errno));
+		//octx->diagnostic("Couldn't advise hugepages for %zu (%s?)",size,strerror(errno));
 	}
 #endif
 	return size;
@@ -234,10 +232,30 @@ netlink_thread(const omphalos_iface *octx){
 	return 0;
 }
 
+static int
+recover_truncated_packet(const omphalos_iface *octx,interface *iface,int fd,unsigned tlen){
+	int r;
+
+	if(iface->truncbuflen < tlen){
+		void **tmp;
+
+		if((tmp = realloc(iface->truncbuf,tlen)) == NULL){
+			return -1;
+		}
+		iface->truncbuf = tmp;
+		iface->truncbuflen = tlen;
+	}
+	if((r = recvfrom(fd,iface->truncbuf,iface->truncbuflen,MSG_DONTWAIT,NULL,0)) <= 0){
+		octx->diagnostic("Error in recvfrom(%s): %s",iface->name,strerror(errno));
+		return r;
+	}
+	return r;
+}
+
 static void
 handle_ring_packet(const omphalos_iface *octx,interface *iface,int fd,void *frame){
 	struct tpacket_hdr *thdr = frame;
-	const struct sockaddr_ll *sall;
+	int len;
 
 	while(thdr->tp_status == 0){
 		struct pollfd pfd[1];
@@ -261,19 +279,30 @@ handle_ring_packet(const omphalos_iface *octx,interface *iface,int fd,void *fram
 			return;
 		}
 	}
-	sall = (struct sockaddr_ll *)((char *)frame + TPACKET_ALIGN(sizeof(*thdr)));
-	if((thdr->tp_status & TP_STATUS_COPY) || thdr->tp_snaplen != thdr->tp_len){
-		octx->diagnostic("Partial capture on %s (%d) (%u/%ub)",
-				iface->name,sall->sll_ifindex,thdr->tp_snaplen,thdr->tp_len);
-		++iface->truncated;
-		thdr->tp_status = TP_STATUS_KERNEL; // return the frame
-		return;
-	}
+	++iface->frames;
+	iface->lastseen.tv_sec = thdr->tp_sec;
+	iface->lastseen.tv_usec = thdr->tp_usec;
 	if(thdr->tp_status & TP_STATUS_LOSING){
 		octx->diagnostic("FUCK ME; THE RINGBUFFER'S FULL!");
+		// update statistics via sockopt() FIXME
 	}
-	++iface->frames;
-	handle_ethernet_packet(octx,iface,(char *)frame + thdr->tp_mac,thdr->tp_len);
+	if((thdr->tp_status & TP_STATUS_COPY) || thdr->tp_snaplen != thdr->tp_len){
+		++iface->truncated;
+		if((len = recover_truncated_packet(octx,iface,fd,thdr->tp_len)) <= 0){
+			octx->diagnostic("Partial capture on %s (%u/%ub)",
+				iface->name,thdr->tp_snaplen,thdr->tp_len);
+			frame = (char *)frame + thdr->tp_mac;
+			len = thdr->tp_snaplen;
+		}else{
+			frame = iface->truncbuf;
+			++iface->truncated_recovered;
+		}
+	}else{
+		frame = (char *)frame + thdr->tp_mac;
+		len = thdr->tp_len;
+	}
+	iface->bytes += len;
+	handle_ethernet_packet(octx,iface,frame,len);
 	if(octx->packet_read){
 		octx->packet_read(iface,iface->opaque);
 	}
@@ -313,7 +342,19 @@ int ring_packet_loop(const omphalos_iface *octx,interface *i,int rfd,
 
 size_t mmap_rx_psocket(const omphalos_iface *octx,int fd,int idx,
 		unsigned maxframe,void **map,struct tpacket_req *treq){
-	return mmap_psocket(octx,PACKET_RX_RING,idx,fd,maxframe,map,treq);
+	size_t ret;
+	int thresh;
+
+	ret = mmap_psocket(octx,PACKET_RX_RING,idx,fd,maxframe,map,treq);
+	if(ret == 0){
+		return 0;
+	}
+	thresh = 1;
+	if(setsockopt(fd,SOL_PACKET,PACKET_COPY_THRESH,&thresh,sizeof(thresh))){
+		unmap_psocket(octx,*map,ret);
+		return -1;
+	}
+	return ret;
 }
 
 int handle_packet_socket(const omphalos_ctx *pctx){
