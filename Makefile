@@ -99,7 +99,7 @@ bless: all
 
 sudobless: test $(ADDCAPS) $(SETUPCORE)
 	sudo $(ADDCAPS) $(BIN)
-	sudo $(SETUPCORE)
+	$(SETUPCORE)
 
 install: all doc
 	@mkdir -p $(PREFIX)/lib
