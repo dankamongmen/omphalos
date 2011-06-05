@@ -20,7 +20,7 @@ print_iface(FILE *fp,const interface *iface){
 	const char *at;
 	int n = 0;
 
-	if((at = lookup_arptype(iface->arptype)) == NULL){
+	if((at = lookup_arptype(iface->arptype,NULL)) == NULL){
 		fprintf(stderr,"Unknown dev type %u\n",iface->arptype);
 		return -1;
 	}

@@ -924,7 +924,7 @@ interface_cb_locked(const interface *i,int inum,iface_state *ret){
 	if(ret == NULL){
 		const char *tstr;
 
-		if( (tstr = lookup_arptype(i->arptype)) ){
+		if( (tstr = lookup_arptype(i->arptype,NULL)) ){
 			if( (ret = malloc(sizeof(iface_state))) ){
 				ret->typestr = tstr;
 				ret->scrline = START_LINE + count_interface * (PAD_LINES + 1);

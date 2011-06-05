@@ -33,6 +33,9 @@ typedef struct wireless_info {
 } wireless_info;
 
 typedef struct interface {
+	// Packet analysis entry point
+	void (*analyzer)(const struct omphalos_iface *,struct interface *,const void *,size_t);
+
 	uintmax_t frames;		// Frames received on the interface
 	uintmax_t malformed;		// Packet had malformed L2 -- L4 headers
 	uintmax_t truncated;		// Packet didn't fit in ringbuffer frame
@@ -103,7 +106,7 @@ int del_route6(interface *,const struct in6_addr *,unsigned);
 int is_local4(const interface *,uint32_t);
 int is_local6(const interface *,const struct in6_addr *);
 
-const char *lookup_arptype(unsigned);
+const char *lookup_arptype(unsigned,void (**)(const struct omphalos_iface *,interface *,const void *,size_t));
 
 int enable_promiscuity(const struct omphalos_iface *,const interface *);
 int disable_promiscuity(const struct omphalos_iface *,const interface *);
