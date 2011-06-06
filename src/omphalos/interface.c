@@ -12,6 +12,7 @@
 #include <omphalos/psocket.h>
 #include <omphalos/omphalos.h>
 #include <omphalos/ethernet.h>
+#include <omphalos/radiotap.h>
 #include <omphalos/interface.h>
 
 #define MAXINTERFACES (1u << 16) // lame FIXME
@@ -242,7 +243,7 @@ static arptype arptypes[] = {
 	{
 		.ifi_type = ARPHRD_LOOPBACK,
 		.name = "Loopback",
-		.analyze = handle_ethernet_packet,
+		.analyze = handle_ethernet_packet, // FIXME don't search l2 tables
 	},{
 		.ifi_type = ARPHRD_ETHER,
 		.name = "Ethernet",
@@ -254,7 +255,7 @@ static arptype arptypes[] = {
 	},{
 		.ifi_type = ARPHRD_IEEE80211_RADIOTAP,
 		.name = "Radiotap",
-		.analyze = handle_ethernet_packet, // FIXME
+		.analyze = handle_radiotap_packet,
 	},{
 		.ifi_type = ARPHRD_TUNNEL,
 		.name = "Tunnelv4",
@@ -266,7 +267,7 @@ static arptype arptypes[] = {
 	},{
 		.ifi_type = ARPHRD_NONE,
 		.name = "VArpless",
-		.analyze = handle_ethernet_packet, // FIXME
+		.analyze = handle_ethernet_packet, // FIXME no l2 header at all
 	},
 };
 
