@@ -3,7 +3,6 @@
 set -e
 
 if ! ulimit -c | grep unlimited > /dev/null ; then
-	echo "Need run 'ulimit -c unlimited'!"
-	exit 1
+	echo "Warning: need run 'ulimit -c unlimited' to get coredumps!" >&2
 fi
 echo 1 | sudo tee /proc/sys/fs/suid_dumpable > /dev/null
