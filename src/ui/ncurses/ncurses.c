@@ -197,6 +197,29 @@ modestr(unsigned dplx){
 	return "";
 }
 
+// For full safety, pass in a buffer that can hold the decimal representation
+// of the largest uintmax_t plus three (one for the unit, one for the
+// decimal separator, and one for the NUL byte).
+static char *
+rate(uintmax_t val,char *buf,size_t bsize){
+	const char prefixes[] = "KMGTPEY";
+	unsigned consumed = 0;
+	uintmax_t div;
+
+	div = 1000;
+	while(val > div && consumed < strlen(prefixes)){
+		++consumed;
+		if(UINTMAX_MAX / div < 1000){ // watch for overflow
+			break;
+		}
+		div *= 1000;
+	}
+	div /= 1000;
+	snprintf(buf,bsize,"%ju.%ju%c",val / div,(val % div) / 1000,
+			consumed ? prefixes[consumed - 1] : '\0');
+	return buf;
+}
+
 #define ERREXIT endwin() ; fprintf(stderr,"ncurses failure|%s|%d\n",__func__,__LINE__); abort() ; goto err
 // to be called only while ncurses lock is held
 static int
@@ -235,13 +258,16 @@ iface_box(WINDOW *w,const interface *i,const iface_state *is){
 	assert(wcolor_set(w,hcolor,NULL) != ERR);
 	assert(wprintw(w,"mtu %d",i->mtu) != ERR);
 	if(interface_up_p(i)){
+		char buf[80]; // FIXME
+
 		assert(iface_optstr(w,"up",hcolor,bcolor) != ERR);
 		if(!interface_carrier_p(i)){
 			assert(waddstr(w," (no carrier)") != ERR);
 		}else if(i->settings_valid == SETTINGS_VALID_ETHTOOL){
-			assert(wprintw(w," (%uMb %s)",i->settings.ethtool.speed,duplexstr(i->settings.ethtool.duplex)) != ERR);
+			assert(wprintw(w," (%sb %s)",rate(i->settings.ethtool.speed * 1000000u,buf,sizeof(buf)),
+						duplexstr(i->settings.ethtool.duplex)) != ERR);
 		}else if(i->settings_valid == SETTINGS_VALID_WEXT){
-			assert(wprintw(w," (%uMb %s)",i->settings.wext.bitrate / 1000000u,modestr(i->settings.wext.mode)) != ERR);
+			assert(wprintw(w," (%sb %s)",rate(i->settings.wext.bitrate,buf,sizeof(buf)),modestr(i->settings.wext.mode)) != ERR);
 		}
 	}else{
 		assert(iface_optstr(w,"down",hcolor,bcolor) != ERR);
@@ -498,6 +524,8 @@ static const wchar_t *helps[] = {
 	L"       export pilfered passwords, cookies, and identifying data",
 	L"'c': crypto configuration",
 	L"       configure algorithm stepdown, WEP/WPA cracking, SSL MitM",
+	L"'r': reset interface's stats",
+	L"'R': reset all interfaces' stats",
 	L"'p': toggle promiscuity",
 	L"'s': toggle sniffing, bringing up interface if down",
 	L"'d': bring down device",
@@ -630,6 +658,18 @@ err:
 	return -1;
 }
 
+static void
+reset_all_interface_stats(const omphalos_iface *octx,WINDOW *w){
+	if(!octx) return; // FIXME
+	wstatus_locked(w,"%s","Sorry bro; that ain't implemented yet!"); // FIXME
+}
+
+static void
+reset_interface_stats(const omphalos_iface *octx,WINDOW *w){
+	if(!octx) return; // FIXME
+	wstatus_locked(w,"%s","Sorry bro; that ain't implemented yet!"); // FIXME
+}
+
 struct ncurses_input_marshal {
 	WINDOW *w;
 	PANEL *p;
@@ -664,6 +704,14 @@ ncurses_input_thread(void *unsafe_marsh){
 				start_screen_update();
 				redrawwin(w);
 				finish_screen_update();
+		case 'R':
+			pthread_mutex_lock(&bfl);
+				reset_all_interface_stats(octx,w);
+			pthread_mutex_unlock(&bfl);
+			break;
+		case 'r':
+			pthread_mutex_lock(&bfl);
+				reset_interface_stats(octx,w);
 			pthread_mutex_unlock(&bfl);
 			break;
 		case 'p':
@@ -887,13 +935,14 @@ static int
 print_iface_state(const interface *i,const iface_state *is){
 	unsigned long usecexist;
 	struct timeval tdiff;
+	char buf[80]; // FIXME
 
 	timersub(&i->lastseen,&i->firstseen,&tdiff);
 	usecexist = timerusec(&tdiff);
 	assert(mvwprintw(is->subwin,1,1 + START_COL * 2,"pkts: %ju\ttruncs: %ju\trecovered: %ju",
 				i->frames,i->truncated,i->truncated_recovered) != ERR);
-	assert(mvwprintw(is->subwin,2,1 + START_COL * 2,"bytes: %ju (%jub/s)",
-				i->bytes,i->bytes * 1000000 * CHAR_BIT / usecexist) != ERR);
+	assert(mvwprintw(is->subwin,2,1 + START_COL * 2,"bytes: %ju (%sb/s)",
+				i->bytes,rate(i->bytes * CHAR_BIT * 1000000 / usecexist,buf,sizeof(buf))) != ERR);
 	assert(start_screen_update() != ERR);
 	assert(finish_screen_update() != ERR);
 	return 0;
@@ -931,7 +980,7 @@ interface_cb_locked(const interface *i,int inum,iface_state *ret){
 	if(ret == NULL){
 		const char *tstr;
 
-		if( (tstr = lookup_arptype(i->arptype)) ){
+		if( (tstr = lookup_arptype(i->arptype,NULL)) ){
 			if( (ret = malloc(sizeof(iface_state))) ){
 				ret->typestr = tstr;
 				ret->scrline = START_LINE + count_interface * (PAD_LINES + 1);

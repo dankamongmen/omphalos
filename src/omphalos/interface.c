@@ -11,6 +11,8 @@
 #include <omphalos/netlink.h>
 #include <omphalos/psocket.h>
 #include <omphalos/omphalos.h>
+#include <omphalos/ethernet.h>
+#include <omphalos/radiotap.h>
 #include <omphalos/interface.h>
 
 #define MAXINTERFACES (1u << 16) // lame FIXME
@@ -234,40 +236,51 @@ int is_local6(const interface *i,const struct in6_addr *a){
 typedef struct arptype {
 	unsigned ifi_type;
 	const char *name;
+	void (*analyze)(const struct omphalos_iface *,interface *,const void *,size_t);
 } arptype;
 
 static arptype arptypes[] = {
 	{
 		.ifi_type = ARPHRD_LOOPBACK,
 		.name = "Loopback",
+		.analyze = handle_ethernet_packet, // FIXME don't search l2 tables
 	},{
 		.ifi_type = ARPHRD_ETHER,
 		.name = "Ethernet",
+		.analyze = handle_ethernet_packet,
 	},{
 		.ifi_type = ARPHRD_IEEE80211,
 		.name = "Wireless",
+		.analyze = handle_ethernet_packet,
 	},{
 		.ifi_type = ARPHRD_IEEE80211_RADIOTAP,
 		.name = "Radiotap",
+		.analyze = handle_radiotap_packet,
 	},{
 		.ifi_type = ARPHRD_TUNNEL,
 		.name = "Tunnelv4",
+		.analyze = handle_ethernet_packet,
 	},{
 		.ifi_type = ARPHRD_TUNNEL6,
 		.name = "TunnelV6",
+		.analyze = handle_ethernet_packet,
 	},{
 		.ifi_type = ARPHRD_NONE,
 		.name = "VArpless",
+		.analyze = handle_ethernet_packet, // FIXME no l2 header at all
 	},
 };
 
-const char *lookup_arptype(unsigned arphrd){
+const char *lookup_arptype(unsigned arphrd,void (**analyzer)(const struct omphalos_iface *,interface *,const void *,size_t)){
 	unsigned idx;
 
 	for(idx = 0 ; idx < sizeof(arptypes) / sizeof(*arptypes) ; ++idx){
 		const arptype *at = arptypes + idx;
 
 		if(at->ifi_type == arphrd){
+			if(analyzer){
+				*analyzer = at->analyze;
+			}
 			return at->name;
 		}
 	}

@@ -525,6 +525,7 @@ handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	if(iface->name == NULL){
 		gettimeofday(&iface->firstseen,NULL);
 	}
+	iface->arptype = ii->ifi_type;
 	rlen = nl->nlmsg_len - NLMSG_LENGTH(sizeof(*ii));
 	ra = (struct rtattr *)((char *)(NLMSG_DATA(nl)) + sizeof(*ii));
 	// FIXME this is all no good. error paths allow partial updates of
@@ -606,11 +607,14 @@ handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 		octx->diagnostic("No name in new link message");
 		return -1;
 	}
+	if(lookup_arptype(ii->ifi_type,&iface->analyzer) == NULL){
+		octx->diagnostic("Unknown device type for %s",iface->name);
+		return -1;
+	}
 	if(iface->mtu == 0){
 		octx->diagnostic("No MTU in new link message for %s",iface->name);
 		return -1;
 	}
-	iface->arptype = ii->ifi_type;
 	// These can fail for a given interface if it lacks ethtool
 	// support, including many wireless cards and loopback.
 	if(iface_driver_info(octx,iface->name,&iface->drv)){

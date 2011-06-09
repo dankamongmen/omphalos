@@ -15,7 +15,7 @@ void handle_arp_packet(const omphalos_iface *octx,interface *i,const void *frame
 	}
 	if(check_ethernet_padup(len,sizeof(*ap) + ap->ar_hln * 2 + ap->ar_pln * 2)){
 		++i->malformed;
-		octx->diagnostic("%s malformed expected %zu got %zu\n",
+		octx->diagnostic("%s malformed expected %zu got %zu",
 			__func__,sizeof(*ap) + ap->ar_hln * 2 + ap->ar_pln * 2,len);
 		return;
 	}
@@ -25,6 +25,6 @@ void handle_arp_packet(const omphalos_iface *octx,interface *i,const void *frame
 	break;}case __constant_ntohs(ARPOP_REPLY):{
 	break;}default:{
 		++i->noprotocol;
-		octx->diagnostic("%s unknown op %u\n",__func__,ap->ar_op);
+		octx->diagnostic("%s unknown op %u",__func__,ap->ar_op);
 	break;}}
 }
