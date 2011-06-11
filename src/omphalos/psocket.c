@@ -158,6 +158,8 @@ static int
 setup_sighandler(const omphalos_iface *octx){
 	struct sigaction sa = {
 		.sa_handler = cancellation_signal_handler,
+		// SA_RESTART doesn't apply to all functions; most of the time,
+		// we're sitting in poll(), which is *not* restarted...
 		.sa_flags = SA_ONSTACK | SA_RESTART,
 	};
 	sigset_t csigs;
@@ -215,8 +217,10 @@ netlink_thread(const omphalos_iface *octx){
 			octx->diagnostic("Spontaneous wakeup on netlink socket %d",pfd[0].fd);
 		}
 		if(events < 0){
-			octx->diagnostic("Error polling netlink socket %d (%s?)",
-					pfd[0].fd,strerror(errno));
+			if(!cancelled){
+				octx->diagnostic("Error polling netlink socket %d (%s?)",
+						pfd[0].fd,strerror(errno));
+			}
 			break;
 		}
 		for(z = 0 ; z < sizeof(pfd) / sizeof(*pfd) ; ++z){
