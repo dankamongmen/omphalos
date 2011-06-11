@@ -1024,7 +1024,7 @@ interface_cb_locked(const interface *i,int inum,iface_state *ret){
 	if(ret){
 		iface_box(ret->subwin,i,ret);
 		if(i->flags & IFF_UP){
-			packet_cb_locked(i,ret);
+			print_iface_state(i,ret);
 		}
 		start_screen_update();
 		finish_screen_update();
