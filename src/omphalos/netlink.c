@@ -473,6 +473,8 @@ int reap_thread(const omphalos_iface *octx,pthread_t tid){
 
 	// See psocket_thread(); we disable pthread cancellation. Send a
 	// signal instead, engaging internal cancellation.
+	// FIXME can't safely send signal if thread has died, results in SIGSEGV.
+	// for now rely on some traffic going through, i guess. lame :/
 	/*if( (errno = pthread_kill(tid,SIGINT)) ){
 		octx->diagnostic("Couldn't signal thread (%s?)",strerror(errno));
 	}*/
@@ -481,7 +483,7 @@ int reap_thread(const omphalos_iface *octx,pthread_t tid){
 		return -1;
 	}
 	if(ret != PTHREAD_CANCELED){
-		//octx->diagnostic("Thread returned error on exit (%s)",(char *)ret);
+		octx->diagnostic("Thread returned error on exit (%s)",(char *)ret);
 		return -1;
 	}
 	return 0;

@@ -144,7 +144,7 @@ static int
 restore_sighandler(const omphalos_iface *pctx){
 	struct sigaction sa = {
 		.sa_handler = SIG_DFL,
-		.sa_flags = SA_ONSTACK | SA_RESTART,
+		.sa_flags = SA_RESTART,
 	};
 
 	if(sigaction(SIGINT,&sa,NULL)){
@@ -270,6 +270,7 @@ handle_ring_packet(const omphalos_iface *octx,interface *iface,int fd,void *fram
 		pfd[0].events = POLLIN | POLLRDNORM | POLLERR;
 		while((events = poll(pfd,sizeof(pfd) / sizeof(*pfd),-1)) == 0){
 			octx->diagnostic("Interrupted polling packet socket %d",fd);
+			return;
 		}
 		if(events < 0){
 			if(errno != EINTR){
@@ -366,6 +367,8 @@ int handle_packet_socket(const omphalos_ctx *pctx){
 		return -1;
 	}
 	ret = netlink_thread(&pctx->iface);
+	// FIXME we can't call this until after cleanup_interfaces(), iff we
+	// signal the packet socket threads to wake them up...
 	ret |= restore_sighandler(&pctx->iface);
 	return ret;
 }

@@ -77,6 +77,16 @@ char *hwaddrstr(const interface *i){
 }
 
 void free_iface(const omphalos_iface *octx,interface *i){
+	if(i->fd >= 0){
+		reap_thread(octx,i->tid);
+		close(i->fd);
+	}
+	if(i->rfd >= 0){
+		close(i->rfd);
+	}
+	if(i->opaque && octx->iface_removed){
+		octx->iface_removed(i,i->opaque);
+	}
 	while(i->ip6r){
 		struct ip6route *r6 = i->ip6r->next;
 
@@ -88,13 +98,6 @@ void free_iface(const omphalos_iface *octx,interface *i){
 
 		free(i->ip4r);
 		i->ip4r = r4;
-	}
-	if(i->fd >= 0){
-		reap_thread(octx,i->tid);
-		close(i->fd);
-	}
-	if(i->rfd >= 0){
-		close(i->rfd);
 	}
 	free(i->truncbuf);
 	free(i->name);
@@ -108,12 +111,6 @@ void cleanup_interfaces(const omphalos_iface *pctx){
 	unsigned i;
 
 	for(i = 0 ; i < sizeof(interfaces) / sizeof(*interfaces) ; ++i){
-		if(interfaces[i].opaque && pctx->iface_removed){
-			void *op = interfaces[i].opaque;
-
-			interfaces[i].opaque = NULL;
-			pctx->iface_removed(&interfaces[i],op);
-		}
 		free_iface(pctx,&interfaces[i]);
 	}
 }
