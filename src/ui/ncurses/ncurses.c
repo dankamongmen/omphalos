@@ -214,8 +214,7 @@ rate(uintmax_t val,char *buf,size_t bsize){
 		}
 		div *= 1000;
 	}
-	div /= 1000;
-	snprintf(buf,bsize,"%ju.%ju%c",val / div,(val % div) / 1000,
+	snprintf(buf,bsize,"%ju.%ju%c",val / (div / 1000),(val % div) / 1000,
 			consumed ? prefixes[consumed - 1] : '\0');
 	return buf;
 }
