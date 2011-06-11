@@ -1,6 +1,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
+#include <signal.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <pthread.h>
@@ -456,7 +457,12 @@ static void *
 psocket_thread(void *unsafe){
 	const psocket_marsh *pm = unsafe;
 
-	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE,NULL);
+	// We control thread exit via the ->cancelled value, set in the signal
+	// handler (and, in certain error cases, by the thread itself). We
+	// don't want actual pthread cancellation, as it's unsafe for the user
+	// callback's duration, and thus we'd need switch between enabled and
+	// disabled status.
+	pthread_setcancelstate(PTHREAD_CANCEL_DISABLE,NULL);
 	ring_packet_loop(pm->octx,pm->i,pm->i->rfd,pm->i->rxm,&pm->i->rtpr);
 	free(unsafe);
 	return NULL;
@@ -465,9 +471,11 @@ psocket_thread(void *unsafe){
 int reap_thread(const omphalos_iface *octx,pthread_t tid){
 	void *ret;
 
-	if( (errno = pthread_cancel(tid)) ){
-		//octx->diagnostic("Couldn't cancel thread (%s?)",strerror(errno));
-	}
+	// See psocket_thread(); we disable pthread cancellation. Send a
+	// signal instead, engaging internal cancellation.
+	/*if( (errno = pthread_kill(tid,SIGINT)) ){
+		octx->diagnostic("Couldn't signal thread (%s?)",strerror(errno));
+	}*/
 	if( (errno = pthread_join(tid,&ret)) ){
 		octx->diagnostic("Couldn't join thread (%s?)",strerror(errno));
 		return -1;

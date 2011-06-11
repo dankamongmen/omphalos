@@ -208,14 +208,19 @@ rate(uintmax_t val,char *buf,size_t bsize){
 
 	div = 1000;
 	while(val > div && consumed < strlen(prefixes)){
-		++consumed;
+		div *= 1000;
 		if(UINTMAX_MAX / div < 1000){ // watch for overflow
 			break;
 		}
-		div *= 1000;
+		++consumed;
 	}
-	snprintf(buf,bsize,"%ju.%ju%c",val / (div / 1000),(val % div) / 1000,
-			consumed ? prefixes[consumed - 1] : '\0');
+	if(div != 1000){
+		div /= 1000;
+		snprintf(buf,bsize,"%ju.%ju%c",val / div,(val % div) / ((div + 99) / 100),
+				prefixes[consumed - 1]);
+	}else{
+		snprintf(buf,bsize,"%ju",val);
+	}
 	return buf;
 }
 
@@ -940,7 +945,7 @@ print_iface_state(const interface *i,const iface_state *is){
 	usecexist = timerusec(&tdiff);
 	assert(mvwprintw(is->subwin,1,1 + START_COL * 2,"pkts: %ju\ttruncs: %ju\trecovered: %ju",
 				i->frames,i->truncated,i->truncated_recovered) != ERR);
-	assert(mvwprintw(is->subwin,2,1 + START_COL * 2,"bytes: %ju (%sb/s)",
+	assert(mvwprintw(is->subwin,2,1 + START_COL * 2,"bytes: %ju (%sb/s)  ",
 				i->bytes,rate(i->bytes * CHAR_BIT * 1000000 / usecexist,buf,sizeof(buf))) != ERR);
 	assert(start_screen_update() != ERR);
 	assert(finish_screen_update() != ERR);

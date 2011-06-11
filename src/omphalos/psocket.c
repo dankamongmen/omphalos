@@ -270,12 +270,10 @@ handle_ring_packet(const omphalos_iface *octx,interface *iface,int fd,void *fram
 		if(events < 0){
 			if(errno != EINTR){
 				octx->diagnostic("Error polling packet socket %d (%s?)",fd,strerror(errno));
-				cancelled = 1;
 				return;
 			}
 		}else if(pfd[0].revents & POLLERR){
 			octx->diagnostic("Error polling packet socket %d",fd);
-			cancelled = 1;
 			return;
 		}
 	}
