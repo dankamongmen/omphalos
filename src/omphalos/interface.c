@@ -109,7 +109,10 @@ void cleanup_interfaces(const omphalos_iface *pctx){
 
 	for(i = 0 ; i < sizeof(interfaces) / sizeof(*interfaces) ; ++i){
 		if(interfaces[i].opaque && pctx->iface_removed){
-			pctx->iface_removed(&interfaces[i],interfaces[i].opaque);
+			void *op = interfaces[i].opaque;
+
+			interfaces[i].opaque = NULL;
+			pctx->iface_removed(&interfaces[i],op);
 		}
 		free_iface(pctx,&interfaces[i]);
 	}
