@@ -199,9 +199,13 @@ modestr(unsigned dplx){
 
 // For full safety, pass in a buffer that can hold the decimal representation
 // of the largest uintmax_t plus three (one for the unit, one for the
-// decimal separator, and one for the NUL byte).
+// decimal separator, and one for the NUL byte). 'decimal' serves as a
+// primitive floating point; '1' indicates no scaling (this is useful when val
+// might be less than 1000, so that we can display the two digits of precision
+// (if val >= 1000, the only displayed precision comes from the prefixing, so
+// decimal is meaningless in that case).
 static char *
-rate(uintmax_t val,char *buf,size_t bsize){
+rate(uintmax_t val,uintmax_t decimal,char *buf,size_t bsize){
 	const char prefixes[] = "KMGTPEY";
 	unsigned consumed = 0;
 	uintmax_t div;
@@ -216,10 +220,10 @@ rate(uintmax_t val,char *buf,size_t bsize){
 	}
 	if(div != 1000){
 		div /= 1000;
-		snprintf(buf,bsize,"%ju.%ju%c",val / div,(val % div) / ((div + 99) / 100),
+		snprintf(buf,bsize,"%ju.%02ju%c",val / div,(val % div) / ((div + 99) / 100),
 				prefixes[consumed - 1]);
 	}else{
-		snprintf(buf,bsize,"%ju",val);
+		snprintf(buf,bsize,"%ju.%02ju",val / decimal,val % decimal);
 	}
 	return buf;
 }
@@ -268,10 +272,10 @@ iface_box(WINDOW *w,const interface *i,const iface_state *is){
 		if(!interface_carrier_p(i)){
 			assert(waddstr(w," (no carrier)") != ERR);
 		}else if(i->settings_valid == SETTINGS_VALID_ETHTOOL){
-			assert(wprintw(w," (%sb %s)",rate(i->settings.ethtool.speed * 1000000u,buf,sizeof(buf)),
+			assert(wprintw(w," (%sb %s)",rate(i->settings.ethtool.speed * 1000000u,0,buf,sizeof(buf)),
 						duplexstr(i->settings.ethtool.duplex)) != ERR);
 		}else if(i->settings_valid == SETTINGS_VALID_WEXT){
-			assert(wprintw(w," (%sb %s)",rate(i->settings.wext.bitrate,buf,sizeof(buf)),modestr(i->settings.wext.mode)) != ERR);
+			assert(wprintw(w," (%sb %s)",rate(i->settings.wext.bitrate,0,buf,sizeof(buf)),modestr(i->settings.wext.mode)) != ERR);
 		}
 	}else{
 		assert(iface_optstr(w,"down",hcolor,bcolor) != ERR);
@@ -946,7 +950,7 @@ print_iface_state(const interface *i,const iface_state *is){
 	assert(mvwprintw(is->subwin,1,1 + START_COL * 2,"pkts: %ju\ttruncs: %ju\trecovered: %ju",
 				i->frames,i->truncated,i->truncated_recovered) != ERR);
 	assert(mvwprintw(is->subwin,2,1 + START_COL * 2,"bytes: %ju (%sb/s)  ",
-				i->bytes,rate(i->bytes * CHAR_BIT * 1000000 / usecexist,buf,sizeof(buf))) != ERR);
+				i->bytes,rate(i->bytes * CHAR_BIT * 1000000 * 100 / usecexist,100,buf,sizeof(buf))) != ERR);
 	assert(start_screen_update() != ERR);
 	assert(finish_screen_update() != ERR);
 	return 0;
