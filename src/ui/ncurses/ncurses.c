@@ -211,7 +211,7 @@ rate(uintmax_t val,uintmax_t decimal,char *buf,size_t bsize){
 	uintmax_t div;
 
 	div = 1000;
-	while(val > div && consumed < strlen(prefixes)){
+	while((val / decimal) > div && consumed < strlen(prefixes)){
 		div *= 1000;
 		if(UINTMAX_MAX / div < 1000){ // watch for overflow
 			break;
@@ -220,7 +220,7 @@ rate(uintmax_t val,uintmax_t decimal,char *buf,size_t bsize){
 	}
 	if(div != 1000){
 		div /= 1000;
-		snprintf(buf,bsize,"%ju.%02ju%c",val / div,(val % div) / ((div + 99) / 100),
+		snprintf(buf,bsize,"%ju.%02ju%c",(val / decimal) / div,((val / decimal) % div) / ((div + 99) / 100),
 				prefixes[consumed - 1]);
 	}else{
 		snprintf(buf,bsize,"%ju.%02ju",val / decimal,val % decimal);
@@ -272,10 +272,10 @@ iface_box(WINDOW *w,const interface *i,const iface_state *is){
 		if(!interface_carrier_p(i)){
 			assert(waddstr(w," (no carrier)") != ERR);
 		}else if(i->settings_valid == SETTINGS_VALID_ETHTOOL){
-			assert(wprintw(w," (%sb %s)",rate(i->settings.ethtool.speed * 1000000u,0,buf,sizeof(buf)),
+			assert(wprintw(w," (%sb %s)",rate(i->settings.ethtool.speed * 1000000u,1,buf,sizeof(buf)),
 						duplexstr(i->settings.ethtool.duplex)) != ERR);
 		}else if(i->settings_valid == SETTINGS_VALID_WEXT){
-			assert(wprintw(w," (%sb %s)",rate(i->settings.wext.bitrate,0,buf,sizeof(buf)),modestr(i->settings.wext.mode)) != ERR);
+			assert(wprintw(w," (%sb %s)",rate(i->settings.wext.bitrate,1,buf,sizeof(buf)),modestr(i->settings.wext.mode)) != ERR);
 		}
 	}else{
 		assert(iface_optstr(w,"down",hcolor,bcolor) != ERR);
@@ -517,7 +517,7 @@ hide_panel_locked(WINDOW *w,struct panel_state *ps){
 static const wchar_t *helps[] = {
 	L"'k'/'↑' (up arrow): previous interface",
 	L"'j'/'↓' (down arrow): next interface",
-	L"Ctrl + 'L': redraw the screen",
+	L"'^L' (ctrl + 'L'): redraw the screen",
 	L"'P': preferences",
 	L"       configure persistent or temporary program settings",
 	L"'n': network configuration",
@@ -947,10 +947,9 @@ print_iface_state(const interface *i,const iface_state *is){
 
 	timersub(&i->lastseen,&i->firstseen,&tdiff);
 	usecexist = timerusec(&tdiff);
-	assert(mvwprintw(is->subwin,1,1 + START_COL * 2,"pkts: %ju\ttruncs: %ju\trecovered: %ju",
+	assert(mvwprintw(is->subwin,1,1 + START_COL * 2,"%sb/s\t%ju pkts\t%ju truncs\t%ju recovered",
+				rate(i->bytes * CHAR_BIT * 1000000 * 100 / usecexist,100,buf,sizeof(buf)),
 				i->frames,i->truncated,i->truncated_recovered) != ERR);
-	assert(mvwprintw(is->subwin,2,1 + START_COL * 2,"bytes: %ju (%sb/s)  ",
-				i->bytes,rate(i->bytes * CHAR_BIT * 1000000 * 100 / usecexist,100,buf,sizeof(buf))) != ERR);
 	assert(start_screen_update() != ERR);
 	assert(finish_screen_update() != ERR);
 	return 0;
