@@ -51,6 +51,7 @@ typedef struct iface_state {
 	const char *typestr;		// looked up using iface->arptype
 	struct timeval lastprinted;	// last time we printed the iface
 	int alarmset;			// alarm set for UI update?
+	int broughtdown;		// down request issued?
 	struct iface_state *next,*prev;
 } iface_state;
 
@@ -463,6 +464,7 @@ down_interface_locked(const omphalos_iface *octx,WINDOW *w){
 	if(i){
 		if(interface_up_p(i)){
 			wstatus_locked(w,"Bringing down %s...",i->name);
+			current_iface->broughtdown = 1;
 			down_interface(octx,i);
 		}
 	}
@@ -1128,6 +1130,9 @@ interface_cb_locked(const interface *i,int inum,iface_state *ret){
 		iface_box(ret->subwin,i,ret);
 		if(i->flags & IFF_UP){
 			print_iface_state(i,ret);
+		}else if(ret->broughtdown){
+			wstatus_locked(pad,"Brought down %s",i->name);
+			ret->broughtdown = 0;
 		}
 		start_screen_update();
 		finish_screen_update();
