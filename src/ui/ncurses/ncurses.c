@@ -34,7 +34,7 @@
 #define PROGNAME "omphalos"	// FIXME
 #define VERSION  "0.98-pre"	// FIXME
 
-#define PAD_LINES 4
+#define PAD_LINES 3
 #define PAD_COLS (COLS - START_COL * 2)
 #define START_LINE 2
 #define START_COL 1
