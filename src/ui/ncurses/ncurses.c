@@ -1035,7 +1035,7 @@ print_iface_state(const interface *i,const iface_state *is){
 
 	timersub(&i->lastseen,&i->firstseen,&tdiff);
 	usecexist = timerusec(&tdiff);
-	assert(mvwprintw(is->subwin,1,1 + START_COL * 2,"%sb/s\t%ju pkts\t%ju truncs\t%ju recovered",
+	assert(mvwprintw(is->subwin,1,1 + START_COL * 2,"%sb/s\t%15ju pkts %9ju truncs%9ju recovered",
 				rate(i->bytes * CHAR_BIT * 1000000 * 100 / usecexist,100,buf,sizeof(buf),0),
 				i->frames,i->truncated,i->truncated_recovered) != ERR);
 	assert(start_screen_update() != ERR);
