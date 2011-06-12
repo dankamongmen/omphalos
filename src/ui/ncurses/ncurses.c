@@ -563,16 +563,23 @@ iface_details(WINDOW *hw,const interface *i,int row,int col,int rows){
 	}
 	switch(z){ // Intentional fallthroughs all the way to 0
 	case 1:{
-		assert(offload_details(hw,i,row + z,col,"RXcsum",RX_CSUM_OFFLOAD) != ERR);
-		assert(offload_details(hw,i,row + z,col + 10,"TXcsum",TX_CSUM_OFFLOAD) != ERR);
-		assert(offload_details(hw,i,row + z,col + 20,"S/G",ETH_SCATTER_GATHER) != ERR);
-		assert(offload_details(hw,i,row + z,col + 27,"TSO",TCP_SEG_OFFLOAD) != ERR);
-		assert(offload_details(hw,i,row + z,col + 34,"UTO",UDP_LARGETX_OFFLOAD) != ERR);
-		assert(offload_details(hw,i,row + z,col + 41,"GSO",GEN_SEG_OFFLOAD) != ERR);
-		assert(offload_details(hw,i,row + z,col + 48,"GRO",GEN_LARGERX_OFFLOAD) != ERR);
+		assert(offload_details(hw,i,row + z,col,"RXS",RX_CSUM_OFFLOAD) != ERR);
+		assert(offload_details(hw,i,row + z,col + 7,"TXS",TX_CSUM_OFFLOAD) != ERR);
+		assert(offload_details(hw,i,row + z,col + 15,"S/G",ETH_SCATTER_GATHER) != ERR);
+		assert(offload_details(hw,i,row + z,col + 23,"TSO",TCP_SEG_OFFLOAD) != ERR);
+		assert(offload_details(hw,i,row + z,col + 31,"UTO",UDP_LARGETX_OFFLOAD) != ERR);
+		assert(offload_details(hw,i,row + z,col + 39,"GSO",GEN_SEG_OFFLOAD) != ERR);
+		assert(offload_details(hw,i,row + z,col + 47,"GRO",GEN_LARGERX_OFFLOAD) != ERR);
 		--z;
 	}case 0:{
-		assert(mvwprintw(hw,row + z,col,"%s",i->name) != ERR);
+		char *mac;
+
+		if((mac = hwaddrstr(i)) == NULL){
+			return ERR;
+		}
+		assert(mvwprintw(hw,row + z,col,"%s\t%s\ttfd: %d\trfd: %d\tmtu: %d",
+					i->name,mac,i->rfd,i->fd,i->mtu) != ERR);
+		free(mac);
 		--z;
 		break;
 	}default:{
