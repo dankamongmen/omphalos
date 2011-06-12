@@ -743,15 +743,30 @@ err:
 }
 
 static void
-reset_all_interface_stats(const omphalos_iface *octx,WINDOW *w){
-	if(!octx) return; // FIXME
-	wstatus_locked(w,"%s","Sorry bro; that ain't implemented yet!"); // FIXME
+reset_interface_stats(WINDOW *w,const interface *i){
+	wstatus_locked(w,"Sorry bro; that ain't implemented yet (%s)!",i->name); // FIXME
 }
 
 static void
-reset_interface_stats(const omphalos_iface *octx,WINDOW *w){
-	if(!octx) return; // FIXME
-	wstatus_locked(w,"%s","Sorry bro; that ain't implemented yet!"); // FIXME
+reset_all_interface_stats(WINDOW *w){
+	iface_state *is;
+
+	if( (is = current_iface) ){
+		do{
+			const interface *i = get_current_iface(); // FIXME get_iface(is);
+
+			reset_interface_stats(w,i);
+		}while((is = is->next) != current_iface);
+	}
+}
+
+static void
+reset_current_interface_stats(WINDOW *w){
+	const interface *i;
+
+	if( (i = get_current_iface()) ){
+		reset_interface_stats(w,i);
+	}
 }
 
 struct ncurses_input_marshal {
@@ -802,12 +817,12 @@ ncurses_input_thread(void *unsafe_marsh){
 			break;
 		case 'R':
 			pthread_mutex_lock(&bfl);
-				reset_all_interface_stats(octx,w);
+				reset_all_interface_stats(w);
 			pthread_mutex_unlock(&bfl);
 			break;
 		case 'r':
 			pthread_mutex_lock(&bfl);
-				reset_interface_stats(octx,w);
+				reset_current_interface_stats(w);
 			pthread_mutex_unlock(&bfl);
 			break;
 		case 'p':
