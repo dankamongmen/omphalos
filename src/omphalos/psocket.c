@@ -261,24 +261,26 @@ handle_ring_packet(const omphalos_iface *octx,interface *iface,int fd,void *fram
 	struct tpacket_hdr *thdr = frame;
 	int len;
 
-	while(thdr->tp_status == 0){
+	if(thdr->tp_status == 0){
 		struct pollfd pfd[1];
 		int events;
 
 		pfd[0].fd = fd;
 		pfd[0].revents = 0;
 		pfd[0].events = POLLIN | POLLRDNORM | POLLERR;
-		while((events = poll(pfd,sizeof(pfd) / sizeof(*pfd),-1)) == 0){
+		if((events = poll(pfd,sizeof(pfd) / sizeof(*pfd),-1)) == 0){
 			octx->diagnostic("Interrupted polling packet socket %d",fd);
 			return;
-		}
-		if(events < 0){
+		}else if(events < 0){
 			if(errno != EINTR){
 				octx->diagnostic("Error polling packet socket %d (%s?)",fd,strerror(errno));
 				return;
 			}
 		}else if(pfd[0].revents & POLLERR){
 			octx->diagnostic("Error polling packet socket %d",fd);
+			return;
+		}
+		if(thdr->tp_status == 0){
 			return;
 		}
 	}

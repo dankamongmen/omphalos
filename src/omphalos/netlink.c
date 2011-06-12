@@ -501,10 +501,10 @@ int reap_thread(const omphalos_iface *octx,interface *i){
 	//  - we use a condvar signal (safe) to wake it up following
 	//  - the thread wakes, dies, and is joined
 	//  - we safely close the fd and free the pmarsh
-	if( (errno = pthread_kill(i->tid,SIGINT)) ){
-		octx->diagnostic("Couldn't signal thread (%s?)",strerror(errno));
-	} // FIXME check return codes here
 	pthread_mutex_lock(&i->pmarsh->lock);
+		if( (errno = pthread_kill(i->tid,SIGINT)) ){
+			octx->diagnostic("Couldn't signal thread (%s?)",strerror(errno));
+		} // FIXME check return codes here
 		i->pmarsh->cancelled = 1;
 	pthread_cond_signal(&i->pmarsh->cond);
 	pthread_mutex_unlock(&i->pmarsh->lock);
