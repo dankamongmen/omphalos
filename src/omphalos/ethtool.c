@@ -9,6 +9,7 @@
 #include <linux/ethtool.h>
 #include <omphalos/ethtool.h>
 #include <omphalos/omphalos.h>
+#include <omphalos/interface.h>
 
 static inline int
 ethtool_docmd(const omphalos_iface *octx,const char *name,void *unsafe){
@@ -53,14 +54,6 @@ int iface_driver_info(const omphalos_iface *octx,const char *name,struct ethtool
 	return 0;
 }
 
-#define RX_CSUM_OFFLOAD		0x01
-#define TX_CSUM_OFFLOAD		0x02
-#define ETH_SCATTER_GATHER	0x04
-#define TCP_SEG_OFFLOAD		0x08
-#define UDP_LARGETX_OFFLOAD	0x10
-#define GEN_SEG_OFFLOAD		0x20
-#define GEN_LARGERX_OFFLOAD	0x40
-
 static const struct offload_info {
 	const char *desc;
 	unsigned mask;
@@ -97,6 +90,18 @@ static const struct offload_info {
 	},
 	{ .desc = NULL, .mask = 0, .op = 0, }
 };
+
+// Returns -1 for unknown, 0 for non-offloaded, 1 for offloaded
+int iface_offloaded_p(const interface *i,unsigned otype){
+	if(i->offloadmask & otype){
+		if(i->offload & otype){
+			return 1;
+		}else{
+			return 0;
+		}
+	}
+	return -1;
+}
 
 int iface_offload_info(const omphalos_iface *octx,const char *name,
 				unsigned *offload,unsigned *valid){

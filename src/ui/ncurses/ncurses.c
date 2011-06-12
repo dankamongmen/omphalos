@@ -27,6 +27,7 @@
 #include <linux/nl80211.h>
 #include <ncursesw/panel.h>
 #include <ncursesw/ncurses.h>
+#include <omphalos/ethtool.h>
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
 #include <gnu/libc-version.h>
@@ -291,7 +292,7 @@ iface_box(WINDOW *w,const interface *i,const iface_state *is){
 	if(interface_promisc_p(i)){
 		assert(iface_optstr(w,"promisc",hcolor,bcolor) != ERR);
 	}
-	if(i->offloadmask && i->offload){
+	if(i->offloadmask & i->offload){
 		assert(iface_optstr(w,"offload",hcolor,bcolor) != ERR);
 	}
 	assert(wcolor_set(w,bcolor,NULL) != ERR);
@@ -546,16 +547,24 @@ new_display_panel(struct panel_state *ps,int rows,int cols,int srow,int scol,
 // FIXME need to support scrolling through the output
 static int
 iface_details(WINDOW *hw,const interface *i,int row,int col,int rows){
-	int z = 0;
+	int z = rows - 1;
 
-	if(rows > 1){
-		rows = 1;
+	if(z > 1){
+		z = 1;
 	}
-	switch(rows){ // Intentional fallthroughs all the way to 0
+	switch(z){ // Intentional fallthroughs all the way to 0
 	case 1:{
-		assert(mvwprintw(hw,row + z,col,"%s",i->name) != ERR);
-		++z;
+		assert(mvwprintw(hw,row + z,col,"RXcsum: %d",iface_offloaded_p(i,RX_CSUM_OFFLOAD)) != ERR);
+		assert(mvwprintw(hw,row + z,col + 10,"TXcsum: %d",iface_offloaded_p(i,TX_CSUM_OFFLOAD)) != ERR);
+		assert(mvwprintw(hw,row + z,col + 20,"S/G: %d",iface_offloaded_p(i,ETH_SCATTER_GATHER)) != ERR);
+		assert(mvwprintw(hw,row + z,col + 28,"TSO: %d",iface_offloaded_p(i,TCP_SEG_OFFLOAD)) != ERR);
+		assert(mvwprintw(hw,row + z,col + 36,"UTO: %d",iface_offloaded_p(i,UDP_LARGETX_OFFLOAD)) != ERR);
+		assert(mvwprintw(hw,row + z,col + 44,"GSO: %d",iface_offloaded_p(i,GEN_SEG_OFFLOAD)) != ERR);
+		assert(mvwprintw(hw,row + z,col + 52,"GRO: %d",iface_offloaded_p(i,GEN_LARGERX_OFFLOAD)) != ERR);
+		--z;
 	}case 0:{
+		assert(mvwprintw(hw,row + z,col,"%s",i->name) != ERR);
+		--z;
 		break;
 	}default:{
 		return ERR;
