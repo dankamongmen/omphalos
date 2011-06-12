@@ -520,6 +520,93 @@ hide_panel_locked(WINDOW *w,struct panel_state *ps){
 	}
 }
 
+// Can leak resources on failure -- caller must free window/panel on error
+static int
+new_display_panel(struct panel_state *ps,int rows,int cols,int srow,int scol,
+						const wchar_t *hstr){
+	const wchar_t crightstr[] = L"copyright © 2011 nick black";
+	const int crightlen = wcslen(crightstr);
+
+	if(cols < crightlen + START_COL * 2){
+		return ERR;
+	}
+	assert((ps->w = newwin(rows,cols,srow,scol)) != NULL);
+	assert((ps->p = new_panel(ps->w)) != NULL);
+	assert(wattron(ps->w,A_BOLD) != ERR);
+	assert(wcolor_set(ps->w,PBORDER_COLOR,NULL) == OK);
+	assert(box(ps->w,0,0) == OK);
+	assert(wattroff(ps->w,A_BOLD) != ERR);
+	assert(wcolor_set(ps->w,PHEADING_COLOR,NULL) == OK);
+	assert(mvwaddwstr(ps->w,0,START_COL * 2,hstr) != ERR);
+	assert(mvwaddwstr(ps->w,rows - 1,cols - (crightlen + START_COL * 2),crightstr) != ERR);
+	assert(wcolor_set(ps->w,BULKTEXT_COLOR,NULL) == OK);
+	return OK;
+}
+
+// FIXME need to support scrolling through the output
+static int
+iface_details(WINDOW *hw,const interface *i,int row,int col,int rows){
+	int z = 0;
+
+	if(rows > 1){
+		rows = 1;
+	}
+	switch(rows){ // Intentional fallthroughs all the way to 0
+	case 1:{
+		assert(mvwprintw(hw,row + z,col,"%s",i->name) != ERR);
+		++z;
+	}case 0:{
+		break;
+	}default:{
+		return ERR;
+	} }
+	return OK;
+}
+
+#define DETAILS_ROWS 8 // FIXME
+static int
+display_details_locked(WINDOW *mainw,struct panel_state *ps){
+	// The NULL doesn't count as a row
+	int rows,cols,startrow;
+	const interface *i;
+
+	if((i = get_current_iface()) == NULL){
+		return -1;
+	}
+	memset(ps,0,sizeof(*ps));
+	getmaxyx(mainw,rows,cols);
+	// Space for the status bar + gap, bottom bar + gap,
+	// and top bar + gap
+	startrow = rows - (START_LINE * 3 + DETAILS_ROWS);
+	if(rows <= startrow){
+		ERREXIT;
+	}
+	rows -= startrow + START_LINE;
+	cols -= START_COL * 2;
+	if(new_display_panel(ps,rows,cols,startrow,START_COL,
+				L"press 'v' to dismiss details")){
+		ERREXIT;
+	}
+	if(iface_details(ps->w,i,START_LINE,START_COL,
+				rows - START_LINE * 2)){
+		ERREXIT;
+	}
+	assert(start_screen_update() != ERR);
+	assert(finish_screen_update() != ERR);
+	return 0;
+
+err:
+	if(ps->p){
+		hide_panel(ps->p);
+		del_panel(ps->p);
+	}
+	if(ps->w){
+		delwin(ps->w);
+	}
+	memset(ps,0,sizeof(*ps));
+	return -1;
+}
+
 static const wchar_t *helps[] = {
 	L"'k'/'↑' (up arrow): previous interface",
 	L"'j'/'↓' (down arrow): next interface",
@@ -559,69 +646,10 @@ helpstrs(WINDOW *hw,int row,int col,int rows){
 
 	for(z = 0 ; (hs = helps[z]) && z < rows ; ++z){
 		if(mvwaddwstr(hw,row + z,col,hs) == ERR){
-			return -1;
+			return ERR;
 		}
 	}
-	return 0;
-}
-
-// Can leak resources on failure -- caller must free window/panel on error
-static int
-new_display_panel(struct panel_state *ps,int rows,int cols,int srow,int scol,
-						const wchar_t *hstr){
-	const wchar_t crightstr[] = L"copyright © 2011 nick black";
-	const int crightlen = wcslen(crightstr);
-
-	if(cols < crightlen + START_COL * 2){
-		return -1;
-	}
-	assert((ps->w = newwin(rows,cols,srow,scol)) != NULL);
-	assert((ps->p = new_panel(ps->w)) != NULL);
-	assert(wattron(ps->w,A_BOLD) != ERR);
-	assert(wcolor_set(ps->w,PBORDER_COLOR,NULL) == OK);
-	assert(box(ps->w,0,0) == OK);
-	assert(wattroff(ps->w,A_BOLD) != ERR);
-	assert(wcolor_set(ps->w,PHEADING_COLOR,NULL) == OK);
-	assert(mvwaddwstr(ps->w,0,START_COL * 2,hstr) != ERR);
-	assert(mvwaddwstr(ps->w,rows - 1,cols - (crightlen + START_COL * 2),crightstr) != ERR);
-	assert(wcolor_set(ps->w,BULKTEXT_COLOR,NULL) == OK);
 	return OK;
-}
-
-#define DETAILS_ROWS 8 // FIXME
-static int
-display_details_locked(WINDOW *mainw,struct panel_state *ps){
-	// The NULL doesn't count as a row
-	int rows,cols,startrow;
-
-	memset(ps,0,sizeof(*ps));
-	getmaxyx(mainw,rows,cols);
-	// Space for the status bar + gap, bottom bar + gap,
-	// and top bar + gap
-	startrow = rows - (START_LINE * 3 + DETAILS_ROWS);
-	if(rows <= startrow){
-		ERREXIT;
-	}
-	rows -= startrow + START_LINE;
-	cols -= START_COL * 2;
-	if(new_display_panel(ps,rows,cols,startrow,START_COL,
-					L"press 'v' to dismiss details")){
-		ERREXIT;
-	}
-	assert(start_screen_update() != ERR);
-	assert(finish_screen_update() != ERR);
-	return 0;
-
-err:
-	if(ps->p){
-		hide_panel(ps->p);
-		del_panel(ps->p);
-	}
-	if(ps->w){
-		delwin(ps->w);
-	}
-	memset(ps,0,sizeof(*ps));
-	return -1;
 }
 
 static int
