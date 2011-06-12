@@ -567,13 +567,16 @@ helpstrs(WINDOW *hw,int row,int col,int rows){
 
 // Can leak resources on failure -- caller must free window/panel on error
 static int
-new_display_panel(struct panel_state *ps,int rows,int cols,int srow,int scol){
+new_display_panel(struct panel_state *ps,int rows,int cols,int srow,int scol,
+						const wchar_t *hstr){
 	assert((ps->w = newwin(rows,cols,srow,scol)) != NULL);
 	assert((ps->p = new_panel(ps->w)) != NULL);
 	assert(wattron(ps->w,A_BOLD) != ERR);
 	assert(wcolor_set(ps->w,PBORDER_COLOR,NULL) == OK);
 	assert(box(ps->w,0,0) == OK);
 	assert(wattroff(ps->w,A_BOLD) != ERR);
+	assert(wcolor_set(ps->w,PHEADING_COLOR,NULL) == OK);
+	assert(mvwaddwstr(ps->w,0,START_COL * 2,hstr) != ERR);
 	return OK;
 }
 
@@ -596,11 +599,10 @@ display_details_locked(WINDOW *mainw,struct panel_state *ps){
 	}
 	rows -= startrow + START_LINE;
 	cols -= START_COL * 2;
-	if(new_display_panel(ps,rows,cols,startrow,START_COL)){
+	if(new_display_panel(ps,rows,cols,startrow,START_COL,
+					L"press 'v' to dismiss details")){
 		ERREXIT;
 	}
-	assert(wcolor_set(ps->w,PHEADING_COLOR,NULL) == OK);
-	assert(mvwprintw(ps->w,0,START_COL * 2,"press 'v' to dismiss details") != ERR);
 	assert(start_screen_update() != ERR);
 	assert(finish_screen_update() != ERR);
 	return 0;
@@ -641,11 +643,10 @@ display_help_locked(WINDOW *mainw,struct panel_state *ps){
 	assert(startrow + START_LINE < rows);
 	rows -= startrow + START_LINE;
 	cols -= START_COL * 2;
-	if(new_display_panel(ps,rows,cols,startrow,START_COL)){
+	if(new_display_panel(ps,rows,cols,startrow,START_COL,
+				L"press 'h' to dismiss help")){
 		ERREXIT;
 	}
-	assert(wcolor_set(ps->w,PHEADING_COLOR,NULL) == OK);
-	assert(mvwprintw(ps->w,0,START_COL * 2,"press 'h' to dismiss help") != ERR);
 	assert(mvwaddwstr(ps->w,rows - 1,cols - (crightlen + START_COL * 2),crightstr) != ERR);
 	assert(wcolor_set(ps->w,BULKTEXT_COLOR,NULL) == OK);
 	if(helpstrs(ps->w,START_LINE,START_COL,rows - START_LINE * 2)){
