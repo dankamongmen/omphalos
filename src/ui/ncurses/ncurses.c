@@ -569,6 +569,12 @@ helpstrs(WINDOW *hw,int row,int col,int rows){
 static int
 new_display_panel(struct panel_state *ps,int rows,int cols,int srow,int scol,
 						const wchar_t *hstr){
+	const wchar_t crightstr[] = L"copyright © 2011 nick black";
+	const int crightlen = wcslen(crightstr);
+
+	if(cols < crightlen + START_COL * 2){
+		return -1;
+	}
 	assert((ps->w = newwin(rows,cols,srow,scol)) != NULL);
 	assert((ps->p = new_panel(ps->w)) != NULL);
 	assert(wattron(ps->w,A_BOLD) != ERR);
@@ -577,6 +583,8 @@ new_display_panel(struct panel_state *ps,int rows,int cols,int srow,int scol,
 	assert(wattroff(ps->w,A_BOLD) != ERR);
 	assert(wcolor_set(ps->w,PHEADING_COLOR,NULL) == OK);
 	assert(mvwaddwstr(ps->w,0,START_COL * 2,hstr) != ERR);
+	assert(mvwaddwstr(ps->w,rows - 1,cols - (crightlen + START_COL * 2),crightstr) != ERR);
+	assert(wcolor_set(ps->w,BULKTEXT_COLOR,NULL) == OK);
 	return OK;
 }
 
@@ -588,9 +596,6 @@ display_details_locked(WINDOW *mainw,struct panel_state *ps){
 
 	memset(ps,0,sizeof(*ps));
 	getmaxyx(mainw,rows,cols);
-	if(cols < START_COL * 2 + 1){
-		ERREXIT;
-	}
 	// Space for the status bar + gap, bottom bar + gap,
 	// and top bar + gap
 	startrow = rows - (START_LINE * 3 + DETAILS_ROWS);
@@ -621,17 +626,12 @@ err:
 
 static int
 display_help_locked(WINDOW *mainw,struct panel_state *ps){
-	const wchar_t crightstr[] = L"copyright © 2011 nick black";
-	const int crightlen = wcslen(crightstr);
 	// The NULL doesn't count as a row
 	const int helprows = sizeof(helps) / sizeof(*helps) - 1;
 	int rows,cols,startrow;
 
 	memset(ps,0,sizeof(*ps));
 	getmaxyx(mainw,rows,cols);
-	if(cols < crightlen + START_COL * 2){
-		ERREXIT;
-	}
 	// Optimally, we get space for the status bar + gap, bottom bar + gap,
 	// and top bar + gap. We might get less.
 	startrow = rows - (START_LINE * 3 + helprows);
@@ -647,10 +647,7 @@ display_help_locked(WINDOW *mainw,struct panel_state *ps){
 				L"press 'h' to dismiss help")){
 		ERREXIT;
 	}
-	assert(mvwaddwstr(ps->w,rows - 1,cols - (crightlen + START_COL * 2),crightstr) != ERR);
-	assert(wcolor_set(ps->w,BULKTEXT_COLOR,NULL) == OK);
 	if(helpstrs(ps->w,START_LINE,START_COL,rows - START_LINE * 2)){
-		// FIXME need to support scrolling!
 		ERREXIT;
 	}
 	if(start_screen_update() == ERR){
