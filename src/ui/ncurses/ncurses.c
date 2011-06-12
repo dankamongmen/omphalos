@@ -793,6 +793,8 @@ ncurses_input_thread(void *unsafe_marsh){
 				start_screen_update();
 				redrawwin(w);
 				finish_screen_update();
+			pthread_mutex_unlock(&bfl);
+			break;
 		case 'R':
 			pthread_mutex_lock(&bfl);
 				reset_all_interface_stats(octx,w);
