@@ -556,13 +556,17 @@ offload_details(WINDOW *w,const interface *i,int row,int col,const char *name,
 // FIXME need to support scrolling through the output
 static int
 iface_details(WINDOW *hw,const interface *i,int row,int col,int rows){
-	int z = rows - 1;
+	int z;
 
-	if(z > 1){
-		z = 1;
+	if((z = rows - 1) > 4){
+		z = 4;
 	}
 	switch(z){ // Intentional fallthroughs all the way to 0
-	case 1:{
+	case 4:{
+		assert(mvwprintw(hw,row + z,col,"malform: %-15ju\tnoprot: %-15ju\t",
+					i->malformed,i->noprotocol) != ERR);
+		--z;
+	}case 3:{
 		assert(offload_details(hw,i,row + z,col,"RXS",RX_CSUM_OFFLOAD) != ERR);
 		assert(offload_details(hw,i,row + z,col + 7,"TXS",TX_CSUM_OFFLOAD) != ERR);
 		assert(offload_details(hw,i,row + z,col + 15,"S/G",ETH_SCATTER_GATHER) != ERR);
@@ -571,14 +575,24 @@ iface_details(WINDOW *hw,const interface *i,int row,int col,int rows){
 		assert(offload_details(hw,i,row + z,col + 39,"GSO",GEN_SEG_OFFLOAD) != ERR);
 		assert(offload_details(hw,i,row + z,col + 47,"GRO",GEN_LARGERX_OFFLOAD) != ERR);
 		--z;
+	}case 2:{
+		assert(mvwprintw(hw,row + z,col,"TXfd: %d\tfsize: %u\tfnum: %u\tbsize: %u\tbnum: %u",
+					i->fd,i->ttpr.tp_frame_size,i->ttpr.tp_frame_nr,
+					i->ttpr.tp_block_size,i->ttpr.tp_block_nr) != ERR);
+		--z;
+	}case 1:{
+		assert(mvwprintw(hw,row + z,col,"RXfd: %d\tfsize: %u\tfnum: %u\tbsize: %u\tbnum: %u",
+					i->rfd,i->rtpr.tp_frame_size,i->rtpr.tp_frame_nr,
+					i->rtpr.tp_block_size,i->rtpr.tp_block_nr) != ERR);
+		--z;
 	}case 0:{
 		char *mac;
 
 		if((mac = hwaddrstr(i)) == NULL){
 			return ERR;
 		}
-		assert(mvwprintw(hw,row + z,col,"%s\t%s\ttfd: %d\trfd: %d\tmtu: %d",
-					i->name,mac,i->rfd,i->fd,i->mtu) != ERR);
+		assert(mvwprintw(hw,row + z,col,"%s\t%s\ttxr: %zu\trxr: %zu\tmtu: %d",
+					i->name,mac,i->ts,i->rs,i->mtu) != ERR);
 		free(mac);
 		--z;
 		break;
