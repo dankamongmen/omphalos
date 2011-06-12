@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <sys/uio.h>
+#include <sys/poll.h>
 #include <sys/time.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
@@ -24,6 +25,16 @@
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
 
+// External cancellation, tested in input-handling loops. This only works
+// without a mutex lock (memory barrier, more precisely) because we
+// restrict signal handling to the input-handling threads (via initial
+// setprocmask() followed by pthread_sigmask() in these threads only). 
+static volatile unsigned cancelled;
+
+void cancellation_signal_handler(int signo __attribute__ ((unused))){
+	cancelled = 1;
+}
+// End nasty signals-based cancellation.
 
 int netlink_socket(const omphalos_iface *octx){
 	struct sockaddr_nl sa;
@@ -59,19 +70,23 @@ int netlink_socket(const omphalos_iface *octx){
 	return r; \
 }while(0)
 
-int discover_addrs(const omphalos_iface *octx,int fd){
+static int
+discover_addrs(const omphalos_iface *octx,int fd){
 	nldiscover(octx,RTM_GETADDR,ifaddrmsg,ifa_family);
 }
 
-int discover_links(const omphalos_iface *octx,int fd){
+static int
+discover_links(const omphalos_iface *octx,int fd){
 	nldiscover(octx,RTM_GETLINK,ifinfomsg,ifi_family);
 }
 
-int discover_neighbors(const omphalos_iface *octx,int fd){
+static int
+discover_neighbors(const omphalos_iface *octx,int fd){
 	nldiscover(octx,RTM_GETNEIGH,ndmsg,ndm_family);
 }
 
-int discover_routes(const omphalos_iface *octx,int fd){
+static int
+discover_routes(const omphalos_iface *octx,int fd){
 	nldiscover(octx,RTM_GETROUTE,rtmsg,rtm_family);
 }
 
@@ -454,6 +469,41 @@ typedef struct psocket_marsh {
 	pthread_t tid;
 } psocket_marsh;
 
+static inline
+ssize_t inclen(unsigned *idx,const struct tpacket_req *treq){
+	ssize_t inc = treq->tp_frame_size; // advance at least this much
+	unsigned fperb = treq->tp_block_size / treq->tp_frame_size;
+
+	++*idx;
+	if(*idx == treq->tp_frame_nr){
+		inc -= fperb * inc;
+		if(treq->tp_block_nr > 1){
+			inc -= (treq->tp_block_nr - 1) * treq->tp_block_size;
+		}
+		*idx = 0;
+	}else if(*idx % fperb == 0){
+		inc += treq->tp_block_size - fperb * inc;
+	}
+	return inc;
+}
+
+static int
+ring_packet_loop(const omphalos_iface *octx,interface *i,int rfd,
+			void *rxm,const struct tpacket_req *treq){
+	unsigned idx = 0;
+
+	while(!cancelled){
+		int r;
+
+		if((r = handle_ring_packet(octx,i,rfd,rxm)) == 0){
+			rxm += inclen(&idx,treq);
+		}else if(r < 0){
+			return -1;
+		}
+	}
+	return 0;
+}
+
 static void *
 psocket_thread(void *unsafe){
 	psocket_marsh *pm = unsafe;
@@ -740,7 +790,8 @@ handle_netlink_error(const omphalos_iface *octx,int fd,const struct nlmsgerr *ne
 	return -1;
 }
 
-int handle_netlink_event(const omphalos_iface *octx,int fd){
+static int
+handle_netlink_event(const omphalos_iface *octx,int fd){
 	char buf[4096]; // FIXME numerous problems
 	struct iovec iov[1] = { { buf, sizeof(buf) } };
 	struct sockaddr_nl sa;
@@ -804,4 +855,54 @@ int handle_netlink_event(const omphalos_iface *octx,int fd){
 		res = -1;
 	}
 	return res;
+}
+
+int netlink_thread(const omphalos_iface *octx){
+	struct pollfd pfd[1] = {
+		{
+			.events = POLLIN | POLLRDNORM | POLLERR,
+		}
+	};
+	int events;
+
+	if((pfd[0].fd = netlink_socket(octx)) < 0){
+		return -1;
+	}
+	if(discover_links(octx,pfd[0].fd) < 0){
+		close(pfd[0].fd);
+		return -1;
+	}
+	if(discover_routes(octx,pfd[0].fd) < 0){
+		close(pfd[0].fd);
+		return -1;
+	}
+	if(discover_neighbors(octx,pfd[0].fd) < 0){
+		close(pfd[0].fd);
+		return -1;
+	}
+	for(;;){
+		unsigned z;
+
+		errno = 0;
+		while((events = poll(pfd,sizeof(pfd) / sizeof(*pfd),-1)) == 0){
+			octx->diagnostic("Spontaneous wakeup on netlink socket %d",pfd[0].fd);
+		}
+		if(events < 0){
+			if(!cancelled){
+				octx->diagnostic("Error polling netlink socket %d (%s?)",
+						pfd[0].fd,strerror(errno));
+			}
+			break;
+		}
+		for(z = 0 ; z < sizeof(pfd) / sizeof(*pfd) ; ++z){
+			if(pfd[z].revents & POLLERR){
+				octx->diagnostic("Error polling netlink socket %d\n",pfd[z].fd);
+			}else if(pfd[z].revents){
+				handle_netlink_event(octx,pfd[z].fd);
+			}
+			pfd[z].revents = 0;
+		}
+	}
+	close(pfd[0].fd);
+	return 0;
 }

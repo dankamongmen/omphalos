@@ -129,128 +129,6 @@ int unmap_psocket(const omphalos_iface *octx,void *map,size_t size){
 	return 0;
 }
 
-// External cancellation, tested in input-handling loops. This only works
-// without a mutex lock (memory barrier, more precisely) because we
-// restrict signal handling to the input-handling threads (via initial
-// setprocmask() followed by pthread_sigmask() in these threads only). 
-static volatile unsigned cancelled;
-
-static void
-cancellation_signal_handler(int signo __attribute__ ((unused))){
-	cancelled = 1;
-}
-
-static int
-restore_sighandler(const omphalos_iface *pctx){
-	struct sigaction sa = {
-		.sa_handler = SIG_DFL,
-		.sa_flags = SA_RESTART,
-	};
-
-	if(sigaction(SIGINT,&sa,NULL)){
-		pctx->diagnostic("Couldn't restore sighandler (%s?)",strerror(errno));
-		return -1;
-	}
-	return 0;
-}
-
-static int
-restore_sigmask(const omphalos_iface *octx){
-	sigset_t csigs;
-
-	if(sigemptyset(&csigs) || sigaddset(&csigs,SIGINT)){
-		octx->diagnostic("Couldn't prepare sigset (%s?)",strerror(errno));
-		return -1;
-	}
-	if(pthread_sigmask(SIG_BLOCK,&csigs,NULL)){
-		octx->diagnostic("Couldn't mask signals (%s?)",strerror(errno));
-		return -1;
-	}
-	return 0;
-}
-
-static int
-setup_sighandler(const omphalos_iface *octx){
-	struct sigaction sa = {
-		.sa_handler = cancellation_signal_handler,
-		// SA_RESTART doesn't apply to all functions; most of the time,
-		// we're sitting in poll(), which is *not* restarted...
-		.sa_flags = SA_ONSTACK | SA_RESTART,
-	};
-	sigset_t csigs;
-
-	if(sigemptyset(&csigs) || sigaddset(&csigs,SIGINT)){
-		octx->diagnostic("Couldn't prepare sigset (%s?)",strerror(errno));
-		return -1;
-	}
-	if(sigaction(SIGINT,&sa,NULL)){
-		octx->diagnostic("Couldn't install sighandler (%s?)",strerror(errno));
-		return -1;
-	}
-	if(pthread_sigmask(SIG_UNBLOCK,&csigs,NULL)){
-		octx->diagnostic("Couldn't unmask signals (%s?)",strerror(errno));
-		restore_sighandler(octx);
-		return -1;
-	}
-	return 0;
-}
-// End nasty signals-based cancellation.
-
-typedef struct netlink_thread_marshal {
-	const omphalos_iface *octx;
-} netlink_thread_marshal;
-
-static int 
-netlink_thread(const omphalos_iface *octx){
-	struct pollfd pfd[1] = {
-		{
-			.events = POLLIN | POLLRDNORM | POLLERR,
-		}
-	};
-	int events;
-
-	if((pfd[0].fd = netlink_socket(octx)) < 0){
-		return -1;
-	}
-	if(discover_links(octx,pfd[0].fd) < 0){
-		close(pfd[0].fd);
-		return -1;
-	}
-	if(discover_routes(octx,pfd[0].fd) < 0){
-		close(pfd[0].fd);
-		return -1;
-	}
-	if(discover_neighbors(octx,pfd[0].fd) < 0){
-		close(pfd[0].fd);
-		return -1;
-	}
-	for(;;){
-		unsigned z;
-
-		errno = 0;
-		while((events = poll(pfd,sizeof(pfd) / sizeof(*pfd),-1)) == 0){
-			octx->diagnostic("Spontaneous wakeup on netlink socket %d",pfd[0].fd);
-		}
-		if(events < 0){
-			if(!cancelled){
-				octx->diagnostic("Error polling netlink socket %d (%s?)",
-						pfd[0].fd,strerror(errno));
-			}
-			break;
-		}
-		for(z = 0 ; z < sizeof(pfd) / sizeof(*pfd) ; ++z){
-			if(pfd[z].revents & POLLERR){
-				octx->diagnostic("Error polling netlink socket %d\n",pfd[z].fd);
-			}else if(pfd[z].revents){
-				handle_netlink_event(octx,pfd[z].fd);
-			}
-			pfd[z].revents = 0;
-		}
-	}
-	close(pfd[0].fd);
-	return 0;
-}
-
 static int
 recover_truncated_packet(const omphalos_iface *octx,interface *iface,int fd,unsigned tlen){
 	int r;
@@ -273,8 +151,7 @@ recover_truncated_packet(const omphalos_iface *octx,interface *iface,int fd,unsi
 
 // -1: error; don't call us anymore. 0: handled frame. 1: interrupted; we
 // return for a cancellation check, and the frameptr oughtn't be advanced.
-static int
-handle_ring_packet(const omphalos_iface *octx,interface *iface,int fd,void *frame){
+int handle_ring_packet(const omphalos_iface *octx,interface *iface,int fd,void *frame){
 	struct tpacket_hdr *thdr = frame;
 	int len;
 
@@ -339,42 +216,6 @@ handle_ring_packet(const omphalos_iface *octx,interface *iface,int fd,void *fram
 	return 0;
 }
 
-#include <assert.h>
-static inline
-ssize_t inclen(unsigned *idx,const struct tpacket_req *treq){
-	ssize_t inc = treq->tp_frame_size; // advance at least this much
-	assert(inc);
-	unsigned fperb = treq->tp_block_size / treq->tp_frame_size;
-
-	++*idx;
-	if(*idx == treq->tp_frame_nr){
-		inc -= fperb * inc;
-		if(treq->tp_block_nr > 1){
-			inc -= (treq->tp_block_nr - 1) * treq->tp_block_size;
-		}
-		*idx = 0;
-	}else if(*idx % fperb == 0){
-		inc += treq->tp_block_size - fperb * inc;
-	}
-	return inc;
-}
-
-int ring_packet_loop(const omphalos_iface *octx,interface *i,int rfd,
-			void *rxm,const struct tpacket_req *treq){
-	unsigned idx = 0;
-
-	while(!cancelled){
-		int r;
-
-		if((r = handle_ring_packet(octx,i,rfd,rxm)) == 0){
-			rxm += inclen(&idx,treq);
-		}else if(r < 0){
-			return -1;
-		}
-	}
-	return 0;
-}
-
 size_t mmap_rx_psocket(const omphalos_iface *octx,int fd,int idx,
 		unsigned maxframe,void **map,struct tpacket_req *treq){
 	size_t ret;
@@ -390,6 +231,61 @@ size_t mmap_rx_psocket(const omphalos_iface *octx,int fd,int idx,
 		return -1;
 	}
 	return ret;
+}
+
+static int
+restore_sighandler(const omphalos_iface *pctx){
+	struct sigaction sa = {
+		.sa_handler = SIG_DFL,
+		.sa_flags = SA_RESTART,
+	};
+
+	if(sigaction(SIGINT,&sa,NULL)){
+		pctx->diagnostic("Couldn't restore sighandler (%s?)",strerror(errno));
+		return -1;
+	}
+	return 0;
+}
+
+static int
+restore_sigmask(const omphalos_iface *octx){
+	sigset_t csigs;
+
+	if(sigemptyset(&csigs) || sigaddset(&csigs,SIGINT)){
+		octx->diagnostic("Couldn't prepare sigset (%s?)",strerror(errno));
+		return -1;
+	}
+	if(pthread_sigmask(SIG_BLOCK,&csigs,NULL)){
+		octx->diagnostic("Couldn't mask signals (%s?)",strerror(errno));
+		return -1;
+	}
+	return 0;
+}
+
+static int
+setup_sighandler(const omphalos_iface *octx){
+	struct sigaction sa = {
+		.sa_handler = cancellation_signal_handler,
+		// SA_RESTART doesn't apply to all functions; most of the time,
+		// we're sitting in poll(), which is *not* restarted...
+		.sa_flags = SA_ONSTACK | SA_RESTART,
+	};
+	sigset_t csigs;
+
+	if(sigemptyset(&csigs) || sigaddset(&csigs,SIGINT)){
+		octx->diagnostic("Couldn't prepare sigset (%s?)",strerror(errno));
+		return -1;
+	}
+	if(sigaction(SIGINT,&sa,NULL)){
+		octx->diagnostic("Couldn't install sighandler (%s?)",strerror(errno));
+		return -1;
+	}
+	if(pthread_sigmask(SIG_UNBLOCK,&csigs,NULL)){
+		octx->diagnostic("Couldn't unmask signals (%s?)",strerror(errno));
+		restore_sighandler(octx);
+		return -1;
+	}
+	return 0;
 }
 
 int handle_packet_socket(const omphalos_ctx *pctx){

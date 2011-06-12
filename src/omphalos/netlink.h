@@ -12,15 +12,13 @@ struct omphalos_iface;
 
 int netlink_socket(const struct omphalos_iface *);
 
-int discover_addrs(const struct omphalos_iface *,int);
-int discover_links(const struct omphalos_iface *,int);
-int discover_routes(const struct omphalos_iface *,int);
-int discover_neighbors(const struct omphalos_iface *,int);
 int iplink_modify(const struct omphalos_iface *,int,int,unsigned,unsigned);
 
-int handle_netlink_event(const struct omphalos_iface *,int);
-
 int reap_thread(const struct omphalos_iface *,struct interface *);
+
+int netlink_thread(const struct omphalos_iface *);
+
+void cancellation_signal_handler(int);
 
 #ifdef __cplusplus
 }
