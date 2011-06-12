@@ -441,68 +441,116 @@ handle_rtm_dellink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 		octx->diagnostic("Invalid interface index: %d",ii->ifi_index);
 		return -1;
 	}
-	if(octx->iface_removed){
-		octx->iface_removed(iface,iface->opaque);
-	}
-	free_iface(octx,iface);
+	free_iface(octx,iface); // calls octx->iface_removed
 	return 0;
 }
 
 typedef struct psocket_marsh {
 	const omphalos_iface *octx;
 	interface *i;
+	int cancelled;
+	pthread_cond_t cond;
+	pthread_mutex_t lock;
 } psocket_marsh;
 
 static void *
 psocket_thread(void *unsafe){
-	const psocket_marsh *pm = unsafe;
+	psocket_marsh *pm = unsafe;
 
-	// We control thread exit via the ->cancelled value, set in the signal
-	// handler (and, in certain error cases, by the thread itself). We
-	// don't want actual pthread cancellation, as it's unsafe for the user
-	// callback's duration, and thus we'd need switch between enabled and
-	// disabled status.
+	// We control thread exit via the global cancelled value, set in the
+	// signal handler. We don't want actual pthread cancellation, as it's
+	// unsafe for the user callback's duration, and thus we'd need switch
+	// between enabled and disabled status.
 	pthread_setcancelstate(PTHREAD_CANCEL_DISABLE,NULL);
 	ring_packet_loop(pm->octx,pm->i,pm->i->rfd,pm->i->rxm,&pm->i->rtpr);
-	free(unsafe);
-	return NULL;
+	// 'cancelled' has been set globally. We must ensure that our death
+	// signal has been sent before safely exiting.
+	pthread_mutex_lock(&pm->lock);
+	while(!pm->cancelled){
+		pthread_cond_wait(&pm->cond,&pm->lock);
+	}
+	pthread_mutex_unlock(&pm->lock);
+	return PTHREAD_CANCELED;
 }
 
-int reap_thread(const omphalos_iface *octx,pthread_t tid){
+static void
+pmarsh_destroy(const omphalos_iface *octx,psocket_marsh *pm){
+	if( (errno = pthread_cond_destroy(&pm->cond)) ){
+		octx->diagnostic("Error cleaning condvar: %s",strerror(errno));
+	}
+	if( (errno = pthread_mutex_destroy(&pm->lock)) ){
+		octx->diagnostic("Error cleaning mutex: %s",strerror(errno));
+	}
+	free(pm);
+}
+
+#include <assert.h>
+int reap_thread(const omphalos_iface *octx,interface *i){
 	void *ret;
 
 	// See psocket_thread(); we disable pthread cancellation. Send a
-	// signal instead, engaging internal cancellation.
-	// FIXME can't safely send signal if thread has died, results in SIGSEGV.
-	// for now rely on some traffic going through, i guess. lame :/
-	/*if( (errno = pthread_kill(tid,SIGINT)) ){
+	// signal instead, engaging internal cancellation. A signal is the only
+	// choice for waking up a thread in poll(), also. Now, it is unsafe to
+	// send a nonexistant thread a signal, so we must ensure the thread
+	// never exits until ater we've signalled it. So, packet sockets:
+	//
+	//  - spin on fd, poll()ing until there's a packet or signal
+	//  - check the global cancellation flag, set in the signal handler
+	//  - if it's high, block on the pmarsh->cancelled variable
+	//  - meanwhile, we set ->cancelled only after sending the signal
+	//  - we use a condvar signal (safe) to wake it up following
+	//  - the thread wakes, dies, and is joined
+	//  - we safely close the fd and free the pmarsh
+	if( (errno = pthread_kill(i->tid,SIGINT)) ){
 		octx->diagnostic("Couldn't signal thread (%s?)",strerror(errno));
-	}*/
-	if( (errno = pthread_join(tid,&ret)) ){
+	} // FIXME check return codes here
+	pthread_mutex_lock(&i->pmarsh->lock);
+		i->pmarsh->cancelled = 1;
+	pthread_cond_signal(&i->pmarsh->cond);
+	pthread_mutex_unlock(&i->pmarsh->lock);
+	if( (errno = pthread_join(i->tid,&ret)) ){
 		octx->diagnostic("Couldn't join thread (%s?)",strerror(errno));
 		return -1;
 	}
 	if(ret != PTHREAD_CANCELED){
-		octx->diagnostic("Thread returned error on exit (%s)",(char *)ret);
+		octx->diagnostic("%s thread returned error on exit (%s)",
+				i->name,(char *)ret);
 		return -1;
 	}
+	pmarsh_destroy(octx,i->pmarsh);
+	i->pmarsh = NULL;
 	return 0;
+}
+
+static psocket_marsh *
+pmarsh_create(void){
+	psocket_marsh *ret;
+
+	if( (ret = malloc(sizeof(*ret))) ){
+		if(pthread_mutex_init(&ret->lock,NULL) == 0){
+			if(pthread_cond_init(&ret->cond,NULL) == 0){
+				ret->cancelled = 0;
+				return ret;
+			}
+			pthread_mutex_destroy(&ret->lock);
+		}
+		free(ret);
+	}
+	return NULL;
 }
 
 static int
 prepare_packet_sockets(const omphalos_iface *octx,interface *iface,int idx){
-	psocket_marsh *pm;
-
-	if( (pm = malloc(sizeof(*pm))) ){
+	if( (iface->pmarsh = pmarsh_create()) ){
 		if((iface->fd = packet_socket(octx,ETH_P_ALL)) >= 0){
 			if((iface->rfd = packet_socket(octx,ETH_P_ALL)) >= 0){
 				if( (iface->rs = mmap_rx_psocket(octx,iface->rfd,idx,
 						iface->mtu,&iface->rxm,&iface->rtpr)) ){
 					if( (iface->ts = mmap_tx_psocket(octx,iface->fd,idx,
 							iface->mtu,&iface->txm,&iface->ttpr)) ){
-						pm->octx = octx;
-						pm->i = iface;
-						if(pthread_create(&iface->tid,NULL,psocket_thread,pm) == 0){
+						iface->pmarsh->octx = octx;
+						iface->pmarsh->i = iface;
+						if(pthread_create(&iface->tid,NULL,psocket_thread,iface->pmarsh) == 0){
 							return 0;
 						}
 					}
@@ -511,7 +559,8 @@ prepare_packet_sockets(const omphalos_iface *octx,interface *iface,int idx){
 			}
 			close(iface->fd); // munmaps
 		}
-		free(pm);
+		pmarsh_destroy(octx,iface->pmarsh);
+		iface->pmarsh = NULL;
 	}
 	iface->rfd = iface->fd = -1;
 	memset(&iface->rtpr,0,sizeof(iface->rtpr));
@@ -646,9 +695,9 @@ handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 		if(prepare_packet_sockets(octx,iface,ii->ifi_index)){
 			octx->diagnostic("Couldn't open packet sockets on %s",iface->name);
 		}
-	}else if(iface->fd >= 0 && !(iface->flags & IFF_UP)){
+	}else if(iface->pmarsh && !(iface->flags & IFF_UP)){
 		// See note in free_iface() about operation ordering here.
-		reap_thread(octx,iface->tid);
+		reap_thread(octx,iface);
 		close(iface->rfd);
 		close(iface->fd);
 		iface->rfd = iface->fd = -1;

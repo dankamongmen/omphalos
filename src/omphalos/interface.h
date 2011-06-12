@@ -11,6 +11,7 @@ extern "C" {
 #include <linux/ethtool.h>
 #include <linux/if_packet.h>
 
+struct psocket_marsh;
 struct omphalos_iface;
 
 typedef struct ip4route {
@@ -45,6 +46,8 @@ typedef struct interface {
 
 	struct timeval firstseen;	// Interface registration time
 	struct timeval lastseen;	// Last time we saw a packet/event here
+
+	struct psocket_marsh *pmarsh;	// State for packet socket thread
 
 	// For recvfrom()ing truncated packets (see PACKET_COPY_THRESH sockopt)
 	void *truncbuf;

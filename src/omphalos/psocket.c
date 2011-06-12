@@ -369,6 +369,6 @@ int handle_packet_socket(const omphalos_ctx *pctx){
 	ret = netlink_thread(&pctx->iface);
 	// FIXME we can't call this until after cleanup_interfaces(), iff we
 	// signal the packet socket threads to wake them up...
-	ret |= restore_sighandler(&pctx->iface);
+	//ret |= restore_sighandler(&pctx->iface);
 	return ret;
 }

@@ -7,6 +7,7 @@ extern "C" {
 
 #include <pthread.h>
 
+struct interface;
 struct omphalos_iface;
 
 int netlink_socket(const struct omphalos_iface *);
@@ -19,7 +20,7 @@ int iplink_modify(const struct omphalos_iface *,int,int,unsigned,unsigned);
 
 int handle_netlink_event(const struct omphalos_iface *,int);
 
-int reap_thread(const struct omphalos_iface *,pthread_t);
+int reap_thread(const struct omphalos_iface *,struct interface *);
 
 #ifdef __cplusplus
 }
