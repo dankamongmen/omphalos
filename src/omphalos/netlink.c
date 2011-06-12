@@ -488,15 +488,17 @@ ssize_t inclen(unsigned *idx,const struct tpacket_req *treq){
 }
 
 static int
-ring_packet_loop(const omphalos_iface *octx,interface *i,int rfd,
-			void *rxm,const struct tpacket_req *treq){
+ring_packet_loop(psocket_marsh *pm){
+	// FIXME either send pm and nothing or everything else this aliases
 	unsigned idx = 0;
+	void *rxm;
 
-	while(!cancelled){
+	rxm = pm->i->rxm;
+	while(!pm->cancelled){
 		int r;
 
-		if((r = handle_ring_packet(octx,i,rfd,rxm)) == 0){
-			rxm += inclen(&idx,treq);
+		if((r = handle_ring_packet(pm->octx,pm->i,pm->i->rfd,rxm)) == 0){
+			rxm += inclen(&idx,&pm->i->rtpr);
 		}else if(r < 0){
 			return -1;
 		}
@@ -514,7 +516,7 @@ psocket_thread(void *unsafe){
 	// unsafe for the user callback's duration, and thus we'd need switch
 	// between enabled and disabled status.
 	pthread_setcancelstate(PTHREAD_CANCEL_DISABLE,NULL);
-	r = ring_packet_loop(pm->octx,pm->i,pm->i->rfd,pm->i->rxm,&pm->i->rtpr);
+	r = ring_packet_loop(pm);
 	// 'cancelled' has been set globally. We must ensure that our death
 	// signal has been sent before safely exiting.
 	pthread_mutex_lock(&pm->lock);
