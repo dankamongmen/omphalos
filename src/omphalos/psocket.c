@@ -288,8 +288,17 @@ handle_ring_packet(const omphalos_iface *octx,interface *iface,int fd,void *fram
 	iface->lastseen.tv_sec = thdr->tp_sec;
 	iface->lastseen.tv_usec = thdr->tp_usec;
 	if(thdr->tp_status & TP_STATUS_LOSING){
-		octx->diagnostic("FUCK ME; THE RINGBUFFER'S FULL!");
-		// update statistics via sockopt() FIXME
+		struct tpacket_stats tstats;
+		socklen_t slen;
+
+		slen = sizeof(tstats);
+		if(getsockopt(fd,SOL_PACKET,PACKET_STATISTICS,&tstats,&slen)){
+			octx->diagnostic("Error reading stats on %s (%s?)",iface->name,strerror(errno));
+		}else{
+			iface->drops += tstats.tp_drops;
+			octx->diagnostic("FUCK ME; THE RINGBUFFER'S FULL (%ju/%ju drops)!",
+					tstats.tp_drops,iface->drops);
+		}
 	}
 	if((thdr->tp_status & TP_STATUS_COPY) || thdr->tp_snaplen != thdr->tp_len){
 		++iface->truncated;

@@ -553,18 +553,24 @@ offload_details(WINDOW *w,const interface *i,int row,int col,const char *name,
 	return mvwprintw(w,row,col,"%s: %c",name,r > 0 ? 'y' : 'n');
 }
 
+#define DETAILROWS 5
+
 // FIXME need to support scrolling through the output
 static int
 iface_details(WINDOW *hw,const interface *i,int row,int col,int rows){
 	int z;
 
-	if((z = rows - 1) > 4){
-		z = 4;
+	if((z = rows - 1) > DETAILROWS){
+		z = DETAILROWS;
 	}
 	switch(z){ // Intentional fallthroughs all the way to 0
-	case 4:{
-		assert(mvwprintw(hw,row + z,col,"malform: %-15ju\tnoprot: %-15ju\t",
+	case DETAILROWS:{
+		assert(mvwprintw(hw,row + z,col,"mform: %-15ju\tnoprot: %-15ju\t",
 					i->malformed,i->noprotocol) != ERR);
+		--z;
+	}case 4:{
+		assert(mvwprintw(hw,row + z,col,"bytes: %-15ju\tframes: %-15ju\tdrops: %-15ju",
+					i->bytes,i->frames,i->drops) != ERR);
 		--z;
 	}case 3:{
 		assert(offload_details(hw,i,row + z,col,"RXS",RX_CSUM_OFFLOAD) != ERR);
@@ -576,12 +582,12 @@ iface_details(WINDOW *hw,const interface *i,int row,int col,int rows){
 		assert(offload_details(hw,i,row + z,col + 47,"GRO",GEN_LARGERX_OFFLOAD) != ERR);
 		--z;
 	}case 2:{
-		assert(mvwprintw(hw,row + z,col,"TXfd: %d\tfsize: %u\tfnum: %u\tbsize: %u\tbnum: %u",
+		assert(mvwprintw(hw,row + z,col,"TXfd: %d\tfsize: %u\tfnum: %-6u\tbsize: %u\tbnum: %u",
 					i->fd,i->ttpr.tp_frame_size,i->ttpr.tp_frame_nr,
 					i->ttpr.tp_block_size,i->ttpr.tp_block_nr) != ERR);
 		--z;
 	}case 1:{
-		assert(mvwprintw(hw,row + z,col,"RXfd: %d\tfsize: %u\tfnum: %u\tbsize: %u\tbnum: %u",
+		assert(mvwprintw(hw,row + z,col,"RXfd: %d\tfsize: %u\tfnum: %-6u\tbsize: %u\tbnum: %u",
 					i->rfd,i->rtpr.tp_frame_size,i->rtpr.tp_frame_nr,
 					i->rtpr.tp_block_size,i->rtpr.tp_block_nr) != ERR);
 		--z;
@@ -591,7 +597,7 @@ iface_details(WINDOW *hw,const interface *i,int row,int col,int rows){
 		if((mac = hwaddrstr(i)) == NULL){
 			return ERR;
 		}
-		assert(mvwprintw(hw,row + z,col,"%s\t%s\ttxr: %zu\trxr: %zu\tmtu: %d",
+		assert(mvwprintw(hw,row + z,col,"%s\t%s\ttxr: %-10zu\trxr: %-10zu\tmtu: %d",
 					i->name,mac,i->ts,i->rs,i->mtu) != ERR);
 		free(mac);
 		--z;
@@ -602,7 +608,6 @@ iface_details(WINDOW *hw,const interface *i,int row,int col,int rows){
 	return OK;
 }
 
-#define DETAILS_ROWS 8 // FIXME
 static int
 display_details_locked(WINDOW *mainw,struct panel_state *ps){
 	// The NULL doesn't count as a row
@@ -616,7 +621,7 @@ display_details_locked(WINDOW *mainw,struct panel_state *ps){
 	getmaxyx(mainw,rows,cols);
 	// Space for the status bar + gap, bottom bar + gap,
 	// and top bar + gap
-	startrow = rows - (START_LINE * 3 + DETAILS_ROWS);
+	startrow = rows - (START_LINE * 3 + DETAILROWS + 1);
 	if(rows <= startrow){
 		ERREXIT;
 	}

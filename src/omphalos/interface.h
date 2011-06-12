@@ -43,6 +43,7 @@ typedef struct interface {
 	uintmax_t truncated_recovered;	// We were able to recvfrom() the packet
 	uintmax_t noprotocol;		// Packets without protocol handler
 	uintmax_t bytes;		// Total bytes sniffed
+	uintmax_t drops;		// PACKET_STATISTICS @ TP_STATUS_LOSING
 
 	struct timeval firstseen;	// Interface registration time
 	struct timeval lastseen;	// Last time we saw a packet/event here
