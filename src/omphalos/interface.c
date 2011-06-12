@@ -77,12 +77,14 @@ char *hwaddrstr(const interface *i){
 }
 
 void free_iface(const omphalos_iface *octx,interface *i){
-	if(i->fd >= 0){
-		reap_thread(octx,i->tid);
-		close(i->fd);
-	}
+	// Must reap thread prior to closing the fd's, lest some other thread
+	// be allocated that fd, and have the packet socket thread use it.
 	if(i->rfd >= 0){
+		reap_thread(octx,i->tid);
 		close(i->rfd);
+	}
+	if(i->fd >= 0){
+		close(i->fd);
 	}
 	if(i->opaque && octx->iface_removed){
 		octx->iface_removed(i,i->opaque);
