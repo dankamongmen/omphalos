@@ -663,9 +663,9 @@ static const wchar_t *helps[] = {
 	L"       configure addresses, routes, bridges, and wireless",
 	L"'a': attack configuration",
 	L"       configure source quenching, assassinations, and deauthentication",
-	L"'j': hijack configuration",
+	L"'J': hijack configuration",
 	L"       configure fake APs, rogue DHCP/DNS, and ARP MitM",
-	L"'d': defense configuration",
+	L"'D': defense configuration",
 	L"       define authoritative configurations to enforce",
 	L"'S': secrets database",
 	L"       export pilfered passwords, cookies, and identifying data",
@@ -744,9 +744,60 @@ err:
 	return -1;
 }
 
+// FIXME eliminate all callers!
+static void
+unimplemented(WINDOW *w,const void *v){
+	wstatus_locked(w,"Sorry bro; that ain't implemented yet (%p)!",v);
+}
+
+static void
+configure_prefs(WINDOW *w){
+	unimplemented(w,NULL);
+}
+
+static void
+configure_network(WINDOW *w){
+	unimplemented(w,NULL);
+}
+
+static void
+configure_attacks(WINDOW *w){
+	unimplemented(w,NULL);
+}
+
+static void
+configure_hijacks(WINDOW *w){
+	unimplemented(w,NULL);
+}
+
+static void
+configure_defence(WINDOW *w){
+	unimplemented(w,NULL);
+}
+
+static void
+configure_secrets(WINDOW *w){
+	unimplemented(w,NULL);
+}
+
+static void
+configure_crypto(WINDOW *w){
+	unimplemented(w,NULL);
+}
+
+static void
+change_mac(WINDOW *w){
+	unimplemented(w,NULL);
+}
+
+static void
+change_mtu(WINDOW *w){
+	unimplemented(w,NULL);
+}
+
 static void
 reset_interface_stats(WINDOW *w,const interface *i){
-	wstatus_locked(w,"Sorry bro; that ain't implemented yet (%s)!",i->name); // FIXME
+	unimplemented(w,i);
 }
 
 static void
@@ -817,6 +868,41 @@ ncurses_input_thread(void *unsafe_marsh){
 				finish_screen_update();
 			pthread_mutex_unlock(&bfl);
 			break;
+		case 'P':
+			pthread_mutex_lock(&bfl);
+				configure_prefs(w);
+			pthread_mutex_unlock(&bfl);
+			break;
+		case 'n':
+			pthread_mutex_lock(&bfl);
+				configure_network(w);
+			pthread_mutex_unlock(&bfl);
+			break;
+		case 'a':
+			pthread_mutex_lock(&bfl);
+				configure_attacks(w);
+			pthread_mutex_unlock(&bfl);
+			break;
+		case 'J':
+			pthread_mutex_lock(&bfl);
+				configure_hijacks(w);
+			pthread_mutex_unlock(&bfl);
+			break;
+		case 'D':
+			pthread_mutex_lock(&bfl);
+				configure_defence(w);
+			pthread_mutex_unlock(&bfl);
+			break;
+		case 'S':
+			pthread_mutex_lock(&bfl);
+				configure_secrets(w);
+			pthread_mutex_unlock(&bfl);
+			break;
+		case 'c':
+			pthread_mutex_lock(&bfl);
+				configure_crypto(w);
+			pthread_mutex_unlock(&bfl);
+			break;
 		case 'R':
 			pthread_mutex_lock(&bfl);
 				reset_all_interface_stats(w);
@@ -840,6 +926,16 @@ ncurses_input_thread(void *unsafe_marsh){
 		case 's':
 			pthread_mutex_lock(&bfl);
 				sniff_interface_locked(octx,w);
+			pthread_mutex_unlock(&bfl);
+			break;
+		case 'u':
+			pthread_mutex_lock(&bfl);
+				change_mtu(w);
+			pthread_mutex_unlock(&bfl);
+			break;
+		case 'm':
+			pthread_mutex_lock(&bfl);
+				change_mac(w);
 			pthread_mutex_unlock(&bfl);
 			break;
 		case 'v':{
