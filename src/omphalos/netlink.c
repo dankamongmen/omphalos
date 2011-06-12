@@ -457,13 +457,14 @@ typedef struct psocket_marsh {
 static void *
 psocket_thread(void *unsafe){
 	psocket_marsh *pm = unsafe;
+	int r;
 
 	// We control thread exit via the global cancelled value, set in the
 	// signal handler. We don't want actual pthread cancellation, as it's
 	// unsafe for the user callback's duration, and thus we'd need switch
 	// between enabled and disabled status.
 	pthread_setcancelstate(PTHREAD_CANCEL_DISABLE,NULL);
-	ring_packet_loop(pm->octx,pm->i,pm->i->rfd,pm->i->rxm,&pm->i->rtpr);
+	r = ring_packet_loop(pm->octx,pm->i,pm->i->rfd,pm->i->rxm,&pm->i->rtpr);
 	// 'cancelled' has been set globally. We must ensure that our death
 	// signal has been sent before safely exiting.
 	pthread_mutex_lock(&pm->lock);
@@ -471,7 +472,7 @@ psocket_thread(void *unsafe){
 		pthread_cond_wait(&pm->cond,&pm->lock);
 	}
 	pthread_mutex_unlock(&pm->lock);
-	return PTHREAD_CANCELED;
+	return r ? "calamitous error" : PTHREAD_CANCELED;
 }
 
 static void

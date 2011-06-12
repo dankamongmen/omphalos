@@ -155,6 +155,21 @@ restore_sighandler(const omphalos_iface *pctx){
 }
 
 static int
+restore_sigmask(const omphalos_iface *octx){
+	sigset_t csigs;
+
+	if(sigemptyset(&csigs) || sigaddset(&csigs,SIGINT)){
+		octx->diagnostic("Couldn't prepare sigset (%s?)",strerror(errno));
+		return -1;
+	}
+	if(pthread_sigmask(SIG_BLOCK,&csigs,NULL)){
+		octx->diagnostic("Couldn't mask signals (%s?)",strerror(errno));
+		return -1;
+	}
+	return 0;
+}
+
+static int
 setup_sighandler(const omphalos_iface *octx){
 	struct sigaction sa = {
 		.sa_handler = cancellation_signal_handler,
@@ -256,12 +271,14 @@ recover_truncated_packet(const omphalos_iface *octx,interface *iface,int fd,unsi
 	return r;
 }
 
-static void
+// -1: error; don't call us anymore. 0: handled frame. 1: interrupted; we
+// return for a cancellation check, and the frameptr oughtn't be advanced.
+static int
 handle_ring_packet(const omphalos_iface *octx,interface *iface,int fd,void *frame){
 	struct tpacket_hdr *thdr = frame;
 	int len;
 
-	if(thdr->tp_status == 0){
+	while(thdr->tp_status == 0){
 		struct pollfd pfd[1];
 		int events;
 
@@ -270,18 +287,16 @@ handle_ring_packet(const omphalos_iface *octx,interface *iface,int fd,void *fram
 		pfd[0].events = POLLIN | POLLRDNORM | POLLERR;
 		if((events = poll(pfd,sizeof(pfd) / sizeof(*pfd),-1)) == 0){
 			octx->diagnostic("Interrupted polling packet socket %d",fd);
-			return;
+			return -1;
 		}else if(events < 0){
 			if(errno != EINTR){
 				octx->diagnostic("Error polling packet socket %d (%s?)",fd,strerror(errno));
-				return;
+				return -1;
 			}
+			return 1;
 		}else if(pfd[0].revents & POLLERR){
 			octx->diagnostic("Error polling packet socket %d",fd);
-			return;
-		}
-		if(thdr->tp_status == 0){
-			return;
+			return -1;
 		}
 	}
 	++iface->frames;
@@ -321,6 +336,7 @@ handle_ring_packet(const omphalos_iface *octx,interface *iface,int fd,void *fram
 		octx->packet_read(iface,iface->opaque);
 	}
 	thdr->tp_status = TP_STATUS_KERNEL; // return the frame
+	return 0;
 }
 
 #include <assert.h>
@@ -348,8 +364,13 @@ int ring_packet_loop(const omphalos_iface *octx,interface *i,int rfd,
 	unsigned idx = 0;
 
 	while(!cancelled){
-		handle_ring_packet(octx,i,rfd,rxm);
-		rxm += inclen(&idx,treq);
+		int r;
+
+		if((r = handle_ring_packet(octx,i,rfd,rxm)) == 0){
+			rxm += inclen(&idx,treq);
+		}else if(r < 0){
+			return -1;
+		}
 	}
 	return 0;
 }
@@ -378,8 +399,6 @@ int handle_packet_socket(const omphalos_ctx *pctx){
 		return -1;
 	}
 	ret = netlink_thread(&pctx->iface);
-	// FIXME we can't call this until after cleanup_interfaces(), iff we
-	// signal the packet socket threads to wake them up...
-	//ret |= restore_sighandler(&pctx->iface);
+	ret |= restore_sigmask(&pctx->iface);
 	return ret;
 }
