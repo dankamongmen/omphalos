@@ -544,6 +544,15 @@ new_display_panel(struct panel_state *ps,int rows,int cols,int srow,int scol,
 	return OK;
 }
 
+static int
+offload_details(WINDOW *w,const interface *i,int row,int col,const char *name,
+						unsigned val){
+	int r;
+
+	r = iface_offloaded_p(i,val);
+	return mvwprintw(w,row,col,"%s: %c",name,r > 0 ? 'y' : 'n');
+}
+
 // FIXME need to support scrolling through the output
 static int
 iface_details(WINDOW *hw,const interface *i,int row,int col,int rows){
@@ -554,14 +563,13 @@ iface_details(WINDOW *hw,const interface *i,int row,int col,int rows){
 	}
 	switch(z){ // Intentional fallthroughs all the way to 0
 	case 1:{
-		// FIXME handle -1 "unknown" results (print '?')
-		assert(mvwprintw(hw,row + z,col,"RXcsum: %d",iface_offloaded_p(i,RX_CSUM_OFFLOAD)) != ERR);
-		assert(mvwprintw(hw,row + z,col + 10,"TXcsum: %d",iface_offloaded_p(i,TX_CSUM_OFFLOAD)) != ERR);
-		assert(mvwprintw(hw,row + z,col + 20,"S/G: %d",iface_offloaded_p(i,ETH_SCATTER_GATHER)) != ERR);
-		assert(mvwprintw(hw,row + z,col + 27,"TSO: %d",iface_offloaded_p(i,TCP_SEG_OFFLOAD)) != ERR);
-		assert(mvwprintw(hw,row + z,col + 34,"UTO: %d",iface_offloaded_p(i,UDP_LARGETX_OFFLOAD)) != ERR);
-		assert(mvwprintw(hw,row + z,col + 41,"GSO: %d",iface_offloaded_p(i,GEN_SEG_OFFLOAD)) != ERR);
-		assert(mvwprintw(hw,row + z,col + 48,"GRO: %d",iface_offloaded_p(i,GEN_LARGERX_OFFLOAD)) != ERR);
+		assert(offload_details(hw,i,row + z,col,"RXcsum",RX_CSUM_OFFLOAD) != ERR);
+		assert(offload_details(hw,i,row + z,col + 10,"TXcsum",TX_CSUM_OFFLOAD) != ERR);
+		assert(offload_details(hw,i,row + z,col + 20,"S/G",ETH_SCATTER_GATHER) != ERR);
+		assert(offload_details(hw,i,row + z,col + 27,"TSO",TCP_SEG_OFFLOAD) != ERR);
+		assert(offload_details(hw,i,row + z,col + 34,"UTO",UDP_LARGETX_OFFLOAD) != ERR);
+		assert(offload_details(hw,i,row + z,col + 41,"GSO",GEN_SEG_OFFLOAD) != ERR);
+		assert(offload_details(hw,i,row + z,col + 48,"GRO",GEN_LARGERX_OFFLOAD) != ERR);
 		--z;
 	}case 0:{
 		assert(mvwprintw(hw,row + z,col,"%s",i->name) != ERR);
