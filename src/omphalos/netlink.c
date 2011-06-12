@@ -451,6 +451,7 @@ typedef struct psocket_marsh {
 	int cancelled;
 	pthread_cond_t cond;
 	pthread_mutex_t lock;
+	pthread_t tid;
 } psocket_marsh;
 
 static void *
@@ -502,13 +503,13 @@ int reap_thread(const omphalos_iface *octx,interface *i){
 	//  - the thread wakes, dies, and is joined
 	//  - we safely close the fd and free the pmarsh
 	pthread_mutex_lock(&i->pmarsh->lock);
-		if( (errno = pthread_kill(i->tid,SIGINT)) ){
+		if( (errno = pthread_kill(i->pmarsh->tid,SIGINT)) ){
 			octx->diagnostic("Couldn't signal thread (%s?)",strerror(errno));
 		} // FIXME check return codes here
 		i->pmarsh->cancelled = 1;
 	pthread_cond_signal(&i->pmarsh->cond);
 	pthread_mutex_unlock(&i->pmarsh->lock);
-	if( (errno = pthread_join(i->tid,&ret)) ){
+	if( (errno = pthread_join(i->pmarsh->tid,&ret)) ){
 		octx->diagnostic("Couldn't join thread (%s?)",strerror(errno));
 		return -1;
 	}
@@ -550,7 +551,8 @@ prepare_packet_sockets(const omphalos_iface *octx,interface *iface,int idx){
 							iface->mtu,&iface->txm,&iface->ttpr)) ){
 						iface->pmarsh->octx = octx;
 						iface->pmarsh->i = iface;
-						if(pthread_create(&iface->tid,NULL,psocket_thread,iface->pmarsh) == 0){
+						if(pthread_create(&iface->pmarsh->tid,NULL,
+								psocket_thread,iface->pmarsh) == 0){
 							return 0;
 						}
 					}

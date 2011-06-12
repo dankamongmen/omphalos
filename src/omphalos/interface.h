@@ -59,7 +59,6 @@ typedef struct interface {
 	char *name;
 	void *addr;		// multiple hwaddrs are multiple ifaces...
 	size_t addrlen;
-	pthread_t tid;		// packet socket thread
 	int rfd;		// RX packet socket
 	void *rxm;		// RX packet ring buffer
 	size_t rs;		// RX packet ring size in bytes
