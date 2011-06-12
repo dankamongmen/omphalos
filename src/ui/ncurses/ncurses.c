@@ -554,13 +554,14 @@ iface_details(WINDOW *hw,const interface *i,int row,int col,int rows){
 	}
 	switch(z){ // Intentional fallthroughs all the way to 0
 	case 1:{
+		// FIXME handle -1 "unknown" results (print '?')
 		assert(mvwprintw(hw,row + z,col,"RXcsum: %d",iface_offloaded_p(i,RX_CSUM_OFFLOAD)) != ERR);
 		assert(mvwprintw(hw,row + z,col + 10,"TXcsum: %d",iface_offloaded_p(i,TX_CSUM_OFFLOAD)) != ERR);
 		assert(mvwprintw(hw,row + z,col + 20,"S/G: %d",iface_offloaded_p(i,ETH_SCATTER_GATHER)) != ERR);
-		assert(mvwprintw(hw,row + z,col + 28,"TSO: %d",iface_offloaded_p(i,TCP_SEG_OFFLOAD)) != ERR);
-		assert(mvwprintw(hw,row + z,col + 36,"UTO: %d",iface_offloaded_p(i,UDP_LARGETX_OFFLOAD)) != ERR);
-		assert(mvwprintw(hw,row + z,col + 44,"GSO: %d",iface_offloaded_p(i,GEN_SEG_OFFLOAD)) != ERR);
-		assert(mvwprintw(hw,row + z,col + 52,"GRO: %d",iface_offloaded_p(i,GEN_LARGERX_OFFLOAD)) != ERR);
+		assert(mvwprintw(hw,row + z,col + 27,"TSO: %d",iface_offloaded_p(i,TCP_SEG_OFFLOAD)) != ERR);
+		assert(mvwprintw(hw,row + z,col + 34,"UTO: %d",iface_offloaded_p(i,UDP_LARGETX_OFFLOAD)) != ERR);
+		assert(mvwprintw(hw,row + z,col + 41,"GSO: %d",iface_offloaded_p(i,GEN_SEG_OFFLOAD)) != ERR);
+		assert(mvwprintw(hw,row + z,col + 48,"GRO: %d",iface_offloaded_p(i,GEN_LARGERX_OFFLOAD)) != ERR);
 		--z;
 	}case 0:{
 		assert(mvwprintw(hw,row + z,col,"%s",i->name) != ERR);
@@ -741,11 +742,21 @@ ncurses_input_thread(void *unsafe_marsh){
 		case KEY_UP: case 'k':
 			pthread_mutex_lock(&bfl);
 				use_prev_iface_locked();
+				if(details.w){
+					hide_panel_locked(w,active);
+					active = (display_details_locked(w,&details) == OK)
+						? &details : NULL;
+				}
 			pthread_mutex_unlock(&bfl);
 			break;
 		case KEY_DOWN: case 'j':
 			pthread_mutex_lock(&bfl);
 				use_next_iface_locked();
+				if(details.w){
+					hide_panel_locked(w,active);
+					active = (display_details_locked(w,&details) == OK)
+						? &details : NULL;
+				}
 			pthread_mutex_unlock(&bfl);
 			break;
 		case 12: // Ctrl-L FIXME
