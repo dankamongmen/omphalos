@@ -12,7 +12,10 @@
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
 
-static interface pcap_file_interface;
+static interface pcap_file_interface = {
+	.fd = -1,
+	.rfd = -1,
+};
 
 typedef struct pcap_marshal {
 	interface *i;
