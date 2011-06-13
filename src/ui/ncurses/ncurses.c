@@ -863,8 +863,11 @@ ncurses_input_thread(void *unsafe_marsh){
 			break;
 		case 12: // Ctrl-L FIXME
 			pthread_mutex_lock(&bfl);
-				start_screen_update();
 				redrawwin(w);
+				if(active){
+					redrawwin(active->w);
+				}
+				start_screen_update();
 				finish_screen_update();
 			pthread_mutex_unlock(&bfl);
 			break;
