@@ -1,9 +1,10 @@
 #include <omphalos/sysfs.h>
 #include <sysfs/libsysfs.h>
 
+// PCIe devices show up as PCI devices; the /bus/pci_express entries in sysfs
+// are all about PCIe routing, not end devices.
 static const char *busids[] = {
 	"pci",
-	"pci_express",
 	"usb",
 	NULL
 };

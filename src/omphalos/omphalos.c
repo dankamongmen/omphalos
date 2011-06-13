@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <signal.h>
 #include <sys/socket.h>
+#include <omphalos/pci.h>
 #include <omphalos/pcap.h>
 #include <sys/capability.h>
 #include <omphalos/privs.h>
@@ -100,9 +101,6 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 		fprintf(stderr,"Trailing argument: %s\n",argv[optind]);
 		usage(argv[0],-1);
 	}
-	if(init_interfaces()){
-		return -1;
-	}
 	if(user == NULL){
 		user = DEFAULT_USERNAME;
 	}
@@ -116,6 +114,12 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 		if(handle_priv_drop(user,caparray,sizeof(caparray) / sizeof(*caparray))){
 			return -1;
 		}
+	}
+	if(init_interfaces()){
+		return -1;
+	}
+	if(init_pci_support()){
+		return -1;
 	}
 	// We unmask the cancellation signals in the packet socket thread
 	if(mask_cancel_sigs(NULL)){
@@ -146,4 +150,5 @@ void omphalos_cleanup(const omphalos_ctx *pctx){
 	cleanup_interfaces(&pctx->iface);
 	cleanup_pcap(&pctx->iface);
 	cleanup_l3hosts();
+	stop_pci_support();
 }
