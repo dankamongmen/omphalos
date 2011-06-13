@@ -24,7 +24,7 @@ CFLAGS:=$(DBCFLAGS)
 # FIXME doesn't work with gold, there we need:
 #GOLDLFLAGS+=-Wl,-O2,--enable-new-dtags,--as-needed,--warn-common
 LFLAGS+=-Wl,-O2,--default-symver,--enable-new-dtags,--as-needed,--warn-common
-LFLAGS+=-lpcap -lcap -lsysfs
+LFLAGS+=-lpcap -lcap -lpci -lsysfs
 CTAGS?=$(shell (which ctags || echo ctags) 2> /dev/null)
 XSLTPROC?=$(shell (which xsltproc || echo xsltproc) 2> /dev/null)
 INSTALL?=install -v
