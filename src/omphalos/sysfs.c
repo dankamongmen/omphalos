@@ -19,6 +19,9 @@ const char *lookup_bus(const char *dname){
 
 	for(b = buses ; b->bus ; ++b){
 		if( (dev = sysfs_open_device(b->bus,dname)) ){
+			if(b->bus_lookup){
+				b->bus_lookup(dname);
+			}
 			sysfs_close_device(dev);
 			return b->bus;
 		}
