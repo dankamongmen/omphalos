@@ -50,7 +50,7 @@ typedef struct iface_state {
 	const char *typestr;		// looked up using iface->arptype
 	struct timeval lastprinted;	// last time we printed the iface
 	int alarmset;			// alarm set for UI update?
-	int broughtdown;		// down request issued?
+	int devaction;			// 1 == down, -1 == up, 0 == nothing
 	struct iface_state *next,*prev;
 } iface_state;
 
@@ -463,7 +463,7 @@ down_interface_locked(const omphalos_iface *octx,WINDOW *w){
 	if(i){
 		if(interface_up_p(i)){
 			wstatus_locked(w,"Bringing down %s...",i->name);
-			current_iface->broughtdown = 1;
+			current_iface->devaction = 1;
 			down_interface(octx,i);
 		}
 	}
@@ -554,7 +554,7 @@ offload_details(WINDOW *w,const interface *i,int row,int col,const char *name,
 	return mvwprintw(w,row,col,"%s: %c",name,r > 0 ? 'y' : 'n');
 }
 
-#define DETAILROWS 5
+#define DETAILROWS 6
 
 // FIXME need to support scrolling through the output
 static int
@@ -563,12 +563,6 @@ iface_details(WINDOW *hw,const interface *i,int row,int col,int rows){
 
 	if((z = rows - 1) > DETAILROWS){
 		z = DETAILROWS;
-	}
-	if(i->topinfo.devname){
-		if(--z < 0){
-			return -1;
-		}
-		++row;
 	}
 	switch(z){ // Intentional fallthroughs all the way to 0
 	case DETAILROWS:{
@@ -610,10 +604,13 @@ iface_details(WINDOW *hw,const interface *i,int row,int col,int rows){
 		--z;
 		break;
 	}default:{
-		return ERR;
+		wstatus_locked(hw,"%d",z);
+		return OK;
 	} }
 	if(i->topinfo.devname){
-		assert(mvwprintw(hw,row - 1,col,"%s",i->topinfo.devname) != ERR);
+		assert(mvwprintw(hw,row,col,"%s",i->topinfo.devname) != ERR);
+	}else{ // FIXME
+		assert(mvwprintw(hw,row,col,"%s","Unknown device") != ERR);
 	}
 	return OK;
 }
@@ -1201,7 +1198,7 @@ interface_cb_locked(const interface *i,int inum,iface_state *ret){
 
 		if( (tstr = lookup_arptype(i->arptype,NULL)) ){
 			if( (ret = malloc(sizeof(iface_state))) ){
-				ret->alarmset = ret->broughtdown = 0;
+				ret->alarmset = ret->devaction = 0;
 				ret->typestr = tstr;
 				ret->lastprinted.tv_sec = ret->lastprinted.tv_usec = 0;
 				ret->scrline = START_LINE + count_interface * (PAD_LINES + 1);
@@ -1239,9 +1236,13 @@ interface_cb_locked(const interface *i,int inum,iface_state *ret){
 		iface_box(ret->subwin,i,ret);
 		if(i->flags & IFF_UP){
 			print_iface_state(i,ret);
-		}else if(ret->broughtdown){
-			wstatus_locked(pad,"Brought down %s",i->name);
-			ret->broughtdown = 0;
+			if(ret->devaction < 0){
+				wstatus_locked(pad,"");
+				ret->devaction = 0;
+			}
+		}else if(ret->devaction > 0){
+			wstatus_locked(pad,"");
+			ret->devaction = 0;
 		}
 		start_screen_update();
 		finish_screen_update();
