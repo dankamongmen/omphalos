@@ -292,9 +292,6 @@ iface_box(WINDOW *w,const interface *i,const iface_state *is){
 	if(interface_promisc_p(i)){
 		assert(iface_optstr(w,"promisc",hcolor,bcolor) != ERR);
 	}
-	if(i->offloadmask & i->offload){
-		assert(iface_optstr(w,"offload",hcolor,bcolor) != ERR);
-	}
 	assert(wcolor_set(w,bcolor,NULL) != ERR);
 	assert(wprintw(w,"]") != ERR);
 	assert(wattroff(w,A_BOLD) != ERR);
