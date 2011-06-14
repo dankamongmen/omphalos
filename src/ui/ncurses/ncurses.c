@@ -564,6 +564,12 @@ iface_details(WINDOW *hw,const interface *i,int row,int col,int rows){
 	if((z = rows - 1) > DETAILROWS){
 		z = DETAILROWS;
 	}
+	if(i->topinfo.devname){
+		if(--z < 0){
+			return -1;
+		}
+		++row;
+	}
 	switch(z){ // Intentional fallthroughs all the way to 0
 	case DETAILROWS:{
 		assert(mvwprintw(hw,row + z,col,"mform: %-15ju\tnoprot: %-15ju\t",
@@ -606,6 +612,9 @@ iface_details(WINDOW *hw,const interface *i,int row,int col,int rows){
 	}default:{
 		return ERR;
 	} }
+	if(i->topinfo.devname){
+		assert(mvwprintw(hw,row - 1,col,"%s",i->topinfo.devname) != ERR);
+	}
 	return OK;
 }
 
