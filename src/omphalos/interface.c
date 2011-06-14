@@ -107,6 +107,7 @@ void free_iface(const omphalos_iface *octx,interface *i){
 		free(i->ip4r);
 		i->ip4r = r4;
 	}
+	free(i->topinfo.devname);
 	free(i->truncbuf);
 	free(i->name);
 	free(i->addr);
