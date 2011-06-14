@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <omphalos/usb.h>
 #include <omphalos/pci.h>
 #include <omphalos/sysfs.h>
 #include <sysfs/libsysfs.h>
@@ -11,7 +12,7 @@ static struct bus {
 	int (*bus_lookup)(const char *,struct topdev_info *);
 } buses[] = {
 	{ "pci",	find_pci_device,	},
-	{ "usb",	NULL,			},
+	{ "usb",	find_usb_device,	},
 	{ NULL,		NULL,			}
 };
 
