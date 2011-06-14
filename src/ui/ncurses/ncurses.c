@@ -45,7 +45,6 @@
 typedef struct iface_state {
 	int ifacenum;			// iface number
 	int scrline;			// line within the containing pad
-	int sniffing;			// do we want to sniff?
 	WINDOW *subwin;			// subwin
 	PANEL *panel;			// panel
 	const char *typestr;		// looked up using iface->arptype
@@ -1193,7 +1192,9 @@ interface_cb_locked(const interface *i,int inum,iface_state *ret){
 
 		if( (tstr = lookup_arptype(i->arptype,NULL)) ){
 			if( (ret = malloc(sizeof(iface_state))) ){
+				ret->alarmset = ret->broughtdown = 0;
 				ret->typestr = tstr;
+				ret->lastprinted.tv_sec = ret->lastprinted.tv_usec = 0;
 				ret->scrline = START_LINE + count_interface * (PAD_LINES + 1);
 				ret->ifacenum = inum;
 				if((ret->prev = current_iface) == NULL){
