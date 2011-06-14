@@ -604,8 +604,7 @@ iface_details(WINDOW *hw,const interface *i,int row,int col,int rows){
 		--z;
 		break;
 	}default:{
-		wstatus_locked(hw,"%d",z);
-		return OK;
+		return ERR;
 	} }
 	if(i->topinfo.devname){
 		assert(mvwprintw(hw,row,col,"%s",i->topinfo.devname) != ERR);
