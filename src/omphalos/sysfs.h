@@ -5,7 +5,9 @@
 extern "C" {
 #endif
 
-const char *lookup_bus(const char *);
+struct topdev_info;
+
+const char *lookup_bus(const char *,struct topdev_info *);
 
 #ifdef __cplusplus
 }

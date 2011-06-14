@@ -1,7 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <pci/pci.h>
 #include <omphalos/pci.h>
+#include <omphalos/interface.h>
 
 static struct pci_access *pci; // FIXME
 
@@ -21,7 +23,7 @@ int stop_pci_support(void){
 }
 
 // feed it the bus id as provided by libsysfs
-int find_pci_device(const char *busid){
+int find_pci_device(const char *busid,topdev_info *tinf){
 	unsigned long domain,bus,dev,func;
 	struct pci_dev *d;
 	const char *cur;
@@ -73,8 +75,9 @@ int find_pci_device(const char *busid){
 			char buf[80]; // FIXME
 			if(pci_lookup_name(pci,buf,sizeof(buf),PCI_LOOKUP_VENDOR | PCI_LOOKUP_DEVICE,
 						d->vendor_id,d->device_id)){
-				fprintf(stderr,"FOUND THE FUCKER: %s\n",buf);
-				return 0;
+				if( (tinf->devname = strdup(buf)) ){
+					return 0;
+				}
 			}
 		}
 	}

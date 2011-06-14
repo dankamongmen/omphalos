@@ -33,6 +33,10 @@ typedef struct wireless_info {
 	unsigned mode;
 } wireless_info;
 
+typedef struct topdev_info {
+	char *devname;			// as in output from lspci or lsusb
+} topdev_info;
+
 typedef struct interface {
 	// Packet analysis entry point
 	void (*analyzer)(const struct omphalos_iface *,struct interface *,const void *,size_t);
@@ -81,6 +85,7 @@ typedef struct interface {
 		struct ethtool_cmd ethtool;	// ethtool settings info
 		struct wireless_info wext;	// wireless extensions info
 	} settings;
+	topdev_info topinfo;
 	// Other interfaces might also offer routes to these same
 	// destinations -- they must not be considered unique!
 	struct ip4route *ip4r;	// list of IPv4 routes

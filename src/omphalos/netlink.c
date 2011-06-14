@@ -735,7 +735,7 @@ handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 		memset(&iface->drv,0,sizeof(iface->drv));
 		iface->busname = NULL;
 	}else{
-		iface->busname = lookup_bus(iface->drv.bus_info);
+		iface->busname = lookup_bus(iface->drv.bus_info,&iface->topinfo);
 	}
 	iface_offload_info(octx,iface->name,&iface->offload,&iface->offloadmask);
 	if(iface_ethtool_info(octx,iface->name,&iface->settings.ethtool) == 0){
