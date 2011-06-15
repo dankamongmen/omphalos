@@ -239,10 +239,11 @@ rate(uintmax_t val,uintmax_t decimal,char *buf,size_t bsize,int omitdec){
 // to be called only while ncurses lock is held
 static int
 iface_box(WINDOW *w,const interface *i,const iface_state *is){
-	int bcolor,hcolor;
+	int bcolor,hcolor,rows,cols;
 	size_t buslen;
 	int attrs;
 
+	getmaxyx(w,rows,cols);
 	// FIXME shouldn't have to know IFF_UP out here
 	bcolor = interface_up_p(i) ? UBORDER_COLOR : DBORDER_COLOR;
 	hcolor = interface_up_p(i) ? UHEADING_COLOR : DHEADING_COLOR;
@@ -269,7 +270,7 @@ iface_box(WINDOW *w,const interface *i,const iface_state *is){
 	assert(wprintw(w,"]") != ERR);
 	assert(wattron(w,attrs) != ERR);
 	assert(wattroff(w,A_REVERSE) != ERR);
-	assert(mvwprintw(w,PAD_LINES - 1,START_COL * 2,"[") != ERR);
+	assert(mvwprintw(w,rows - 1,START_COL * 2,"[") != ERR);
 	assert(wcolor_set(w,hcolor,NULL) != ERR);
 	assert(wprintw(w,"mtu %d",i->mtu) != ERR);
 	if(interface_up_p(i)){
@@ -298,10 +299,10 @@ iface_box(WINDOW *w,const interface *i,const iface_state *is){
 	if( (buslen = strlen(i->drv.bus_info)) ){
 		if(i->busname){
 			buslen += strlen(i->busname) + 1;
-			assert(mvwprintw(w,PAD_LINES - 1,COLS - (buslen + 3 + START_COL),
+			assert(mvwprintw(w,rows - 1,COLS - (buslen + 3 + START_COL),
 					"%s:%s",i->busname,i->drv.bus_info) != ERR);
 		}else{
-			assert(mvwprintw(w,PAD_LINES - 1,COLS - (buslen + 3 + START_COL),
+			assert(mvwprintw(w,rows - 1,COLS - (buslen + 3 + START_COL),
 					"%s",i->drv.bus_info) != ERR);
 		}
 	}
@@ -571,13 +572,13 @@ iface_details(WINDOW *hw,const interface *i,int row,int col,int rows){
 					i->bytes,i->frames,i->drops) != ERR);
 		--z;
 	}case 3:{
-		assert(offload_details(hw,i,row + z,col,"RXS",RX_CSUM_OFFLOAD) != ERR);
-		assert(offload_details(hw,i,row + z,col + 7,"TXS",TX_CSUM_OFFLOAD) != ERR);
-		assert(offload_details(hw,i,row + z,col + 15,"S/G",ETH_SCATTER_GATHER) != ERR);
-		assert(offload_details(hw,i,row + z,col + 23,"TSO",TCP_SEG_OFFLOAD) != ERR);
-		assert(offload_details(hw,i,row + z,col + 31,"UTO",UDP_LARGETX_OFFLOAD) != ERR);
-		assert(offload_details(hw,i,row + z,col + 39,"GSO",GEN_SEG_OFFLOAD) != ERR);
-		assert(offload_details(hw,i,row + z,col + 47,"GRO",GEN_LARGERX_OFFLOAD) != ERR);
+		assert(offload_details(hw,i,row + z,col,"TSO",TCP_SEG_OFFLOAD) != ERR);
+		assert(offload_details(hw,i,row + z,col + 7,"S/G",ETH_SCATTER_GATHER) != ERR);
+		assert(offload_details(hw,i,row + z,col + 15,"UTO",UDP_LARGETX_OFFLOAD) != ERR);
+		assert(offload_details(hw,i,row + z,col + 23,"GSO",GEN_SEG_OFFLOAD) != ERR);
+		assert(offload_details(hw,i,row + z,col + 31,"GRO",GEN_LARGERX_OFFLOAD) != ERR);
+		assert(offload_details(hw,i,row + z,col + 39,"TCsm",TX_CSUM_OFFLOAD) != ERR);
+		assert(offload_details(hw,i,row + z,col + 47,"RCsm",RX_CSUM_OFFLOAD) != ERR);
 		--z;
 	}case 2:{
 		assert(mvwprintw(hw,row + z,col,"TXfd: %d\tfsize: %u\tfnum: %-6u\tbsize: %u\tbnum: %u",
