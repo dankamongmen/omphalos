@@ -1212,7 +1212,7 @@ interface_cb_locked(const interface *i,int inum,iface_state *ret){
 					ret->next->prev = ret;
 					ret->prev->next = ret;
 				}
-				if( (ret->subwin = subwin(pad,PAD_LINES,PAD_COLS,ret->scrline,START_COL)) &&
+				if( (ret->subwin = derwin(pad,PAD_LINES,PAD_COLS,ret->scrline,START_COL)) &&
 						(ret->panel = new_panel(ret->subwin)) ){
 					++count_interface;
 				}else{
