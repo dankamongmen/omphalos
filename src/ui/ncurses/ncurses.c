@@ -45,6 +45,7 @@
 typedef struct iface_state {
 	int ifacenum;			// iface number
 	int scrline;			// line within the containing pad
+	int ysize;			// number of lines
 	WINDOW *subwin;			// subwin
 	PANEL *panel;			// panel
 	const char *typestr;		// looked up using iface->arptype
@@ -1188,6 +1189,15 @@ packet_callback(const interface *i,void *unsafe){
 	pthread_mutex_unlock(&bfl);
 }
 
+static inline unsigned
+lines_for_interface(const interface *i){
+	if(i->flags & IFF_UP){
+		return PAD_LINES;
+	}else{
+		return PAD_LINES - 1;
+	}
+}
+
 static inline void *
 interface_cb_locked(const interface *i,int inum,iface_state *ret){
 	if(ret == NULL){
@@ -1195,24 +1205,26 @@ interface_cb_locked(const interface *i,int inum,iface_state *ret){
 
 		if( (tstr = lookup_arptype(i->arptype,NULL)) ){
 			if( (ret = malloc(sizeof(iface_state))) ){
+				ret->ysize = lines_for_interface(i);
 				ret->alarmset = ret->devaction = 0;
 				ret->typestr = tstr;
 				ret->lastprinted.tv_sec = ret->lastprinted.tv_usec = 0;
-				ret->scrline = START_LINE + count_interface * (PAD_LINES + 1);
 				ret->ifacenum = inum;
 				if((ret->prev = current_iface) == NULL){
 					current_iface = ret->prev = ret->next = ret;
+					ret->scrline = START_LINE;
 				}else{
 					// The order on screen must match the list order, so splice it onto
 					// the end. We might be anywhere, so use absolute coords (scrline).
 					while(ret->prev->next->scrline > ret->prev->scrline){
 						ret->prev = ret->prev->next;
 					}
+					ret->scrline = lines_for_interface(iface_by_idx(ret->prev->ifacenum)) + ret->prev->scrline  + 1;
 					ret->next = ret->prev->next;
 					ret->next->prev = ret;
 					ret->prev->next = ret;
 				}
-				if( (ret->subwin = derwin(pad,PAD_LINES,PAD_COLS,ret->scrline,START_COL)) &&
+				if( (ret->subwin = derwin(pad,ret->ysize,PAD_COLS,ret->scrline,START_COL)) &&
 						(ret->panel = new_panel(ret->subwin)) ){
 					++count_interface;
 				}else{
@@ -1237,9 +1249,11 @@ interface_cb_locked(const interface *i,int inum,iface_state *ret){
 				wstatus_locked(pad,"");
 				ret->devaction = 0;
 			}
+			// FIXME expand it
 		}else if(ret->devaction > 0){
 			wstatus_locked(pad,"");
 			ret->devaction = 0;
+			// FIXME collapse it
 		}
 		start_screen_update();
 		finish_screen_update();
@@ -1273,6 +1287,7 @@ interface_removed_locked(iface_state *is){
 			current_iface = NULL;
 		}
 		free(is);
+		// FIXME need move other ifaces up
 		start_screen_update();
 		finish_screen_update();
 	}
