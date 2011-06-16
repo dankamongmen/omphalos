@@ -45,7 +45,15 @@
 struct panel_state {
 	PANEL *p;
 	WINDOW *w;
+	int scrline;			// line within the containing pad
+	int ysize;			// number of lines of *text* (not win)
 };
+
+#define PANEL_STATE_INITIALIZER { .p = NULL, .w = NULL, .scrline = -1, .ysize = -1, }
+
+static struct panel_state *active;
+static struct panel_state help = PANEL_STATE_INITIALIZER;
+static struct panel_state details = PANEL_STATE_INITIALIZER;
 
 // Bind one of these state structures to each interface in the callback,
 // and also associate an iface with them via ifacenum (for UI actions).
@@ -526,6 +534,7 @@ hide_panel_locked(WINDOW *w,struct panel_state *ps){
 		ps->p = NULL;
 		delwin(ps->w);
 		ps->w = NULL;
+		ps->scrline = ps->ysize = -1;
 		start_screen_update();
 		draw_main_window(w,PROGNAME,VERSION);
 		finish_screen_update();
@@ -650,6 +659,8 @@ display_details_locked(WINDOW *mainw,struct panel_state *ps,const interface *i){
 	}
 	assert(start_screen_update() != ERR);
 	assert(finish_screen_update() != ERR);
+	ps->scrline = startrow;
+	ps->ysize = rows - START_LINE * 2;
 	return 0;
 
 err:
@@ -741,6 +752,8 @@ display_help_locked(WINDOW *mainw,struct panel_state *ps){
 	if(finish_screen_update() == ERR){
 		ERREXIT;
 	}
+	ps->scrline = startrow;
+	ps->ysize = rows - START_LINE * 2;
 	return 0;
 
 err:
@@ -842,7 +855,6 @@ struct ncurses_input_marshal {
 static void *
 ncurses_input_thread(void *unsafe_marsh){
 	struct ncurses_input_marshal *nim = unsafe_marsh;
-	struct panel_state help,details,*active;
 	const omphalos_iface *octx = nim->octx;
 	WINDOW *w = nim->w;
 	int ch;
@@ -858,6 +870,7 @@ ncurses_input_thread(void *unsafe_marsh){
 				if(details.w){
 					// FIXME don't destroy + create each time
 					hide_panel_locked(w,active);
+					iface_details(details.w,get_current_iface(),START_LINE,START_COL,details.ysize);
 					active = (display_details_locked(w,&details,get_current_iface()) == OK)
 						? &details : NULL;
 				}
