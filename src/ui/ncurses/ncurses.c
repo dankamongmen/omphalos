@@ -565,8 +565,9 @@ iface_details(WINDOW *hw,const interface *i,int row,int col,int rows){
 	}
 	switch(z){ // Intentional fallthroughs all the way to 0
 	case DETAILROWS:{
-		assert(mvwprintw(hw,row + z,col,"mform: %-15ju\tnoprot: %-15ju\t",
-					i->malformed,i->noprotocol) != ERR);
+		// FIXME: display percentage of truncations that were recovered
+		assert(mvwprintw(hw,row + z,col,"mform: %-15ju\tnoprot: %-15ju\ttruncs: %-15ju",
+					i->malformed,i->noprotocol,i->truncated) != ERR);
 		--z;
 	}case 4:{
 		assert(mvwprintw(hw,row + z,col,"bytes: %-15ju\tframes: %-15ju\tdrops: %-15ju",
@@ -1154,9 +1155,8 @@ print_iface_state(const interface *i,const iface_state *is){
 
 	timersub(&i->lastseen,&i->firstseen,&tdiff);
 	usecexist = timerusec(&tdiff);
-	assert(mvwprintw(is->subwin,1,1 + START_COL * 2,"%sb/s\t%15ju pkts %9ju truncs%9ju recovered",
-				rate(i->bytes * CHAR_BIT * 1000000 * 100 / usecexist,100,buf,sizeof(buf),0),
-				i->frames,i->truncated,i->truncated_recovered) != ERR);
+	assert(mvwprintw(is->subwin,1,1 + START_COL * 2,"%sb/s\t%15ju pkts",
+				rate(i->bytes * CHAR_BIT * 1000000 * 100 / usecexist,100,buf,sizeof(buf),0),i->frames) != ERR);
 	assert(start_screen_update() != ERR);
 	assert(finish_screen_update() != ERR);
 	return 0;
