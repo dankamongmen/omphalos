@@ -868,11 +868,7 @@ ncurses_input_thread(void *unsafe_marsh){
 			pthread_mutex_lock(&bfl);
 				use_prev_iface_locked();
 				if(details.w){
-					// FIXME don't destroy + create each time
-					hide_panel_locked(w,active);
 					iface_details(details.w,get_current_iface(),START_LINE,START_COL,details.ysize);
-					active = (display_details_locked(w,&details,get_current_iface()) == OK)
-						? &details : NULL;
 				}
 			pthread_mutex_unlock(&bfl);
 			break;
@@ -880,10 +876,7 @@ ncurses_input_thread(void *unsafe_marsh){
 			pthread_mutex_lock(&bfl);
 				use_next_iface_locked();
 				if(details.w){
-					// FIXME don't destroy + create each time
-					hide_panel_locked(w,active);
-					active = (display_details_locked(w,&details,get_current_iface()) == OK)
-						? &details : NULL;
+					iface_details(details.w,get_current_iface(),START_LINE,START_COL,details.ysize);
 				}
 			pthread_mutex_unlock(&bfl);
 			break;
@@ -982,6 +975,9 @@ ncurses_input_thread(void *unsafe_marsh){
 		}case 'h':{
 			pthread_mutex_lock(&bfl);
 			if(help.w){
+				if(current_iface){
+					current_iface->detailwin = NULL;
+				}
 				hide_panel_locked(w,&help);
 				active = NULL;
 			}else{
