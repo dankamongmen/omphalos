@@ -74,6 +74,25 @@ handle_igmp_packet(const omphalos_iface *octx,interface *i,const void *frame,siz
 	// FIXME
 }
 
+typedef struct pimhdr {
+	unsigned pimver: 4;
+	unsigned pimtype: 4;
+	unsigned reserved: 8;
+	uint16_t csum;
+} pimhdr;
+
+static void
+handle_pim_packet(const omphalos_iface *octx,interface *i,const void *frame,size_t len){
+	const struct pimhdr *pim = frame;
+
+	if(len < sizeof(*pim)){
+		octx->diagnostic("%s malformed with %zu",__func__,len);
+		++i->malformed;
+		return;
+	}
+	// FIXME
+}
+
 void handle_ipv4_packet(const omphalos_iface *octx,interface *i,
 				const void *frame,size_t len){
 	const struct iphdr *ip = frame;
@@ -116,6 +135,8 @@ void handle_ipv4_packet(const omphalos_iface *octx,interface *i,
 		handle_icmp_packet(octx,i,nhdr,nlen);
 	break; }case IPPROTO_IGMP:{
 		handle_igmp_packet(octx,i,nhdr,nlen);
+	break; }case IPPROTO_PIM:{
+		handle_pim_packet(octx,i,nhdr,nlen);
 	break; }default:{
 		++i->noprotocol;
 		octx->diagnostic("%s noproto for %u",__func__,ip->protocol);
