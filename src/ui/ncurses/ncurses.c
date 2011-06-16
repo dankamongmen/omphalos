@@ -40,6 +40,13 @@
 #define START_LINE 2
 #define START_COL 1
 
+// FIXME we ought precreate the subwindows, and show/hide them rather than
+// creating and destroying them every time.
+struct panel_state {
+	PANEL *p;
+	WINDOW *w;
+};
+
 // Bind one of these state structures to each interface in the callback,
 // and also associate an iface with them via ifacenum (for UI actions).
 typedef struct iface_state {
@@ -52,6 +59,7 @@ typedef struct iface_state {
 	struct timeval lastprinted;	// last time we printed the iface
 	int alarmset;			// alarm set for UI update?
 	int devaction;			// 1 == down, -1 == up, 0 == nothing
+	struct panel_state *detailwin;	// non-NULL if we own the detail window
 	struct iface_state *next,*prev;
 } iface_state;
 
@@ -469,11 +477,20 @@ down_interface_locked(const omphalos_iface *octx,WINDOW *w){
 }
 
 static void
+transfer_details_window(iface_state *from,iface_state *to){
+	if(from->detailwin){
+		to->detailwin = from->detailwin;
+		from->detailwin = NULL;
+	}
+}
+
+static void
 use_next_iface_locked(void){
 	if(current_iface && current_iface->next != current_iface){
 		const iface_state *is = current_iface;
 		interface *i = iface_by_idx(is->ifacenum);
 
+		transfer_details_window(current_iface,current_iface->next);
 		current_iface = current_iface->next;
 		iface_box(is->subwin,i,is);
 		is = current_iface;
@@ -490,6 +507,7 @@ use_prev_iface_locked(void){
 		const iface_state *is = current_iface;
 		interface *i = iface_by_idx(is->ifacenum);
 
+		transfer_details_window(current_iface,current_iface->prev);
 		current_iface = current_iface->prev;
 		iface_box(is->subwin,i,is);
 		is = current_iface;
@@ -499,13 +517,6 @@ use_prev_iface_locked(void){
 		finish_screen_update();
 	}
 }
-
-// FIXME we ought precreate the help screen, and show/hide it rather than
-// creating and destroying it every time.
-struct panel_state {
-	PANEL *p;
-	WINDOW *w;
-};
 
 static void
 hide_panel_locked(WINDOW *w,struct panel_state *ps){
@@ -615,14 +626,10 @@ iface_details(WINDOW *hw,const interface *i,int row,int col,int rows){
 }
 
 static int
-display_details_locked(WINDOW *mainw,struct panel_state *ps){
+display_details_locked(WINDOW *mainw,struct panel_state *ps,const interface *i){
 	// The NULL doesn't count as a row
 	int rows,cols,startrow;
-	const interface *i;
 
-	if((i = get_current_iface()) == NULL){
-		return -1;
-	}
 	memset(ps,0,sizeof(*ps));
 	getmaxyx(mainw,rows,cols);
 	// Space for the status bar + gap, bottom bar + gap,
@@ -849,8 +856,9 @@ ncurses_input_thread(void *unsafe_marsh){
 			pthread_mutex_lock(&bfl);
 				use_prev_iface_locked();
 				if(details.w){
+					// FIXME don't destroy + create each time
 					hide_panel_locked(w,active);
-					active = (display_details_locked(w,&details) == OK)
+					active = (display_details_locked(w,&details,get_current_iface()) == OK)
 						? &details : NULL;
 				}
 			pthread_mutex_unlock(&bfl);
@@ -859,8 +867,9 @@ ncurses_input_thread(void *unsafe_marsh){
 			pthread_mutex_lock(&bfl);
 				use_next_iface_locked();
 				if(details.w){
+					// FIXME don't destroy + create each time
 					hide_panel_locked(w,active);
-					active = (display_details_locked(w,&details) == OK)
+					active = (display_details_locked(w,&details,get_current_iface()) == OK)
 						? &details : NULL;
 				}
 			pthread_mutex_unlock(&bfl);
@@ -952,7 +961,7 @@ ncurses_input_thread(void *unsafe_marsh){
 				active = NULL;
 			}else{
 				hide_panel_locked(w,active);
-				active = (display_details_locked(w,&details) == OK)
+				active = (display_details_locked(w,&details,get_current_iface()) == OK)
 					? &details : NULL;
 			}
 			pthread_mutex_unlock(&bfl);
@@ -1179,6 +1188,8 @@ packet_cb_locked(const interface *i,iface_state *is){
 		}
 		is->lastprinted = i->lastseen;
 		print_iface_state(i,is);
+		// FIXME need also call iface_details() if the details
+		// subdisplay is active
 	}
 }
 
@@ -1210,6 +1221,7 @@ interface_cb_locked(const interface *i,int inum,iface_state *ret){
 				ret->typestr = tstr;
 				ret->lastprinted.tv_sec = ret->lastprinted.tv_usec = 0;
 				ret->ifacenum = inum;
+				ret->detailwin = NULL;
 				if((ret->prev = current_iface) == NULL){
 					current_iface = ret->prev = ret->next = ret;
 					ret->scrline = START_LINE;
@@ -1283,7 +1295,14 @@ interface_removed_locked(iface_state *is){
 			if(is == current_iface){
 				current_iface = is->prev;
 			}
+			// If we owned the details window, give it to the new
+			// current_iface.
+			transfer_details_window(is,current_iface);
+			if(is->detailwin){
+				current_iface->detailwin = is->detailwin;
+			}
 		}else{
+			// If we owned the details window, destroy it FIXME
 			current_iface = NULL;
 		}
 		free(is);
