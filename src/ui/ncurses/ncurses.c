@@ -45,11 +45,11 @@
 struct panel_state {
 	PANEL *p;
 	WINDOW *w;
-	int scrline;			// line within the containing pad
 	int ysize;			// number of lines of *text* (not win)
+	int xsize;			// maximum cols of *text* (not win)
 };
 
-#define PANEL_STATE_INITIALIZER { .p = NULL, .w = NULL, .scrline = -1, .ysize = -1, }
+#define PANEL_STATE_INITIALIZER { .p = NULL, .w = NULL, .ysize = -1, .xsize = -1, }
 
 static struct panel_state *active;
 static struct panel_state help = PANEL_STATE_INITIALIZER;
@@ -493,40 +493,6 @@ transfer_details_window(iface_state *from,iface_state *to){
 }
 
 static void
-use_next_iface_locked(void){
-	if(current_iface && current_iface->next != current_iface){
-		const iface_state *is = current_iface;
-		interface *i = iface_by_idx(is->ifacenum);
-
-		transfer_details_window(current_iface,current_iface->next);
-		current_iface = current_iface->next;
-		iface_box(is->subwin,i,is);
-		is = current_iface;
-		i = iface_by_idx(is->ifacenum);
-		iface_box(is->subwin,i,is);
-		start_screen_update();
-		finish_screen_update();
-	}
-}
-
-static void
-use_prev_iface_locked(void){
-	if(current_iface && current_iface->prev != current_iface){
-		const iface_state *is = current_iface;
-		interface *i = iface_by_idx(is->ifacenum);
-
-		transfer_details_window(current_iface,current_iface->prev);
-		current_iface = current_iface->prev;
-		iface_box(is->subwin,i,is);
-		is = current_iface;
-		i = iface_by_idx(is->ifacenum);
-		iface_box(is->subwin,i,is);
-		start_screen_update();
-		finish_screen_update();
-	}
-}
-
-static void
 hide_panel_locked(WINDOW *w,struct panel_state *ps){
 	if(ps){
 		hide_panel(ps->p);
@@ -534,7 +500,7 @@ hide_panel_locked(WINDOW *w,struct panel_state *ps){
 		ps->p = NULL;
 		delwin(ps->w);
 		ps->w = NULL;
-		ps->scrline = ps->ysize = -1;
+		ps->xsize = ps->ysize = -1;
 		start_screen_update();
 		draw_main_window(w,PROGNAME,VERSION);
 		finish_screen_update();
@@ -577,7 +543,7 @@ offload_details(WINDOW *w,const interface *i,int row,int col,const char *name,
 
 // FIXME need to support scrolling through the output
 static int
-iface_details(WINDOW *hw,const interface *i,int row,int col,int rows){
+iface_details(WINDOW *hw,const interface *i,int row,int col,int rows,int cols){
 	int z;
 
 	if((z = rows - 1) > DETAILROWS){
@@ -627,9 +593,9 @@ iface_details(WINDOW *hw,const interface *i,int row,int col,int rows){
 		return ERR;
 	} }
 	if(i->topinfo.devname){
-		assert(mvwprintw(hw,row,col,"%s",i->topinfo.devname) != ERR);
+		assert(mvwprintw(hw,row,col,"%-*s",cols - 2,i->topinfo.devname) != ERR);
 	}else{ // FIXME
-		assert(mvwprintw(hw,row,col,"%s","Unknown device") != ERR);
+		assert(mvwprintw(hw,row,col,"%-*s",cols - 2,"Unknown device") != ERR);
 	}
 	return OK;
 }
@@ -653,14 +619,17 @@ display_details_locked(WINDOW *mainw,struct panel_state *ps,const interface *i){
 				L"press 'v' to dismiss details")){
 		ERREXIT;
 	}
-	if(iface_details(ps->w,i,START_LINE,START_COL,
-				rows - START_LINE * 2)){
-		ERREXIT;
+	if(i){
+		if(iface_details(ps->w,i,START_LINE,START_COL,
+					rows - START_LINE * 2,
+					cols - START_COL * 2)){
+			ERREXIT;
+		}
 	}
 	assert(start_screen_update() != ERR);
 	assert(finish_screen_update() != ERR);
-	ps->scrline = startrow;
 	ps->ysize = rows - START_LINE * 2;
+	ps->xsize = cols - START_COL * 2;
 	return 0;
 
 err:
@@ -752,8 +721,8 @@ display_help_locked(WINDOW *mainw,struct panel_state *ps){
 	if(finish_screen_update() == ERR){
 		ERREXIT;
 	}
-	ps->scrline = startrow;
 	ps->ysize = rows - START_LINE * 2;
+	ps->xsize = cols - START_COL * 2;
 	return 0;
 
 err:
@@ -846,6 +815,46 @@ reset_current_interface_stats(WINDOW *w){
 	}
 }
 
+static void
+use_next_iface_locked(void){
+	if(current_iface && current_iface->next != current_iface){
+		const iface_state *is = current_iface;
+		interface *i = iface_by_idx(is->ifacenum);
+
+		transfer_details_window(current_iface,current_iface->next);
+		current_iface = current_iface->next;
+		iface_box(is->subwin,i,is);
+		is = current_iface;
+		i = iface_by_idx(is->ifacenum);
+		iface_box(is->subwin,i,is);
+		if(details.w){
+			iface_details(details.w,i,START_LINE,START_COL,details.ysize,details.xsize);
+		}
+		start_screen_update();
+		finish_screen_update();
+	}
+}
+
+static void
+use_prev_iface_locked(void){
+	if(current_iface && current_iface->prev != current_iface){
+		const iface_state *is = current_iface;
+		interface *i = iface_by_idx(is->ifacenum);
+
+		transfer_details_window(current_iface,current_iface->prev);
+		current_iface = current_iface->prev;
+		iface_box(is->subwin,i,is);
+		is = current_iface;
+		i = iface_by_idx(is->ifacenum);
+		iface_box(is->subwin,i,is);
+		if(details.w){
+			iface_details(details.w,i,START_LINE,START_COL,details.ysize,details.xsize);
+		}
+		start_screen_update();
+		finish_screen_update();
+	}
+}
+
 struct ncurses_input_marshal {
 	WINDOW *w;
 	PANEL *p;
@@ -867,17 +876,11 @@ ncurses_input_thread(void *unsafe_marsh){
 		case KEY_UP: case 'k':
 			pthread_mutex_lock(&bfl);
 				use_prev_iface_locked();
-				if(details.w){
-					iface_details(details.w,get_current_iface(),START_LINE,START_COL,details.ysize);
-				}
 			pthread_mutex_unlock(&bfl);
 			break;
 		case KEY_DOWN: case 'j':
 			pthread_mutex_lock(&bfl);
 				use_next_iface_locked();
-				if(details.w){
-					iface_details(details.w,get_current_iface(),START_LINE,START_COL,details.ysize);
-				}
 			pthread_mutex_unlock(&bfl);
 			break;
 		case 12: // Ctrl-L FIXME
@@ -1196,6 +1199,11 @@ packet_cb_locked(const interface *i,iface_state *is){
 			return;
 		}
 		is->lastprinted = i->lastseen;
+		if(is->detailwin){
+			iface_details(is->detailwin,i,START_LINE,START_COL,
+					is->detailwin->ysize,
+					is->detailwin->xsize);
+		}
 		print_iface_state(i,is);
 		// FIXME need also call iface_details() if the details
 		// subdisplay is active
