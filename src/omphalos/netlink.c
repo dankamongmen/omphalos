@@ -625,6 +625,22 @@ prepare_packet_sockets(const omphalos_iface *octx,interface *iface,int idx){
 	return -1;
 }
 
+static char *
+name_virtual_device(const struct ifinfomsg *ii,struct ethtool_drvinfo *ed){
+	if(ii->ifi_type == ARPHRD_LOOPBACK){
+		return strdup("Linux IPv4/IPv6 loopback device");
+	}else if(ed){
+		if(strcmp(ed->driver,"tun") == 0){
+			if(strcmp(ed->bus_info,"tap") == 0){
+				return strdup("Linux IPv4/IPv6 Ethernet TAP device");
+			}else if(strcmp(ed->bus_info,"tun") == 0){
+				return strdup("Linux IPv4 point-to-point TUN device");
+			}
+		}
+	}
+	return NULL;
+}
+
 static int
 handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	const struct ifinfomsg *ii = NLMSG_DATA(nl);
@@ -733,9 +749,11 @@ handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	// support, including many wireless cards and loopback.
 	if(iface_driver_info(octx,iface->name,&iface->drv)){
 		memset(&iface->drv,0,sizeof(iface->drv));
-		iface->busname = NULL;
+		iface->topinfo.devname = name_virtual_device(ii,NULL);
 	}else{
-		iface->busname = lookup_bus(iface->drv.bus_info,&iface->topinfo);
+		if((iface->busname = lookup_bus(iface->drv.bus_info,&iface->topinfo)) == NULL){
+			iface->topinfo.devname = name_virtual_device(ii,&iface->drv);
+		}
 	}
 	iface_offload_info(octx,iface->name,&iface->offload,&iface->offloadmask);
 	if(iface_ethtool_info(octx,iface->name,&iface->settings.ethtool) == 0){
