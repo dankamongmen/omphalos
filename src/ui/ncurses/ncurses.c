@@ -261,6 +261,7 @@ iface_box(WINDOW *w,const interface *i,const iface_state *is){
 	int attrs;
 
 	getmaxyx(w,rows,cols);
+	assert(cols >= 0);	// for 'set but unused' warning on cols
 	// FIXME shouldn't have to know IFF_UP out here
 	bcolor = interface_up_p(i) ? UBORDER_COLOR : DBORDER_COLOR;
 	hcolor = interface_up_p(i) ? UHEADING_COLOR : DHEADING_COLOR;
@@ -592,6 +593,8 @@ iface_details(WINDOW *hw,const interface *i,int row,int col,int rows,int cols){
 	}default:{
 		return ERR;
 	} }
+	// FIXME it's not sufficient to just pad these out; we need do so for all
+	// lines, or clear the detail window each time
 	if(i->topinfo.devname){
 		assert(mvwprintw(hw,row,col,"%-*s",cols - 2,i->topinfo.devname) != ERR);
 	}else{ // FIXME
@@ -601,7 +604,7 @@ iface_details(WINDOW *hw,const interface *i,int row,int col,int rows,int cols){
 }
 
 static int
-display_details_locked(WINDOW *mainw,struct panel_state *ps,const interface *i){
+display_details_locked(WINDOW *mainw,struct panel_state *ps,iface_state *is){
 	// The NULL doesn't count as a row
 	int rows,cols,startrow;
 
@@ -619,12 +622,14 @@ display_details_locked(WINDOW *mainw,struct panel_state *ps,const interface *i){
 				L"press 'v' to dismiss details")){
 		ERREXIT;
 	}
-	if(i){
-		if(iface_details(ps->w,i,START_LINE,START_COL,
+	if(is){
+		if(iface_details(ps->w,get_current_iface(),
+					START_LINE,START_COL,
 					rows - START_LINE * 2,
 					cols - START_COL * 2)){
 			ERREXIT;
 		}
+		is->detailwin = ps;
 	}
 	assert(start_screen_update() != ERR);
 	assert(finish_screen_update() != ERR);
@@ -970,7 +975,7 @@ ncurses_input_thread(void *unsafe_marsh){
 				active = NULL;
 			}else{
 				hide_panel_locked(w,active);
-				active = (display_details_locked(w,&details,get_current_iface()) == OK)
+				active = (display_details_locked(w,&details,current_iface) == OK)
 					? &details : NULL;
 			}
 			pthread_mutex_unlock(&bfl);
@@ -1200,13 +1205,11 @@ packet_cb_locked(const interface *i,iface_state *is){
 		}
 		is->lastprinted = i->lastseen;
 		if(is->detailwin){
-			iface_details(is->detailwin,i,START_LINE,START_COL,
+			iface_details(is->detailwin->w,i,START_LINE,START_COL,
 					is->detailwin->ysize,
 					is->detailwin->xsize);
 		}
 		print_iface_state(i,is);
-		// FIXME need also call iface_details() if the details
-		// subdisplay is active
 	}
 }
 

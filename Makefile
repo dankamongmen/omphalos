@@ -18,8 +18,8 @@ UI:=ncurses tty
 BIN:=$(addprefix $(OMPHALOS)-,$(UI))
 
 DFLAGS:=-D_FILE_OFFSET_BITS=64 -D_XOPEN_SOURCE_EXTENDED -D_GNU_SOURCE
-CFLAGS+=$(DFLAGS) -pthread -I$(SRC) -fpic -fstrict-aliasing #-fvisibility=hidden -Wall -W -Wextra -Werror -O2
-DBCFLAGS+=$(DFLAGS) -pthread -I$(SRC) -fpic -fstrict-aliasing #-fvisibility=hidden -Wall -W -Wextra -Werror -g -ggdb
+CFLAGS+=$(DFLAGS) -pthread -I$(SRC) -fpic -fstrict-aliasing -fvisibility=hidden -Wall -W -Wextra -Werror -O2
+DBCFLAGS+=$(DFLAGS) -pthread -I$(SRC) -fpic -fstrict-aliasing -fvisibility=hidden -Wall -W -Wextra -Werror -g -ggdb
 CFLAGS:=$(DBCFLAGS)
 # FIXME doesn't work with gold, there we need:
 #GOLDLFLAGS+=-Wl,-O2,--enable-new-dtags,--as-needed,--warn-common
@@ -87,7 +87,7 @@ $(OUT)/%.1omphalos: %.xml
 	@mkdir -p $(@D)
 	$(XSLTPROC) --writesubtree $(@D) -o $@ $(DOC2MANXSL) $<
 
-$(TAGS): $(wildcard $(SRC)/*/*.c) $(wildcard $(SRC)/*/*.h)
+$(TAGS): $(CINCS) $(CSRCS) $(wildcard $(SRC)/ui/*/*.c)
 	@mkdir -p $(@D)
 	$(CTAGS) -o $@ -R $(SRC)
 
