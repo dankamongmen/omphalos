@@ -6,6 +6,7 @@
 #include <sys/socket.h>
 #include <linux/if.h>
 #include <linux/sockios.h>
+#include <linux/version.h>
 #include <linux/ethtool.h>
 #include <omphalos/ethtool.h>
 #include <omphalos/omphalos.h>
@@ -101,6 +102,7 @@ static const struct offload_flags_info {
 		.mask = LARGERX_OFFLOAD,
 		.flag = ETH_FLAG_LRO,
 	},{
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,37)
 		.desc = "TX VLAN offload",
 		.mask = TXVLAN_OFFLOAD,
 		.flag = ETH_FLAG_TXVLAN,
@@ -109,6 +111,7 @@ static const struct offload_flags_info {
 		.mask = RXVLAN_OFFLOAD,
 		.flag = ETH_FLAG_RXVLAN,
 	},{
+#endif
 		.desc = "N-tuple filters",
 		.mask = NTUPLE_FILTERS,
 		.flag = ETH_FLAG_NTUPLE,
