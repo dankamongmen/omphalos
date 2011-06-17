@@ -45,7 +45,7 @@ extern int mvwprintw(WINDOW *,int,int,const char *,...) __attribute__ ((format (
 #define START_COL 1
 #define U64STRLEN 20	// Does not include a '\0' (18,446,744,073,709,551,616)
 #define U64FMT "%-20ju"
-#define RATESTRLEN U64STRLEN
+#define prefixSTRLEN U64STRLEN
 
 // FIXME we ought precreate the subwindows, and show/hide them rather than
 // creating and destroying them every time.
@@ -232,7 +232,7 @@ modestr(unsigned dplx){
 // omitdec is non-zero, and the decimal portion is all 0's, the decimal portion
 // will not be printed.
 static char *
-genrate(uintmax_t val,uintmax_t decimal,char *buf,size_t bsize,int omitdec,
+genprefix(uintmax_t val,uintmax_t decimal,char *buf,size_t bsize,int omitdec,
 			unsigned mult,int uprefix){
 	const char prefixes[] = "KMGTPEY";
 	unsigned consumed = 0;
@@ -266,13 +266,13 @@ genrate(uintmax_t val,uintmax_t decimal,char *buf,size_t bsize,int omitdec,
 }
 
 static inline char *
-rate(uintmax_t val,uintmax_t decimal,char *buf,size_t bsize,int omitdec){
-	return genrate(val,decimal,buf,bsize,omitdec,1000,'\0');
+prefix(uintmax_t val,uintmax_t decimal,char *buf,size_t bsize,int omitdec){
+	return genprefix(val,decimal,buf,bsize,omitdec,1000,'\0');
 }
 
 static inline char *
-brate(uintmax_t val,uintmax_t decimal,char *buf,size_t bsize,int omitdec){
-	return genrate(val,decimal,buf,bsize,omitdec,1024,'i');
+bprefix(uintmax_t val,uintmax_t decimal,char *buf,size_t bsize,int omitdec){
+	return genprefix(val,decimal,buf,bsize,omitdec,1024,'i');
 }
 
 #define ERREXIT endwin() ; fprintf(stderr,"ncurses failure|%s|%d\n",__func__,__LINE__); abort() ; goto err
@@ -321,10 +321,10 @@ iface_box(WINDOW *w,const interface *i,const iface_state *is){
 		if(!interface_carrier_p(i)){
 			assert(waddstr(w," (no carrier)") != ERR);
 		}else if(i->settings_valid == SETTINGS_VALID_ETHTOOL){
-			assert(wprintw(w," (%sb %s)",rate(i->settings.ethtool.speed * 1000000u,1,buf,sizeof(buf),1),
+			assert(wprintw(w," (%sb %s)",prefix(i->settings.ethtool.speed * 1000000u,1,buf,sizeof(buf),1),
 						duplexstr(i->settings.ethtool.duplex)) != ERR);
 		}else if(i->settings_valid == SETTINGS_VALID_WEXT){
-			assert(wprintw(w," (%sb %s)",rate(i->settings.wext.bitrate,1,buf,sizeof(buf),1),modestr(i->settings.wext.mode)) != ERR);
+			assert(wprintw(w," (%sb %s)",prefix(i->settings.wext.bitrate,1,buf,sizeof(buf),1),modestr(i->settings.wext.mode)) != ERR);
 		}
 	}else{
 		assert(iface_optstr(w,"down",hcolor,bcolor) != ERR);
@@ -588,14 +588,16 @@ iface_details(WINDOW *hw,const interface *i,int row,int col,int rows,int cols){
 					i->bytes,i->frames) != ERR);
 		--z;
 	}case 4:{
-		assert(mvwprintw(hw,row + z,col,"RXfd: %-4d fsize: %-6u fnum: %-8u bsize: %-6u bnum: %-8u",
+		char buf[U64STRLEN];
+		assert(mvwprintw(hw,row + z,col,"RXfd: %-4d fbytes: %-6u fnum: %-8u bsize: %sB bnum: %-8u",
 					i->rfd,i->rtpr.tp_frame_size,i->rtpr.tp_frame_nr,
-					i->rtpr.tp_block_size,i->rtpr.tp_block_nr) != ERR);
+					bprefix(i->ttpr.tp_block_size,1,buf,sizeof(buf),1),i->rtpr.tp_block_nr) != ERR);
 		--z;
 	}case 3:{
-		assert(mvwprintw(hw,row + z,col,"TXfd: %-4d fsize: %-6u fnum: %-8u bsize: %-6u bnum: %-8u",
+		char buf[U64STRLEN];
+		assert(mvwprintw(hw,row + z,col,"TXfd: %-4d fbytes: %-6u fnum: %-8u bsize: %sB bnum: %-8u",
 					i->fd,i->ttpr.tp_frame_size,i->ttpr.tp_frame_nr,
-					i->ttpr.tp_block_size,i->ttpr.tp_block_nr) != ERR);
+					bprefix(i->ttpr.tp_block_size,1,buf,sizeof(buf),1),i->ttpr.tp_block_nr) != ERR);
 		--z;
 	}case 2:{
 		// FIXME need to apply valditity masking here!
@@ -615,7 +617,7 @@ iface_details(WINDOW *hw,const interface *i,int row,int col,int rows,int cols){
 		}
 		--z;
 	}case 0:{
-		char buf[RATESTRLEN],buf2[RATESTRLEN];
+		char buf[prefixSTRLEN],buf2[prefixSTRLEN];
 		char *mac;
 
 		if((mac = hwaddrstr(i)) == NULL){
@@ -624,8 +626,8 @@ iface_details(WINDOW *hw,const interface *i,int row,int col,int rows,int cols){
 		// FIXME blank end of line!
 		assert(mvwprintw(hw,row + z,col,"%-16s %s txr: %sB\t rxr: %sB\t mtu: %-6d",
 					i->name,mac,
-					brate(i->ts,1,buf,sizeof(buf),1),
-					brate(i->rs,1,buf2,sizeof(buf2),1),i->mtu) != ERR);
+					bprefix(i->ts,1,buf,sizeof(buf),1),
+					bprefix(i->rs,1,buf2,sizeof(buf2),1),i->mtu) != ERR);
 		free(mac);
 		--z;
 		break;
@@ -1214,7 +1216,7 @@ print_iface_state(const interface *i,const iface_state *is){
 	timersub(&i->lastseen,&i->firstseen,&tdiff);
 	usecexist = timerusec(&tdiff);
 	assert(mvwprintw(is->subwin,1,1 + START_COL * 2,"%sb/s\t%*ju pkts",
-				rate(i->bytes * CHAR_BIT * 1000000 * 100 / usecexist,100,buf,sizeof(buf),0),
+				prefix(i->bytes * CHAR_BIT * 1000000 * 100 / usecexist,100,buf,sizeof(buf),0),
 				U64STRLEN,i->frames) != ERR);
 	assert(start_screen_update() != ERR);
 	assert(finish_screen_update() != ERR);
