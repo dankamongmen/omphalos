@@ -8,7 +8,7 @@
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
 
-int handle_wireless_event(const omphalos_iface *octx,interface *i,
+int handle_wireless_event(const omphalos_iface *octx,interface *i,int inum,
 				const struct iw_event *iw,size_t len){
 	if(len < IW_EV_LCP_LEN){
 		octx->diagnostic("Wireless msg too short on %s (%zu)",i->name,len);
@@ -21,12 +21,18 @@ int handle_wireless_event(const omphalos_iface *octx,interface *i,
 		// FIXME handle AP results
 	break;}case IWEVASSOCRESPIE:{
 		// FIXME handle IE reassociation results
+	break;}case SIOCGIWESSID:{
+		// FIXME handle ESSID change
+	break;}case SIOCGIWRATE:{
+		// FIXME handle rate change
+	break;}case SIOCGIWTXPOW:{
+		// FIXME handle TX power change
 	break;}default:{
 		octx->diagnostic("Unknown wireless event on %s: 0x%x",i->name,iw->cmd);
 		return -1;
 	} }
 	if(octx->wireless_event){
-		i->opaque = octx->wireless_event(i,iw->cmd,i->opaque);
+		i->opaque = octx->wireless_event(i,inum,iw->cmd,i->opaque);
 	}
 	return 0;
 }

@@ -1348,6 +1348,17 @@ interface_callback(const interface *i,int inum,void *unsafe){
 	return r;
 }
 
+static void *
+wireless_callback(const interface *i,int inum,
+		unsigned wcmd __attribute__ ((unused)),void *unsafe){
+	void *r;
+
+	pthread_mutex_lock(&bfl);
+	r = interface_cb_locked(i,inum,unsafe);
+	pthread_mutex_unlock(&bfl);
+	return r;
+}
+
 static inline void
 interface_removed_locked(iface_state *is){
 	if(is){
@@ -1414,6 +1425,7 @@ int main(int argc,char * const *argv){
 	pctx.iface.iface_event = interface_callback;
 	pctx.iface.iface_removed = interface_removed_callback;
 	pctx.iface.diagnostic = diag_callback;
+	pctx.iface.wireless_event = wireless_callback;
 	if((pad = ncurses_setup(&pctx.iface,&panel)) == NULL){
 		return EXIT_FAILURE;
 	}
