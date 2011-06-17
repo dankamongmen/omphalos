@@ -151,8 +151,8 @@ int iface_offload_info(const omphalos_iface *octx,const char *name,
 	ev.cmd = ETHTOOL_GFLAGS;
 	if(ethtool_docmd(octx,name,&ev) == 0){
 		for(of = offload_flags ; of->desc ; ++of){
+			*valid |= of->mask;
 			if(ev.data & of->flag){
-				*valid |= of->mask;
 				*offload |= (ev.data & of->flag) ? of->mask : 0;
 			}
 		}

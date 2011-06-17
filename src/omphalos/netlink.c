@@ -632,7 +632,7 @@ name_virtual_device(const struct ifinfomsg *ii,struct ethtool_drvinfo *ed){
 	}else if(ed){
 		if(strcmp(ed->driver,"tun") == 0){
 			if(strcmp(ed->bus_info,"tap") == 0){
-				return strdup("Linux IPv4/IPv6 Ethernet TAP device");
+				return strdup("Linux Ethernet TAP device");
 			}else if(strcmp(ed->bus_info,"tun") == 0){
 				return strdup("Linux IPv4 point-to-point TUN device");
 			}
