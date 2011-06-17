@@ -1241,10 +1241,12 @@ interface_cb_locked(const interface *i,int inum,iface_state *ret){
 				ret->typestr = tstr;
 				ret->lastprinted.tv_sec = ret->lastprinted.tv_usec = 0;
 				ret->ifacenum = inum;
-				ret->detailwin = NULL;
 				if((ret->prev = current_iface) == NULL){
 					current_iface = ret->prev = ret->next = ret;
 					ret->scrline = START_LINE;
+					if(details.w){
+						ret->detailwin = &details;
+					}
 				}else{
 					// The order on screen must match the list order, so splice it onto
 					// the end. We might be anywhere, so use absolute coords (scrline).
@@ -1255,6 +1257,7 @@ interface_cb_locked(const interface *i,int inum,iface_state *ret){
 					ret->next = ret->prev->next;
 					ret->next->prev = ret;
 					ret->prev->next = ret;
+					ret->detailwin = NULL;
 				}
 				if( (ret->subwin = derwin(pad,ret->ysize,PAD_COLS,ret->scrline,START_COL)) &&
 						(ret->panel = new_panel(ret->subwin)) ){
@@ -1274,6 +1277,11 @@ interface_cb_locked(const interface *i,int inum,iface_state *ret){
 		}
 	}
 	if(ret){
+		if(ret->detailwin){
+			iface_details(ret->detailwin->w,i,START_LINE,START_COL,
+					ret->detailwin->ysize,
+					ret->detailwin->xsize);
+		}
 		iface_box(ret->subwin,i,ret);
 		if(i->flags & IFF_UP){
 			print_iface_state(i,ret);
@@ -1286,9 +1294,9 @@ interface_cb_locked(const interface *i,int inum,iface_state *ret){
 			wstatus_locked(pad,"");
 			ret->devaction = 0;
 			// FIXME collapse it
+			start_screen_update();
+			finish_screen_update();
 		}
-		start_screen_update();
-		finish_screen_update();
 	}
 	return ret;
 }
