@@ -76,19 +76,23 @@ static const struct offload_info {
 		.mask = TCP_SEG_OFFLOAD,
 		.op = ETHTOOL_GTSO,
 	},{
-		.desc = "UDP large TX offload",
-		.mask = UDP_LARGETX_OFFLOAD,
+		.desc = "UDP fragmentation offload",
+		.mask = UDP_FRAG_OFFLOAD,
 		.op = ETHTOOL_GUFO,
 	},{
 		.desc = "Generic segmentation offload",
 		.mask = GEN_SEG_OFFLOAD,
 		.op = ETHTOOL_GGSO,
 	},{
-		.desc = "Generic large RX offload",
-		.mask = GEN_LARGERX_OFFLOAD,
+		.desc = "Generic RX offload",
+		.mask = GENRX_OFFLOAD,
 		.op = ETHTOOL_GGRO,
+	},{
+		.desc = "Large RX offload",
+		.mask = LARGERX_OFFLOAD,
+		.op = -1,
 	},
-	{ .desc = NULL, .mask = 0, .op = 0, }
+	{ .desc = NULL, .mask = 0, .op = -1, }
 };
 
 // Returns -1 for unknown, 0 for non-offloaded, 1 for offloaded
@@ -106,16 +110,27 @@ int iface_offloaded_p(const interface *i,unsigned otype){
 int iface_offload_info(const omphalos_iface *octx,const char *name,
 				unsigned *offload,unsigned *valid){
 	const struct offload_info *oi;
+	struct ethtool_value ev;
 
 	*valid = *offload = 0;
 	for(oi = offload_infos ; oi->desc ; ++oi){
-		struct ethtool_value ev;
-
-		ev.cmd = oi->op;
-		if(ethtool_docmd(octx,name,&ev) == 0){
-			*valid |= oi->mask;
-			*offload |= ev.data ? oi->mask : 0;
+		if(oi->op >= 0){
+			ev.cmd = oi->op;
+			if(ethtool_docmd(octx,name,&ev) == 0){
+				*valid |= oi->mask;
+				*offload |= ev.data ? oi->mask : 0;
+			}
 		}
+	}
+	ev.cmd = ETHTOOL_GFLAGS;
+	if(ethtool_docmd(octx,name,&ev) == 0){
+		*valid |= LARGERX_OFFLOAD;
+		*offload |= (ev.data & ETH_FLAG_LRO) ? LARGERX_OFFLOAD : 0;
+		/* FIXME walk another table to get these four:
+		rxvlan = (eval.data & ETH_FLAG_RXVLAN);
+		txvlan = (eval.data & ETH_FLAG_TXVLAN);
+		ntuple = (eval.data & ETH_FLAG_NTUPLE);
+		rxhash = (eval.data & ETH_FLAG_RXHASH);*/
 	}
 	return 0;
 }

@@ -603,11 +603,12 @@ iface_details(WINDOW *hw,const interface *i,int row,int col,int rows,int cols){
 		// FIXME need to apply valditity masking here!
 		assert(offload_details(hw,i,row + z,col,"TSO",TCP_SEG_OFFLOAD) != ERR);
 		assert(offload_details(hw,i,row + z,col + 5,"S/G",ETH_SCATTER_GATHER) != ERR);
-		assert(offload_details(hw,i,row + z,col + 10,"UTO",UDP_LARGETX_OFFLOAD) != ERR);
+		assert(offload_details(hw,i,row + z,col + 10,"UFO",UDP_FRAG_OFFLOAD) != ERR);
 		assert(offload_details(hw,i,row + z,col + 15,"GSO",GEN_SEG_OFFLOAD) != ERR);
-		assert(offload_details(hw,i,row + z,col + 20,"GRO",GEN_LARGERX_OFFLOAD) != ERR);
-		assert(offload_details(hw,i,row + z,col + 25,"TCsm",TX_CSUM_OFFLOAD) != ERR);
-		assert(offload_details(hw,i,row + z,col + 31,"RCsm",RX_CSUM_OFFLOAD) != ERR);
+		assert(offload_details(hw,i,row + z,col + 20,"GRO",GENRX_OFFLOAD) != ERR);
+		assert(offload_details(hw,i,row + z,col + 25,"LRO",LARGERX_OFFLOAD) != ERR);
+		assert(offload_details(hw,i,row + z,col + 30,"TCsm",TX_CSUM_OFFLOAD) != ERR);
+		assert(offload_details(hw,i,row + z,col + 36,"RCsm",RX_CSUM_OFFLOAD) != ERR);
 		--z;
 	}case 1:{
 		if(i->topinfo.devname){

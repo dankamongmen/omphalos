@@ -9,9 +9,10 @@ extern "C" {
 #define TX_CSUM_OFFLOAD		0x02
 #define ETH_SCATTER_GATHER	0x04
 #define TCP_SEG_OFFLOAD		0x08
-#define UDP_LARGETX_OFFLOAD	0x10
+#define UDP_FRAG_OFFLOAD	0x10
 #define GEN_SEG_OFFLOAD		0x20
-#define GEN_LARGERX_OFFLOAD	0x40
+#define GENRX_OFFLOAD		0x40
+#define LARGERX_OFFLOAD		0x80
 
 struct interface;
 struct ethtool_cmd;
