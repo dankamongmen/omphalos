@@ -16,8 +16,10 @@ int init_usb_support(void){
 }
 
 int stop_usb_support(void){
-	libusb_exit(usb);
-	usb = NULL;
+	if(usb){
+		libusb_exit(usb);
+		usb = NULL;
+	}
 	return 0;
 }
 

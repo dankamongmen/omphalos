@@ -17,8 +17,10 @@ int init_pci_support(void){
 }
 
 int stop_pci_support(void){
-	pci_cleanup(pci);
-	pci = NULL;
+	if(pci){
+		pci_cleanup(pci);
+		pci = NULL;
+	}
 	return 0;
 }
 

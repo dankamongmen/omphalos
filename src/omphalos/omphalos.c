@@ -119,12 +119,6 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 	if(init_interfaces()){
 		return -1;
 	}
-	if(init_pci_support()){
-		return -1;
-	}
-	if(init_usb_support()){
-		return -1;
-	}
 	// We unmask the cancellation signals in the packet socket thread
 	if(mask_cancel_sigs(NULL)){
 		return -1;
@@ -143,6 +137,12 @@ int omphalos_init(const omphalos_ctx *pctx){
 			return -1;
 		}
 	}else{
+		if(init_pci_support()){
+			return -1;
+		}
+		if(init_usb_support()){
+			return -1;
+		}
 		if(handle_packet_socket(pctx)){
 			return -1;
 		}
