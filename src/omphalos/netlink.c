@@ -695,7 +695,9 @@ handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 				iface->mtu = *(int *)RTA_DATA(ra);
 			break;}case IFLA_LINK:{
 			break;}case IFLA_MASTER:{ // bridging event
-				octx->diagnostic("Bridging event on %s",iface->name);
+				if(RTA_PAYLOAD(ra) == sizeof(int)){
+					octx->diagnostic("Bridging event on %s (%d)",iface->name,RTA_DATA(ra));
+				}
 			break;}case IFLA_PROTINFO:{
 				octx->diagnostic("Protocol info message on %s",iface->name);
 			break;}case IFLA_TXQLEN:{
