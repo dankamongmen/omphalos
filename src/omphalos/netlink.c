@@ -755,7 +755,10 @@ handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 		reap_thread(octx,iface);
 		close(iface->rfd);
 		close(iface->fd);
+		memset(&iface->ttpr,0,sizeof(iface->ttpr));
+		memset(&iface->rtpr,0,sizeof(iface->rtpr));
 		iface->rfd = iface->fd = -1;
+		iface->rs = iface->ts = 0;
 	}
 	if(octx->iface_event){
 		iface->opaque = octx->iface_event(iface,ii->ifi_index,iface->opaque);
