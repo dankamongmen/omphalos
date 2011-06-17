@@ -32,6 +32,10 @@
 #include <omphalos/interface.h>
 #include <gnu/libc-version.h>
 
+// Add ((format (printf))) attributes to ncurses functions, which sadly
+// lack them (at least as of Debian's 5.9-1).
+extern int mvwprintw(WINDOW *,int,int,const char *,...) __attribute__ ((format (printf,4,5)));
+
 #define PROGNAME "omphalos"	// FIXME
 #define VERSION  "0.98-pre"	// FIXME
 
@@ -39,6 +43,8 @@
 #define PAD_COLS (COLS - START_COL * 2)
 #define START_LINE 2
 #define START_COL 1
+#define U64STRLEN 20	// Does not include a '\0' (18,446,744,073,709,551,616)
+#define U64FMT "%-20ju"
 
 // FIXME we ought precreate the subwindows, and show/hide them rather than
 // creating and destroying them every time.
@@ -221,24 +227,26 @@ modestr(unsigned dplx){
 // primitive floating point; '1' indicates no scaling (this is useful when val
 // might be less than 1000, so that we can display the two digits of precision
 // (if val >= 1000, the only displayed precision comes from the prefixing, so
-// decimal is meaningless in that case). If omitdec is non-zero, and the decimal
-// portion is all 0's, the decimal portion will not be printed.
+// decimal is meaningless in that case)), and '0' must not be passed. If
+// omitdec is non-zero, and the decimal portion is all 0's, the decimal portion
+// will not be printed.
 static char *
-rate(uintmax_t val,uintmax_t decimal,char *buf,size_t bsize,int omitdec){
+genrate(uintmax_t val,uintmax_t decimal,char *buf,size_t bsize,int omitdec,
+			unsigned mult){
 	const char prefixes[] = "KMGTPEY";
 	unsigned consumed = 0;
 	uintmax_t div;
 
-	div = 1000;
+	div = mult;
 	while((val / decimal) > div && consumed < strlen(prefixes)){
-		div *= 1000;
-		if(UINTMAX_MAX / div < 1000){ // watch for overflow
+		div *= mult;
+		if(UINTMAX_MAX / div < mult){ // watch for overflow
 			break;
 		}
 		++consumed;
 	}
-	if(div != 1000){
-		div /= 1000;
+	if(div != mult){
+		div /= mult;
 		val /= decimal;
 		if(val % div || omitdec == 0){
 			snprintf(buf,bsize,"%ju.%02ju%c",val / div,(val % div) / ((div + 99) / 100),
@@ -250,6 +258,16 @@ rate(uintmax_t val,uintmax_t decimal,char *buf,size_t bsize,int omitdec){
 		snprintf(buf,bsize,"%ju.%02ju",val / decimal,val % decimal);
 	}
 	return buf;
+}
+
+static inline char *
+rate(uintmax_t val,uintmax_t decimal,char *buf,size_t bsize,int omitdec){
+	return genrate(val,decimal,buf,bsize,omitdec,1000);
+}
+
+static inline char *
+brate(uintmax_t val,uintmax_t decimal,char *buf,size_t bsize,int omitdec){
+	return genrate(val,decimal,buf,bsize,omitdec,1024);
 }
 
 #define ERREXIT endwin() ; fprintf(stderr,"ncurses failure|%s|%d\n",__func__,__LINE__); abort() ; goto err
@@ -292,7 +310,7 @@ iface_box(WINDOW *w,const interface *i,const iface_state *is){
 	assert(wcolor_set(w,hcolor,NULL) != ERR);
 	assert(wprintw(w,"mtu %d",i->mtu) != ERR);
 	if(interface_up_p(i)){
-		char buf[80]; // FIXME
+		char buf[U64STRLEN + 1];
 
 		assert(iface_optstr(w,"up",hcolor,bcolor) != ERR);
 		if(!interface_carrier_p(i)){
@@ -537,10 +555,10 @@ offload_details(WINDOW *w,const interface *i,int row,int col,const char *name,
 	int r;
 
 	r = iface_offloaded_p(i,val);
-	return mvwprintw(w,row,col,"%s: %c",name,r > 0 ? 'y' : 'n');
+	return mvwprintw(w,row,col,"%s%c",name,r > 0 ? '+' : r < 0 ? '?' : '-');
 }
 
-#define DETAILROWS 6
+#define DETAILROWS 7
 
 // FIXME need to support scrolling through the output
 static int
@@ -553,31 +571,36 @@ iface_details(WINDOW *hw,const interface *i,int row,int col,int rows,int cols){
 	switch(z){ // Intentional fallthroughs all the way to 0
 	case DETAILROWS:{
 		// FIXME: display percentage of truncations that were recovered
-		assert(mvwprintw(hw,row + z,col,"mform: %-15ju\tnoprot: %-15ju\ttruncs: %-15ju",
-					i->malformed,i->noprotocol,i->truncated) != ERR);
+		assert(mvwprintw(hw,row + z,col,"drops: "U64FMT" truncs: "U64FMT,
+					i->drops,i->truncated) != ERR);
+		--z;
+	}case 5:{
+		assert(mvwprintw(hw,row + z,col,"mform: "U64FMT" noprot: "U64FMT,
+					i->malformed,i->noprotocol) != ERR);
 		--z;
 	}case 4:{
-		assert(mvwprintw(hw,row + z,col,"bytes: %-15ju\tframes: %-15ju\tdrops: %-15ju",
-					i->bytes,i->frames,i->drops) != ERR);
+		assert(mvwprintw(hw,row + z,col,"bytes: "U64FMT" frames: "U64FMT,
+					i->bytes,i->frames) != ERR);
 		--z;
 	}case 3:{
-		assert(offload_details(hw,i,row + z,col,"TSO",TCP_SEG_OFFLOAD) != ERR);
-		assert(offload_details(hw,i,row + z,col + 7,"S/G",ETH_SCATTER_GATHER) != ERR);
-		assert(offload_details(hw,i,row + z,col + 15,"UTO",UDP_LARGETX_OFFLOAD) != ERR);
-		assert(offload_details(hw,i,row + z,col + 23,"GSO",GEN_SEG_OFFLOAD) != ERR);
-		assert(offload_details(hw,i,row + z,col + 31,"GRO",GEN_LARGERX_OFFLOAD) != ERR);
-		assert(offload_details(hw,i,row + z,col + 39,"TCsm",TX_CSUM_OFFLOAD) != ERR);
-		assert(offload_details(hw,i,row + z,col + 47,"RCsm",RX_CSUM_OFFLOAD) != ERR);
+		assert(mvwprintw(hw,row + z,col,"RXfd: %-4d fsize: %-6u fnum: %-8u bsize: %-6u bnum: %-8u",
+					i->rfd,i->rtpr.tp_frame_size,i->rtpr.tp_frame_nr,
+					i->rtpr.tp_block_size,i->rtpr.tp_block_nr) != ERR);
 		--z;
 	}case 2:{
-		assert(mvwprintw(hw,row + z,col,"TXfd: %d\tfsize: %u\tfnum: %-6u\tbsize: %u\tbnum: %u",
+		assert(mvwprintw(hw,row + z,col,"TXfd: %-4d fsize: %-6u fnum: %-8u bsize: %-6u bnum: %-8u",
 					i->fd,i->ttpr.tp_frame_size,i->ttpr.tp_frame_nr,
 					i->ttpr.tp_block_size,i->ttpr.tp_block_nr) != ERR);
 		--z;
 	}case 1:{
-		assert(mvwprintw(hw,row + z,col,"RXfd: %d\tfsize: %u\tfnum: %-6u\tbsize: %u\tbnum: %u",
-					i->rfd,i->rtpr.tp_frame_size,i->rtpr.tp_frame_nr,
-					i->rtpr.tp_block_size,i->rtpr.tp_block_nr) != ERR);
+		// FIXME need to apply valditity masking here!
+		assert(offload_details(hw,i,row + z,col,"TSO",TCP_SEG_OFFLOAD) != ERR);
+		assert(offload_details(hw,i,row + z,col + 5,"S/G",ETH_SCATTER_GATHER) != ERR);
+		assert(offload_details(hw,i,row + z,col + 10,"UTO",UDP_LARGETX_OFFLOAD) != ERR);
+		assert(offload_details(hw,i,row + z,col + 15,"GSO",GEN_SEG_OFFLOAD) != ERR);
+		assert(offload_details(hw,i,row + z,col + 20,"GRO",GEN_LARGERX_OFFLOAD) != ERR);
+		assert(offload_details(hw,i,row + z,col + 25,"TCsm",TX_CSUM_OFFLOAD) != ERR);
+		assert(offload_details(hw,i,row + z,col + 31,"RCsm",RX_CSUM_OFFLOAD) != ERR);
 		--z;
 	}case 0:{
 		char *mac;
@@ -585,7 +608,7 @@ iface_details(WINDOW *hw,const interface *i,int row,int col,int rows,int cols){
 		if((mac = hwaddrstr(i)) == NULL){
 			return ERR;
 		}
-		assert(mvwprintw(hw,row + z,col,"%s\t%s\ttxr: %-10zu\trxr: %-10zu\tmtu: %d",
+		assert(mvwprintw(hw,row + z,col,"%s\t%s\ttxr: %-10zu\trxr: %-10zu\tmtu: %-6d",
 					i->name,mac,i->ts,i->rs,i->mtu) != ERR);
 		free(mac);
 		--z;
@@ -593,8 +616,6 @@ iface_details(WINDOW *hw,const interface *i,int row,int col,int rows,int cols){
 	}default:{
 		return ERR;
 	} }
-	// FIXME it's not sufficient to just pad these out; we need do so for all
-	// lines, or clear the detail window each time
 	if(i->topinfo.devname){
 		assert(mvwprintw(hw,row,col,"%-*s",cols - 2,i->topinfo.devname) != ERR);
 	}else{ // FIXME
@@ -1176,13 +1197,14 @@ timerusec(const struct timeval *tv){
 static int
 print_iface_state(const interface *i,const iface_state *is){
 	unsigned long usecexist;
+	char buf[U64STRLEN + 1];
 	struct timeval tdiff;
-	char buf[80]; // FIXME
 
 	timersub(&i->lastseen,&i->firstseen,&tdiff);
 	usecexist = timerusec(&tdiff);
-	assert(mvwprintw(is->subwin,1,1 + START_COL * 2,"%sb/s\t%15ju pkts",
-				rate(i->bytes * CHAR_BIT * 1000000 * 100 / usecexist,100,buf,sizeof(buf),0),i->frames) != ERR);
+	assert(mvwprintw(is->subwin,1,1 + START_COL * 2,"%sb/s\t%*ju pkts",
+				rate(i->bytes * CHAR_BIT * 1000000 * 100 / usecexist,100,buf,sizeof(buf),0),
+				U64STRLEN,i->frames) != ERR);
 	assert(start_screen_update() != ERR);
 	assert(finish_screen_update() != ERR);
 	return 0;
