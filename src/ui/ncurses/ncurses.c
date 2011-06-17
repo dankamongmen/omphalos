@@ -233,7 +233,7 @@ modestr(unsigned dplx){
 // will not be printed.
 static char *
 genrate(uintmax_t val,uintmax_t decimal,char *buf,size_t bsize,int omitdec,
-			unsigned mult){
+			unsigned mult,int uprefix){
 	const char prefixes[] = "KMGTPEY";
 	unsigned consumed = 0;
 	uintmax_t div;
@@ -250,25 +250,29 @@ genrate(uintmax_t val,uintmax_t decimal,char *buf,size_t bsize,int omitdec,
 		div /= mult;
 		val /= decimal;
 		if(val % div || omitdec == 0){
-			snprintf(buf,bsize,"%ju.%02ju%c",val / div,(val % div) / ((div + 99) / 100),
-					prefixes[consumed - 1]);
+			snprintf(buf,bsize,"%ju.%02ju%c%c",val / div,(val % div) / ((div + 99) / 100),
+					prefixes[consumed - 1],uprefix);
 		}else{
-			snprintf(buf,bsize,"%ju%c",val / div,prefixes[consumed - 1]);
+			snprintf(buf,bsize,"%ju%c%c",val / div,prefixes[consumed - 1],uprefix);
 		}
 	}else{
-		snprintf(buf,bsize,"%ju.%02ju",val / decimal,val % decimal);
+		if(val % div || omitdec == 0){
+			snprintf(buf,bsize,"%ju.%02ju",val / decimal,val % decimal);
+		}else{
+			snprintf(buf,bsize,"%ju",val / decimal);
+		}
 	}
 	return buf;
 }
 
 static inline char *
 rate(uintmax_t val,uintmax_t decimal,char *buf,size_t bsize,int omitdec){
-	return genrate(val,decimal,buf,bsize,omitdec,1000);
+	return genrate(val,decimal,buf,bsize,omitdec,1000,'\0');
 }
 
 static inline char *
 brate(uintmax_t val,uintmax_t decimal,char *buf,size_t bsize,int omitdec){
-	return genrate(val,decimal,buf,bsize,omitdec,1024);
+	return genrate(val,decimal,buf,bsize,omitdec,1024,'i');
 }
 
 #define ERREXIT endwin() ; fprintf(stderr,"ncurses failure|%s|%d\n",__func__,__LINE__); abort() ; goto err
@@ -617,7 +621,8 @@ iface_details(WINDOW *hw,const interface *i,int row,int col,int rows,int cols){
 		if((mac = hwaddrstr(i)) == NULL){
 			return ERR;
 		}
-		assert(mvwprintw(hw,row + z,col,"%-16s %s txr: %siB rxr: %siB mtu: %-6d",
+		// FIXME blank end of line!
+		assert(mvwprintw(hw,row + z,col,"%-16s %s txr: %sB\t rxr: %sB\t mtu: %-6d",
 					i->name,mac,
 					brate(i->ts,1,buf,sizeof(buf),1),
 					brate(i->rs,1,buf2,sizeof(buf2),1),i->mtu) != ERR);
