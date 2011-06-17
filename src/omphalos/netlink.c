@@ -636,6 +636,8 @@ name_virtual_device(const struct ifinfomsg *ii,struct ethtool_drvinfo *ed){
 			}else if(strcmp(ed->bus_info,"tun") == 0){
 				return strdup("Linux IPv4 point-to-point TUN device");
 			}
+		}else if(strcmp(ed->driver,"bridge") == 0){
+			return strdup("Linux Ethernet bridge");
 		}
 	}
 	return NULL;
