@@ -45,6 +45,7 @@ extern int mvwprintw(WINDOW *,int,int,const char *,...) __attribute__ ((format (
 #define START_COL 1
 #define U64STRLEN 20	// Does not include a '\0' (18,446,744,073,709,551,616)
 #define U64FMT "%-20ju"
+#define RATESTRLEN U64STRLEN
 
 // FIXME we ought precreate the subwindows, and show/hide them rather than
 // creating and destroying them every time.
@@ -565,7 +566,7 @@ static int
 iface_details(WINDOW *hw,const interface *i,int row,int col,int rows,int cols){
 	int z;
 
-	if((z = rows - 1) > DETAILROWS){
+	if((z = rows) > DETAILROWS){
 		z = DETAILROWS;
 	}
 	switch(z){ // Intentional fallthroughs all the way to 0
@@ -574,25 +575,25 @@ iface_details(WINDOW *hw,const interface *i,int row,int col,int rows,int cols){
 		assert(mvwprintw(hw,row + z,col,"drops: "U64FMT" truncs: "U64FMT,
 					i->drops,i->truncated) != ERR);
 		--z;
-	}case 5:{
+	}case 6:{
 		assert(mvwprintw(hw,row + z,col,"mform: "U64FMT" noprot: "U64FMT,
 					i->malformed,i->noprotocol) != ERR);
 		--z;
-	}case 4:{
+	}case 5:{
 		assert(mvwprintw(hw,row + z,col,"bytes: "U64FMT" frames: "U64FMT,
 					i->bytes,i->frames) != ERR);
 		--z;
-	}case 3:{
+	}case 4:{
 		assert(mvwprintw(hw,row + z,col,"RXfd: %-4d fsize: %-6u fnum: %-8u bsize: %-6u bnum: %-8u",
 					i->rfd,i->rtpr.tp_frame_size,i->rtpr.tp_frame_nr,
 					i->rtpr.tp_block_size,i->rtpr.tp_block_nr) != ERR);
 		--z;
-	}case 2:{
+	}case 3:{
 		assert(mvwprintw(hw,row + z,col,"TXfd: %-4d fsize: %-6u fnum: %-8u bsize: %-6u bnum: %-8u",
 					i->fd,i->ttpr.tp_frame_size,i->ttpr.tp_frame_nr,
 					i->ttpr.tp_block_size,i->ttpr.tp_block_nr) != ERR);
 		--z;
-	}case 1:{
+	}case 2:{
 		// FIXME need to apply valditity masking here!
 		assert(offload_details(hw,i,row + z,col,"TSO",TCP_SEG_OFFLOAD) != ERR);
 		assert(offload_details(hw,i,row + z,col + 5,"S/G",ETH_SCATTER_GATHER) != ERR);
@@ -602,25 +603,30 @@ iface_details(WINDOW *hw,const interface *i,int row,int col,int rows,int cols){
 		assert(offload_details(hw,i,row + z,col + 25,"TCsm",TX_CSUM_OFFLOAD) != ERR);
 		assert(offload_details(hw,i,row + z,col + 31,"RCsm",RX_CSUM_OFFLOAD) != ERR);
 		--z;
+	}case 1:{
+		if(i->topinfo.devname){
+			assert(mvwprintw(hw,row + z,col,"%-*s",cols - 2,i->topinfo.devname) != ERR);
+		}else{ // FIXME
+			assert(mvwprintw(hw,row + z,col,"%-*s",cols - 2,"Unknown device") != ERR);
+		}
+		--z;
 	}case 0:{
+		char buf[RATESTRLEN],buf2[RATESTRLEN];
 		char *mac;
 
 		if((mac = hwaddrstr(i)) == NULL){
 			return ERR;
 		}
-		assert(mvwprintw(hw,row + z,col,"%s\t%s\ttxr: %-10zu\trxr: %-10zu\tmtu: %-6d",
-					i->name,mac,i->ts,i->rs,i->mtu) != ERR);
+		assert(mvwprintw(hw,row + z,col,"%-16s %s txr: %siB rxr: %siB mtu: %-6d",
+					i->name,mac,
+					brate(i->ts,1,buf,sizeof(buf),1),
+					brate(i->rs,1,buf2,sizeof(buf2),1),i->mtu) != ERR);
 		free(mac);
 		--z;
 		break;
 	}default:{
 		return ERR;
 	} }
-	if(i->topinfo.devname){
-		assert(mvwprintw(hw,row,col,"%-*s",cols - 2,i->topinfo.devname) != ERR);
-	}else{ // FIXME
-		assert(mvwprintw(hw,row,col,"%-*s",cols - 2,"Unknown device") != ERR);
-	}
 	return OK;
 }
 
