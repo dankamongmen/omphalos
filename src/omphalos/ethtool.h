@@ -5,14 +5,18 @@
 extern "C" {
 #endif
 
-#define RX_CSUM_OFFLOAD		0x01
-#define TX_CSUM_OFFLOAD		0x02
-#define ETH_SCATTER_GATHER	0x04
-#define TCP_SEG_OFFLOAD		0x08
-#define UDP_FRAG_OFFLOAD	0x10
-#define GEN_SEG_OFFLOAD		0x20
-#define GENRX_OFFLOAD		0x40
-#define LARGERX_OFFLOAD		0x80
+#define RX_CSUM_OFFLOAD		0x0001
+#define TX_CSUM_OFFLOAD		0x0002
+#define ETH_SCATTER_GATHER	0x0004
+#define TCP_SEG_OFFLOAD		0x0008
+#define UDP_FRAG_OFFLOAD	0x0010
+#define GEN_SEG_OFFLOAD		0x0020
+#define GENRX_OFFLOAD		0x0040
+#define LARGERX_OFFLOAD		0x0080
+#define TXVLAN_OFFLOAD		0x0100
+#define RXVLAN_OFFLOAD		0x0200
+#define NTUPLE_FILTERS		0x0400
+#define RXPATH_HASH		0x0800
 
 struct interface;
 struct ethtool_cmd;

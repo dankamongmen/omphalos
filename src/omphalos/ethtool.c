@@ -87,12 +87,37 @@ static const struct offload_info {
 		.desc = "Generic RX offload",
 		.mask = GENRX_OFFLOAD,
 		.op = ETHTOOL_GGRO,
-	},{
-		.desc = "Large RX offload",
-		.mask = LARGERX_OFFLOAD,
-		.op = -1,
 	},
 	{ .desc = NULL, .mask = 0, .op = -1, }
+};
+
+static const struct offload_flags_info {
+	const char *desc;
+	unsigned mask;
+	int flag;
+} offload_flags[] = {
+	{
+		.desc = "Large RX offload",
+		.mask = LARGERX_OFFLOAD,
+		.flag = ETH_FLAG_LRO,
+	},{
+		.desc = "TX VLAN offload",
+		.mask = TXVLAN_OFFLOAD,
+		.flag = ETH_FLAG_TXVLAN,
+	},{
+		.desc = "RX VLAN offload",
+		.mask = RXVLAN_OFFLOAD,
+		.flag = ETH_FLAG_RXVLAN,
+	},{
+		.desc = "N-tuple filters",
+		.mask = NTUPLE_FILTERS,
+		.flag = ETH_FLAG_NTUPLE,
+	},{
+		.desc = "RX path hashing",
+		.mask = RXPATH_HASH,
+		.flag = ETH_FLAG_RXHASH,
+	},
+	{ .desc = NULL, .mask = 0, .flag = 0, }
 };
 
 // Returns -1 for unknown, 0 for non-offloaded, 1 for offloaded
@@ -110,6 +135,7 @@ int iface_offloaded_p(const interface *i,unsigned otype){
 int iface_offload_info(const omphalos_iface *octx,const char *name,
 				unsigned *offload,unsigned *valid){
 	const struct offload_info *oi;
+	const struct offload_flags_info *of;
 	struct ethtool_value ev;
 
 	*valid = *offload = 0;
@@ -124,13 +150,12 @@ int iface_offload_info(const omphalos_iface *octx,const char *name,
 	}
 	ev.cmd = ETHTOOL_GFLAGS;
 	if(ethtool_docmd(octx,name,&ev) == 0){
-		*valid |= LARGERX_OFFLOAD;
-		*offload |= (ev.data & ETH_FLAG_LRO) ? LARGERX_OFFLOAD : 0;
-		/* FIXME walk another table to get these four:
-		rxvlan = (eval.data & ETH_FLAG_RXVLAN);
-		txvlan = (eval.data & ETH_FLAG_TXVLAN);
-		ntuple = (eval.data & ETH_FLAG_NTUPLE);
-		rxhash = (eval.data & ETH_FLAG_RXHASH);*/
+		for(of = offload_flags ; of->desc ; ++of){
+			if(ev.data & of->flag){
+				*valid |= of->mask;
+				*offload |= (ev.data & of->flag) ? of->mask : 0;
+			}
+		}
 	}
 	return 0;
 }
