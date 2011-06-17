@@ -1355,6 +1355,7 @@ wireless_callback(const interface *i,int inum,
 
 	pthread_mutex_lock(&bfl);
 	r = interface_cb_locked(i,inum,unsafe);
+	wstatus_locked(pad,"wireless event on %s",i->name); // FIXME
 	pthread_mutex_unlock(&bfl);
 	return r;
 }

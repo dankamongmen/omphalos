@@ -21,11 +21,11 @@ int handle_wireless_event(const omphalos_iface *octx,interface *i,int inum,
 		// FIXME handle AP results
 	break;}case IWEVASSOCRESPIE:{
 		// FIXME handle IE reassociation results
-	break;}case SIOCGIWESSID:{
+	break;}case SIOCSIWESSID:{
 		// FIXME handle ESSID change
-	break;}case SIOCGIWRATE:{
+	break;}case SIOCSIWRATE:{
 		// FIXME handle rate change
-	break;}case SIOCGIWTXPOW:{
+	break;}case SIOCSIWTXPOW:{
 		// FIXME handle TX power change
 	break;}default:{
 		octx->diagnostic("Unknown wireless event on %s: 0x%x",i->name,iw->cmd);
