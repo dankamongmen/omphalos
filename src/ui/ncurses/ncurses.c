@@ -1268,6 +1268,8 @@ interface_cb_locked(const interface *i,int inum,iface_state *ret){
 					ret->scrline = START_LINE;
 					if(details.w){
 						ret->detailwin = &details;
+					}else{
+						ret->detailwin = NULL;
 					}
 				}else{
 					// The order on screen must match the list order, so splice it onto
