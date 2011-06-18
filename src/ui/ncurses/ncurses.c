@@ -1301,6 +1301,9 @@ interface_cb_locked(const interface *i,int inum,iface_state *ret){
 				}
 				if( (ret->subwin = derwin(pad,ret->ysize,PAD_COLS,ret->scrline,START_COL)) &&
 						(ret->panel = new_panel(ret->subwin)) ){
+					// Want the subdisplay left above this
+					// new iface, should they intersect.
+					assert(bottom_panel(ret->panel) == OK);
 					++count_interface;
 				}else{
 					delwin(ret->subwin);
