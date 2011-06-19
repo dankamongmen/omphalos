@@ -54,19 +54,28 @@ void timestat_inc(timestat *ts,const struct timeval *tv,unsigned val){
 			// zero out our new slot and any that we've skipped
 			// over (expired in total). might be disjoint.
 			if(idx + 1 < expired){
-				unsigned rexpir = expired - (idx + 1);
+				unsigned z,rexpir = expired - (idx + 1);
 
-				memset(ts->counts,0,
-					sizeof(*ts->counts) * (idx + 1));
-				memset(ts->counts + (ts->total - rexpir),0,
-						sizeof(*ts->counts) * rexpir);
-			}else{ // we can get all expired counts with one memset
-				memset(ts->counts + ((idx + 1) - expired),0,
-					sizeof(*ts->counts) * expired);
+				for(z = 0 ; z < idx + 1 ; ++z){
+					ts->valtotal -= ts->counts[z];
+					ts->counts[z] = 0;
+				}
+				for(z += ts->total - rexpir ; z < ts->total ; ++z){
+					ts->valtotal -= ts->counts[z];
+					ts->counts[z] = 0;
+				}
+			}else{ // we can get all expired counts with one loop
+				unsigned z;
+
+				for(z = idx + 1 - expired ; z <= idx ; ++z){
+					ts->valtotal -= ts->counts[z];
+					ts->counts[z] = 0;
+				}
 			}
 		}else{ // lose all; start over at head of ring, zero out all
 			ts->firstidx = 0;
 			distance = 0;
+			ts->valtotal = 0;
 			memset(ts->counts,0,sizeof(*ts->counts) * ts->total);
 		}
 		// Base the time off distance * ts->usec + firstsamp,
@@ -76,6 +85,7 @@ void timestat_inc(timestat *ts,const struct timeval *tv,unsigned val){
 		timeradd(&ts->firstsamp,&adv,&ts->firstsamp);
 	}
 	ts->counts[ringinc(ts->firstidx,distance,ts->total)] += val;
+	ts->valtotal += val;
 }
 
 void timestat_destroy(timestat *ts){

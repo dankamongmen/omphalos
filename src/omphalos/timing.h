@@ -14,11 +14,13 @@ extern "C" {
 #include <stdint.h>
 #include <sys/time.h>
 
+// Total time domain in microseconds == total * usec
 typedef struct timestat {
-	uint32_t *counts;		// (count = rate * time)-entry ringbuf
+	uint32_t *counts;		// ringbuf of values
 	unsigned usec,total;		// usec per count, number of counts
 	unsigned firstidx;		// index of first sample in ringbuffer
 	struct timeval firstsamp;	// time associated with first sample
+	uintmax_t valtotal;		// sum of all counts
 } timestat;
 
 // For 5s at 50Hz, provide 20000 and 250 -- 50Hz means 20ms per counter.
