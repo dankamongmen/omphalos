@@ -154,6 +154,7 @@ recover_truncated_packet(const omphalos_iface *octx,interface *iface,int fd,unsi
 // return for a cancellation check, and the frameptr oughtn't be advanced.
 int handle_ring_packet(const omphalos_iface *octx,interface *iface,int fd,void *frame){
 	struct tpacket_hdr *thdr = frame;
+	struct timeval tv;
 	int len;
 
 	while(thdr->tp_status == 0){
@@ -178,6 +179,9 @@ int handle_ring_packet(const omphalos_iface *octx,interface *iface,int fd,void *
 		}
 	}
 	++iface->frames;
+	tv.tv_sec = thdr->tp_sec;
+	tv.tv_usec = thdr->tp_usec;
+	timestat_inc(&iface->fps,&tv,1);
 	iface->lastseen.tv_sec = thdr->tp_sec;
 	iface->lastseen.tv_usec = thdr->tp_usec;
 	if(thdr->tp_status & TP_STATUS_LOSING){
@@ -208,6 +212,7 @@ int handle_ring_packet(const omphalos_iface *octx,interface *iface,int fd,void *
 		frame = (char *)frame + thdr->tp_mac;
 		len = thdr->tp_len;
 	}
+	timestat_inc(&iface->bps,&tv,len);
 	iface->bytes += len;
 	iface->analyzer(octx,iface,frame,len);
 	if(octx->packet_read){
