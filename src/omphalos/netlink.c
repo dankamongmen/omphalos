@@ -654,8 +654,16 @@ handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 		octx->diagnostic("Invalid interface index: %d",ii->ifi_index);
 		return -1;
 	}
+	// FIXME this is all crap
 	if(iface->name == NULL){
 		gettimeofday(&iface->firstseen,NULL);
+		if(timestat_prep(&iface->fps,20000,250)){
+			return -1;
+		}
+		if(timestat_prep(&iface->bps,20000,250)){
+			timestat_destroy(&iface->fps);
+			return -1;
+		}
 	}
 	iface->arptype = ii->ifi_type;
 	rlen = nl->nlmsg_len - NLMSG_LENGTH(sizeof(*ii));
@@ -782,7 +790,7 @@ handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 		iface->rfd = iface->fd = -1;
 		iface->rs = iface->ts = 0;
 	}
-	if(octx->iface_event){
+	if(octx->iface_event){ // FIXME do this before launching the thread
 		iface->opaque = octx->iface_event(iface,ii->ifi_index,iface->opaque);
 	}
 	return 0;

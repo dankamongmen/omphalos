@@ -10,6 +10,7 @@ extern "C" {
 #include <netinet/in.h>
 #include <linux/ethtool.h>
 #include <linux/if_packet.h>
+#include <omphalos/timing.h>
 
 struct psocket_marsh;
 struct omphalos_iface;
@@ -41,6 +42,7 @@ typedef struct interface {
 	// Packet analysis entry point
 	void (*analyzer)(const struct omphalos_iface *,struct interface *,const void *,size_t);
 
+	// Lifetime stats
 	uintmax_t frames;		// Frames received on the interface
 	uintmax_t malformed;		// Packet had malformed L2 -- L4 headers
 	uintmax_t truncated;		// Packet didn't fit in ringbuffer frame
@@ -49,8 +51,12 @@ typedef struct interface {
 	uintmax_t bytes;		// Total bytes sniffed
 	uintmax_t drops;		// PACKET_STATISTICS @ TP_STATUS_LOSING
 
+	// Finite time domain stats
+	timestat fps,bps;		// frames and bits per second
+	// FIXME can get rid of these two, i think
 	struct timeval firstseen;	// Interface registration time
 	struct timeval lastseen;	// Last time we saw a packet/event here
+	
 
 	struct psocket_marsh *pmarsh;	// State for packet socket thread
 

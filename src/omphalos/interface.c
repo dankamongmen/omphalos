@@ -107,6 +107,8 @@ void free_iface(const omphalos_iface *octx,interface *i){
 		free(i->ip4r);
 		i->ip4r = r4;
 	}
+	timestat_destroy(&i->fps);
+	timestat_destroy(&i->bps);
 	free(i->topinfo.devname);
 	free(i->truncbuf);
 	free(i->name);
