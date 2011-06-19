@@ -254,7 +254,7 @@ genprefix(uintmax_t val,unsigned decimal,char *buf,size_t bsize,int omitdec,
 			snprintf(buf,bsize,"%ju%c%c",val / div,prefixes[consumed - 1],uprefix);
 		}
 	}else{
-		if(val % div || omitdec == 0){
+		if(val % decimal || omitdec == 0){
 			snprintf(buf,bsize,"%ju.%02ju",val / decimal,val % decimal);
 		}else{
 			snprintf(buf,bsize,"%ju",val / decimal);
@@ -1207,14 +1207,15 @@ err:
 static int
 print_iface_state(const interface *i,const iface_state *is){
 	char buf[U64STRLEN + 1],buf2[U64STRLEN + 1];
-	unsigned long usecexist;
-	struct timeval tdiff;
+	unsigned long usecdomain;
 
-	timersub(&i->lastseen,&i->firstseen,&tdiff);
-	usecexist = timerusec(&tdiff);
-	assert(mvwprintw(is->subwin,1,START_COL,"Last 5s: %6sb/s %6sp/s",
-				prefix(timestat_val(&i->bps) * CHAR_BIT * 1000000 * 100 / (i->bps.usec * i->bps.total),100,buf,sizeof(buf),0),
-				prefix(timestat_val(&i->fps) * CHAR_BIT * 1000000 * 100 / (i->fps.usec * i->fps.total),100,buf2,sizeof(buf2),0)) != ERR);
+	// FIXME broken if bps domain ever != fps domain. need unite those
+	// into one FTD stat by letting it take an object...
+	usecdomain = i->bps.usec * i->bps.total;
+	assert(mvwprintw(is->subwin,1,START_COL,"Last %lus: %7sb/s %7sp/s",
+				usecdomain / 1000000,
+				prefix(timestat_val(&i->bps) * CHAR_BIT * 1000000 * 100 / usecdomain,100,buf,sizeof(buf),0),
+				prefix(timestat_val(&i->fps) * 1000000 * 100 / usecdomain,100,buf2,sizeof(buf2),0)) != ERR);
 	assert(start_screen_update() != ERR);
 	assert(finish_screen_update() != ERR);
 	return 0;
@@ -1228,7 +1229,7 @@ packet_cb_locked(const interface *i,iface_state *is){
 
 		timersub(&i->lastseen,&is->lastprinted,&tdiff);
 		udiff = timerusec(&tdiff);
-		if(udiff < 16667){ // At most one update every 1/60s
+		if(udiff < 500000){ // At most one update every 1/2s
 			if(!is->alarmset){
 				// FIXME register the alarm
 				is->alarmset = 1;
