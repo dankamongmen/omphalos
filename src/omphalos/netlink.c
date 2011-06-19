@@ -777,9 +777,7 @@ handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	}
 	iface->flags = ii->ifi_flags;
 	if(iface->fd < 0 && (iface->flags & IFF_UP)){
-		if(prepare_packet_sockets(octx,iface,ii->ifi_index)){
-			octx->diagnostic("Couldn't open packet sockets on %s",iface->name);
-		}
+		prepare_packet_sockets(octx,iface,ii->ifi_index);
 	}else if(iface->pmarsh && !(iface->flags & IFF_UP)){
 		// See note in free_iface() about operation ordering here.
 		reap_thread(octx,iface);
