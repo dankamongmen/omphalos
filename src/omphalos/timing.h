@@ -23,7 +23,7 @@ typedef struct timestat {
 
 // For 5s at 50Hz, provide 20000 and 250 -- 50Hz means 20ms per counter.
 int timestat_prep(timestat *,unsigned,unsigned);
-void timestat_inc(timestat *,const struct timeval *tv);
+void timestat_inc(timestat *,const struct timeval *tv,unsigned);
 void timestat_destroy(timestat *);
 
 static inline unsigned long

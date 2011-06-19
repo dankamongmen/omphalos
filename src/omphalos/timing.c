@@ -19,7 +19,7 @@ ringinc(unsigned idx,unsigned move,unsigned s){
 	return idx + move % s;
 }
 
-void timestat_inc(timestat *ts,const struct timeval *tv){
+void timestat_inc(timestat *ts,const struct timeval *tv,unsigned val){
 	struct timeval diff;
 	unsigned long usec;
 	unsigned distance;
@@ -74,7 +74,7 @@ void timestat_inc(timestat *ts,const struct timeval *tv){
 		adv.tv_usec = ((distance - ts->total) * ts->usec) % 1000000;
 		timeradd(&ts->firstsamp,&adv,&ts->firstsamp);
 	}
-	++ts->counts[ringinc(ts->firstidx,distance,ts->total)]; // inc counter
+	ts->counts[ringinc(ts->firstidx,distance,ts->total)] += val;
 }
 
 void timestat_destroy(timestat *ts){
