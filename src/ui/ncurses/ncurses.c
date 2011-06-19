@@ -589,7 +589,7 @@ iface_details(WINDOW *hw,const interface *i,int row,int col,int rows,int cols){
 		char buf[U64STRLEN];
 		assert(mvwprintw(hw,row + z,col,"RXfd: %-4d fbytes: %-6u fnum: %-8u bsize: %sB bnum: %-8u",
 					i->rfd,i->rtpr.tp_frame_size,i->rtpr.tp_frame_nr,
-					bprefix(i->ttpr.tp_block_size,1,buf,sizeof(buf),1),i->rtpr.tp_block_nr) != ERR);
+					bprefix(i->rtpr.tp_block_size,1,buf,sizeof(buf),1),i->rtpr.tp_block_nr) != ERR);
 		--z;
 	}case 3:{
 		char buf[U64STRLEN];
