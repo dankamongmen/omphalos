@@ -10,7 +10,7 @@
 // No need to store addrlen, since all objects in a given arena have the
 // same length of hardware address.
 typedef struct l2host {
-	unsigned char *hwaddr;
+	uint64_t hwaddr;	// does anything have more than 64 bits at L2?
 	struct l2host *next;
 } l2host;
 
@@ -19,18 +19,12 @@ static inline l2host *
 create_l2host(const void *hwaddr,size_t addrlen){
 	l2host *l2;
 
+	if(addrlen > sizeof(l2->hwaddr)){
+		return NULL;
+	}
 	if( (l2 = malloc(sizeof(*l2))) ){
-		char *hwstr;
-
-		if((l2->hwaddr = malloc(addrlen)) == NULL){
-			free(l2);
-			return NULL;
-		}
-		if( (hwstr = l2addrstr(hwaddr,addrlen)) ){ // FIXME
-			// printf("New neighbor: %s\n",hwstr);
-			free(hwstr);
-		}
-		memcpy(l2->hwaddr,hwaddr,addrlen);
+		l2->hwaddr = 0;
+		memcpy(&l2->hwaddr,hwaddr,addrlen);
 	}
 	return l2;
 }
@@ -40,13 +34,12 @@ create_l2host(const void *hwaddr,size_t addrlen){
 // lookup, backed by an arena-allocated LRU, etc...
 l2host *lookup_l2host(l2host **list,const void *hwaddr,size_t addrlen){
 	l2host *l2,**prev;
+	uint64_t hwcmp;
 
-	if(addrlen != IFHWADDRLEN){
-		fprintf(stderr,"Only 48-bit l2 addresses are supported\n");
-		return NULL;
-	}
+	hwcmp = 0;
+	memcpy(&hwcmp,hwaddr,addrlen);
 	for(prev = list ; (l2 = *prev) ; prev = &l2->next){
-		if(memcmp(l2->hwaddr,hwaddr,addrlen) == 0){
+		if(l2->hwaddr == hwcmp){
 			*prev = l2->next;
 			l2->next = *list;
 			*list = l2;
@@ -65,7 +58,6 @@ void cleanup_l2hosts(l2host **list){
 
 	for(l2 = *list ; l2 ; l2 = tmp){
 		tmp = l2->next;
-		free(l2->hwaddr);
 		free(l2);
 	}
 	*list = NULL;
@@ -89,8 +81,8 @@ char *l2addrstr(const void *addr,size_t len){
 static const unsigned char brd[] = "\xff\xff\xff\xff\xff\xff";
 
 static int
-categorize_ethaddr(const unsigned char *mac){
-	if(mac[0] & 0x1){
+categorize_ethaddr(const void *mac){
+	if(((const unsigned char *)mac)[0] & 0x1){
 		// Can't use sizeof(brd), since it has a terminating NUL :/
 		if(memcmp(mac,brd,IFHWADDRLEN) == 0){
 			return RTN_BROADCAST;
@@ -108,7 +100,7 @@ int print_l2hosts(FILE *fp,const l2host *list){
 			return -1;
 		}
 		do{
-			int ethtype = categorize_ethaddr(l2->hwaddr);
+			int ethtype = categorize_ethaddr(&l2->hwaddr);
 			char *hwaddr = NULL;
 
 			switch(ethtype){
@@ -118,7 +110,7 @@ int print_l2hosts(FILE *fp,const l2host *list){
 				}
 				break;
 			}case RTN_MULTICAST:{
-				hwaddr = l2addrstr(l2->hwaddr,IFHWADDRLEN);
+				hwaddr = l2addrstr(&l2->hwaddr,IFHWADDRLEN);
 
 				if(fprintf(fp,"<ieee802 mcast=\"%s\"/>",hwaddr) < 0){
 					free(hwaddr);
@@ -126,7 +118,7 @@ int print_l2hosts(FILE *fp,const l2host *list){
 				}
 				break;
 			}case RTN_UNICAST:{
-				hwaddr = l2addrstr(l2->hwaddr,IFHWADDRLEN);
+				hwaddr = l2addrstr(&l2->hwaddr,IFHWADDRLEN);
 
 				if(fprintf(fp,"<ieee802 addr=\"%s\"/>",hwaddr) < 0){
 					free(hwaddr);
@@ -152,7 +144,7 @@ int print_neigh(const interface *iface,const struct l2host *l2){
 	int n;
 
 	// FIXME need real family! inet_ntop(nd->ndm_family,l2->hwaddr,str,sizeof(str));
-	hwaddr = l2addrstr(l2->hwaddr,IFHWADDRLEN);
+	hwaddr = l2addrstr(&l2->hwaddr,IFHWADDRLEN);
 
 	n = printf("[%8s] neighbor %s\n",iface->name,hwaddr);
 	free(hwaddr);
