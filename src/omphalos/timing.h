@@ -28,6 +28,11 @@ int timestat_prep(timestat *,unsigned,unsigned);
 void timestat_inc(timestat *,const struct timeval *tv,unsigned);
 void timestat_destroy(timestat *);
 
+static inline uintmax_t
+timestat_val(const timestat *ts){
+	return ts->valtotal;
+}
+
 static inline unsigned long
 timerusec(const struct timeval *tv){
 	return tv->tv_sec * 1000000 + tv->tv_usec;

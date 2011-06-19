@@ -790,7 +790,12 @@ handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 		iface->rfd = iface->fd = -1;
 		iface->rs = iface->ts = 0;
 	}
-	if(octx->iface_event){ // FIXME do this before launching the thread
+	if(octx->iface_event){
+		struct timeval tv; // account for any recent zero-sampling
+
+		gettimeofday(&tv,NULL);
+		timestat_inc(&iface->fps,&tv,0);
+		timestat_inc(&iface->bps,&tv,0);
 		iface->opaque = octx->iface_event(iface,ii->ifi_index,iface->opaque);
 	}
 	return 0;

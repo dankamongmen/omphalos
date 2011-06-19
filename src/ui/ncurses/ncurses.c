@@ -35,6 +35,7 @@
 
 // Add ((format (printf))) attributes to ncurses functions, which sadly
 // lack them (at least as of Debian's 5.9-1).
+extern int wprintw(WINDOW *,const char *,...) __attribute__ ((format (printf,2,3)));
 extern int mvwprintw(WINDOW *,int,int,const char *,...) __attribute__ ((format (printf,4,5)));
 
 #define PROGNAME "omphalos"	// FIXME
@@ -46,7 +47,7 @@ extern int mvwprintw(WINDOW *,int,int,const char *,...) __attribute__ ((format (
 #define START_COL 1
 #define U64STRLEN 20	// Does not include a '\0' (18,446,744,073,709,551,616)
 #define U64FMT "%-20ju"
-#define prefixSTRLEN U64STRLEN
+#define PREFIXSTRLEN U64STRLEN
 
 // FIXME we ought precreate the subwindows, and show/hide them rather than
 // creating and destroying them every time.
@@ -224,16 +225,12 @@ modestr(unsigned dplx){
 }
 
 // For full safety, pass in a buffer that can hold the decimal representation
-// of the largest uintmax_t plus three (one for the unit, one for the
-// decimal separator, and one for the NUL byte). 'decimal' serves as a
-// primitive floating point; '1' indicates no scaling (this is useful when val
-// might be less than 1000, so that we can display the two digits of precision
-// (if val >= 1000, the only displayed precision comes from the prefixing, so
-// decimal is meaningless in that case)), and '0' must not be passed. If
-// omitdec is non-zero, and the decimal portion is all 0's, the decimal portion
-// will not be printed.
+// of the largest uintmax_t plus three (one for the unit, one for the decimal
+// separator, and one for the NUL byte). If omitdec is non-zero, and the
+// decimal portion is all 0's, the decimal portion will not be printed. decimal
+// indicates scaling, and should be '1' if no scaling has taken place.
 static char *
-genprefix(uintmax_t val,uintmax_t decimal,char *buf,size_t bsize,int omitdec,
+genprefix(uintmax_t val,unsigned decimal,char *buf,size_t bsize,int omitdec,
 			unsigned mult,int uprefix){
 	const char prefixes[] = "KMGTPEY";
 	unsigned consumed = 0;
@@ -267,12 +264,12 @@ genprefix(uintmax_t val,uintmax_t decimal,char *buf,size_t bsize,int omitdec,
 }
 
 static inline char *
-prefix(uintmax_t val,uintmax_t decimal,char *buf,size_t bsize,int omitdec){
+prefix(uintmax_t val,unsigned decimal,char *buf,size_t bsize,int omitdec){
 	return genprefix(val,decimal,buf,bsize,omitdec,1000,'\0');
 }
 
 static inline char *
-bprefix(uintmax_t val,uintmax_t decimal,char *buf,size_t bsize,int omitdec){
+bprefix(uintmax_t val,unsigned decimal,char *buf,size_t bsize,int omitdec){
 	return genprefix(val,decimal,buf,bsize,omitdec,1024,'i');
 }
 
@@ -621,7 +618,7 @@ iface_details(WINDOW *hw,const interface *i,int row,int col,int rows,int cols){
 		}
 		--z;
 	}case 0:{
-		char buf[prefixSTRLEN],buf2[prefixSTRLEN];
+		char buf[PREFIXSTRLEN],buf2[PREFIXSTRLEN];
 		char *mac;
 
 		if((mac = hwaddrstr(i)) == NULL){
@@ -1209,15 +1206,15 @@ err:
 
 static int
 print_iface_state(const interface *i,const iface_state *is){
+	char buf[U64STRLEN + 1],buf2[U64STRLEN + 1];
 	unsigned long usecexist;
-	char buf[U64STRLEN + 1];
 	struct timeval tdiff;
 
 	timersub(&i->lastseen,&i->firstseen,&tdiff);
 	usecexist = timerusec(&tdiff);
-	assert(mvwprintw(is->subwin,1,1 + START_COL * 2,"%sb/s\t%*ju pkts",
-				prefix(i->bytes * CHAR_BIT * 1000000 * 100 / usecexist,100,buf,sizeof(buf),0),
-				U64STRLEN,i->frames) != ERR);
+	assert(mvwprintw(is->subwin,1,START_COL,"Last 5s: %6sb/s %6sp/s",
+				prefix(timestat_val(&i->bps) * CHAR_BIT * 1000000 * 100 / (i->bps.usec * i->bps.total),100,buf,sizeof(buf),0),
+				prefix(timestat_val(&i->fps) * CHAR_BIT * 1000000 * 100 / (i->fps.usec * i->fps.total),100,buf2,sizeof(buf2),0)) != ERR);
 	assert(start_screen_update() != ERR);
 	assert(finish_screen_update() != ERR);
 	return 0;
