@@ -650,10 +650,11 @@ display_details_locked(WINDOW *mainw,struct panel_state *ps,iface_state *is){
 	getmaxyx(mainw,rows,cols);
 	// Space for the status bar + gap, bottom bar + gap,
 	// and top bar + gap
-	startrow = rows - (START_LINE * 3 + DETAILROWS + 1);
+	startrow = START_LINE * 3 + DETAILROWS + 1;
 	if(rows <= startrow){
 		ERREXIT;
 	}
+	startrow = rows - startrow;
 	rows -= startrow + START_LINE;
 	cols -= START_COL * 2;
 	if(new_display_panel(ps,rows,cols,startrow,START_COL,
