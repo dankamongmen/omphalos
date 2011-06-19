@@ -574,8 +574,8 @@ iface_details(WINDOW *hw,const interface *i,int row,int col,int rows,int cols){
 	switch(z){ // Intentional fallthroughs all the way to 0
 	case DETAILROWS:{
 		// FIXME: display percentage of truncations that were recovered
-		assert(mvwprintw(hw,row + z,col,"drops: "U64FMT" truncs: "U64FMT,
-					i->drops,i->truncated) != ERR);
+		assert(mvwprintw(hw,row + z,col,"drops: "U64FMT" truncs: "U64FMT" recv: %-6ju",
+					i->drops,i->truncated,i->truncated_recovered) != ERR);
 		--z;
 	}case 6:{
 		assert(mvwprintw(hw,row + z,col,"mform: "U64FMT" noprot: "U64FMT,
