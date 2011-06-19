@@ -26,6 +26,7 @@
 #include <linux/version.h>
 #include <linux/nl80211.h>
 #include <ncursesw/panel.h>
+#include <omphalos/timing.h>
 #include <ncursesw/ncurses.h>
 #include <omphalos/ethtool.h>
 #include <omphalos/omphalos.h>
@@ -1203,11 +1204,6 @@ err:
 	mandatory_cleanup(&w,&p);
 	fprintf(stderr,"%s",errstr);
 	return NULL;
-}
-
-static inline unsigned long
-timerusec(const struct timeval *tv){
-	return tv->tv_sec * 1000000 + tv->tv_usec;
 }
 
 static int
