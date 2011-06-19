@@ -207,6 +207,7 @@ int handle_ring_packet(const omphalos_iface *octx,interface *iface,int fd,void *
 		}else{
 			frame = iface->truncbuf;
 			++iface->truncated_recovered;
+			len = thdr->tp_len;
 		}
 	}else{
 		frame = (char *)frame + thdr->tp_mac;
