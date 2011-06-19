@@ -16,7 +16,7 @@ int timestat_prep(timestat *ts,unsigned usec,unsigned total){
 
 static inline unsigned
 ringinc(unsigned idx,unsigned move,unsigned s){
-	return idx + move % s;
+	return (idx + move) % s;
 }
 
 void timestat_inc(timestat *ts,const struct timeval *tv,unsigned val){
@@ -24,6 +24,7 @@ void timestat_inc(timestat *ts,const struct timeval *tv,unsigned val){
 	unsigned long usec;
 	unsigned distance;
 
+	//assert(!timercmp(tv,&ts->firstsamp,<));
 	timersub(tv,&ts->firstsamp,&diff);
        	usec = timerusec(&diff);
 	// Get the number of samples between us and the first sample
@@ -70,8 +71,8 @@ void timestat_inc(timestat *ts,const struct timeval *tv,unsigned val){
 		}
 		// Base the time off distance * ts->usec + firstsamp,
 		// normalizing time of the sample within the period.
-		adv.tv_sec = ((distance - ts->total) * ts->usec) / 1000000;
-		adv.tv_usec = ((distance - ts->total) * ts->usec) % 1000000;
+		adv.tv_sec = (expired * ts->usec) / 1000000;
+		adv.tv_usec = (expired * ts->usec) % 1000000;
 		timeradd(&ts->firstsamp,&adv,&ts->firstsamp);
 	}
 	ts->counts[ringinc(ts->firstidx,distance,ts->total)] += val;

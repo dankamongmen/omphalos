@@ -95,7 +95,7 @@ static const struct offload_info {
 static const struct offload_flags_info {
 	const char *desc;
 	unsigned mask;
-	int flag;
+	unsigned flag;
 } offload_flags[] = {
 	{
 		.desc = "Large RX offload",
@@ -156,7 +156,7 @@ int iface_offload_info(const omphalos_iface *octx,const char *name,
 		for(of = offload_flags ; of->desc ; ++of){
 			*valid |= of->mask;
 			if(ev.data & of->flag){
-				*offload |= (ev.data & of->flag) ? of->mask : 0;
+				*offload |= of->mask;
 			}
 		}
 	}
