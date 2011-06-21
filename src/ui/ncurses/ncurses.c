@@ -1253,7 +1253,7 @@ packet_callback(const interface *i,void *unsafe){
 	pthread_mutex_unlock(&bfl);
 }
 
-static inline unsigned
+static inline int
 lines_for_interface(const interface *i){
 	if(i->flags & IFF_UP){
 		return PAD_LINES;
@@ -1288,7 +1288,8 @@ interface_cb_locked(const interface *i,int inum,iface_state *ret){
 					while(ret->prev->next->scrline > ret->prev->scrline){
 						ret->prev = ret->prev->next;
 					}
-					ret->scrline = lines_for_interface(iface_by_idx(ret->prev->ifacenum)) + ret->prev->scrline  + 1;
+					ret->scrline = lines_for_interface(iface_by_idx(ret->prev->ifacenum))
+						+ ret->prev->scrline + 1;
 					ret->next = ret->prev->next;
 					ret->next->prev = ret;
 					ret->prev->next = ret;
@@ -1311,6 +1312,30 @@ interface_cb_locked(const interface *i,int inum,iface_state *ret){
 					free(ret);
 					ret = NULL;
 				}
+			}
+		}
+	}else{ // preexisting interface
+		if(lines_for_interface(i) != ret->ysize){ // need resize
+			int delta = lines_for_interface(i) - ret->ysize;
+			iface_state *is;
+
+			ret->ysize = lines_for_interface(i);
+			assert(werase(ret->subwin) == OK);
+			assert(delwin(ret->subwin) == OK);
+			assert(del_panel(ret->panel) == OK);
+			ret->subwin = derwin(pad,ret->ysize,PAD_COLS,ret->scrline,START_COL);
+			ret->panel = new_panel(ret->subwin);
+			for(is = ret->next ; is->scrline > ret->scrline ; is = is->next){
+				interface *ii = iface_by_idx(is->ifacenum);
+
+				is->scrline += delta;
+				assert(werase(is->subwin) == OK);
+				assert(delwin(is->subwin) == OK);
+				assert(del_panel(is->panel) == OK);
+				is->subwin = derwin(pad,is->ysize,PAD_COLS,is->scrline,START_COL);
+				is->panel = new_panel(is->subwin);
+				iface_box(is->subwin,ii,is);
+				print_iface_state(ii,is);
 			}
 		}
 	}
