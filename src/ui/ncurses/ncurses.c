@@ -659,7 +659,7 @@ display_details_locked(WINDOW *mainw,struct panel_state *ps,iface_state *is){
 		ERREXIT;
 	}
 	if(is){
-		if(iface_details(ps->w,get_current_iface(),
+		if(iface_details(ps->w,iface_by_idx(is->ifacenum),
 					START_LINE,START_COL,
 					rows - START_LINE * 2,
 					cols - START_COL * 2)){
