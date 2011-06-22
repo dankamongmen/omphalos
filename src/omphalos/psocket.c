@@ -143,9 +143,13 @@ recover_truncated_packet(const omphalos_iface *octx,interface *iface,int fd,unsi
 		iface->truncbuf = tmp;
 		iface->truncbuflen = tlen;
 	}
-	if((r = recvfrom(fd,iface->truncbuf,iface->truncbuflen,MSG_DONTWAIT,NULL,0)) <= 0){
+	if((r = recvfrom(fd,iface->truncbuf,iface->truncbuflen,MSG_DONTWAIT|MSG_TRUNC,NULL,0)) <= 0){
 		octx->diagnostic("Error in recvfrom(%s): %s",iface->name,strerror(errno));
 		return r;
+	}
+	if((unsigned)r > iface->truncbuflen){
+		octx->diagnostic("Couldn't recover truncated packet (%d > %zu)",r,iface->truncbuflen);
+		return -1;
 	}
 	return r;
 }
