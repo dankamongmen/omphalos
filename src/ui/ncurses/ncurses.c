@@ -517,6 +517,9 @@ transfer_details_window(iface_state *from,iface_state *to){
 static void
 hide_panel_locked(WINDOW *w,struct panel_state *ps){
 	if(ps){
+		if(current_iface){
+			current_iface->detailwin = NULL;
+		}
 		hide_panel(ps->p);
 		del_panel(ps->p);
 		ps->p = NULL;
@@ -1019,9 +1022,6 @@ ncurses_input_thread(void *unsafe_marsh){
 		}case 'h':{
 			pthread_mutex_lock(&bfl);
 			if(help.w){
-				if(current_iface){
-					current_iface->detailwin = NULL;
-				}
 				hide_panel_locked(w,&help);
 				active = NULL;
 			}else{
@@ -1401,8 +1401,8 @@ interface_removed_locked(iface_state *is){
 			// If we owned the details window, give it to the new
 			// current_iface.
 			transfer_details_window(is,current_iface);
-			if(is->detailwin){
-				current_iface->detailwin = is->detailwin;
+			if(details.w){
+				iface_details(details.w,get_current_iface(),START_LINE,START_COL,details.ysize,details.xsize);
 			}
 		}else{
 			// If we owned the details window, destroy it FIXME
