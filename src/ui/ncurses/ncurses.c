@@ -76,7 +76,6 @@ typedef struct iface_state {
 	struct timeval lastprinted;	// last time we printed the iface
 	int alarmset;			// alarm set for UI update?
 	int devaction;			// 1 == down, -1 == up, 0 == nothing
-	struct panel_state *detailwin;	// non-NULL if we own the detail window
 	struct iface_state *next,*prev;
 } iface_state;
 
@@ -507,19 +506,8 @@ down_interface_locked(const omphalos_iface *octx,WINDOW *w){
 }
 
 static void
-transfer_details_window(iface_state *from,iface_state *to){
-	if(from->detailwin){
-		to->detailwin = from->detailwin;
-		from->detailwin = NULL;
-	}
-}
-
-static void
 hide_panel_locked(WINDOW *w,struct panel_state *ps){
 	if(ps){
-		if(current_iface){
-			current_iface->detailwin = NULL;
-		}
 		hide_panel(ps->p);
 		del_panel(ps->p);
 		ps->p = NULL;
@@ -668,7 +656,6 @@ display_details_locked(WINDOW *mainw,struct panel_state *ps,iface_state *is){
 					cols - START_COL * 2)){
 			ERREXIT;
 		}
-		is->detailwin = ps;
 	}
 	assert(start_screen_update() != ERR);
 	assert(finish_screen_update() != ERR);
@@ -865,7 +852,6 @@ use_next_iface_locked(void){
 		const iface_state *is = current_iface;
 		interface *i = iface_by_idx(is->ifacenum);
 
-		transfer_details_window(current_iface,current_iface->next);
 		current_iface = current_iface->next;
 		iface_box(is->subwin,i,is);
 		is = current_iface;
@@ -885,7 +871,6 @@ use_prev_iface_locked(void){
 		const iface_state *is = current_iface;
 		interface *i = iface_by_idx(is->ifacenum);
 
-		transfer_details_window(current_iface,current_iface->prev);
 		current_iface = current_iface->prev;
 		iface_box(is->subwin,i,is);
 		is = current_iface;
@@ -1237,10 +1222,10 @@ packet_cb_locked(const interface *i,iface_state *is){
 			return;
 		}
 		is->lastprinted = i->lastseen;
-		if(is->detailwin){
-			iface_details(is->detailwin->w,i,START_LINE,START_COL,
-					is->detailwin->ysize,
-					is->detailwin->xsize);
+		if(is == current_iface && details.w){
+			iface_details(details.w,i,START_LINE,START_COL,
+					details.ysize,
+					details.xsize);
 		}
 		print_iface_state(i,is);
 	}
@@ -1277,11 +1262,6 @@ interface_cb_locked(const interface *i,int inum,iface_state *ret){
 				if((ret->prev = current_iface) == NULL){
 					current_iface = ret->prev = ret->next = ret;
 					ret->scrline = START_LINE;
-					if(details.w){
-						ret->detailwin = &details;
-					}else{
-						ret->detailwin = NULL;
-					}
 				}else{
 					// The order on screen must match the list order, so splice it onto
 					// the end. We might be anywhere, so use absolute coords (scrline).
@@ -1293,7 +1273,6 @@ interface_cb_locked(const interface *i,int inum,iface_state *ret){
 					ret->next = ret->prev->next;
 					ret->next->prev = ret;
 					ret->prev->next = ret;
-					ret->detailwin = NULL;
 				}
 				if( (ret->subwin = derwin(pad,ret->ysize,PAD_COLS,ret->scrline,START_COL)) &&
 						(ret->panel = new_panel(ret->subwin)) ){
@@ -1340,10 +1319,10 @@ interface_cb_locked(const interface *i,int inum,iface_state *ret){
 		}
 	}
 	if(ret){
-		if(ret->detailwin){
-			iface_details(ret->detailwin->w,i,START_LINE,START_COL,
-					ret->detailwin->ysize,
-					ret->detailwin->xsize);
+		if(ret == current_iface && details.w){
+			iface_details(details.w,i,START_LINE,START_COL,
+					details.ysize,
+					details.xsize);
 		}
 		iface_box(ret->subwin,i,ret);
 		if(i->flags & IFF_UP){
@@ -1400,7 +1379,6 @@ interface_removed_locked(iface_state *is){
 			}
 			// If we owned the details window, give it to the new
 			// current_iface.
-			transfer_details_window(is,current_iface);
 			if(details.w){
 				iface_details(details.w,get_current_iface(),START_LINE,START_COL,details.ysize,details.xsize);
 			}
