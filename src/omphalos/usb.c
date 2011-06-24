@@ -40,39 +40,67 @@ get_ul_token(const char **str,char tok,unsigned long *ul){
 	return 0;
 }
 
-static struct libusb_device_handle *
-lookup(libusb_context *ctx,const char *busid){
-	libusb_device_handle *handle = NULL;
+// feed it the bus id as provided by libsysfs
+static libusb_device_handle *
+lookup(const char *busid,struct libusb_device_descriptor *desc){
+	libusb_device_handle *handle;
 	unsigned long bus,dev,port;
 	libusb_device **list;
 	const char *cur;
 	ssize_t s;
 
-	cur = busid;
+	cur = busid; // sysfs form: bus-port.dev:x.y
 	if(get_ul_token(&cur,'-',&bus) || get_ul_token(&cur,'.',&port) ||
-		get_ul_token(&cur,':',&dev)){
+			get_ul_token(&cur,':',&dev)){
 		return NULL;
 	}
 	// Error, or no USB devices connected to the system. Since we were
 	// triggered off a discovered device, following a bus lookup via sysfs,
 	// there certainly ought be a USB device connected.
-	if((s = libusb_get_device_list(ctx,&list)) <= 0){
+	if((s = libusb_get_device_list(usb,&list)) <= 0){
 		return NULL;
 	}
-	//1-1.1:1.0
+	handle = NULL;
+	while(--s >= 0){
+		if(libusb_get_bus_number(list[s]) != bus){
+			continue;
+		}
+		if(libusb_get_device_address(list[s]) != dev){
+			continue;
+		}
+		if(libusb_get_device_descriptor(list[s],desc)){
+			break;
+		}
+		if(libusb_open(list[s],&handle)){
+			break;
+		}
+		break;
+	}
 	libusb_free_device_list(list,1);
 	return handle;
 }
 
-// feed it the bus id as provided by libsysfs
 int find_usb_device(const char *busid,topdev_info *tinf){
-	struct libusb_device_handle *handle;
+	struct libusb_device_descriptor desc;
+	libusb_device_handle *handle;
+	unsigned char buf[128]; // FIXME
+	int l;
 
-	if((handle = lookup(usb,busid)) == NULL){
+	if((handle = lookup(busid,&desc)) == NULL){
 		return -1;
 	}
-	if(!busid || !tinf){
+	if((l = libusb_get_string_descriptor_ascii(handle,desc.iManufacturer,buf,sizeof(buf))) <= 0){
+		libusb_close(handle);
 		return -1;
-	} // FIXME filler
+	}
+	buf[l] = ' ';
+	if((l = libusb_get_string_descriptor_ascii(handle,desc.iProduct,buf + l,sizeof(buf) - l)) <= 0){
+		libusb_close(handle);
+		return -1;
+	}
+	libusb_close(handle);
+	if((tinf->devname = strdup((const char *)buf)) == NULL){
+		return -1;
+	}
 	return 0;
 }
