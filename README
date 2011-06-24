@@ -17,7 +17,7 @@ IV. Hacking
 I. Requirements
 ===================================================================
 
-libsysfs, libiw, libpcap and libcap are used at both build and runtime.
+libsysfs, libiw, libpcap, libpci and libcap are used at both build and runtime.
 
 Omphalos currently only builds or runs on a Linux kernel with PACKET_MMAP
 sockets. Packet transmission requires at least a 2.6.29 kernel.
