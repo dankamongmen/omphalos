@@ -121,14 +121,33 @@ int stop_usb_support(void){
 
 int find_usb_device(const char *busid __attribute__ ((unused)),
 		struct sysfs_device *sd,topdev_info *tinf){
-	struct dlist *dl;
+	struct sysfs_attribute *attr;
+	struct sysfs_device *parent;
+	char *tmp;
 
-	if(!tinf){ // FIXME kill
+	if((parent = sysfs_get_device_parent(sd)) == NULL){
 		return -1;
 	}
-	if((dl = sysfs_get_device_attributes(sd)) == NULL){
+	if((attr = sysfs_get_device_attr(parent,"manufacturer")) == NULL){
 		return -1;
 	}
-	dlist_destroy(dl);
+	if((tinf->devname = strdup(attr->value)) == NULL){
+		return -1;
+	}
+	if((attr = sysfs_get_device_attr(parent,"product")) == NULL){
+		free(tinf->devname);
+		tinf->devname = NULL;
+		return -1;
+	}
+	if((tmp = realloc(tinf->devname,strlen(tinf->devname) + strlen(attr->value) + 2)) == NULL){
+		free(tinf->devname);
+		tinf->devname = NULL;
+		return -1;
+	}
+	// They come with a newline at the end, argh!
+	tmp[strlen(tmp) - 1] = ' ';
+	strcat(tmp,attr->value);
+	tmp[strlen(tmp) - 1] = '\0';
+	tinf->devname = tmp;
 	return 0;
 }
