@@ -520,25 +520,36 @@ hide_panel_locked(WINDOW *w,struct panel_state *ps){
 	}
 }
 
-// Can leak resources on failure -- caller must free window/panel on error
+// Create a panel at the bottom of the window, referred to as the "subdisplay".
+// Only one can currently be active at a time. Window decoration and placement
+// is managed here; only the rows needed for display ought be provided.
 static int
-new_display_panel(struct panel_state *ps,int rows,int cols,int srow,int scol,
-						const wchar_t *hstr){
+new_display_panel(WINDOW *w,struct panel_state *ps,int rows,const wchar_t *hstr){
 	const wchar_t crightstr[] = L"copyright © 2011 nick black";
 	const int crightlen = wcslen(crightstr);
+	int x,y;
 
-	if(cols < crightlen + START_COL * 2){
+	getmaxyx(w,y,x);
+	assert(y >= rows + 3);
+	assert(x >= crightlen + START_COL * 3);
+	assert((ps->w = newwin(rows + 2,x - START_COL * 2,y - (rows + 3),1)));
+	if(ps->w == NULL){
 		return ERR;
 	}
-	assert((ps->w = newwin(rows,cols,srow,scol)) != NULL);
-	assert((ps->p = new_panel(ps->w)) != NULL);
+	assert((ps->p = new_panel(ps->w)));
+	if(ps->p == NULL){
+		return ERR;
+	}
+	ps->ysize = rows;
+	ps->xsize = x - START_COL * 2;
+	// memory leaks follow if we're compiled with NDEBUG! FIXME
 	assert(wattron(ps->w,A_BOLD) != ERR);
 	assert(wcolor_set(ps->w,PBORDER_COLOR,NULL) == OK);
 	assert(box(ps->w,0,0) == OK);
 	assert(wattroff(ps->w,A_BOLD) != ERR);
 	assert(wcolor_set(ps->w,PHEADING_COLOR,NULL) == OK);
 	assert(mvwaddwstr(ps->w,0,START_COL * 2,hstr) != ERR);
-	assert(mvwaddwstr(ps->w,rows - 1,cols - (crightlen + START_COL * 2),crightstr) != ERR);
+	assert(mvwaddwstr(ps->w,rows + 1,x - (crightlen + START_COL * 4),crightstr) != ERR);
 	assert(wcolor_set(ps->w,BULKTEXT_COLOR,NULL) == OK);
 	return OK;
 }
@@ -631,25 +642,10 @@ iface_details(WINDOW *hw,const interface *i,int row,int col,int rows,int cols){
 
 static int
 display_details_locked(WINDOW *mainw,struct panel_state *ps,iface_state *is){
-	// The NULL doesn't count as a row
-	int rows,cols,startrow,linesneeded;
-
 	memset(ps,0,sizeof(*ps));
-	getmaxyx(mainw,rows,cols);
-	// Space for the status bar + gap, bottom bar, and top bar
-	linesneeded = START_LINE * 2 + DETAILROWS;
-	if(rows <= linesneeded){
+	if(new_display_panel(mainw,ps,DETAILROWS,L"press 'v' to dismiss details")){
 		ERREXIT;
 	}
-	startrow = rows - linesneeded;
-	rows -= startrow + START_LINE;
-	cols -= START_COL * 2;
-	if(new_display_panel(ps,rows,cols,startrow,START_COL,
-				L"press 'v' to dismiss details")){
-		ERREXIT;
-	}
-	ps->ysize = rows - START_LINE;
-	ps->xsize = cols - START_COL * 2;
 	if(is){
 		if(iface_details(ps->w,iface_by_idx(is->ifacenum),1,START_COL,
 					ps->ysize,ps->xsize)){
@@ -705,12 +701,12 @@ static const wchar_t *helps[] = {
 
 // FIXME need to support scrolling through the list
 static int
-helpstrs(WINDOW *hw,int row,int col,int rows){
+helpstrs(WINDOW *hw,int row,int rows){
 	const wchar_t *hs;
 	int z;
 
 	for(z = 0 ; (hs = helps[z]) && z < rows ; ++z){
-		if(mvwaddwstr(hw,row + z,col,hs) == ERR){
+		if(mvwaddwstr(hw,row + z,1,hs) == ERR){
 			return ERR;
 		}
 	}
@@ -720,24 +716,12 @@ helpstrs(WINDOW *hw,int row,int col,int rows){
 static int
 display_help_locked(WINDOW *mainw,struct panel_state *ps){
 	const int helprows = sizeof(helps) / sizeof(*helps) - 1; // NULL != row
-	int rows,cols,startrow,linesneeded;
 
 	memset(ps,0,sizeof(*ps));
-	getmaxyx(mainw,rows,cols);
-	// Space for the status bar + gap, bottom bar, and top bar
-	linesneeded = START_LINE * 2 + helprows;
-	if(rows <= linesneeded){
+	if(new_display_panel(mainw,ps,helprows,L"press 'h' to dismiss help")){
 		ERREXIT;
 	}
-	startrow = rows - linesneeded;
-	// We're using (total lines) - (start line) - (2 lines for bottom bar)
-	rows -= startrow + START_LINE;
-	cols -= START_COL * 2;
-	if(new_display_panel(ps,rows,cols,startrow,START_COL,
-				L"press 'h' to dismiss help")){
-		ERREXIT;
-	}
-	if(helpstrs(ps->w,1,START_COL,rows - START_LINE)){
+	if(helpstrs(ps->w,1,ps->ysize)){
 		ERREXIT;
 	}
 	if(start_screen_update() == ERR){
@@ -746,8 +730,6 @@ display_help_locked(WINDOW *mainw,struct panel_state *ps){
 	if(finish_screen_update() == ERR){
 		ERREXIT;
 	}
-	ps->ysize = rows - START_LINE;
-	ps->xsize = cols - START_COL * 2;
 	return 0;
 
 err:
