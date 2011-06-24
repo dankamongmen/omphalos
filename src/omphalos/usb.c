@@ -3,9 +3,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <omphalos/usb.h>
-#include <libusb-1.0/libusb.h>
 #include <omphalos/interface.h>
 
+/* LibUSB 1.0 implementation
+#include <libusb-1.0/libusb.h>
 static libusb_context *usb;
 
 int init_usb_support(void){
@@ -80,7 +81,7 @@ lookup(const char *busid,struct libusb_device_descriptor *desc){
 	return handle;
 }
 
-int find_usb_device(const char *busid,const struct sysfs_device *sd __attribute__ ((unused)),
+int find_usb_device(const char *busid,struct sysfs_device *sd __attribute__ ((unused)),
 				topdev_info *tinf){
 	struct libusb_device_descriptor desc;
 	libusb_device_handle *handle;
@@ -103,5 +104,31 @@ int find_usb_device(const char *busid,const struct sysfs_device *sd __attribute_
 	if((tinf->devname = strdup((const char *)buf)) == NULL){
 		return -1;
 	}
+	return 0;
+}
+*/
+
+// libsysfs implementation
+#include <sysfs/libsysfs.h>
+
+int init_usb_support(void){
+	return 0;
+}
+
+int stop_usb_support(void){
+	return 0;
+}
+
+int find_usb_device(const char *busid __attribute__ ((unused)),
+		struct sysfs_device *sd,topdev_info *tinf){
+	struct dlist *dl;
+
+	if(!tinf){ // FIXME kill
+		return -1;
+	}
+	if((dl = sysfs_get_device_attributes(sd)) == NULL){
+		return -1;
+	}
+	dlist_destroy(dl);
 	return 0;
 }

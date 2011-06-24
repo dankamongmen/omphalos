@@ -9,7 +9,7 @@
 // are all about PCIe routing, not end devices.
 static struct bus {
 	const char *bus;
-	int (*bus_lookup)(const char *,const struct sysfs_device *,
+	int (*bus_lookup)(const char *,struct sysfs_device *,
 				struct topdev_info *);
 } buses[] = {
 	{ "pci",	find_pci_device,	},
