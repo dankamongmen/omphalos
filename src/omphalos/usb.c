@@ -80,7 +80,8 @@ lookup(const char *busid,struct libusb_device_descriptor *desc){
 	return handle;
 }
 
-int find_usb_device(const char *busid,topdev_info *tinf){
+int find_usb_device(const char *busid,const struct sysfs_device *sd __attribute__ ((unused)),
+				topdev_info *tinf){
 	struct libusb_device_descriptor desc;
 	libusb_device_handle *handle;
 	unsigned char buf[128]; // FIXME

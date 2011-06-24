@@ -25,7 +25,8 @@ int stop_pci_support(void){
 }
 
 // feed it the bus id as provided by libsysfs
-int find_pci_device(const char *busid,topdev_info *tinf){
+int find_pci_device(const char *busid,const struct sysfs_device *sd __attribute__ ((unused)),
+				topdev_info *tinf){
 	unsigned long domain,bus,dev,func;
 	struct pci_dev *d;
 	const char *cur;

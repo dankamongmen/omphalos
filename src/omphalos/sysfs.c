@@ -9,7 +9,8 @@
 // are all about PCIe routing, not end devices.
 static struct bus {
 	const char *bus;
-	int (*bus_lookup)(const char *,struct topdev_info *);
+	int (*bus_lookup)(const char *,const struct sysfs_device *,
+				struct topdev_info *);
 } buses[] = {
 	{ "pci",	find_pci_device,	},
 	{ "usb",	find_usb_device,	},
@@ -25,7 +26,7 @@ const char *lookup_bus(const char *dname,topdev_info *tinf){
 	for(b = buses ; b->bus ; ++b){
 		if( (dev = sysfs_open_device(b->bus,dname)) ){
 			if(b->bus_lookup){
-				b->bus_lookup(dname,tinf);
+				b->bus_lookup(dname,dev,tinf);
 			}
 			sysfs_close_device(dev);
 			return b->bus;

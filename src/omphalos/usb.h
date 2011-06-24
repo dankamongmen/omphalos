@@ -6,12 +6,12 @@ extern "C" {
 #endif
 
 struct topdev_info;
+struct sysfs_device;
 
 int init_usb_support(void);
 int stop_usb_support(void);
 
-// feed it the bus id as provided by libsysfs
-int find_usb_device(const char *,struct topdev_info *);
+int find_usb_device(const char *,const struct sysfs_device *,struct topdev_info *);
 
 #ifdef __cplusplus
 }
