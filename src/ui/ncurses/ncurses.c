@@ -632,35 +632,32 @@ iface_details(WINDOW *hw,const interface *i,int row,int col,int rows,int cols){
 static int
 display_details_locked(WINDOW *mainw,struct panel_state *ps,iface_state *is){
 	// The NULL doesn't count as a row
-	int rows,cols,startrow;
+	int rows,cols,startrow,linesneeded;
 
 	memset(ps,0,sizeof(*ps));
 	getmaxyx(mainw,rows,cols);
-	// Space for the status bar + gap, bottom bar + gap,
-	// and top bar + gap
-	startrow = START_LINE * 3 + DETAILROWS + 1;
-	if(rows <= startrow){
+	// Space for the status bar + gap, bottom bar, and top bar
+	linesneeded = START_LINE * 2 + DETAILROWS + 1;
+	if(rows <= linesneeded){
 		ERREXIT;
 	}
-	startrow = rows - startrow;
+	startrow = rows - linesneeded;
 	rows -= startrow + START_LINE;
 	cols -= START_COL * 2;
 	if(new_display_panel(ps,rows,cols,startrow,START_COL,
 				L"press 'v' to dismiss details")){
 		ERREXIT;
 	}
+	ps->ysize = rows - START_LINE;
+	ps->xsize = cols - START_COL * 2;
 	if(is){
-		if(iface_details(ps->w,iface_by_idx(is->ifacenum),
-					START_LINE,START_COL,
-					rows - START_LINE * 2,
-					cols - START_COL * 2)){
+		if(iface_details(ps->w,iface_by_idx(is->ifacenum),1,START_COL,
+					ps->ysize,ps->xsize)){
 			ERREXIT;
 		}
 	}
 	assert(start_screen_update() != ERR);
 	assert(finish_screen_update() != ERR);
-	ps->ysize = rows - START_LINE * 2;
-	ps->xsize = cols - START_COL * 2;
 	return 0;
 
 err:
@@ -858,7 +855,7 @@ use_next_iface_locked(void){
 		i = iface_by_idx(is->ifacenum);
 		iface_box(is->subwin,i,is);
 		if(details.w){
-			iface_details(details.w,i,START_LINE,START_COL,details.ysize,details.xsize);
+			iface_details(details.w,i,1,START_COL,details.ysize,details.xsize);
 		}
 		start_screen_update();
 		finish_screen_update();
@@ -877,7 +874,7 @@ use_prev_iface_locked(void){
 		i = iface_by_idx(is->ifacenum);
 		iface_box(is->subwin,i,is);
 		if(details.w){
-			iface_details(details.w,i,START_LINE,START_COL,details.ysize,details.xsize);
+			iface_details(details.w,i,1,START_COL,details.ysize,details.xsize);
 		}
 		start_screen_update();
 		finish_screen_update();
@@ -1223,7 +1220,7 @@ packet_cb_locked(const interface *i,iface_state *is){
 		}
 		is->lastprinted = i->lastseen;
 		if(is == current_iface && details.w){
-			iface_details(details.w,i,START_LINE,START_COL,
+			iface_details(details.w,i,1,START_COL,
 					details.ysize,
 					details.xsize);
 		}
@@ -1320,7 +1317,7 @@ interface_cb_locked(const interface *i,int inum,iface_state *ret){
 	}
 	if(ret){
 		if(ret == current_iface && details.w){
-			iface_details(details.w,i,START_LINE,START_COL,
+			iface_details(details.w,i,1,START_COL,
 					details.ysize,
 					details.xsize);
 		}
@@ -1380,7 +1377,7 @@ interface_removed_locked(iface_state *is){
 			// If we owned the details window, give it to the new
 			// current_iface.
 			if(details.w){
-				iface_details(details.w,get_current_iface(),START_LINE,START_COL,details.ysize,details.xsize);
+				iface_details(details.w,get_current_iface(),1,START_COL,details.ysize,details.xsize);
 			}
 		}else{
 			// If we owned the details window, destroy it FIXME
