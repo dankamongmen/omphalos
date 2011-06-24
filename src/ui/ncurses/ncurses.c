@@ -236,7 +236,7 @@ genprefix(uintmax_t val,unsigned decimal,char *buf,size_t bsize,int omitdec,
 	uintmax_t div;
 
 	div = mult;
-	while((val / decimal) > div && consumed < strlen(prefixes)){
+	while((val / decimal) >= div && consumed < strlen(prefixes)){
 		div *= mult;
 		if(UINTMAX_MAX / div < mult){ // watch for overflow
 			break;
