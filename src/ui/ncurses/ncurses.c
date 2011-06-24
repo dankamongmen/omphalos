@@ -552,18 +552,18 @@ offload_details(WINDOW *w,const interface *i,int row,int col,const char *name,
 	return mvwprintw(w,row,col,"%s%c",name,r > 0 ? '+' : r < 0 ? '?' : '-');
 }
 
-#define DETAILROWS 7
+#define DETAILROWS 8
 
 // FIXME need to support scrolling through the output
 static int
 iface_details(WINDOW *hw,const interface *i,int row,int col,int rows,int cols){
 	int z;
 
-	if((z = rows) > DETAILROWS){
-		z = DETAILROWS;
+	if((z = rows) >= DETAILROWS){
+		z = DETAILROWS - 1;
 	}
 	switch(z){ // Intentional fallthroughs all the way to 0
-	case DETAILROWS:{
+	case (DETAILROWS - 1):{
 		// FIXME: display percentage of truncations that were recovered
 		assert(mvwprintw(hw,row + z,col,"drops: "U64FMT" truncs: "U64FMT" recov: %-6ju",
 					i->drops,i->truncated,i->truncated_recovered) != ERR);
@@ -637,7 +637,7 @@ display_details_locked(WINDOW *mainw,struct panel_state *ps,iface_state *is){
 	memset(ps,0,sizeof(*ps));
 	getmaxyx(mainw,rows,cols);
 	// Space for the status bar + gap, bottom bar, and top bar
-	linesneeded = START_LINE * 2 + DETAILROWS + 1;
+	linesneeded = START_LINE * 2 + DETAILROWS;
 	if(rows <= linesneeded){
 		ERREXIT;
 	}
@@ -719,28 +719,25 @@ helpstrs(WINDOW *hw,int row,int col,int rows){
 
 static int
 display_help_locked(WINDOW *mainw,struct panel_state *ps){
-	// The NULL doesn't count as a row
-	const int helprows = sizeof(helps) / sizeof(*helps) - 1;
-	int rows,cols,startrow;
+	const int helprows = sizeof(helps) / sizeof(*helps) - 1; // NULL != row
+	int rows,cols,startrow,linesneeded;
 
 	memset(ps,0,sizeof(*ps));
 	getmaxyx(mainw,rows,cols);
-	// Optimally, we get space for the status bar + gap, bottom bar + gap,
-	// and top bar + gap. We might get less.
-	startrow = rows - (START_LINE * 3 + helprows);
-	// Need to support scrolling for this to work! FIXME
-	if(startrow <= START_LINE + PAD_LINES + 1){
-		startrow = START_LINE + PAD_LINES + 1;
+	// Space for the status bar + gap, bottom bar, and top bar
+	linesneeded = START_LINE * 2 + helprows;
+	if(rows <= linesneeded){
+		ERREXIT;
 	}
-	// We get all the rows from startrow to the last two.
-	assert(startrow + START_LINE < rows);
+	startrow = rows - linesneeded;
+	// We're using (total lines) - (start line) - (2 lines for bottom bar)
 	rows -= startrow + START_LINE;
 	cols -= START_COL * 2;
 	if(new_display_panel(ps,rows,cols,startrow,START_COL,
 				L"press 'h' to dismiss help")){
 		ERREXIT;
 	}
-	if(helpstrs(ps->w,START_LINE,START_COL,rows - START_LINE * 2)){
+	if(helpstrs(ps->w,1,START_COL,rows - START_LINE)){
 		ERREXIT;
 	}
 	if(start_screen_update() == ERR){
@@ -749,7 +746,7 @@ display_help_locked(WINDOW *mainw,struct panel_state *ps){
 	if(finish_screen_update() == ERR){
 		ERREXIT;
 	}
-	ps->ysize = rows - START_LINE * 2;
+	ps->ysize = rows - START_LINE;
 	ps->xsize = cols - START_COL * 2;
 	return 0;
 
