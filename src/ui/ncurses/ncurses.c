@@ -28,6 +28,7 @@
 #include <ncursesw/panel.h>
 #include <omphalos/timing.h>
 #include <ncursesw/ncurses.h>
+#include <omphalos/hwaddrs.h>
 #include <omphalos/ethtool.h>
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
@@ -70,6 +71,7 @@ typedef struct iface_state {
 	int ifacenum;			// iface number
 	int scrline;			// line within the containing pad
 	int ysize;			// number of lines
+	int l2ents;			// number of l2 entities
 	WINDOW *subwin;			// subwin
 	PANEL *panel;			// panel
 	const char *typestr;		// looked up using iface->arptype
@@ -121,6 +123,15 @@ finish_screen_update(void){
 		return ERR;
 	}
 	return OK;
+}
+
+static inline int
+full_screen_update(void){
+	int ret;
+
+	assert((ret = start_screen_update()) == 0);
+	assert((ret |= finish_screen_update()) == 0);
+	return ret;
 }
 
 // Pass current number of columns
@@ -1169,13 +1180,88 @@ print_iface_state(const interface *i,const iface_state *is){
 	return 0;
 }
 
+static inline int
+lines_for_interface(const interface *i,const iface_state *is){
+	if(i->flags & IFF_UP){
+		return PAD_LINES + is->l2ents;
+	}else{
+		return PAD_LINES + is->l2ents - 1;
+	}
+}
+
+static int
+resize_iface(const interface *i,iface_state *ret){
+	if(lines_for_interface(i,ret) != ret->ysize){ // need resize
+		int delta = lines_for_interface(i,ret) - ret->ysize;
+		iface_state *is;
+
+		for(is = ret->next ; is->scrline > ret->scrline ; is = is->next){
+			interface *ii = iface_by_idx(is->ifacenum);
+
+			is->scrline += delta;
+			assert(werase(is->subwin) == OK);
+			assert(delwin(is->subwin) == OK);
+			assert(del_panel(is->panel) == OK);
+			assert( (is->subwin = derwin(pad,is->ysize,PAD_COLS,is->scrline,START_COL)) );
+			assert( (is->panel = new_panel(is->subwin)) );
+			iface_box(is->subwin,ii,is);
+			print_iface_state(ii,is);
+		}
+		ret->ysize = lines_for_interface(i,ret);
+		assert(werase(ret->subwin) != ERR);
+		assert(wresize(ret->subwin,ret->ysize,PAD_COLS) != ERR);
+		assert(replace_panel(ret->panel,ret->subwin) != ERR);
+		full_screen_update();
+	}
+	return 0;
+}
+
+typedef struct l2obj {
+	int line;
+} l2obj;
+
+static l2obj *
+get_l2obj(int line){
+	l2obj *l;
+
+	if( (l = malloc(sizeof(*l))) ){
+		l->line = line;
+	}
+	return l;
+}
+
+static void
+handle_l2(const interface *i,iface_state *is,omphalos_packet *op){
+	int l2ents = is->l2ents;
+	l2obj *l;
+
+	if((l = l2host_get_opaque(op->l2s)) == NULL){
+		if((l = get_l2obj(++is->l2ents)) == NULL){
+			--is->l2ents;
+			return;
+		}
+		l2host_set_opaque(op->l2s,l);
+	}
+	if((l = l2host_get_opaque(op->l2d)) == NULL){
+		if((l = get_l2obj(++is->l2ents)) == NULL){
+			--is->l2ents;
+			return;
+		}
+		l2host_set_opaque(op->l2d,l);
+	}
+	if(is->l2ents != l2ents){
+		resize_iface(i,is);
+		iface_box(is->subwin,i,is);
+	}
+}
+
 static inline void
-packet_cb_locked(const interface *i,iface_state *is,const omphalos_packet *op){
+packet_cb_locked(const interface *i,iface_state *is,omphalos_packet *op){
 	if(is){
 		struct timeval tdiff;
 		unsigned long udiff;
 
-		wstatus_locked(pad,"l2: %p/%p",op->l2s,op->l2d);
+		handle_l2(i,is,op);
 		timersub(&i->lastseen,&is->lastprinted,&tdiff);
 		udiff = timerusec(&tdiff);
 		if(udiff < 500000){ // At most one update every 1/2s
@@ -1200,51 +1286,6 @@ packet_callback(const interface *i,void *unsafe,omphalos_packet *op){
 	pthread_mutex_unlock(&bfl);
 }
 
-static inline int
-lines_for_interface(const interface *i){
-	if(i->flags & IFF_UP){
-		return PAD_LINES;
-	}else{
-		return PAD_LINES - 1;
-	}
-}
-
-static inline int
-full_screen_update(void){
-	int ret;
-
-	assert((ret = start_screen_update()) == 0);
-	assert((ret |= finish_screen_update()) == 0);
-	return ret;
-}
-
-static int
-resize_iface(const interface *i,iface_state *ret){
-	if(lines_for_interface(i) != ret->ysize){ // need resize
-		int delta = lines_for_interface(i) - ret->ysize;
-		iface_state *is;
-
-		for(is = ret->next ; is->scrline > ret->scrline ; is = is->next){
-			interface *ii = iface_by_idx(is->ifacenum);
-
-			is->scrline += delta;
-			assert(werase(is->subwin) == OK);
-			assert(delwin(is->subwin) == OK);
-			assert(del_panel(is->panel) == OK);
-			assert( (is->subwin = derwin(pad,is->ysize,PAD_COLS,is->scrline,START_COL)) );
-			assert( (is->panel = new_panel(is->subwin)) );
-			iface_box(is->subwin,ii,is);
-			print_iface_state(ii,is);
-		}
-		ret->ysize = lines_for_interface(i);
-		assert(werase(ret->subwin) != ERR);
-		assert(wresize(ret->subwin,ret->ysize,PAD_COLS) != ERR);
-		assert(replace_panel(ret->panel,ret->subwin) != ERR);
-		full_screen_update();
-	}
-	return 0;
-}
-
 static inline void *
 interface_cb_locked(const interface *i,int inum,iface_state *ret){
 	if(ret == NULL){
@@ -1252,7 +1293,8 @@ interface_cb_locked(const interface *i,int inum,iface_state *ret){
 
 		if( (tstr = lookup_arptype(i->arptype,NULL)) ){
 			if( (ret = malloc(sizeof(iface_state))) ){
-				ret->ysize = lines_for_interface(i);
+				ret->l2ents = 0;
+				ret->ysize = lines_for_interface(i,ret);
 				ret->alarmset = ret->devaction = 0;
 				ret->typestr = tstr;
 				ret->lastprinted.tv_sec = ret->lastprinted.tv_usec = 0;
@@ -1266,7 +1308,7 @@ interface_cb_locked(const interface *i,int inum,iface_state *ret){
 					while(ret->prev->next->scrline > ret->prev->scrline){
 						ret->prev = ret->prev->next;
 					}
-					ret->scrline = lines_for_interface(iface_by_idx(ret->prev->ifacenum))
+					ret->scrline = lines_for_interface(iface_by_idx(ret->prev->ifacenum),ret->prev)
 						+ ret->prev->scrline + 1;
 					ret->next = ret->prev->next;
 					ret->next->prev = ret;
