@@ -107,8 +107,6 @@ static const char *glibc_version,*glibc_release;
 static char *statusmsg;
 static int statuschars;	// True size, not necessarily what's available
 
-#define ANSITERM_COLS 80
-
 static inline int
 start_screen_update(void){
 	int ret = OK;
@@ -130,8 +128,6 @@ static int
 setup_statusbar(int cols){
 	if(cols < 0){
 		return -1;
-	}else if(cols < ANSITERM_COLS){
-		cols = ANSITERM_COLS;
 	}
 	if(statuschars <= cols){
 		const size_t s = cols + 1;
@@ -1087,11 +1083,6 @@ ncurses_setup(const omphalos_iface *octx,PANEL **panel){
 		goto err;
 	}
 	w = stdscr;
-	/*if((w = newpad(LINES,COLS)) == NULL){
-		errstr = "Couldn't initialize main pad\n";
-		goto err;
-	}
-	*/
 	if((p = new_panel(stdscr)) == NULL){
 		errstr = "Couldn't initialize main panel\n";
 		goto err;
@@ -1224,6 +1215,42 @@ lines_for_interface(const interface *i){
 	}
 }
 
+static inline int
+full_screen_update(void){
+	int ret;
+
+	assert((ret = start_screen_update()) == 0);
+	assert((ret |= finish_screen_update()) == 0);
+	return ret;
+}
+
+static int
+resize_iface(const interface *i,iface_state *ret){
+	if(lines_for_interface(i) != ret->ysize){ // need resize
+		int delta = lines_for_interface(i) - ret->ysize;
+		iface_state *is;
+
+		for(is = ret->next ; is->scrline > ret->scrline ; is = is->next){
+			interface *ii = iface_by_idx(is->ifacenum);
+
+			is->scrline += delta;
+			assert(werase(is->subwin) == OK);
+			assert(delwin(is->subwin) == OK);
+			assert(del_panel(is->panel) == OK);
+			assert( (is->subwin = derwin(pad,is->ysize,PAD_COLS,is->scrline,START_COL)) );
+			assert( (is->panel = new_panel(is->subwin)) );
+			iface_box(is->subwin,ii,is);
+			print_iface_state(ii,is);
+		}
+		ret->ysize = lines_for_interface(i);
+		assert(werase(ret->subwin) != ERR);
+		assert(wresize(ret->subwin,ret->ysize,PAD_COLS) != ERR);
+		assert(replace_panel(ret->panel,ret->subwin) != ERR);
+		full_screen_update();
+	}
+	return 0;
+}
+
 static inline void *
 interface_cb_locked(const interface *i,int inum,iface_state *ret){
 	if(ret == NULL){
@@ -1271,27 +1298,7 @@ interface_cb_locked(const interface *i,int inum,iface_state *ret){
 			}
 		}
 	}else{ // preexisting interface
-		if(lines_for_interface(i) != ret->ysize){ // need resize
-			int delta = lines_for_interface(i) - ret->ysize;
-			iface_state *is;
-
-			for(is = ret->next ; is->scrline > ret->scrline ; is = is->next){
-				interface *ii = iface_by_idx(is->ifacenum);
-
-				is->scrline += delta;
-				assert(werase(is->subwin) == OK);
-				assert(delwin(is->subwin) == OK);
-				assert(del_panel(is->panel) == OK);
-				is->subwin = derwin(pad,is->ysize,PAD_COLS,is->scrline,START_COL);
-				is->panel = new_panel(is->subwin);
-				iface_box(is->subwin,ii,is);
-				print_iface_state(ii,is);
-			}
-			ret->ysize = lines_for_interface(i);
-			assert(werase(ret->subwin) != ERR);
-			assert(wresize(ret->subwin,ret->ysize,PAD_COLS) != ERR);
-			assert(replace_panel(ret->panel,ret->subwin) != ERR);
-		}
+		resize_iface(i,ret);
 	}
 	if(ret){
 		if(ret == current_iface && details.w){
@@ -1306,13 +1313,11 @@ interface_cb_locked(const interface *i,int inum,iface_state *ret){
 				wstatus_locked(pad,"");
 				ret->devaction = 0;
 			}
-			// FIXME expand it
 			start_screen_update();
 			finish_screen_update();
 		}else if(ret->devaction > 0){
 			wstatus_locked(pad,"");
 			ret->devaction = 0;
-			// FIXME collapse it
 			start_screen_update();
 			finish_screen_update();
 		}
