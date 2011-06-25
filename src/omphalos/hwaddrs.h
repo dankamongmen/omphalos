@@ -17,6 +17,9 @@ int print_l2hosts(FILE *,const struct l2host *);
 char *l2addrstr(const void *,size_t);
 int print_neigh(const struct interface *,const struct l2host *);
 
+void *l2host_get_opaque(struct l2host *);
+void l2host_set_opaque(struct l2host *,void *);
+
 #ifdef __cplusplus
 }
 #endif

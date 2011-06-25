@@ -574,8 +574,7 @@ iface_details(WINDOW *hw,const interface *i,int rows,int cols){
 	}
 	switch(z){ // Intentional fallthroughs all the way to 0
 	case (DETAILROWS - 1):{
-		// FIXME: display percentage of truncations that were recovered
-		assert(mvwprintw(hw,row + z,col,"drops: "U64FMT" truncs: "U64FMT" recov: %-6ju",
+		assert(mvwprintw(hw,row + z,col,"drops: "U64FMT" truncs: "U64FMT" (%ju recov)",
 					i->drops,i->truncated,i->truncated_recovered) != ERR);
 		--z;
 	}case 6:{
@@ -599,7 +598,6 @@ iface_details(WINDOW *hw,const interface *i,int rows,int cols){
 					bprefix(i->ttpr.tp_block_size,1,buf,sizeof(buf),1),i->ttpr.tp_block_nr) != ERR);
 		--z;
 	}case 2:{
-		// FIXME need to apply valditity masking here!
 		assert(offload_details(hw,i,row + z,col,"TSO",TCP_SEG_OFFLOAD) != ERR);
 		assert(offload_details(hw,i,row + z,col + 5,"S/G",ETH_SCATTER_GATHER) != ERR);
 		assert(offload_details(hw,i,row + z,col + 10,"UFO",UDP_FRAG_OFFLOAD) != ERR);
@@ -612,11 +610,8 @@ iface_details(WINDOW *hw,const interface *i,int rows,int cols){
 		assert(offload_details(hw,i,row + z,col + 48,"RVln",RXVLAN_OFFLOAD) != ERR);
 		--z;
 	}case 1:{
-		if(i->topinfo.devname){
-			assert(mvwprintw(hw,row + z,col,"%-*s",cols - 2,i->topinfo.devname) != ERR);
-		}else{ // FIXME
-			assert(mvwprintw(hw,row + z,col,"%-*s",cols - 2,"Unknown device") != ERR);
-		}
+		assert(mvwprintw(hw,row + z,col,"%-*s",cols - 2,i->topinfo.devname ?
+					i->topinfo.devname : "Unknown device") != ERR);
 		--z;
 	}case 0:{
 		char buf[PREFIXSTRLEN],buf2[PREFIXSTRLEN];
@@ -625,7 +620,6 @@ iface_details(WINDOW *hw,const interface *i,int rows,int cols){
 		if((mac = hwaddrstr(i)) == NULL){
 			return ERR;
 		}
-		// FIXME blank end of line!
 		assert(mvwprintw(hw,row + z,col,"%-16s %s txr: %sB\t rxr: %sB\t mtu: %-6d",
 					i->name,mac,
 					bprefix(i->ts,1,buf,sizeof(buf),1),
@@ -1200,7 +1194,7 @@ packet_cb_locked(const interface *i,iface_state *is,const omphalos_packet *op){
 }
 
 static void
-packet_callback(const interface *i,void *unsafe,const omphalos_packet *op){
+packet_callback(const interface *i,void *unsafe,omphalos_packet *op){
 	pthread_mutex_lock(&bfl);
 	packet_cb_locked(i,unsafe,op);
 	pthread_mutex_unlock(&bfl);

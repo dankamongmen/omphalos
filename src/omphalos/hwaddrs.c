@@ -12,6 +12,7 @@
 typedef struct l2host {
 	uint64_t hwaddr;	// does anything have more than 64 bits at L2?
 	struct l2host *next;
+	void *opaque;		// FIXME not sure about how this is being done
 } l2host;
 
 // FIXME replace internals with LRU acquisition...
@@ -139,7 +140,7 @@ int print_l2hosts(FILE *fp,const l2host *list){
 	return 0;
 }
 
-int print_neigh(const interface *iface,const struct l2host *l2){
+int print_neigh(const interface *iface,const l2host *l2){
 	char *hwaddr;
 	int n;
 
@@ -160,4 +161,12 @@ int print_neigh(const interface *iface,const struct l2host *l2){
 			);
 		*/
 	return n;
+}
+
+void *l2host_get_opaque(l2host *l2){
+	return l2->opaque;
+}
+
+void l2host_set_opaque(l2host *l2,void *opaque){
+	l2->opaque = opaque;
 }
