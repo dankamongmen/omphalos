@@ -564,7 +564,9 @@ offload_details(WINDOW *w,const interface *i,int row,int col,const char *name,
 
 // FIXME need to support scrolling through the output
 static int
-iface_details(WINDOW *hw,const interface *i,int row,int col,int rows,int cols){
+iface_details(WINDOW *hw,const interface *i,int rows,int cols){
+	const int col = START_COL;
+	const int row = 1;
 	int z;
 
 	if((z = rows) >= DETAILROWS){
@@ -644,8 +646,7 @@ display_details_locked(WINDOW *mainw,struct panel_state *ps,iface_state *is){
 		ERREXIT;
 	}
 	if(is){
-		if(iface_details(ps->w,iface_by_idx(is->ifacenum),1,START_COL,
-					ps->ysize,ps->xsize)){
+		if(iface_details(ps->w,iface_by_idx(is->ifacenum),ps->ysize,ps->xsize)){
 			ERREXIT;
 		}
 	}
@@ -831,7 +832,7 @@ use_next_iface_locked(void){
 		i = iface_by_idx(is->ifacenum);
 		iface_box(is->subwin,i,is);
 		if(details.w){
-			iface_details(details.w,i,1,START_COL,details.ysize,details.xsize);
+			iface_details(details.w,i,details.ysize,details.xsize);
 		}
 		start_screen_update();
 		finish_screen_update();
@@ -850,7 +851,7 @@ use_prev_iface_locked(void){
 		i = iface_by_idx(is->ifacenum);
 		iface_box(is->subwin,i,is);
 		if(details.w){
-			iface_details(details.w,i,1,START_COL,details.ysize,details.xsize);
+			iface_details(details.w,i,details.ysize,details.xsize);
 		}
 		start_screen_update();
 		finish_screen_update();
@@ -1191,9 +1192,7 @@ packet_cb_locked(const interface *i,iface_state *is){
 		}
 		is->lastprinted = i->lastseen;
 		if(is == current_iface && details.w){
-			iface_details(details.w,i,1,START_COL,
-					details.ysize,
-					details.xsize);
+			iface_details(details.w,i,details.ysize,details.xsize);
 		}
 		print_iface_state(i,is);
 	}
@@ -1302,9 +1301,7 @@ interface_cb_locked(const interface *i,int inum,iface_state *ret){
 	}
 	if(ret){
 		if(ret == current_iface && details.w){
-			iface_details(details.w,i,1,START_COL,
-					details.ysize,
-					details.xsize);
+			iface_details(details.w,i,details.ysize,details.xsize);
 		}
 		iface_box(ret->subwin,i,ret);
 		if(i->flags & IFF_UP){
@@ -1313,13 +1310,11 @@ interface_cb_locked(const interface *i,int inum,iface_state *ret){
 				wstatus_locked(pad,"");
 				ret->devaction = 0;
 			}
-			start_screen_update();
-			finish_screen_update();
+			full_screen_update();
 		}else if(ret->devaction > 0){
 			wstatus_locked(pad,"");
 			ret->devaction = 0;
-			start_screen_update();
-			finish_screen_update();
+			full_screen_update();
 		}
 	}
 	return ret;
@@ -1362,7 +1357,7 @@ interface_removed_locked(iface_state *is){
 			// If we owned the details window, give it to the new
 			// current_iface.
 			if(details.w){
-				iface_details(details.w,get_current_iface(),1,START_COL,details.ysize,details.xsize);
+				iface_details(details.w,get_current_iface(),details.ysize,details.xsize);
 			}
 		}else{
 			// If we owned the details window, destroy it FIXME
@@ -1370,8 +1365,7 @@ interface_removed_locked(iface_state *is){
 		}
 		free(is);
 		// FIXME need move other ifaces up
-		start_screen_update();
-		finish_screen_update();
+		full_screen_update();
 	}
 }
 
