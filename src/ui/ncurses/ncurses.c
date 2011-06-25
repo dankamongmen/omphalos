@@ -1176,11 +1176,12 @@ print_iface_state(const interface *i,const iface_state *is){
 }
 
 static inline void
-packet_cb_locked(const interface *i,iface_state *is){
+packet_cb_locked(const interface *i,iface_state *is,const omphalos_packet *op){
 	if(is){
 		struct timeval tdiff;
 		unsigned long udiff;
 
+		wstatus_locked(pad,"l2: %p/%p",op->l2s,op->l2d);
 		timersub(&i->lastseen,&is->lastprinted,&tdiff);
 		udiff = timerusec(&tdiff);
 		if(udiff < 500000){ // At most one update every 1/2s
@@ -1199,9 +1200,9 @@ packet_cb_locked(const interface *i,iface_state *is){
 }
 
 static void
-packet_callback(const interface *i,void *unsafe){
+packet_callback(const interface *i,void *unsafe,const omphalos_packet *op){
 	pthread_mutex_lock(&bfl);
-	packet_cb_locked(i,unsafe);
+	packet_cb_locked(i,unsafe,op);
 	pthread_mutex_unlock(&bfl);
 }
 

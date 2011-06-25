@@ -59,18 +59,17 @@ handle_8021q(const omphalos_iface *octx,interface *i,const void *frame,
 	break;} }
 }
 
-void handle_ethernet_packet(const omphalos_iface *octx,interface *i,
+void handle_ethernet_packet(const omphalos_iface *octx,interface *i,omphalos_packet *op,
 					const void *frame,size_t len){
 	const struct ethhdr *hdr = frame;
-	struct l2host *l2s,*l2d;
 
 	if(len < sizeof(*hdr)){
 		++i->malformed;
 		octx->diagnostic("%s malformed with %zu",__func__,len);
 		return;
 	}
-	if( (l2s = lookup_l2host(&i->l2hosts,hdr->h_source,ETH_ALEN)) ){
-		if( (l2d = lookup_l2host(&i->l2hosts,hdr->h_dest,ETH_ALEN)) ){
+	if( (op->l2s = lookup_l2host(&i->l2hosts,hdr->h_source,ETH_ALEN)) ){
+		if( (op->l2d = lookup_l2host(&i->l2hosts,hdr->h_dest,ETH_ALEN)) ){
 			const void *dgram = (const char *)frame + sizeof(*hdr);
 			uint16_t proto = ntohs(hdr->h_proto);
 			size_t dlen = len - sizeof(*hdr);

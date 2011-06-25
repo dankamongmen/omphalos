@@ -4,9 +4,9 @@
 //#include <net/ieee80211_radiotap.h>
 
 void handle_radiotap_packet(const omphalos_iface *octx,interface *iface,
-				const void *frame,size_t len){
+			omphalos_packet *op,const void *frame,size_t len){
 	octx->diagnostic("FIXME radiotap %p/%zu (%s)\n",frame,len,iface->name);
 	if(octx->packet_read){
-		octx->packet_read(iface,iface->opaque);
+		octx->packet_read(iface,iface->opaque,op);
 	}
 }

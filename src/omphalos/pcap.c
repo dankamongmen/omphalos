@@ -28,6 +28,7 @@ static void
 handle_pcap_ethernet(u_char *gi,const struct pcap_pkthdr *h,const u_char *bytes){
 	pcap_marshal *pm = (pcap_marshal *)gi;
 	interface *iface = pm->i; // interface for the pcap file
+	omphalos_packet packet;
 
 	++iface->frames;
 	if(h->caplen != h->len){
@@ -35,9 +36,9 @@ handle_pcap_ethernet(u_char *gi,const struct pcap_pkthdr *h,const u_char *bytes)
 		pm->octx->diagnostic("Partial capture (%u/%ub)",h->caplen,h->len);
 		return;
 	}
-	handle_ethernet_packet(pm->octx,iface,bytes,h->len);
+	handle_ethernet_packet(pm->octx,iface,&packet,bytes,h->len);
 	if(pm->octx->packet_read){
-		pm->octx->packet_read(iface,iface->opaque);
+		pm->octx->packet_read(iface,iface->opaque,&packet);
 	}
 }
 
@@ -52,6 +53,7 @@ handle_pcap_cooked(u_char *gi,const struct pcap_pkthdr *h,const u_char *bytes){
 		char hwaddr[8];
 		uint16_t proto;
 	} *sll;
+	omphalos_packet packet;
 	struct l2host *l2s;
 
 	++iface->frames;
@@ -83,7 +85,7 @@ handle_pcap_cooked(u_char *gi,const struct pcap_pkthdr *h,const u_char *bytes){
 		}
 	}
 	if(pm->octx->packet_read){
-		pm->octx->packet_read(iface,iface->opaque);
+		pm->octx->packet_read(iface,iface->opaque,&packet);
 	}
 }
 

@@ -158,6 +158,7 @@ recover_truncated_packet(const omphalos_iface *octx,interface *iface,int fd,unsi
 // return for a cancellation check, and the frameptr oughtn't be advanced.
 int handle_ring_packet(const omphalos_iface *octx,interface *iface,int fd,void *frame){
 	struct tpacket_hdr *thdr = frame;
+	omphalos_packet packet;
 	struct timeval tv;
 	int len;
 
@@ -192,6 +193,7 @@ int handle_ring_packet(const omphalos_iface *octx,interface *iface,int fd,void *
 		struct tpacket_stats tstats;
 		socklen_t slen;
 
+		// FIXME only call once for each burst of TP_STATUS_LOSING
 		slen = sizeof(tstats);
 		if(getsockopt(fd,SOL_PACKET,PACKET_STATISTICS,&tstats,&slen)){
 			octx->diagnostic("Error reading stats on %s (%s?)",iface->name,strerror(errno));
@@ -219,9 +221,9 @@ int handle_ring_packet(const omphalos_iface *octx,interface *iface,int fd,void *
 	}
 	timestat_inc(&iface->bps,&tv,len);
 	iface->bytes += len;
-	iface->analyzer(octx,iface,frame,len);
+	iface->analyzer(octx,iface,&packet,frame,len);
 	if(octx->packet_read){
-		octx->packet_read(iface,iface->opaque);
+		octx->packet_read(iface,iface->opaque,&packet);
 	}
 	thdr->tp_status = TP_STATUS_KERNEL; // return the frame
 	return 0;

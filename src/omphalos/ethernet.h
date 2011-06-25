@@ -10,9 +10,10 @@ extern "C" {
 
 struct interface;
 struct omphalos_iface;
+struct omphalos_packet;
 
-void handle_ethernet_packet(const struct omphalos_iface *,
-		struct interface *,const void *,size_t);
+void handle_ethernet_packet(const struct omphalos_iface *,struct interface *,
+				struct omphalos_packet *,const void *,size_t);
 
 // The actual length received might be off due to padding up to 60 octets,
 // the minimum Ethernet frame (discounting 4-octet FCS). Allow such frames
