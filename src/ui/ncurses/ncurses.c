@@ -1275,12 +1275,6 @@ interface_cb_locked(const interface *i,int inum,iface_state *ret){
 			int delta = lines_for_interface(i) - ret->ysize;
 			iface_state *is;
 
-			ret->ysize = lines_for_interface(i);
-			assert(werase(ret->subwin) == OK);
-			assert(delwin(ret->subwin) == OK);
-			assert(del_panel(ret->panel) == OK);
-			ret->subwin = derwin(pad,ret->ysize,PAD_COLS,ret->scrline,START_COL);
-			ret->panel = new_panel(ret->subwin);
 			for(is = ret->next ; is->scrline > ret->scrline ; is = is->next){
 				interface *ii = iface_by_idx(is->ifacenum);
 
@@ -1293,6 +1287,10 @@ interface_cb_locked(const interface *i,int inum,iface_state *ret){
 				iface_box(is->subwin,ii,is);
 				print_iface_state(ii,is);
 			}
+			ret->ysize = lines_for_interface(i);
+			assert(werase(ret->subwin) != ERR);
+			assert(wresize(ret->subwin,ret->ysize,PAD_COLS) != ERR);
+			assert(replace_panel(ret->panel,ret->subwin) != ERR);
 		}
 	}
 	if(ret){
