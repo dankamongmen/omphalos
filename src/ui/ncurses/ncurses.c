@@ -484,6 +484,7 @@ sniff_interface_locked(const omphalos_iface *octx,WINDOW *w){
 		if(!interface_sniffing_p(i)){
 			if(!interface_up_p(i)){
 				wstatus_locked(w,"Bringing up %s...",i->name);
+				current_iface->devaction = -1;
 				up_interface(octx,i);
 			}
 		}else{
@@ -1308,6 +1309,8 @@ interface_cb_locked(const interface *i,int inum,iface_state *ret){
 				ret->devaction = 0;
 			}
 			// FIXME expand it
+			start_screen_update();
+			finish_screen_update();
 		}else if(ret->devaction > 0){
 			wstatus_locked(pad,"");
 			ret->devaction = 0;
