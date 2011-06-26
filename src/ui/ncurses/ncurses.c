@@ -1190,7 +1190,6 @@ print_iface_state(const interface *i,const iface_state *is){
 				usecdomain / 1000000,
 				prefix(timestat_val(&i->bps) * CHAR_BIT * 1000000 * 100 / usecdomain,100,buf,sizeof(buf),0),
 				prefix(timestat_val(&i->fps) * 1000000 * 100 / usecdomain,100,buf2,sizeof(buf2),0)) != ERR);
-	wprintw(is->subwin," %d",is->l2ents);
 	return 0;
 }
 
