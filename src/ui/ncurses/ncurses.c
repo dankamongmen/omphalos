@@ -1224,13 +1224,13 @@ print_iface_hosts(const interface *i,const iface_state *is){
 		}
 		switch(cat){
 			case RTN_UNICAST:
-				assert(wattrset(is->subwin,A_BOLD | COLOR_PAIR(BCAST_COLOR)) != ERR);
+				assert(wattrset(is->subwin,COLOR_PAIR(MCAST_COLOR)) != ERR);
 				break;
 			case RTN_LOCAL:
 				assert(wattrset(is->subwin,A_BOLD | COLOR_PAIR(MCAST_COLOR)) != ERR);
 				break;
 			case RTN_MULTICAST:
-				assert(wattrset(is->subwin,COLOR_PAIR(MCAST_COLOR)) != ERR);
+				assert(wattrset(is->subwin,A_BOLD | COLOR_PAIR(BCAST_COLOR)) != ERR);
 				break;
 			case RTN_BROADCAST:
 				assert(wattrset(is->subwin,COLOR_PAIR(BCAST_COLOR)) != ERR);
