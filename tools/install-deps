@@ -1,0 +1,5 @@
+#!/bin/sh
+
+set -e || exit 1
+
+aptitude install libpci-dev libcap-dev libpcap-dev libncursesw5-dev
