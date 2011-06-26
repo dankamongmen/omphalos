@@ -1218,6 +1218,7 @@ print_iface_hosts(const interface *i,const iface_state *is){
 	for(l = is->l2objs ; l ; l = l->next){
 		char *hw = l2addrstr(l->l2,i->addrlen);
 		int cat = l2categorize(i,l->l2);
+		char legend;
 		
 		if(hw == NULL){
 			return ERR;
@@ -1225,18 +1226,22 @@ print_iface_hosts(const interface *i,const iface_state *is){
 		switch(cat){
 			case RTN_UNICAST:
 				assert(wattrset(is->subwin,COLOR_PAIR(MCAST_COLOR)) != ERR);
+				legend = 'U';
 				break;
 			case RTN_LOCAL:
 				assert(wattrset(is->subwin,A_BOLD | COLOR_PAIR(MCAST_COLOR)) != ERR);
+				legend = 'L';
 				break;
 			case RTN_MULTICAST:
 				assert(wattrset(is->subwin,A_BOLD | COLOR_PAIR(BCAST_COLOR)) != ERR);
+				legend = 'M';
 				break;
 			case RTN_BROADCAST:
 				assert(wattrset(is->subwin,COLOR_PAIR(BCAST_COLOR)) != ERR);
+				legend = 'B';
 				break;
 		}
-		assert(mvwprintw(is->subwin,++line,START_COL,"  %s",hw) != ERR);
+		assert(mvwprintw(is->subwin,++line,START_COL," %c %s",legend,hw) != ERR);
 		free(hw);
 	}
 	return OK;
