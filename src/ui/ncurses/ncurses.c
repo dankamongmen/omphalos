@@ -1284,7 +1284,9 @@ add_l2_to_iface(iface_state *is,l2obj *l2){
 
 	++is->l2ents;
 	for(prev = &is->l2objs ; *prev ; prev = &(*prev)->next){
-		;
+		if(l2hostcmp(l2->l2,(*prev)->l2) < 0){
+			break;
+		}
 	}
 	l2->next = *prev;
 	*prev = l2;
