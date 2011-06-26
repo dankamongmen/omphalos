@@ -629,6 +629,10 @@ static char *
 name_virtual_device(const struct ifinfomsg *ii,struct ethtool_drvinfo *ed){
 	if(ii->ifi_type == ARPHRD_LOOPBACK){
 		return strdup("Linux IPv4/IPv6 loopback device");
+	}else if(ii->ifi_type == ARPHRD_TUNNEL){
+		return strdup("Linux IPIP tunnel");
+	}else if(ii->ifi_type == ARPHRD_TUNNEL6){
+		return strdup("Linux IP6IP6 tunnel");
 	}else if(ed){
 		if(strcmp(ed->driver,"tun") == 0){
 			if(strcmp(ed->bus_info,"tap") == 0){
