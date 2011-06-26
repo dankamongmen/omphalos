@@ -1236,7 +1236,7 @@ print_iface_hosts(const interface *i,const iface_state *is){
 				assert(wattrset(is->subwin,COLOR_PAIR(BCAST_COLOR)) != ERR);
 				break;
 		}
-		assert(mvwprintw(is->subwin,++line,START_COL,"%s",hw) != ERR);
+		assert(mvwprintw(is->subwin,++line,START_COL,"  %s",hw) != ERR);
 		free(hw);
 	}
 	return OK;
