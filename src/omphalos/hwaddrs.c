@@ -26,6 +26,7 @@ create_l2host(const void *hwaddr,size_t addrlen){
 	if( (l2 = malloc(sizeof(*l2))) ){
 		l2->hwaddr = 0;
 		memcpy(&l2->hwaddr,hwaddr,addrlen);
+		l2->opaque = NULL;
 	}
 	return l2;
 }
@@ -64,7 +65,7 @@ void cleanup_l2hosts(l2host **list){
 	*list = NULL;
 }
 
-char *l2addrstr(const void *addr,size_t len){
+char *l2addrstr(const l2host *l2,size_t len){
 	unsigned idx;
 	size_t s;
 	char *r;
@@ -73,7 +74,7 @@ char *l2addrstr(const void *addr,size_t len){
 	s = len * 3;
 	if( (r = malloc(s)) ){
 		for(idx = 0 ; idx < len ; ++idx){
-			snprintf(r + idx * 3,s - idx * 3,"%02x:",((unsigned char *)addr)[idx]);
+			snprintf(r + idx * 3,s - idx * 3,"%02x:",((unsigned char *)&l2->hwaddr)[idx]);
 		}
 	}
 	return r;
@@ -111,7 +112,7 @@ int print_l2hosts(FILE *fp,const l2host *list){
 				}
 				break;
 			}case RTN_MULTICAST:{
-				hwaddr = l2addrstr(&l2->hwaddr,IFHWADDRLEN);
+				hwaddr = l2addrstr(l2,IFHWADDRLEN);
 
 				if(fprintf(fp,"<ieee802 mcast=\"%s\"/>",hwaddr) < 0){
 					free(hwaddr);
@@ -119,7 +120,7 @@ int print_l2hosts(FILE *fp,const l2host *list){
 				}
 				break;
 			}case RTN_UNICAST:{
-				hwaddr = l2addrstr(&l2->hwaddr,IFHWADDRLEN);
+				hwaddr = l2addrstr(l2,IFHWADDRLEN);
 
 				if(fprintf(fp,"<ieee802 addr=\"%s\"/>",hwaddr) < 0){
 					free(hwaddr);
@@ -145,7 +146,7 @@ int print_neigh(const interface *iface,const l2host *l2){
 	int n;
 
 	// FIXME need real family! inet_ntop(nd->ndm_family,l2->hwaddr,str,sizeof(str));
-	hwaddr = l2addrstr(&l2->hwaddr,IFHWADDRLEN);
+	hwaddr = l2addrstr(l2,IFHWADDRLEN);
 
 	n = printf("[%8s] neighbor %s\n",iface->name,hwaddr);
 	free(hwaddr);

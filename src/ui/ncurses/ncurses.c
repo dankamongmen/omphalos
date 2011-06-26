@@ -62,6 +62,7 @@ struct panel_state {
 typedef struct l2obj {
 	int line;
 	struct l2obj *next;
+	struct l2host *l2;
 } l2obj;
 
 #define PANEL_STATE_INITIALIZER { .p = NULL, .w = NULL, .ysize = -1, .xsize = -1, }
@@ -98,7 +99,8 @@ enum {
 	UHEADING_COLOR,
 	PBORDER_COLOR,			// popups
 	PHEADING_COLOR,
-	BULKTEXT_COLOR,			// bulk text (help)
+	BULKTEXT_COLOR,			// bulk text (help, details)
+	IFACE_COLOR,			// interface summary text
 };
 
 // FIXME granularize things, make packet handler iret-like
@@ -1138,6 +1140,10 @@ ncurses_setup(const omphalos_iface *octx,PANEL **panel){
 		errstr = "Couldn't initialize ncurses colorpair\n";
 		goto err;
 	}
+	if(init_pair(IFACE_COLOR,COLOR_WHITE,-1) != OK){
+		errstr = "Couldn't initialize ncurses colorpair\n";
+		goto err;
+	}
 	if(curs_set(0) == ERR){
 		errstr = "Couldn't disable cursor\n";
 		goto err;
@@ -1176,6 +1182,7 @@ print_iface_state(const interface *i,const iface_state *is){
 	char buf[U64STRLEN + 1],buf2[U64STRLEN + 1];
 	unsigned long usecdomain;
 
+	assert(wattron(is->subwin,A_BOLD | COLOR_PAIR(IFACE_COLOR)) == OK);
 	// FIXME broken if bps domain ever != fps domain. need unite those
 	// into one FTD stat by letting it take an object...
 	usecdomain = i->bps.usec * i->bps.total;
@@ -1183,6 +1190,7 @@ print_iface_state(const interface *i,const iface_state *is){
 				usecdomain / 1000000,
 				prefix(timestat_val(&i->bps) * CHAR_BIT * 1000000 * 100 / usecdomain,100,buf,sizeof(buf),0),
 				prefix(timestat_val(&i->fps) * 1000000 * 100 / usecdomain,100,buf2,sizeof(buf2),0)) != ERR);
+	wprintw(is->subwin," %d",is->l2ents);
 	return 0;
 }
 
@@ -1191,7 +1199,7 @@ print_iface_hosts(const interface *i,const iface_state *is){
 	const l2obj *l;
 
 	for(l = is->l2objs ; l ; l = l->next){
-		char *hw = l2addrstr(l,i->addrlen);
+		char *hw = l2addrstr(l->l2,i->addrlen);
 		
 		if(hw == NULL){
 			return ERR;
@@ -1252,11 +1260,12 @@ resize_iface(const interface *i,iface_state *ret){
 }
 
 static l2obj *
-get_l2obj(int line){
+get_l2obj(int line,struct l2host *l2){
 	l2obj *l;
 
 	if( (l = malloc(sizeof(*l))) ){
 		l->line = line;
+		l->l2 = l2;
 	}
 	return l;
 }
@@ -1277,7 +1286,7 @@ handle_l2(const interface *i,iface_state *is,omphalos_packet *op){
 	l2obj *news = NULL,*newd = NULL;
 
 	if(l2host_get_opaque(op->l2s) == NULL){
-		if((news = get_l2obj(++is->l2ents + 1)) == NULL){
+		if((news = get_l2obj(++is->l2ents + 1,op->l2s)) == NULL){
 			--is->l2ents;
 			return;
 		}
@@ -1285,7 +1294,7 @@ handle_l2(const interface *i,iface_state *is,omphalos_packet *op){
 		l2host_set_opaque(op->l2s,news);
 	}
 	if(l2host_get_opaque(op->l2d) == NULL){
-		if((newd = get_l2obj(++is->l2ents + 1)) == NULL){
+		if((newd = get_l2obj(++is->l2ents + 1,op->l2d)) == NULL){
 			--is->l2ents;
 			return;
 		}
@@ -1294,18 +1303,7 @@ handle_l2(const interface *i,iface_state *is,omphalos_packet *op){
 	}
 	if(news || newd){
 		resize_iface(i,is);
-		iface_box(is->subwin,i,is);
-		assert(wcolor_set(is->subwin,BULKTEXT_COLOR,NULL) == OK);
-		if(news){
-			char *hw = l2addrstr(op->l2s,i->addrlen);
-			assert(mvwprintw(is->subwin,news->line,START_COL,"%s",hw) != ERR);
-			free(hw);
-		}
-		if(newd){
-			char *hw = l2addrstr(op->l2d,i->addrlen);
-			assert(mvwprintw(is->subwin,newd->line,START_COL,"%s",hw) != ERR);
-			free(hw);
-		}
+		redraw_iface(i,is);
 		full_screen_update();
 	}
 }
@@ -1439,6 +1437,13 @@ wireless_callback(const interface *i,int inum,
 static inline void
 interface_removed_locked(iface_state *is){
 	if(is){
+		l2obj *l = is->l2objs;
+
+		while(l){
+			l2obj *tmp = l->next;
+			free(l);
+			l = tmp;
+		}
 		werase(is->subwin);
 		del_panel(is->panel);
 		delwin(is->subwin);
