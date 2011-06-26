@@ -1232,26 +1232,35 @@ get_l2obj(int line){
 
 static void
 handle_l2(const interface *i,iface_state *is,omphalos_packet *op){
-	int l2ents = is->l2ents;
-	l2obj *l;
+	l2obj *news = NULL,*newd = NULL;
 
-	if((l = l2host_get_opaque(op->l2s)) == NULL){
-		if((l = get_l2obj(++is->l2ents)) == NULL){
+	if(l2host_get_opaque(op->l2s) == NULL){
+		if((news = get_l2obj(++is->l2ents + 1)) == NULL){
 			--is->l2ents;
 			return;
 		}
-		l2host_set_opaque(op->l2s,l);
+		l2host_set_opaque(op->l2s,news);
 	}
-	if((l = l2host_get_opaque(op->l2d)) == NULL){
-		if((l = get_l2obj(++is->l2ents)) == NULL){
+	if(l2host_get_opaque(op->l2d) == NULL){
+		if((newd = get_l2obj(++is->l2ents + 1)) == NULL){
 			--is->l2ents;
 			return;
 		}
-		l2host_set_opaque(op->l2d,l);
+		l2host_set_opaque(op->l2d,newd);
 	}
-	if(is->l2ents != l2ents){
+	if(news || newd){
 		resize_iface(i,is);
 		iface_box(is->subwin,i,is);
+		if(news){
+			char *hw = l2addrstr(op->l2s,i->addrlen);
+			assert(mvwprintw(is->subwin,news->line,START_COL,"%s",hw) != ERR);
+			free(hw);
+		}
+		if(newd){
+			char *hw = l2addrstr(op->l2d,i->addrlen);
+			assert(mvwprintw(is->subwin,newd->line,START_COL,"%s",hw) != ERR);
+			free(hw);
+		}
 	}
 }
 
