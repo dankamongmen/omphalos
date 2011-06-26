@@ -149,8 +149,8 @@ handle_rtm_newneigh(const omphalos_iface *octx,const struct nlmsghdr *nl){
 		switch(ra->rta_type){
 		case NDA_DST:{
 			if(RTA_PAYLOAD(ra) != flen){
-				octx->diagnostic("Expected %zu nw bytes, got %lu",
-						flen,RTA_PAYLOAD(ra));
+				octx->diagnostic("Expected %zu nw bytes on %s, got %lu",
+						flen,iface->name,RTA_PAYLOAD(ra));
 				break;
 			}
 			memcpy(ad,RTA_DATA(ra),flen);
@@ -158,8 +158,8 @@ handle_rtm_newneigh(const omphalos_iface *octx,const struct nlmsghdr *nl){
 			llen = RTA_PAYLOAD(ra);
 			if(llen){
 				if(llen != sizeof(ll)){
-					octx->diagnostic("Expected %zu ll bytes, got %d",
-						sizeof(ll),llen);
+					octx->diagnostic("Expected %zu ll bytes on %s, got %d",
+						sizeof(ll),iface->name,llen);
 					llen = 0;
 					break;
 				}
@@ -168,12 +168,12 @@ handle_rtm_newneigh(const omphalos_iface *octx,const struct nlmsghdr *nl){
 		break;}case NDA_CACHEINFO:{
 		break;}case NDA_PROBES:{
 		break;}default:{
-			octx->diagnostic("Unknown ndatype %u",ra->rta_type);
+			octx->diagnostic("Unknown ndatype %u on %s",ra->rta_type,iface->name);
 		break;}}
 		ra = RTA_NEXT(ra,rlen);
 	}
 	if(rlen){
-		octx->diagnostic("%d excess bytes on newlink message",rlen);
+		octx->diagnostic("%d excess bytes on %s newlink message",rlen,iface->name);
 	}
 	if(llen){
 		l2 = lookup_l2host(&iface->l2hosts,ll,sizeof(ll));
@@ -222,8 +222,8 @@ handle_rtm_delneigh(const omphalos_iface *octx,const struct nlmsghdr *nl){
 		switch(ra->rta_type){
 		case NDA_DST:{
 			if(RTA_PAYLOAD(ra) != flen){
-				octx->diagnostic("Expected %zu nw bytes, got %lu",
-						flen,RTA_PAYLOAD(ra));
+				octx->diagnostic("Expected %zu nw bytes on %s, got %lu",
+						flen,iface->name,RTA_PAYLOAD(ra));
 				break;
 			}
 			memcpy(ad,RTA_DATA(ra),flen);
@@ -231,8 +231,8 @@ handle_rtm_delneigh(const omphalos_iface *octx,const struct nlmsghdr *nl){
 			llen = RTA_PAYLOAD(ra);
 			if(llen){
 				if(llen != sizeof(ll)){
-					octx->diagnostic("Expected %zu ll bytes, got %d",
-						sizeof(ll),llen);
+					octx->diagnostic("Expected %zu ll bytes on %s, got %d",
+						sizeof(ll),iface->name,llen);
 					llen = 0;
 					break;
 				}
@@ -241,12 +241,12 @@ handle_rtm_delneigh(const omphalos_iface *octx,const struct nlmsghdr *nl){
 		break;}case NDA_CACHEINFO:{
 		break;}case NDA_PROBES:{
 		break;}default:{
-			octx->diagnostic("Unknown ndatype %u",ra->rta_type);
+			octx->diagnostic("Unknown ndatype %u on %s",ra->rta_type,iface->name);
 		break;}}
 		ra = RTA_NEXT(ra,rlen);
 	}
 	if(rlen){
-		octx->diagnostic("%d excess bytes on newlink message",rlen);
+		octx->diagnostic("%d excess bytes on %s newlink message",rlen,iface->name);
 	}
 	if(llen){
 		l2 = lookup_l2host(&iface->l2hosts,ll,sizeof(ll));
