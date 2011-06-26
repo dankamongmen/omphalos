@@ -638,6 +638,8 @@ name_virtual_device(const struct ifinfomsg *ii,struct ethtool_drvinfo *ed){
 			}
 		}else if(strcmp(ed->driver,"bridge") == 0){
 			return strdup("Linux Ethernet bridge");
+		}else if(strcmp(ed->driver,"vif") == 0){
+			return strdup("Xen virtual Ethernet interface");
 		}
 	}
 	return NULL;
