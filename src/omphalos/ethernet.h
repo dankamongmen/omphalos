@@ -19,15 +19,19 @@ void handle_ethernet_packet(const struct omphalos_iface *,struct interface *,
 				struct omphalos_packet *,const void *,size_t);
 
 // The actual length received might be off due to padding up to 60 octets,
-// the minimum Ethernet frame (discounting 4-octet FCS). Allow such frames
-// to go through formedness checks. Always use the uppermost protocol's
-// measure of size!
+// the minimum Ethernet frame (discounting 4-octet FCS). In the presence of
+// 802.1q VLAN tagging, the minimum Ethernet frame is 64 bytes (again
+// discounting the 4-octet FCS); LLC/SNAP encapsulation do not extend the
+// minimum or maximum frame length. Allow such frames to go through formedness
+// checks. Always use the uppermost protocol's measure of size!
 static inline int
 check_ethernet_padup(size_t rx,size_t expected){
 	if(expected == rx){
 		return 0;
 	}else if(rx > expected){
-		if(rx <= ETH_ZLEN - sizeof(struct ethhdr)){
+		// 4 bytes for possible 802.1q VLAN tag. Probably ought verify
+		// that 802.1q is actually in use FIXME.
+		if(rx <= ETH_ZLEN + 4 - sizeof(struct ethhdr)){
 			return 0;
 		}
 	}

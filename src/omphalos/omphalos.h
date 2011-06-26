@@ -5,11 +5,20 @@
 extern "C" {
 #endif
 
+#include <stdint.h>
+
 struct l2host;
+struct iphost;
+struct ipv6host;
 struct interface;
 
 typedef struct omphalos_packet {
 	struct l2host *l2s,*l2d;
+	uint16_t l3proto;
+	union {
+		struct iphost *ip4;
+		struct ipv6host *ip6;
+	} l3s,l3d;
 } omphalos_packet;
 
 // UI callback interface. Any number may be NULL.
