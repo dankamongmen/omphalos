@@ -5,8 +5,11 @@
 extern "C" {
 #endif
 
+#include <string.h>
 #include <stddef.h>
+#include <linux/if.h>
 #include <linux/if_ether.h>
+#include <linux/rtnetlink.h>
 
 struct interface;
 struct omphalos_iface;
@@ -29,6 +32,20 @@ check_ethernet_padup(size_t rx,size_t expected){
 		}
 	}
 	return 1;
+}
+
+static inline int
+categorize_ethaddr(const void *mac){
+	static const unsigned char brd[] = "\xff\xff\xff\xff\xff\xff";
+
+	if(((const unsigned char *)mac)[0] & 0x1){
+		// Can't use sizeof(brd), since it has a terminating NUL :/
+		if(memcmp(mac,brd,IFHWADDRLEN) == 0){
+			return RTN_BROADCAST;
+		}
+		return RTN_MULTICAST;
+	}
+	return RTN_UNICAST;
 }
 
 #ifdef __cplusplus

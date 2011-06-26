@@ -60,7 +60,6 @@ struct panel_state {
 };
 
 typedef struct l2obj {
-	int line;
 	struct l2obj *next;
 	struct l2host *l2;
 } l2obj;
@@ -1196,6 +1195,7 @@ print_iface_state(const interface *i,const iface_state *is){
 static int
 print_iface_hosts(const interface *i,const iface_state *is){
 	const l2obj *l;
+	int line = 1;
 
 	for(l = is->l2objs ; l ; l = l->next){
 		char *hw = l2addrstr(l->l2,i->addrlen);
@@ -1203,7 +1203,7 @@ print_iface_hosts(const interface *i,const iface_state *is){
 		if(hw == NULL){
 			return ERR;
 		}
-		assert(mvwprintw(is->subwin,l->line,START_COL,"%s",hw) != ERR);
+		assert(mvwprintw(is->subwin,++line,START_COL,"%s",hw) != ERR);
 		free(hw);
 	}
 	return OK;
@@ -1253,17 +1253,17 @@ resize_iface(const interface *i,iface_state *ret){
 		assert(werase(ret->subwin) != ERR);
 		assert(wresize(ret->subwin,ret->ysize,PAD_COLS) != ERR);
 		assert(replace_panel(ret->panel,ret->subwin) != ERR);
+		redraw_iface(i,ret);
 		full_screen_update();
 	}
 	return 0;
 }
 
 static l2obj *
-get_l2obj(int line,struct l2host *l2){
+get_l2obj(struct l2host *l2){
 	l2obj *l;
 
 	if( (l = malloc(sizeof(*l))) ){
-		l->line = line;
 		l->l2 = l2;
 	}
 	return l;
@@ -1273,6 +1273,7 @@ static void
 add_l2_to_iface(iface_state *is,l2obj *l2){
 	l2obj **prev;
 
+	++is->l2ents;
 	for(prev = &is->l2objs ; *prev ; prev = &(*prev)->next){
 		;
 	}
@@ -1285,26 +1286,20 @@ handle_l2(const interface *i,iface_state *is,omphalos_packet *op){
 	l2obj *news = NULL,*newd = NULL;
 
 	if(l2host_get_opaque(op->l2s) == NULL){
-		if((news = get_l2obj(++is->l2ents + 1,op->l2s)) == NULL){
-			--is->l2ents;
+		if((news = get_l2obj(op->l2s)) == NULL){
 			return;
 		}
 		add_l2_to_iface(is,news);
 		l2host_set_opaque(op->l2s,news);
 	}
 	if(l2host_get_opaque(op->l2d) == NULL){
-		if((newd = get_l2obj(++is->l2ents + 1,op->l2d)) == NULL){
-			--is->l2ents;
+		if((newd = get_l2obj(op->l2d)) == NULL){
 			return;
 		}
 		add_l2_to_iface(is,newd);
 		l2host_set_opaque(op->l2d,newd);
 	}
-	if(news || newd){
-		resize_iface(i,is);
-		redraw_iface(i,is);
-		full_screen_update();
-	}
+	resize_iface(i,is);
 }
 
 static inline void
@@ -1387,7 +1382,7 @@ interface_cb_locked(const interface *i,int inum,iface_state *ret){
 				}
 			}
 		}
-	}else{ // preexisting interface
+	}else{ // preexisting interface might need be expanded / collapsed
 		resize_iface(i,ret);
 	}
 	if(ret){

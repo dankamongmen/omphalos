@@ -1,10 +1,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <net/if.h>
 #include <arpa/inet.h>
 #include <linux/rtnetlink.h>
 #include <omphalos/hwaddrs.h>
+#include <omphalos/ethernet.h>
 #include <omphalos/interface.h>
 
 // No need to store addrlen, since all objects in a given arena have the
@@ -78,20 +78,6 @@ char *l2addrstr(const l2host *l2,size_t len){
 		}
 	}
 	return r;
-}
-
-static const unsigned char brd[] = "\xff\xff\xff\xff\xff\xff";
-
-static int
-categorize_ethaddr(const void *mac){
-	if(((const unsigned char *)mac)[0] & 0x1){
-		// Can't use sizeof(brd), since it has a terminating NUL :/
-		if(memcmp(mac,brd,IFHWADDRLEN) == 0){
-			return RTN_BROADCAST;
-		}
-		return RTN_MULTICAST;
-	}
-	return RTN_UNICAST;
 }
 
 int print_l2hosts(FILE *fp,const l2host *list){
