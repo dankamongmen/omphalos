@@ -138,7 +138,7 @@ int omphalos_init(const omphalos_ctx *pctx){
 		}
 	}else{
 		if(init_pci_support()){
-			return -1;
+			pctx->iface.diagnostic("Warning: no PCI support available");
 		}
 		if(init_usb_support()){
 			return -1;
