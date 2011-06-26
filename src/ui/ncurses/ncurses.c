@@ -635,16 +635,23 @@ iface_details(WINDOW *hw,const interface *i,int rows,int cols){
 		--z;
 	}case 0:{
 		char buf[PREFIXSTRLEN],buf2[PREFIXSTRLEN];
-		char *mac;
+		if(i->flags & IFF_NOARP){
+			assert(mvwprintw(hw,row + z,col,"%-16s %*s txr: %sB\t rxr: %sB\t mtu: %-6d",
+						i->name,IFHWADDRLEN * 3 - 1,"",
+						bprefix(i->ts,1,buf,sizeof(buf),1),
+						bprefix(i->rs,1,buf2,sizeof(buf2),1),i->mtu) != ERR);
+		}else{
+			char *mac;
 
-		if((mac = hwaddrstr(i)) == NULL){
-			return ERR;
+			if((mac = hwaddrstr(i)) == NULL){
+				return ERR;
+			}
+			assert(mvwprintw(hw,row + z,col,"%-16s %*s txr: %sB\t rxr: %sB\t mtu: %-6d",
+						i->name,IFHWADDRLEN * 3 - 1,mac,
+						bprefix(i->ts,1,buf,sizeof(buf),1),
+						bprefix(i->rs,1,buf2,sizeof(buf2),1),i->mtu) != ERR);
+			free(mac);
 		}
-		assert(mvwprintw(hw,row + z,col,"%-16s %s txr: %sB\t rxr: %sB\t mtu: %-6d",
-					i->name,mac,
-					bprefix(i->ts,1,buf,sizeof(buf),1),
-					bprefix(i->rs,1,buf2,sizeof(buf2),1),i->mtu) != ERR);
-		free(mac);
 		--z;
 		break;
 	}default:{
