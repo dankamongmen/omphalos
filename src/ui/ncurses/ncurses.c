@@ -10,6 +10,7 @@
 #include <signal.h>
 #include <limits.h>
 #include <pthread.h>
+#include <langinfo.h>
 #include <sys/time.h>
 #include <sys/socket.h>
 #include <linux/if.h>
@@ -1521,11 +1522,16 @@ diag_callback(const char *fmt,...){
 }
 
 int main(int argc,char * const *argv){
+	const char *codeset;
 	omphalos_ctx pctx;
 	PANEL *panel;
 
-	if(setlocale(LC_ALL,"") == NULL){
+	if(setlocale(LC_ALL,"") == NULL || ((codeset = nl_langinfo(CODESET)) == NULL)){
 		fprintf(stderr,"Couldn't initialize locale (%s?)\n",strerror(errno));
+		return EXIT_FAILURE;
+	}
+	if(strcmp(codeset,"UTF-8")){
+		fprintf(stderr,"Only UTF-8 is supported; got %s\n",codeset);
 		return EXIT_FAILURE;
 	}
 	if(uname(&sysuts)){
