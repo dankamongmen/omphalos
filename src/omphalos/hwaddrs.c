@@ -159,8 +159,7 @@ void l2host_set_opaque(l2host *l2,void *opaque){
 }
 
 int l2hostcmp(const l2host *l21,const l2host *l22){
-	return l21->hwaddr < l22->hwaddr ? -1 :
-		l21->hwaddr == l22->hwaddr ? 0 : 1;
+	return memcmp(&l21->hwaddr,&l22->hwaddr,IFHWADDRLEN); // FIXME len-param
 }
 
 int l2categorize(const interface *i,const l2host *l2){
