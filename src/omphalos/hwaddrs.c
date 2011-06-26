@@ -157,3 +157,12 @@ void *l2host_get_opaque(l2host *l2){
 void l2host_set_opaque(l2host *l2,void *opaque){
 	l2->opaque = opaque;
 }
+
+int l2hostcmp(const l2host *l21,const l2host *l22){
+	return l21->hwaddr < l22->hwaddr ? -1 :
+		l21->hwaddr == l22->hwaddr ? 0 : 1;
+}
+
+int l2categorize(const l2host *l2){
+	return categorize_ethaddr(&l2->hwaddr);
+}
