@@ -11,11 +11,10 @@ extern "C" {
 #include <linux/if_ether.h>
 #include <linux/rtnetlink.h>
 
-struct interface;
 struct omphalos_iface;
 struct omphalos_packet;
 
-void handle_ethernet_packet(const struct omphalos_iface *,struct interface *,
+void handle_ethernet_packet(const struct omphalos_iface *,
 				struct omphalos_packet *,const void *,size_t);
 
 // The actual length received might be off due to padding up to 60 octets,

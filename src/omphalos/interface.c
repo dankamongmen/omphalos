@@ -247,8 +247,7 @@ int is_local6(const interface *i,const struct in6_addr *a){
 typedef struct arptype {
 	unsigned ifi_type;
 	const char *name;
-	void (*analyze)(const struct omphalos_iface *,interface *,
-		struct omphalos_packet *,const void *,size_t);
+	analyzefxn analyze;
 } arptype;
 
 static arptype arptypes[] = {
@@ -283,8 +282,7 @@ static arptype arptypes[] = {
 	},
 };
 
-const char *lookup_arptype(unsigned arphrd,void (**analyzer)(const struct omphalos_iface *,interface *,
-				struct omphalos_packet *op,const void *,size_t)){
+const char *lookup_arptype(unsigned arphrd,analyzefxn *analyzer){
 	unsigned idx;
 
 	for(idx = 0 ; idx < sizeof(arptypes) / sizeof(*arptypes) ; ++idx){

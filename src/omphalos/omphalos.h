@@ -13,6 +13,7 @@ struct ipv6host;
 struct interface;
 
 typedef struct omphalos_packet {
+	struct interface *i;
 	struct l2host *l2s,*l2d;
 	uint16_t l3proto;
 	union {
@@ -23,6 +24,7 @@ typedef struct omphalos_packet {
 
 // UI callback interface. Any number may be NULL.
 typedef struct omphalos_iface {
+	// FIXME get rid of first two arguments, passing only omphalos_packet
 	void (*packet_read)(const struct interface *,void *,struct omphalos_packet *);
 	void *(*iface_event)(const struct interface *,int,void *);
 	void (*iface_removed)(const struct interface *,void *);

@@ -36,7 +36,8 @@ handle_pcap_ethernet(u_char *gi,const struct pcap_pkthdr *h,const u_char *bytes)
 		pm->octx->diagnostic("Partial capture (%u/%ub)",h->caplen,h->len);
 		return;
 	}
-	handle_ethernet_packet(pm->octx,iface,&packet,bytes,h->len);
+	packet.i = iface;
+	handle_ethernet_packet(pm->octx,&packet,bytes,h->len);
 	if(pm->octx->packet_read){
 		pm->octx->packet_read(iface,iface->opaque,&packet);
 	}

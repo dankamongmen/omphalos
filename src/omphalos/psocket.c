@@ -221,7 +221,8 @@ int handle_ring_packet(const omphalos_iface *octx,interface *iface,int fd,void *
 	}
 	timestat_inc(&iface->bps,&tv,len);
 	iface->bytes += len;
-	iface->analyzer(octx,iface,&packet,frame,len);
+	packet.i = iface;
+	iface->analyzer(octx,&packet,frame,len);
 	if(octx->packet_read){
 		octx->packet_read(iface,iface->opaque,&packet);
 	}
