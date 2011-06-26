@@ -59,6 +59,11 @@ struct panel_state {
 	int xsize;			// maximum cols of *text* (not win)
 };
 
+typedef struct l2obj {
+	int line;
+	struct l2obj *next;
+} l2obj;
+
 #define PANEL_STATE_INITIALIZER { .p = NULL, .w = NULL, .ysize = -1, .xsize = -1, }
 
 static struct panel_state *active;
@@ -67,8 +72,10 @@ static struct panel_state details = PANEL_STATE_INITIALIZER;
 
 // Bind one of these state structures to each interface in the callback,
 // and also associate an iface with them via ifacenum (for UI actions).
+// FIXME get rid of ifacenum and just keep a pointer to the iface, since it
+//   can't be destroyed until a callback to us
 typedef struct iface_state {
-	int ifacenum;			// iface number
+	int ifacenum;			// iface number FIXME see above
 	int scrline;			// line within the containing pad
 	int ysize;			// number of lines
 	int l2ents;			// number of l2 entities
@@ -78,6 +85,7 @@ typedef struct iface_state {
 	struct timeval lastprinted;	// last time we printed the iface
 	int alarmset;			// alarm set for UI update?
 	int devaction;			// 1 == down, -1 == up, 0 == nothing
+	l2obj *l2objs;			// l2 entity list
 	struct iface_state *next,*prev;
 } iface_state;
 
@@ -396,7 +404,7 @@ draw_main_window(WINDOW *w,const char *name,const char *ver){
 	// addstr() doesn't interpret format strings, so this is safe. It will
 	// fail, however, if the string can't fit on the window, which will for
 	// instance happen if there's an embedded newline.
-	mvwaddstr(w,rows - 1,START_COL * 2,statusmsg);
+	assert(mvwaddstr(w,rows - 1,START_COL * 2,statusmsg) != ERR);
 	if(wattroff(w,A_BOLD | COLOR_PAIR(BORDER_COLOR)) != OK){
 		ERREXIT;
 	}
@@ -1175,9 +1183,23 @@ print_iface_state(const interface *i,const iface_state *is){
 				usecdomain / 1000000,
 				prefix(timestat_val(&i->bps) * CHAR_BIT * 1000000 * 100 / usecdomain,100,buf,sizeof(buf),0),
 				prefix(timestat_val(&i->fps) * 1000000 * 100 / usecdomain,100,buf2,sizeof(buf2),0)) != ERR);
-	assert(start_screen_update() != ERR);
-	assert(finish_screen_update() != ERR);
 	return 0;
+}
+
+static int
+print_iface_hosts(const interface *i,const iface_state *is){
+	const l2obj *l;
+
+	for(l = is->l2objs ; l ; l = l->next){
+		char *hw = l2addrstr(l,i->addrlen);
+		
+		if(hw == NULL){
+			return ERR;
+		}
+		assert(mvwprintw(is->subwin,l->line,START_COL,"%s",hw) != ERR);
+		free(hw);
+	}
+	return OK;
 }
 
 static inline int
@@ -1187,6 +1209,20 @@ lines_for_interface(const interface *i,const iface_state *is){
 	}else{
 		return PAD_LINES + is->l2ents - 1;
 	}
+}
+
+static int
+redraw_iface(const interface *i,iface_state *is){
+	if(iface_box(is->subwin,i,is)){
+		return ERR;
+	}
+	if(print_iface_state(i,is)){
+		return ERR;
+	}
+	if(print_iface_hosts(i,is)){
+		return ERR;
+	}
+	return OK;
 }
 
 static int
@@ -1204,8 +1240,7 @@ resize_iface(const interface *i,iface_state *ret){
 			assert(del_panel(is->panel) == OK);
 			assert( (is->subwin = derwin(pad,is->ysize,PAD_COLS,is->scrline,START_COL)) );
 			assert( (is->panel = new_panel(is->subwin)) );
-			iface_box(is->subwin,ii,is);
-			print_iface_state(ii,is);
+			redraw_iface(ii,is);
 		}
 		ret->ysize = lines_for_interface(i,ret);
 		assert(werase(ret->subwin) != ERR);
@@ -1215,10 +1250,6 @@ resize_iface(const interface *i,iface_state *ret){
 	}
 	return 0;
 }
-
-typedef struct l2obj {
-	int line;
-} l2obj;
 
 static l2obj *
 get_l2obj(int line){
@@ -1231,6 +1262,17 @@ get_l2obj(int line){
 }
 
 static void
+add_l2_to_iface(iface_state *is,l2obj *l2){
+	l2obj **prev;
+
+	for(prev = &is->l2objs ; *prev ; prev = &(*prev)->next){
+		;
+	}
+	l2->next = *prev;
+	*prev = l2;
+}
+
+static void
 handle_l2(const interface *i,iface_state *is,omphalos_packet *op){
 	l2obj *news = NULL,*newd = NULL;
 
@@ -1239,6 +1281,7 @@ handle_l2(const interface *i,iface_state *is,omphalos_packet *op){
 			--is->l2ents;
 			return;
 		}
+		add_l2_to_iface(is,news);
 		l2host_set_opaque(op->l2s,news);
 	}
 	if(l2host_get_opaque(op->l2d) == NULL){
@@ -1246,11 +1289,13 @@ handle_l2(const interface *i,iface_state *is,omphalos_packet *op){
 			--is->l2ents;
 			return;
 		}
+		add_l2_to_iface(is,newd);
 		l2host_set_opaque(op->l2d,newd);
 	}
 	if(news || newd){
 		resize_iface(i,is);
 		iface_box(is->subwin,i,is);
+		assert(wcolor_set(is->subwin,BULKTEXT_COLOR,NULL) == OK);
 		if(news){
 			char *hw = l2addrstr(op->l2s,i->addrlen);
 			assert(mvwprintw(is->subwin,news->line,START_COL,"%s",hw) != ERR);
@@ -1261,6 +1306,7 @@ handle_l2(const interface *i,iface_state *is,omphalos_packet *op){
 			assert(mvwprintw(is->subwin,newd->line,START_COL,"%s",hw) != ERR);
 			free(hw);
 		}
+		full_screen_update();
 	}
 }
 
@@ -1285,6 +1331,7 @@ packet_cb_locked(const interface *i,iface_state *is,omphalos_packet *op){
 			iface_details(details.w,i,details.ysize,details.xsize);
 		}
 		print_iface_state(i,is);
+		full_screen_update();
 	}
 }
 
@@ -1303,6 +1350,7 @@ interface_cb_locked(const interface *i,int inum,iface_state *ret){
 		if( (tstr = lookup_arptype(i->arptype,NULL)) ){
 			if( (ret = malloc(sizeof(iface_state))) ){
 				ret->l2ents = 0;
+				ret->l2objs = NULL;
 				ret->ysize = lines_for_interface(i,ret);
 				ret->alarmset = ret->devaction = 0;
 				ret->typestr = tstr;
