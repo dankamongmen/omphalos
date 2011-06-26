@@ -1214,7 +1214,7 @@ lines_for_interface(const interface *i,const iface_state *is){
 	if(i->flags & IFF_UP){
 		return PAD_LINES + is->l2ents;
 	}else{
-		return PAD_LINES + is->l2ents - 1;
+		return PAD_LINES - 1;
 	}
 }
 
@@ -1223,11 +1223,13 @@ redraw_iface(const interface *i,iface_state *is){
 	if(iface_box(is->subwin,i,is)){
 		return ERR;
 	}
-	if(print_iface_state(i,is)){
-		return ERR;
-	}
-	if(print_iface_hosts(i,is)){
-		return ERR;
+	if(i->flags & IFF_UP){
+		if(print_iface_state(i,is)){
+			return ERR;
+		}
+		if(print_iface_hosts(i,is)){
+			return ERR;
+		}
 	}
 	return OK;
 }
