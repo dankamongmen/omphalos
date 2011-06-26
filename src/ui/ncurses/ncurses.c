@@ -26,6 +26,7 @@
 #include <linux/version.h>
 #include <linux/nl80211.h>
 #include <ncursesw/panel.h>
+#include <linux/rtnetlink.h>
 #include <omphalos/timing.h>
 #include <ncursesw/ncurses.h>
 #include <omphalos/hwaddrs.h>
@@ -100,6 +101,8 @@ enum {
 	PHEADING_COLOR,
 	BULKTEXT_COLOR,			// bulk text (help, details)
 	IFACE_COLOR,			// interface summary text
+	MCAST_COLOR,			// multicast addresses
+	BCAST_COLOR,			// broadcast addresses
 };
 
 // FIXME granularize things, make packet handler iret-like
@@ -1150,6 +1153,14 @@ ncurses_setup(const omphalos_iface *octx,PANEL **panel){
 		errstr = "Couldn't initialize ncurses colorpair\n";
 		goto err;
 	}
+	if(init_pair(MCAST_COLOR,COLOR_CYAN,-1) != OK){
+		errstr = "Couldn't initialize ncurses colorpair\n";
+		goto err;
+	}
+	if(init_pair(BCAST_COLOR,COLOR_BLUE,-1) != OK){
+		errstr = "Couldn't initialize ncurses colorpair\n";
+		goto err;
+	}
 	if(curs_set(0) == ERR){
 		errstr = "Couldn't disable cursor\n";
 		goto err;
@@ -1206,9 +1217,24 @@ print_iface_hosts(const interface *i,const iface_state *is){
 
 	for(l = is->l2objs ; l ; l = l->next){
 		char *hw = l2addrstr(l->l2,i->addrlen);
+		int cat = l2categorize(i,l->l2);
 		
 		if(hw == NULL){
 			return ERR;
+		}
+		switch(cat){
+			case RTN_UNICAST:
+				assert(wattrset(is->subwin,A_BOLD | COLOR_PAIR(BCAST_COLOR)) != ERR);
+				break;
+			case RTN_LOCAL:
+				assert(wattrset(is->subwin,A_BOLD | COLOR_PAIR(MCAST_COLOR)) != ERR);
+				break;
+			case RTN_MULTICAST:
+				assert(wattrset(is->subwin,COLOR_PAIR(MCAST_COLOR)) != ERR);
+				break;
+			case RTN_BROADCAST:
+				assert(wattrset(is->subwin,COLOR_PAIR(BCAST_COLOR)) != ERR);
+				break;
 		}
 		assert(mvwprintw(is->subwin,++line,START_COL,"%s",hw) != ERR);
 		free(hw);
