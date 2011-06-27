@@ -1271,9 +1271,9 @@ resize_iface(const interface *i,iface_state *ret){
 			is->scrline += delta;
 			assert(werase(is->subwin) == OK);
 			assert(delwin(is->subwin) == OK);
-			assert(del_panel(is->panel) == OK);
 			assert( (is->subwin = derwin(pad,is->ysize,PAD_COLS,is->scrline,START_COL)) );
-			assert( (is->panel = new_panel(is->subwin)) );
+			assert(move_panel(is->panel,is->scrline,START_COL) != ERR);
+			assert(replace_panel(is->panel,is->subwin) != ERR);
 			redraw_iface(ii,is);
 		}
 		ret->ysize = lines_for_interface(i,ret);
