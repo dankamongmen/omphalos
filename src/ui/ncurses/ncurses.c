@@ -295,12 +295,10 @@ bprefix(uintmax_t val,unsigned decimal,char *buf,size_t bsize,int omitdec){
 // to be called only while ncurses lock is held
 static int
 iface_box(WINDOW *w,const interface *i,const iface_state *is){
-	int bcolor,hcolor,rows,cols;
+	int bcolor,hcolor;
 	size_t buslen;
 	int attrs;
 
-	getmaxyx(w,rows,cols);
-	assert(cols >= 0);	// for 'set but unused' warning on cols
 	bcolor = interface_up_p(i) ? UBORDER_COLOR : DBORDER_COLOR;
 	hcolor = interface_up_p(i) ? UHEADING_COLOR : DHEADING_COLOR;
 	attrs = ((is == current_iface) ? A_REVERSE : 0) | A_BOLD;
@@ -326,7 +324,7 @@ iface_box(WINDOW *w,const interface *i,const iface_state *is){
 	assert(wprintw(w,"]") != ERR);
 	assert(wattron(w,attrs) != ERR);
 	assert(wattroff(w,A_REVERSE) != ERR);
-	assert(mvwprintw(w,rows - 1,START_COL * 2,"[") != ERR);
+	assert(mvwprintw(w,is->ysize - 1,START_COL * 2,"[") != ERR);
 	assert(wcolor_set(w,hcolor,NULL) != ERR);
 	assert(wprintw(w,"mtu %d",i->mtu) != ERR);
 	if(interface_up_p(i)){
@@ -353,10 +351,10 @@ iface_box(WINDOW *w,const interface *i,const iface_state *is){
 	if( (buslen = strlen(i->drv.bus_info)) ){
 		if(i->busname){
 			buslen += strlen(i->busname) + 1;
-			assert(mvwprintw(w,rows - 1,COLS - (buslen + 3 + START_COL),
+			assert(mvwprintw(w,is->ysize - 1,COLS - (buslen + 3 + START_COL),
 					"%s:%s",i->busname,i->drv.bus_info) != ERR);
 		}else{
-			assert(mvwprintw(w,rows - 1,COLS - (buslen + 3 + START_COL),
+			assert(mvwprintw(w,is->ysize - 1,COLS - (buslen + 3 + START_COL),
 					"%s",i->drv.bus_info) != ERR);
 		}
 	}
