@@ -302,7 +302,6 @@ iface_box(WINDOW *w,const interface *i,const iface_state *is){
 
 	getmaxyx(w,rows,cols);
 	assert(cols >= 0);	// for 'set but unused' warning on cols
-	// FIXME shouldn't have to know IFF_UP out here
 	bcolor = interface_up_p(i) ? UBORDER_COLOR : DBORDER_COLOR;
 	hcolor = interface_up_p(i) ? UHEADING_COLOR : DHEADING_COLOR;
 	attrs = ((is == current_iface) ? A_REVERSE : 0) | A_BOLD;
@@ -1245,9 +1244,7 @@ lines_for_interface(const interface *i,const iface_state *is){
 
 static int
 redraw_iface(const interface *i,iface_state *is){
-	if(iface_box(is->subwin,i,is)){
-		return ERR;
-	}
+	assert(iface_box(is->subwin,i,is) != ERR);
 	if(i->flags & IFF_UP){
 		if(print_iface_state(i,is)){
 			return ERR;
