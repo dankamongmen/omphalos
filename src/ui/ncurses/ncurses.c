@@ -56,7 +56,6 @@ extern int mvwprintw(WINDOW *,int,int,const char *,...) __attribute__ ((format (
 // creating and destroying them every time.
 struct panel_state {
 	PANEL *p;
-	WINDOW *w;
 	int ysize;			// number of lines of *text* (not win)
 	int xsize;			// maximum cols of *text* (not win)
 };
@@ -66,7 +65,7 @@ typedef struct l2obj {
 	struct l2host *l2;
 } l2obj;
 
-#define PANEL_STATE_INITIALIZER { .p = NULL, .w = NULL, .ysize = -1, .xsize = -1, }
+#define PANEL_STATE_INITIALIZER { .p = NULL, .ysize = -1, .xsize = -1, }
 
 static struct panel_state *active;
 static struct panel_state help = PANEL_STATE_INITIALIZER;
@@ -526,11 +525,13 @@ down_interface_locked(const omphalos_iface *octx,WINDOW *w){
 static void
 hide_panel_locked(WINDOW *w,struct panel_state *ps){
 	if(ps){
+		WINDOW *psw;
+
+		psw = panel_window(ps->p);
 		hide_panel(ps->p);
 		del_panel(ps->p);
 		ps->p = NULL;
-		delwin(ps->w);
-		ps->w = NULL;
+		delwin(psw);
 		ps->xsize = ps->ysize = -1;
 		start_screen_update();
 		draw_main_window(w,PROGNAME,VERSION);
@@ -545,30 +546,32 @@ static int
 new_display_panel(WINDOW *w,struct panel_state *ps,int rows,const wchar_t *hstr){
 	const wchar_t crightstr[] = L"copyright © 2011 nick black";
 	const int crightlen = wcslen(crightstr);
+	WINDOW *psw;
 	int x,y;
 
 	getmaxyx(w,y,x);
 	assert(y >= rows + 3);
 	assert(x >= crightlen + START_COL * 3);
-	assert((ps->w = newwin(rows + 2,x - START_COL * 2,y - (rows + 3),1)));
-	if(ps->w == NULL){
+	assert( (psw = newwin(rows + 2,x - START_COL * 2,y - (rows + 3),1)) );
+	if(psw == NULL){
 		return ERR;
 	}
-	assert((ps->p = new_panel(ps->w)));
+	assert((ps->p = new_panel(psw)));
 	if(ps->p == NULL){
+		delwin(psw);
 		return ERR;
 	}
 	ps->ysize = rows;
 	ps->xsize = x - START_COL * 2;
 	// memory leaks follow if we're compiled with NDEBUG! FIXME
-	assert(wattron(ps->w,A_BOLD) != ERR);
-	assert(wcolor_set(ps->w,PBORDER_COLOR,NULL) == OK);
-	assert(box(ps->w,0,0) == OK);
-	assert(wattroff(ps->w,A_BOLD) != ERR);
-	assert(wcolor_set(ps->w,PHEADING_COLOR,NULL) == OK);
-	assert(mvwaddwstr(ps->w,0,START_COL * 2,hstr) != ERR);
-	assert(mvwaddwstr(ps->w,rows + 1,x - (crightlen + START_COL * 4),crightstr) != ERR);
-	assert(wcolor_set(ps->w,BULKTEXT_COLOR,NULL) == OK);
+	assert(wattron(psw,A_BOLD) != ERR);
+	assert(wcolor_set(psw,PBORDER_COLOR,NULL) == OK);
+	assert(box(psw,0,0) == OK);
+	assert(wattroff(psw,A_BOLD) != ERR);
+	assert(wcolor_set(psw,PHEADING_COLOR,NULL) == OK);
+	assert(mvwaddwstr(psw,0,START_COL * 2,hstr) != ERR);
+	assert(mvwaddwstr(psw,rows + 1,x - (crightlen + START_COL * 4),crightstr) != ERR);
+	assert(wcolor_set(psw,BULKTEXT_COLOR,NULL) == OK);
 	return OK;
 }
 
@@ -668,7 +671,7 @@ display_details_locked(WINDOW *mainw,struct panel_state *ps,iface_state *is){
 		ERREXIT;
 	}
 	if(is){
-		if(iface_details(ps->w,iface_by_idx(is->ifacenum),ps->ysize,ps->xsize)){
+		if(iface_details(panel_window(ps->p),iface_by_idx(is->ifacenum),ps->ysize,ps->xsize)){
 			ERREXIT;
 		}
 	}
@@ -678,11 +681,11 @@ display_details_locked(WINDOW *mainw,struct panel_state *ps,iface_state *is){
 
 err:
 	if(ps->p){
+		WINDOW *psw = panel_window(ps->p);
+
 		hide_panel(ps->p);
 		del_panel(ps->p);
-	}
-	if(ps->w){
-		delwin(ps->w);
+		delwin(psw);
 	}
 	memset(ps,0,sizeof(*ps));
 	return -1;
@@ -741,7 +744,7 @@ display_help_locked(WINDOW *mainw,struct panel_state *ps){
 	if(new_display_panel(mainw,ps,helprows,L"press 'h' to dismiss help")){
 		ERREXIT;
 	}
-	if(helpstrs(ps->w,1,ps->ysize)){
+	if(helpstrs(panel_window(ps->p),1,ps->ysize)){
 		ERREXIT;
 	}
 	if(start_screen_update() == ERR){
@@ -754,11 +757,11 @@ display_help_locked(WINDOW *mainw,struct panel_state *ps){
 
 err:
 	if(ps->p){
+		WINDOW *psw = panel_window(ps->p);
+
 		hide_panel(ps->p);
 		del_panel(ps->p);
-	}
-	if(ps->w){
-		delwin(ps->w);
+		delwin(psw);
 	}
 	memset(ps,0,sizeof(*ps));
 	return -1;
@@ -853,8 +856,8 @@ use_next_iface_locked(void){
 		is = current_iface;
 		i = iface_by_idx(is->ifacenum);
 		iface_box(is->subwin,i,is);
-		if(details.w){
-			iface_details(details.w,i,details.ysize,details.xsize);
+		if(details.p){
+			iface_details(panel_window(details.p),i,details.ysize,details.xsize);
 		}
 		start_screen_update();
 		finish_screen_update();
@@ -872,8 +875,8 @@ use_prev_iface_locked(void){
 		is = current_iface;
 		i = iface_by_idx(is->ifacenum);
 		iface_box(is->subwin,i,is);
-		if(details.w){
-			iface_details(details.w,i,details.ysize,details.xsize);
+		if(details.p){
+			iface_details(panel_window(details.p),i,details.ysize,details.xsize);
 		}
 		start_screen_update();
 		finish_screen_update();
@@ -911,7 +914,7 @@ ncurses_input_thread(void *unsafe_marsh){
 			pthread_mutex_lock(&bfl);
 				redrawwin(w);
 				if(active){
-					redrawwin(active->w);
+					redrawwin(panel_window(active->p));
 				}
 				start_screen_update();
 				finish_screen_update();
@@ -989,7 +992,7 @@ ncurses_input_thread(void *unsafe_marsh){
 			break;
 		case 'v':{
 			pthread_mutex_lock(&bfl);
-			if(details.w){
+			if(details.p){
 				hide_panel_locked(w,&details);
 				active = NULL;
 			}else{
@@ -1001,7 +1004,7 @@ ncurses_input_thread(void *unsafe_marsh){
 			break;
 		}case 'h':{
 			pthread_mutex_lock(&bfl);
-			if(help.w){
+			if(help.p){
 				hide_panel_locked(w,&help);
 				active = NULL;
 			}else{
@@ -1012,7 +1015,7 @@ ncurses_input_thread(void *unsafe_marsh){
 			pthread_mutex_unlock(&bfl);
 			break;
 		}default:{
-			const char *hstr = !help.w ? " ('h' for help)" : "";
+			const char *hstr = !help.p ? " ('h' for help)" : "";
 			if(isprint(ch)){
 				wstatus(w,"unknown command '%c'%s",ch,hstr);
 			}else{
@@ -1339,8 +1342,8 @@ packet_cb_locked(const interface *i,iface_state *is,omphalos_packet *op){
 			return;
 		}
 		is->lastprinted = i->lastseen;
-		if(is == current_iface && details.w){
-			iface_details(details.w,i,details.ysize,details.xsize);
+		if(is == current_iface && details.p){
+			iface_details(panel_window(details.p),i,details.ysize,details.xsize);
 		}
 		print_iface_state(i,is);
 		full_screen_update();
@@ -1406,8 +1409,8 @@ interface_cb_locked(const interface *i,int inum,iface_state *ret){
 		resize_iface(i,ret);
 	}
 	if(ret){
-		if(ret == current_iface && details.w){
-			iface_details(details.w,i,details.ysize,details.xsize);
+		if(ret == current_iface && details.p){
+			iface_details(panel_window(details.p),i,details.ysize,details.xsize);
 		}
 		iface_box(ret->subwin,i,ret);
 		if(i->flags & IFF_UP){
@@ -1469,8 +1472,8 @@ interface_removed_locked(iface_state *is){
 			}
 			// If we owned the details window, give it to the new
 			// current_iface.
-			if(details.w){
-				iface_details(details.w,get_current_iface(),details.ysize,details.xsize);
+			if(details.p){
+				iface_details(panel_window(details.p),get_current_iface(),details.ysize,details.xsize);
 			}
 		}else{
 			// If we owned the details window, destroy it FIXME
