@@ -344,8 +344,6 @@ iface_box(WINDOW *w,const interface *i,const iface_state *is){
 		}
 	}else{
 		assert(iface_optstr(w,"down",hcolor,bcolor) != ERR);
-		// FIXME find out whether carrier is meaningful for down
-		// interfaces (i've never seen a down interface with carrier)
 	}
 	if(interface_promisc_p(i)){
 		assert(iface_optstr(w,"promisc",hcolor,bcolor) != ERR);
