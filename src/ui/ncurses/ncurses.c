@@ -884,7 +884,6 @@ use_prev_iface_locked(void){
 
 struct ncurses_input_marshal {
 	WINDOW *w;
-	PANEL *p;
 	const omphalos_iface *octx;
 };
 
