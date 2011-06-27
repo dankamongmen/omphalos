@@ -1267,7 +1267,6 @@ resize_iface(const interface *i,iface_state *ret){
 			is->scrline += delta;
 			assert(werase(is->subwin) == OK);
 			assert(move_panel(is->panel,is->scrline,START_COL) != ERR);
-			update_panels();
 			redraw_iface(ii,is);
 		}
 		ret->ysize = lines_for_interface(i,ret);
