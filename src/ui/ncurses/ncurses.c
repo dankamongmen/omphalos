@@ -57,7 +57,6 @@ extern int mvwprintw(WINDOW *,int,int,const char *,...) __attribute__ ((format (
 struct panel_state {
 	PANEL *p;
 	int ysize;			// number of lines of *text* (not win)
-	int xsize;			// maximum cols of *text* (not win)
 };
 
 typedef struct l2obj {
@@ -65,7 +64,7 @@ typedef struct l2obj {
 	struct l2host *l2;
 } l2obj;
 
-#define PANEL_STATE_INITIALIZER { .p = NULL, .ysize = -1, .xsize = -1, }
+#define PANEL_STATE_INITIALIZER { .p = NULL, .ysize = -1, }
 
 static struct panel_state *active;
 static struct panel_state help = PANEL_STATE_INITIALIZER;
@@ -295,10 +294,12 @@ bprefix(uintmax_t val,unsigned decimal,char *buf,size_t bsize,int omitdec){
 // to be called only while ncurses lock is held
 static int
 iface_box(WINDOW *w,const interface *i,const iface_state *is){
-	int bcolor,hcolor;
+	int bcolor,hcolor,scrrows,scrcols;
 	size_t buslen;
 	int attrs;
 
+	getmaxyx(w,scrrows,scrcols);
+	assert(scrrows); // FIXME
 	bcolor = interface_up_p(i) ? UBORDER_COLOR : DBORDER_COLOR;
 	hcolor = interface_up_p(i) ? UHEADING_COLOR : DHEADING_COLOR;
 	attrs = ((is == current_iface) ? A_REVERSE : 0) | A_BOLD;
@@ -351,10 +352,10 @@ iface_box(WINDOW *w,const interface *i,const iface_state *is){
 	if( (buslen = strlen(i->drv.bus_info)) ){
 		if(i->busname){
 			buslen += strlen(i->busname) + 1;
-			assert(mvwprintw(w,is->ysize - 1,COLS - (buslen + 3 + START_COL),
+			assert(mvwprintw(w,is->ysize - 1,scrcols - (buslen + 3 + START_COL),
 					"%s:%s",i->busname,i->drv.bus_info) != ERR);
 		}else{
-			assert(mvwprintw(w,is->ysize - 1,COLS - (buslen + 3 + START_COL),
+			assert(mvwprintw(w,is->ysize - 1,scrcols - (buslen + 3 + START_COL),
 					"%s",i->drv.bus_info) != ERR);
 		}
 	}
@@ -530,7 +531,7 @@ hide_panel_locked(WINDOW *w,struct panel_state *ps){
 		del_panel(ps->p);
 		ps->p = NULL;
 		delwin(psw);
-		ps->xsize = ps->ysize = -1;
+		ps->ysize = -1;
 		start_screen_update();
 		draw_main_window(w,PROGNAME,VERSION);
 		finish_screen_update();
@@ -560,7 +561,6 @@ new_display_panel(WINDOW *w,struct panel_state *ps,int rows,const wchar_t *hstr)
 		return ERR;
 	}
 	ps->ysize = rows;
-	ps->xsize = x - START_COL * 2;
 	// memory leaks follow if we're compiled with NDEBUG! FIXME
 	assert(wattron(psw,A_BOLD) != ERR);
 	assert(wcolor_set(psw,PBORDER_COLOR,NULL) == OK);
@@ -586,11 +586,14 @@ offload_details(WINDOW *w,const interface *i,int row,int col,const char *name,
 
 // FIXME need to support scrolling through the output
 static int
-iface_details(WINDOW *hw,const interface *i,int rows,int cols){
+iface_details(WINDOW *hw,const interface *i,int rows){
 	const int col = START_COL;
+	int scrcols,scrrows;
 	const int row = 1;
 	int z;
 
+	getmaxyx(hw,scrrows,scrcols);
+	assert(scrrows); // FIXME
 	if((z = rows) >= DETAILROWS){
 		z = DETAILROWS - 1;
 	}
@@ -632,7 +635,7 @@ iface_details(WINDOW *hw,const interface *i,int rows,int cols){
 		assert(offload_details(hw,i,row + z,col + 48,"RVln",RXVLAN_OFFLOAD) != ERR);
 		--z;
 	}case 1:{
-		assert(mvwprintw(hw,row + z,col,"%-*s",cols - 2,i->topinfo.devname ?
+		assert(mvwprintw(hw,row + z,col,"%-*s",scrcols - 2,i->topinfo.devname ?
 					i->topinfo.devname : "Unknown device") != ERR);
 		--z;
 	}case 0:{
@@ -669,7 +672,7 @@ display_details_locked(WINDOW *mainw,struct panel_state *ps,iface_state *is){
 		ERREXIT;
 	}
 	if(is){
-		if(iface_details(panel_window(ps->p),iface_by_idx(is->ifacenum),ps->ysize,ps->xsize)){
+		if(iface_details(panel_window(ps->p),iface_by_idx(is->ifacenum),ps->ysize)){
 			ERREXIT;
 		}
 	}
@@ -855,7 +858,7 @@ use_next_iface_locked(void){
 		i = iface_by_idx(is->ifacenum);
 		iface_box(is->subwin,i,is);
 		if(details.p){
-			iface_details(panel_window(details.p),i,details.ysize,details.xsize);
+			iface_details(panel_window(details.p),i,details.ysize);
 		}
 		start_screen_update();
 		finish_screen_update();
@@ -874,7 +877,7 @@ use_prev_iface_locked(void){
 		i = iface_by_idx(is->ifacenum);
 		iface_box(is->subwin,i,is);
 		if(details.p){
-			iface_details(panel_window(details.p),i,details.ysize,details.xsize);
+			iface_details(panel_window(details.p),i,details.ysize);
 		}
 		start_screen_update();
 		finish_screen_update();
@@ -1341,7 +1344,7 @@ packet_cb_locked(const interface *i,iface_state *is,omphalos_packet *op){
 		}
 		is->lastprinted = i->lastseen;
 		if(is == current_iface && details.p){
-			iface_details(panel_window(details.p),i,details.ysize,details.xsize);
+			iface_details(panel_window(details.p),i,details.ysize);
 		}
 		print_iface_state(i,is);
 		full_screen_update();
@@ -1408,7 +1411,7 @@ interface_cb_locked(const interface *i,int inum,iface_state *ret){
 	}
 	if(ret){
 		if(ret == current_iface && details.p){
-			iface_details(panel_window(details.p),i,details.ysize,details.xsize);
+			iface_details(panel_window(details.p),i,details.ysize);
 		}
 		iface_box(ret->subwin,i,ret);
 		if(i->flags & IFF_UP){
@@ -1471,7 +1474,7 @@ interface_removed_locked(iface_state *is){
 			// If we owned the details window, give it to the new
 			// current_iface.
 			if(details.p){
-				iface_details(panel_window(details.p),get_current_iface(),details.ysize,details.xsize);
+				iface_details(panel_window(details.p),get_current_iface(),details.ysize);
 			}
 		}else{
 			// If we owned the details window, destroy it FIXME
