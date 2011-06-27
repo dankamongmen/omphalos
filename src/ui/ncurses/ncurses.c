@@ -1036,16 +1036,10 @@ ncurses_input_thread(void *unsafe_marsh){
 // Cleanup which ought be performed even if we had a failure elsewhere, or
 // indeed never started.
 static int
-mandatory_cleanup(WINDOW **w,PANEL **p){
+mandatory_cleanup(WINDOW **w){
 	int ret = 0;
 
 	pthread_mutex_lock(&bfl);
-	if(*p){
-		if(del_panel(*p) == ERR){
-			ret = -4;
-		}
-		*p = NULL;
-	}
 	if(*w){
 		if(delwin(*w) != OK){
 			ret = -1;
@@ -1063,7 +1057,6 @@ mandatory_cleanup(WINDOW **w,PANEL **p){
 	}
 	pthread_mutex_unlock(&bfl);
 	switch(ret){
-	case -4: fprintf(stderr,"Couldn't destroy main panel\n"); break;
 	case -3: fprintf(stderr,"Couldn't end main window\n"); break;
 	case -2: fprintf(stderr,"Couldn't delete main window\n"); break;
 	case -1: fprintf(stderr,"Couldn't delete main pad\n"); break;
@@ -1074,11 +1067,10 @@ mandatory_cleanup(WINDOW **w,PANEL **p){
 }
 
 static WINDOW *
-ncurses_setup(const omphalos_iface *octx,PANEL **panel){
+ncurses_setup(const omphalos_iface *octx){
 	struct ncurses_input_marshal *nim;
 	const char *errstr = NULL;
 	WINDOW *w = NULL;
-	PANEL *p = NULL;
 
 	if(initscr() == NULL){
 		fprintf(stderr,"Couldn't initialize ncurses\n");
@@ -1109,10 +1101,6 @@ ncurses_setup(const omphalos_iface *octx,PANEL **panel){
 		goto err;
 	}
 	w = stdscr;
-	if((p = new_panel(stdscr)) == NULL){
-		errstr = "Couldn't initialize main panel\n";
-		goto err;
-	}
 	keypad(stdscr,TRUE);
 	if(init_pair(BORDER_COLOR,COLOR_GREEN,-1) != OK){
 		errstr = "Couldn't initialize ncurses colorpair\n";
@@ -1179,18 +1167,16 @@ ncurses_setup(const omphalos_iface *octx,PANEL **panel){
 	}
 	nim->octx = octx;
 	nim->w = w;
-	nim->p = p;
 	if(pthread_create(&inputtid,NULL,ncurses_input_thread,nim)){
 		errstr = "Couldn't create UI thread\n";
 		free(nim);
 		goto err;
 	}
-	// FIXME install SIGWINCH() handler...
-	*panel = p;
+	// FIXME install SIGWINCH() handler...?
 	return w;
 
 err:
-	mandatory_cleanup(&w,&p);
+	mandatory_cleanup(&w);
 	fprintf(stderr,"%s",errstr);
 	return NULL;
 }
@@ -1524,7 +1510,6 @@ diag_callback(const char *fmt,...){
 int main(int argc,char * const *argv){
 	const char *codeset;
 	omphalos_ctx pctx;
-	PANEL *panel;
 
 	if(setlocale(LC_ALL,"") == NULL || ((codeset = nl_langinfo(CODESET)) == NULL)){
 		fprintf(stderr,"Couldn't initialize locale (%s?)\n",strerror(errno));
@@ -1548,18 +1533,18 @@ int main(int argc,char * const *argv){
 	pctx.iface.iface_removed = interface_removed_callback;
 	pctx.iface.diagnostic = diag_callback;
 	pctx.iface.wireless_event = wireless_callback;
-	if((pad = ncurses_setup(&pctx.iface,&panel)) == NULL){
+	if((pad = ncurses_setup(&pctx.iface)) == NULL){
 		return EXIT_FAILURE;
 	}
 	if(omphalos_init(&pctx)){
 		int err = errno;
 
-		mandatory_cleanup(&pad,&panel);
+		mandatory_cleanup(&pad);
 		fprintf(stderr,"Error in omphalos_init() (%s?)\n",strerror(err));
 		return EXIT_FAILURE;
 	}
 	omphalos_cleanup(&pctx);
-	if(mandatory_cleanup(&pad,&panel)){
+	if(mandatory_cleanup(&pad)){
 		return EXIT_FAILURE;
 	}
 	return EXIT_SUCCESS;
