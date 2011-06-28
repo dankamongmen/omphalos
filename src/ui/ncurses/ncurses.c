@@ -1208,7 +1208,7 @@ print_iface_hosts(const interface *i,const iface_state *is){
 		
 		if(idx < is->first_visible){
 			continue;
-		}else if(idx - is->first_visible > is->ysize){
+		}else if(idx - is->first_visible >= is->ysize - PAD_LINES){
 			break;
 		}
 		switch(cat){
@@ -1282,6 +1282,8 @@ iface_hidden_p(int rows,const iface_state *ret){
 	return 1; // hidden below
 }
 
+// FIXME this only addresses expansion. need to handle shrinking, also (which
+// can make a panel visible, just as expansion can hide it).
 static int
 resize_iface(const interface *i,iface_state *ret){
 	int rows,cols,nlines;
@@ -1289,7 +1291,7 @@ resize_iface(const interface *i,iface_state *ret){
 	getmaxyx(stdscr,rows,cols);
 	// FIXME this only addresses expansion. need to handle shrinking, also.
 	// (which can make a panel visible, just as expansion can hide it)
-	if(iface_hidden_p(rows,ret)){
+	if(!iface_visible_p(rows,ret)){
 		return 0;
 	}
 	if((nlines = lines_for_interface(i,ret)) == ret->ysize){
