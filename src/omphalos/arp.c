@@ -19,6 +19,7 @@ void handle_arp_packet(const omphalos_iface *octx,interface *i,const void *frame
 			__func__,sizeof(*ap) + ap->ar_hln * 2 + ap->ar_pln * 2,len);
 		return;
 	}
+	// FIXME name_l2host(op->l2s,AF_INET,&ip->saddr);
 	switch(ap->ar_op){
 	case __constant_ntohs(ARPOP_REQUEST):{
 		// FIXME reply with ARP spoof...
