@@ -45,7 +45,7 @@ extern int mvwprintw(WINDOW *,int,int,const char *,...) __attribute__ ((format (
 #define VERSION  "0.98-pre"	// FIXME
 
 #define PAD_LINES 3
-#define PAD_COLS (COLS - START_COL * 2)
+#define PAD_COLS(cols) ((cols) - START_COL * 2)
 #define START_LINE 2
 #define START_COL 1
 #define U64STRLEN 20	// Does not include a '\0' (18,446,744,073,709,551,616)
@@ -1257,9 +1257,23 @@ redraw_iface(const interface *i,iface_state *is){
 	return OK;
 }
 
+// Is the interface window entirely visible?
+static int
+iface_visible_p(int rows,const iface_state *ret){
+	if(ret->scrline + ret->ysize >= rows){
+		return 0;
+	}
+	return 1;
+}
+
 static int
 resize_iface(const interface *i,iface_state *ret){
-	if(lines_for_interface(i,ret) != ret->ysize){ // need resize
+	int rows,cols;
+
+	getmaxyx(stdscr,rows,cols);
+	// FIXME this only addresses expansion. need to handle shrinking, also.
+	// (which can make a panel visible, just as expansion can hide it)
+	if(lines_for_interface(i,ret) != ret->ysize){ // aye, need resize
 		int delta = lines_for_interface(i,ret) - ret->ysize;
 		iface_state *is;
 
@@ -1268,17 +1282,25 @@ resize_iface(const interface *i,iface_state *ret){
 
 			is->scrline += delta;
 			assert(werase(is->subwin) == OK);
-			assert(move_panel(is->panel,is->scrline,START_COL) != ERR);
-			redraw_iface(ii,is);
+			if(iface_visible_p(rows,is)){
+				assert(move_panel(is->panel,is->scrline,START_COL) != ERR);
+				if(redraw_iface(ii,is)){
+					return ERR;
+				}
+			}else{
+				hide_panel(is->panel);
+			}
 		}
 		ret->ysize = lines_for_interface(i,ret);
 		assert(werase(ret->subwin) != ERR);
-		assert(wresize(ret->subwin,ret->ysize,PAD_COLS) != ERR);
+		assert(wresize(ret->subwin,ret->ysize,PAD_COLS(cols)) != ERR);
 		assert(replace_panel(ret->panel,ret->subwin) != ERR);
-		redraw_iface(i,ret);
+		if(redraw_iface(i,ret)){
+			return ERR;
+		}
 		full_screen_update();
 	}
-	return 0;
+	return OK;
 }
 
 static l2obj *
@@ -1365,6 +1387,9 @@ interface_cb_locked(const interface *i,int inum,iface_state *ret){
 
 		if( (tstr = lookup_arptype(i->arptype,NULL)) ){
 			if( (ret = malloc(sizeof(iface_state))) ){
+				int rows,cols;
+
+				getmaxyx(stdscr,rows,cols);
 				ret->l2ents = 0;
 				ret->l2objs = NULL;
 				ret->ysize = lines_for_interface(i,ret);
@@ -1376,6 +1401,9 @@ interface_cb_locked(const interface *i,int inum,iface_state *ret){
 					current_iface = ret->prev = ret->next = ret;
 					ret->scrline = START_LINE;
 				}else{
+					// FIXME check rows; might need kick an
+					// existing interface off/start hidden
+					assert(rows); // FIXME
 					// The order on screen must match the list order, so splice it onto
 					// the end. We might be anywhere, so use absolute coords (scrline).
 					while(ret->prev->next->scrline > ret->prev->scrline){
@@ -1387,7 +1415,7 @@ interface_cb_locked(const interface *i,int inum,iface_state *ret){
 					ret->next->prev = ret;
 					ret->prev->next = ret;
 				}
-				if( (ret->subwin = newwin(ret->ysize,PAD_COLS,ret->scrline,START_COL)) &&
+				if( (ret->subwin = newwin(ret->ysize,PAD_COLS(cols),ret->scrline,START_COL)) &&
 						(ret->panel = new_panel(ret->subwin)) ){
 					// Want the subdisplay left above this
 					// new iface, should they intersect.
