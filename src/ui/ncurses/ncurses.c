@@ -662,7 +662,7 @@ iface_details(WINDOW *hw,const interface *i,int rows){
 		assert(offload_details(hw,i,row + z,col + 36,"RCsm",RX_CSUM_OFFLOAD) != ERR);
 		assert(offload_details(hw,i,row + z,col + 42,"TVln",TXVLAN_OFFLOAD) != ERR);
 		assert(offload_details(hw,i,row + z,col + 48,"RVln",RXVLAN_OFFLOAD) != ERR);
-		assert(mvwprintw(hw,row + z,col + 53," mtu: %-6d",i->mtu) != ERR);
+		assert(mvwprintw(hw,row + z,col + 53," MTU: %-6d",i->mtu) != ERR);
 		--z;
 	}case 1:{
 		assert(mvwprintw(hw,row + z,col,"%-*s",scrcols - 2,i->topinfo.devname ?
