@@ -185,3 +185,7 @@ void name_l2host(l2host *l2,int family,const void *name){
 		}
 	}
 }
+
+const char *get_name(const l2host *l2){
+	return l2->name;
+}
