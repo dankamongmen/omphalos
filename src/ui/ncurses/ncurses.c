@@ -1267,8 +1267,19 @@ static int
 iface_visible_p(int rows,const iface_state *ret){
 	if(ret->scrline + ret->ysize >= rows){
 		return 0;
+	}else if(ret->scrline < START_LINE){
+		return 0;
 	}
 	return 1;
+}
+
+// Is the interface window entirely invisible?
+static int
+iface_hidden_p(int rows,const iface_state *ret){
+	if(ret->scrline < rows && ret->scrline + ret->ysize >= START_LINE){
+		return 0;
+	}
+	return 1; // hidden below
 }
 
 static int
@@ -1278,7 +1289,7 @@ resize_iface(const interface *i,iface_state *ret){
 	getmaxyx(stdscr,rows,cols);
 	// FIXME this only addresses expansion. need to handle shrinking, also.
 	// (which can make a panel visible, just as expansion can hide it)
-	if(!iface_visible_p(rows,ret)){
+	if(iface_hidden_p(rows,ret)){
 		return 0;
 	}
 	if((nlines = lines_for_interface(i,ret)) == ret->ysize){
