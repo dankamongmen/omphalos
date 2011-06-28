@@ -1401,9 +1401,6 @@ interface_cb_locked(const interface *i,int inum,iface_state *ret){
 					current_iface = ret->prev = ret->next = ret;
 					ret->scrline = START_LINE;
 				}else{
-					// FIXME check rows; might need kick an
-					// existing interface off/start hidden
-					assert(rows); // FIXME
 					// The order on screen must match the list order, so splice it onto
 					// the end. We might be anywhere, so use absolute coords (scrline).
 					while(ret->prev->next->scrline > ret->prev->scrline){
@@ -1415,6 +1412,9 @@ interface_cb_locked(const interface *i,int inum,iface_state *ret){
 					ret->next->prev = ret;
 					ret->prev->next = ret;
 				}
+				// FIXME check rows; might need kick an iface
+				// off or start hidden.
+				assert(rows); // FIXME
 				if( (ret->subwin = newwin(ret->ysize,PAD_COLS(cols),ret->scrline,START_COL)) &&
 						(ret->panel = new_panel(ret->subwin)) ){
 					// Want the subdisplay left above this
