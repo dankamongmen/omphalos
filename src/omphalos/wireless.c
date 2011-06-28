@@ -8,7 +8,7 @@
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
 
-int handle_wireless_event(const omphalos_iface *octx,interface *i,int inum,
+int handle_wireless_event(const omphalos_iface *octx,interface *i,
 				const struct iw_event *iw,size_t len){
 	if(len < IW_EV_LCP_LEN){
 		octx->diagnostic("Wireless msg too short on %s (%zu)",i->name,len);
@@ -32,7 +32,7 @@ int handle_wireless_event(const omphalos_iface *octx,interface *i,int inum,
 		return -1;
 	} }
 	if(octx->wireless_event){
-		i->opaque = octx->wireless_event(i,inum,iw->cmd,i->opaque);
+		i->opaque = octx->wireless_event(i,iw->cmd,i->opaque);
 	}
 	return 0;
 }

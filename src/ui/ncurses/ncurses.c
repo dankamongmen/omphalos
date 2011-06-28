@@ -71,14 +71,13 @@ static struct panel_state help = PANEL_STATE_INITIALIZER;
 static struct panel_state details = PANEL_STATE_INITIALIZER;
 
 // Bind one of these state structures to each interface in the callback,
-// and also associate an iface with them via ifacenum (for UI actions).
-// FIXME get rid of ifacenum and just keep a pointer to the iface, since it
-//   can't be destroyed until a callback to us
+// and also associate an iface with them via *iface (for UI actions).
 typedef struct iface_state {
-	int ifacenum;			// iface number FIXME see above
+	interface *iface;		// corresponding omphalos iface struct
 	int scrline;			// line within the containing pad
 	int ysize;			// number of lines
 	int l2ents;			// number of l2 entities
+	int first_visible;		// index of first visible l2 entity
 	WINDOW *subwin;			// subwin
 	PANEL *panel;			// panel
 	const char *typestr;		// looked up using iface->arptype
@@ -471,7 +470,7 @@ wstatus(WINDOW *w,const char *fmt,...){
 static const interface *
 get_current_iface(void){
 	if(current_iface){
-		return iface_by_idx(current_iface->ifacenum);
+		return current_iface->iface;
 	}
 	return NULL;
 }
@@ -672,7 +671,7 @@ display_details_locked(WINDOW *mainw,struct panel_state *ps,iface_state *is){
 		ERREXIT;
 	}
 	if(is){
-		if(iface_details(panel_window(ps->p),iface_by_idx(is->ifacenum),ps->ysize)){
+		if(iface_details(panel_window(ps->p),is->iface,ps->ysize)){
 			ERREXIT;
 		}
 	}
@@ -850,12 +849,12 @@ static void
 use_next_iface_locked(void){
 	if(current_iface && current_iface->next != current_iface){
 		const iface_state *is = current_iface;
-		interface *i = iface_by_idx(is->ifacenum);
+		interface *i = is->iface;
 
 		current_iface = current_iface->next;
 		iface_box(is->subwin,i,is);
 		is = current_iface;
-		i = iface_by_idx(is->ifacenum);
+		i = is->iface;
 		iface_box(is->subwin,i,is);
 		if(details.p){
 			iface_details(panel_window(details.p),i,details.ysize);
@@ -869,12 +868,12 @@ static void
 use_prev_iface_locked(void){
 	if(current_iface && current_iface->prev != current_iface){
 		const iface_state *is = current_iface;
-		interface *i = iface_by_idx(is->ifacenum);
+		interface *i = is->iface;
 
 		current_iface = current_iface->prev;
 		iface_box(is->subwin,i,is);
 		is = current_iface;
-		i = iface_by_idx(is->ifacenum);
+		i = is->iface;
 		iface_box(is->subwin,i,is);
 		if(details.p){
 			iface_details(panel_window(details.p),i,details.ysize);
@@ -1278,7 +1277,7 @@ resize_iface(const interface *i,iface_state *ret){
 		iface_state *is;
 
 		for(is = ret->next ; is->scrline > ret->scrline ; is = is->next){
-			interface *ii = iface_by_idx(is->ifacenum);
+			interface *ii = is->iface;
 
 			is->scrline += delta;
 			assert(werase(is->subwin) == OK);
@@ -1374,64 +1373,72 @@ packet_cb_locked(const interface *i,iface_state *is,omphalos_packet *op){
 }
 
 static void
-packet_callback(const interface *i,void *unsafe,omphalos_packet *op){
+packet_callback(void *unsafe,omphalos_packet *op){
 	pthread_mutex_lock(&bfl);
-	packet_cb_locked(i,unsafe,op);
+	packet_cb_locked(op->i,unsafe,op);
 	pthread_mutex_unlock(&bfl);
 }
 
+static iface_state *
+create_interface_state(interface *i){
+	iface_state *ret;
+	const char *tstr;
+
+	if( (tstr = lookup_arptype(i->arptype,NULL)) ){
+		if( (ret = malloc(sizeof(*ret))) ){
+			ret->l2ents = 0;
+			ret->l2objs = NULL;
+			ret->ysize = lines_for_interface(i,ret);
+			ret->alarmset = ret->devaction = 0;
+			ret->typestr = tstr;
+			ret->lastprinted.tv_sec = ret->lastprinted.tv_usec = 0;
+			ret->iface = i;
+		}
+	}
+	return ret;
+}
+
 static inline void *
-interface_cb_locked(const interface *i,int inum,iface_state *ret){
+interface_cb_locked(interface *i,iface_state *ret){
 	if(ret == NULL){
-		const char *tstr;
+		if( (ret = create_interface_state(i)) ){
+			int rows,cols;
 
-		if( (tstr = lookup_arptype(i->arptype,NULL)) ){
-			if( (ret = malloc(sizeof(iface_state))) ){
-				int rows,cols;
-
-				getmaxyx(stdscr,rows,cols);
-				ret->l2ents = 0;
-				ret->l2objs = NULL;
-				ret->ysize = lines_for_interface(i,ret);
-				ret->alarmset = ret->devaction = 0;
-				ret->typestr = tstr;
-				ret->lastprinted.tv_sec = ret->lastprinted.tv_usec = 0;
-				ret->ifacenum = inum;
-				if((ret->prev = current_iface) == NULL){
-					current_iface = ret->prev = ret->next = ret;
-					ret->scrline = START_LINE;
-				}else{
-					// The order on screen must match the list order, so splice it onto
-					// the end. We might be anywhere, so use absolute coords (scrline).
-					while(ret->prev->next->scrline > ret->prev->scrline){
-						ret->prev = ret->prev->next;
-					}
-					ret->scrline = lines_for_interface(iface_by_idx(ret->prev->ifacenum),ret->prev)
-						+ ret->prev->scrline + 1;
-					ret->next = ret->prev->next;
-					ret->next->prev = ret;
-					ret->prev->next = ret;
+			if((ret->prev = current_iface) == NULL){
+				current_iface = ret->prev = ret->next = ret;
+				ret->scrline = START_LINE;
+			}else{
+				// The order on screen must match the list order, so splice it onto
+				// the end. We might be anywhere, so use absolute coords (scrline).
+				while(ret->prev->next->scrline > ret->prev->scrline){
+					ret->prev = ret->prev->next;
 				}
-				// FIXME check rows; might need kick an iface
-				// off or start hidden.
-				assert(rows); // FIXME
-				if( (ret->subwin = newwin(ret->ysize,PAD_COLS(cols),ret->scrline,START_COL)) &&
-						(ret->panel = new_panel(ret->subwin)) ){
-					// Want the subdisplay left above this
-					// new iface, should they intersect.
-					assert(bottom_panel(ret->panel) == OK);
-					++count_interface;
+				ret->scrline = lines_for_interface(ret->prev->iface,ret->prev)
+					+ ret->prev->scrline + 1;
+				ret->next = ret->prev->next;
+				ret->next->prev = ret;
+				ret->prev->next = ret;
+			}
+			getmaxyx(stdscr,rows,cols);
+			// FIXME check rows; might need kick an iface
+			// off or start hidden.
+			assert(rows); // FIXME
+			if( (ret->subwin = newwin(ret->ysize,PAD_COLS(cols),ret->scrline,START_COL)) &&
+					(ret->panel = new_panel(ret->subwin)) ){
+				// Want the subdisplay left above this
+				// new iface, should they intersect.
+				assert(bottom_panel(ret->panel) == OK);
+				++count_interface;
+			}else{
+				delwin(ret->subwin);
+				if(current_iface == ret){
+					current_iface = NULL;
 				}else{
-					delwin(ret->subwin);
-					if(current_iface == ret){
-						current_iface = NULL;
-					}else{
-						ret->next->prev = ret->prev;
-						ret->prev->next = ret->next;
-					}
-					free(ret);
-					ret = NULL;
+					ret->next->prev = ret->prev;
+					ret->prev->next = ret->next;
 				}
+				free(ret);
+				ret = NULL;
 			}
 		}
 	}else{ // preexisting interface might need be expanded / collapsed
@@ -1459,22 +1466,21 @@ interface_cb_locked(const interface *i,int inum,iface_state *ret){
 }
 
 static void *
-interface_callback(const interface *i,int inum,void *unsafe){
+interface_callback(interface *i,void *unsafe){
 	void *r;
 
 	pthread_mutex_lock(&bfl);
-	r = interface_cb_locked(i,inum,unsafe);
+	r = interface_cb_locked(i,unsafe);
 	pthread_mutex_unlock(&bfl);
 	return r;
 }
 
 static void *
-wireless_callback(const interface *i,int inum,
-		unsigned wcmd __attribute__ ((unused)),void *unsafe){
+wireless_callback(interface *i,unsigned wcmd __attribute__ ((unused)),void *unsafe){
 	void *r;
 
 	pthread_mutex_lock(&bfl);
-	r = interface_cb_locked(i,inum,unsafe);
+	r = interface_cb_locked(i,unsafe);
 	wstatus_locked(pad,"wireless event on %s",i->name); // FIXME
 	pthread_mutex_unlock(&bfl);
 	return r;

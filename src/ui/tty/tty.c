@@ -103,8 +103,7 @@ dump_output(FILE *fp){
 }
 
 static void *
-iface_event(const interface *i,int inum __attribute__ ((unused)),
-			void *unsafe __attribute__ ((unused))){
+iface_event(interface *i,void *unsafe __attribute__ ((unused))){
 	print_iface(stdout,i);
 	return NULL;
 }
@@ -122,29 +121,29 @@ iface_removed(const interface *i,void *unsafe __attribute__ ((unused))){
 }
 
 static int
-print_wireless_event(FILE *fp,const interface *i,int inum,unsigned cmd){
+print_wireless_event(FILE *fp,const interface *i,unsigned cmd){
 	int n = 0;
 
 	switch(cmd){
 	case SIOCGIWSCAN:{
 		// FIXME handle scan results
-		n = fprintf(fp,"\t   Scan results on %d:%s\n",inum,i->name);
+		n = fprintf(fp,"\t   Scan results on %s\n",i->name);
 	break;}case SIOCGIWAP:{
 		// FIXME handle AP results
-		n = fprintf(fp,"\t   Access point on %d:%s\n",inum,i->name);
+		n = fprintf(fp,"\t   Access point on %s\n",i->name);
 	break;}case IWEVASSOCRESPIE:{
 		// FIXME handle IE reassociation results
-		n = fprintf(fp,"\t   Reassociation on %d:%s\n",inum,i->name);
+		n = fprintf(fp,"\t   Reassociation on %s\n",i->name);
 	break;}default:{
-		n = fprintf(fp,"\t   Unknown wireless event on %d:%s: 0x%x\n",inum,i->name,cmd);
+		n = fprintf(fp,"\t   Unknown wireless event on %s: 0x%x\n",i->name,cmd);
 		break;
 	} }
 	return n;
 }
 
 static void *
-wireless_event(const interface *i,int inum,unsigned cmd,void *unsafe __attribute__ ((unused))){
-	print_wireless_event(stdout,i,inum,cmd);
+wireless_event(interface *i,unsigned cmd,void *unsafe __attribute__ ((unused))){
+	print_wireless_event(stdout,i,cmd);
 	return NULL;
 }
 

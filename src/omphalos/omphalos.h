@@ -24,13 +24,13 @@ typedef struct omphalos_packet {
 
 // UI callback interface. Any number may be NULL.
 typedef struct omphalos_iface {
-	// FIXME get rid of first two arguments, passing only omphalos_packet
-	void (*packet_read)(const struct interface *,void *,struct omphalos_packet *);
-	void *(*iface_event)(const struct interface *,int,void *);
+	// FIXME get rid of first argument, passing only omphalos_packet
+	void (*packet_read)(void *,struct omphalos_packet *);
+	void *(*iface_event)(struct interface *,void *);
 	void (*iface_removed)(const struct interface *,void *);
 	void *(*neigh_event)(const struct interface *,const struct l2host *,void *);
 	void (*neigh_removed)(const struct interface *,const struct l2host *,void *);
-	void *(*wireless_event)(const struct interface *,int,unsigned,void *);
+	void *(*wireless_event)(struct interface *,unsigned,void *);
 	void (*diagnostic)(const char *,...);
 } omphalos_iface;
 

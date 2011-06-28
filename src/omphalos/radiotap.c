@@ -7,6 +7,6 @@ void handle_radiotap_packet(const omphalos_iface *octx,omphalos_packet *op,
 				const void *frame,size_t len){
 	octx->diagnostic("FIXME radiotap %p/%zu (%s)\n",frame,len,op->i->name);
 	if(octx->packet_read){
-		octx->packet_read(op->i,op->i->opaque,op);
+		octx->packet_read(op->i->opaque,op);
 	}
 }

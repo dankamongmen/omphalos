@@ -720,7 +720,7 @@ handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 			break;}case IFLA_QDISC:{
 			break;}case IFLA_STATS:{
 			break;}case IFLA_WIRELESS:{
-				if(handle_wireless_event(octx,iface,ii->ifi_index,RTA_DATA(ra),RTA_PAYLOAD(ra)) < 0){
+				if(handle_wireless_event(octx,iface,RTA_DATA(ra),RTA_PAYLOAD(ra)) < 0){
 					return -1;
 				}
 			break;}case IFLA_OPERSTATE:{
@@ -800,7 +800,7 @@ handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 		gettimeofday(&tv,NULL);
 		timestat_inc(&iface->fps,&tv,0);
 		timestat_inc(&iface->bps,&tv,0);
-		iface->opaque = octx->iface_event(iface,ii->ifi_index,iface->opaque);
+		iface->opaque = octx->iface_event(iface,iface->opaque);
 	}
 	return 0;
 }
