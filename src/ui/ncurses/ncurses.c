@@ -1206,10 +1206,10 @@ print_iface_hosts(const interface *i,const iface_state *is){
 		char legend;
 		char *hw;
 		
-		if(++idx < is->first_visible){
+		if(idx < is->first_visible){
 			continue;
-		/*}else if(idx - is->first_visible > is->ysize){
-			break;*/
+		}else if(idx - is->first_visible > is->ysize){
+			break;
 		}
 		switch(cat){
 			case RTN_UNICAST:
@@ -1238,6 +1238,7 @@ print_iface_hosts(const interface *i,const iface_state *is){
 	return OK;
 }
 
+// This is the number of lines we'd have in an optimal world; we might get less.
 static inline int
 lines_for_interface(const interface *i,const iface_state *is){
 	if(i->flags & IFF_UP){
@@ -1282,8 +1283,7 @@ resize_iface(const interface *i,iface_state *ret){
 	}
 	nlines = lines_for_interface(i,ret);
 	if(nlines + ret->scrline >= rows){
-		// FIXME we can expand up in this case
-		return 0;
+		return 0; // FIXME we can expand up in this case
 	}
 	if(nlines != ret->ysize){ // aye, need resize
 		int delta = nlines - ret->ysize;
