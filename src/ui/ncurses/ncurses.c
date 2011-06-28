@@ -1232,7 +1232,7 @@ print_iface_hosts(const interface *i,const iface_state *is){
 		if((hw = l2addrstr(l->l2,i->addrlen)) == NULL){
 			return ERR;
 		}
-		assert(mvwprintw(is->subwin,++line,START_COL," %c %s",legend,hw) != ERR);
+		assert(mvwprintw(is->subwin,++line,START_COL," %c %s %s",legend,hw,get_name(l->l2)) != ERR);
 		free(hw);
 	}
 	return OK;

@@ -11,6 +11,7 @@
 // same length of hardware address.
 typedef struct l2host {
 	uint64_t hwaddr;	// does anything have more than 64 bits at L2?
+	char *name;		// some textual description
 	struct l2host *next;
 	void *opaque;		// FIXME not sure about how this is being done
 } l2host;
@@ -26,6 +27,7 @@ create_l2host(const void *hwaddr,size_t addrlen){
 	if( (l2 = malloc(sizeof(*l2))) ){
 		l2->hwaddr = 0;
 		memcpy(&l2->hwaddr,hwaddr,addrlen);
+		l2->name = NULL;
 		l2->opaque = NULL;
 	}
 	return l2;
@@ -59,6 +61,7 @@ void cleanup_l2hosts(l2host **list){
 	l2host *l2,*tmp;
 
 	for(l2 = *list ; l2 ; l2 = tmp){
+		free(l2->name);
 		tmp = l2->next;
 		free(l2);
 	}
@@ -170,4 +173,19 @@ int l2categorize(const interface *i,const l2host *l2){
 		return memcmp(i->addr,&l2->hwaddr,i->addrlen) ? RTN_UNICAST : RTN_LOCAL;
 	}
 	return ret;
+}
+
+void name_l2host(l2host *l2,int family,const void *name){
+	if(l2 && l2->name == NULL){
+		char b[INET6_ADDRSTRLEN];
+
+		assert(inet_ntop(family,name,b,sizeof(b)) == b);
+		if( (l2->name = malloc(strlen(b) + 1)) ){
+			strcpy(l2->name,b);
+		}
+	}
+}
+
+const char *get_name(const l2host *l2){
+	return l2->name;
 }

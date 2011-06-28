@@ -55,7 +55,6 @@ handle_pcap_cooked(u_char *gi,const struct pcap_pkthdr *h,const u_char *bytes){
 		uint16_t proto;
 	} *sll;
 	omphalos_packet packet;
-	struct l2host *l2s;
 
 	++iface->frames;
 	if(h->caplen != h->len){
@@ -68,17 +67,20 @@ handle_pcap_cooked(u_char *gi,const struct pcap_pkthdr *h,const u_char *bytes){
 		++iface->malformed;
 		return;
 	}
-	if((l2s = lookup_l2host(&iface->l2hosts,sll->hwaddr,ntohs(sll->hwlen))) == NULL){
+	// FIXME what to do about l2d?
+	if((packet.l2s = lookup_l2host(&iface->l2hosts,sll->hwaddr,ntohs(sll->hwlen))) == NULL){
 		return;
 	}
+	packet.l2d = NULL;
+	packet.i = iface;
 	// proto is in network byte-order. rather than possibly switch it
 	// every time, we provide the cases in network byte-order
 	switch(sll->proto){
 		case __constant_ntohs(ETH_P_IP):{
-			handle_ipv4_packet(pm->octx,iface,bytes + sizeof(*sll),h->len - sizeof(*sll));
+			handle_ipv4_packet(pm->octx,&packet,bytes + sizeof(*sll),h->len - sizeof(*sll));
 			break;
 		}case __constant_ntohs(ETH_P_IPV6):{
-			handle_ipv6_packet(pm->octx,iface,bytes + sizeof(*sll),h->len - sizeof(*sll));
+			handle_ipv6_packet(pm->octx,&packet,bytes + sizeof(*sll),h->len - sizeof(*sll));
 			break;
 		}default:{
 			++iface->noprotocol;

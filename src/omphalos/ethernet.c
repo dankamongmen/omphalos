@@ -64,11 +64,11 @@ handle_8021q(const omphalos_iface *octx,omphalos_packet *op,const void *frame,
 	op->l3proto = ntohs(*(const uint16_t *)type);
 	switch(op->l3proto){
 	case ETH_P_IP:{
-		handle_ipv4_packet(octx,op->i,dgram,dlen);
+		handle_ipv4_packet(octx,op,dgram,dlen);
 	break;}case ETH_P_ARP:{
 		handle_arp_packet(octx,op->i,dgram,dlen);
 	break;}case ETH_P_IPV6:{
-		handle_ipv6_packet(octx,op->i,dgram,dlen);
+		handle_ipv6_packet(octx,op,dgram,dlen);
 	break;}case ETH_P_PAE:{
 		handle_eapol_packet(octx,op->i,dgram,dlen);
 	break;}case ETH_P_ECTP:{
@@ -112,13 +112,13 @@ handle_snap(const omphalos_iface *octx,omphalos_packet *op,const void *frame,siz
 	op->l3proto = proto;
 	switch(proto){
 		case ETH_P_IP:{
-			handle_ipv4_packet(octx,op->i,dgram,dlen);
+			handle_ipv4_packet(octx,op,dgram,dlen);
 			break;
 		}case ETH_P_ARP:{
 			handle_arp_packet(octx,op->i,dgram,dlen);
 			break;
 		}case ETH_P_IPV6:{
-			handle_ipv6_packet(octx,op->i,dgram,dlen);
+			handle_ipv6_packet(octx,op,dgram,dlen);
 			break;
 		}case ETH_P_8021Q:{	// 802.1q on SNAP
 			handle_8021q(octx,op,dgram - IEEE8021QHDRLEN,
@@ -159,7 +159,7 @@ handle_8022(const omphalos_iface *octx,omphalos_packet *op,const void *frame,siz
 		switch(sap){
 			case LLC_SAP_IP:{
 				op->l3proto = ETH_P_IP;
-				handle_ipv4_packet(octx,op->i,dgram,dlen);
+				handle_ipv4_packet(octx,op,dgram,dlen);
 				break;
 			}case LLC_SAP_BSPAN:{ // STP
 				op->l3proto = LLC_SAP_BSPAN;
@@ -197,13 +197,13 @@ void handle_ethernet_packet(const omphalos_iface *octx,omphalos_packet *op,
 	// FIXME need handle IEEE 802.1ad doubly-tagged frames
 	switch(proto){
 		case ETH_P_IP:{
-			handle_ipv4_packet(octx,op->i,dgram,dlen);
+			handle_ipv4_packet(octx,op,dgram,dlen);
 			break;
 		}case ETH_P_ARP:{
 			handle_arp_packet(octx,op->i,dgram,dlen);
 			break;
 		}case ETH_P_IPV6:{
-			handle_ipv6_packet(octx,op->i,dgram,dlen);
+			handle_ipv6_packet(octx,op,dgram,dlen);
 			break;
 		}case ETH_P_8021Q:{	// 802.1q on Ethernet II
 			handle_8021q(octx,op,(const char *)dgram - IEEE8021QHDRLEN,
