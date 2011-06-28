@@ -119,6 +119,31 @@ static const char *glibc_version,*glibc_release;
 static char *statusmsg;
 static int statuschars;	// True size, not necessarily what's available
 
+static int
+bevel(WINDOW *w,chtype verch,chtype horch){
+	static const cchar_t bchr[] = {
+		{ .attr = 0, .chars = L"╭", },
+		{ .attr = 0, .chars = L"╮", },
+		{ .attr = 0, .chars = L"╰", },
+		{ .attr = 0, .chars = L"╯", },
+	};
+	int rows,cols;
+
+	assert(!verch) ; assert(!horch) ; // FIXME
+	getmaxyx(w,rows,cols);
+	assert(mvwadd_wch(w,0,0,&bchr[0]) != ERR);
+	assert(whline(w,horch,cols - 2) != ERR);
+	assert(mvwadd_wch(w,0,cols - 1,&bchr[1]) != ERR);
+	assert(mvwvline(w,1,0,verch,rows - 2) != ERR);
+	assert(mvwvline(w,1,cols - 1,verch,rows - 2) != ERR);
+	assert(mvwadd_wch(w,rows - 1,0,&bchr[2]) != ERR);
+	assert(mvwhline(w,rows - 1,1,horch,PAD_COLS(cols)) != ERR);
+	// called as one expects: 'mvwadd_wch(w,rows - 1,cols - 1,&bchr[3]);'
+	// we get ERR returned and abort out. fuck ncurses. FIXME?
+	mvwadd_wch(w,rows - 1,cols - 1,&bchr[3]);
+	return OK;
+}
+
 static inline int
 start_screen_update(void){
 	int ret = OK;
@@ -303,7 +328,7 @@ iface_box(WINDOW *w,const interface *i,const iface_state *is){
 	hcolor = interface_up_p(i) ? UHEADING_COLOR : DHEADING_COLOR;
 	attrs = ((is == current_iface) ? A_REVERSE : 0) | A_BOLD;
 	assert(wattron(w,attrs | COLOR_PAIR(bcolor)) == OK);
-	assert(box(w,0,0) == OK);
+	assert(bevel(w,0,0) == OK);
 	assert(wattroff(w,A_REVERSE) == OK);
 	assert(mvwprintw(w,0,START_COL,"[") != ERR);
 	assert(wcolor_set(w,hcolor,NULL) == OK);
@@ -375,7 +400,7 @@ draw_main_window(WINDOW *w,const char *name,const char *ver){
 	if(wcolor_set(w,BORDER_COLOR,NULL) != OK){
 		ERREXIT;
 	}
-	if(box(w,0,0) != OK){
+	if(bevel(w,0,0) != OK){
 		ERREXIT;
 	}
 	if(mvwprintw(w,0,2,"[") < 0){
@@ -1084,6 +1109,10 @@ ncurses_setup(const omphalos_iface *octx){
 	}
 	if(intrflush(stdscr,TRUE) != OK){
 		errstr = "Couldn't set flush-on-interrupt\n";
+		goto err;
+	}
+	if(scrollok(stdscr,FALSE) != OK){
+		errstr = "Couldn't disable scrolling\n";
 		goto err;
 	}
 	if(nonl() != OK){
