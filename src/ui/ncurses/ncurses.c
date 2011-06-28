@@ -1208,8 +1208,8 @@ print_iface_hosts(const interface *i,const iface_state *is){
 		
 		if(++idx < is->first_visible){
 			continue;
-		}else if(idx - is->first_visible > is->ysize){
-			break;
+		/*}else if(idx - is->first_visible > is->ysize){
+			break;*/
 		}
 		switch(cat){
 			case RTN_UNICAST:
