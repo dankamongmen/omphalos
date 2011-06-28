@@ -1267,13 +1267,18 @@ iface_visible_p(int rows,const iface_state *ret){
 
 static int
 resize_iface(const interface *i,iface_state *ret){
-	int rows,cols;
+	int rows,cols,nlines;
 
 	getmaxyx(stdscr,rows,cols);
 	// FIXME this only addresses expansion. need to handle shrinking, also.
 	// (which can make a panel visible, just as expansion can hide it)
-	if(lines_for_interface(i,ret) != ret->ysize){ // aye, need resize
-		int delta = lines_for_interface(i,ret) - ret->ysize;
+	nlines = lines_for_interface(i,ret);
+	if(nlines + ret->scrline >= rows){
+		// FIXME we can expand up in this case
+		return 0;
+	}
+	if(nlines != ret->ysize){ // aye, need resize
+		int delta = nlines - ret->ysize;
 		iface_state *is;
 
 		for(is = ret->next ; is->scrline > ret->scrline ; is = is->next){
@@ -1290,7 +1295,7 @@ resize_iface(const interface *i,iface_state *ret){
 				hide_panel(is->panel);
 			}
 		}
-		ret->ysize = lines_for_interface(i,ret);
+		ret->ysize = nlines;
 		assert(werase(ret->subwin) != ERR);
 		assert(wresize(ret->subwin,ret->ysize,PAD_COLS(cols)) != ERR);
 		assert(replace_panel(ret->panel,ret->subwin) != ERR);
