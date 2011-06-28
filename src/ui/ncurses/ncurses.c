@@ -588,7 +588,7 @@ new_display_panel(WINDOW *w,struct panel_state *ps,int rows,const wchar_t *hstr)
 	// memory leaks follow if we're compiled with NDEBUG! FIXME
 	assert(wattron(psw,A_BOLD) != ERR);
 	assert(wcolor_set(psw,PBORDER_COLOR,NULL) == OK);
-	assert(box(psw,0,0) == OK);
+	assert(bevel(psw,0,0) == OK);
 	assert(wattroff(psw,A_BOLD) != ERR);
 	assert(wcolor_set(psw,PHEADING_COLOR,NULL) == OK);
 	assert(mvwaddwstr(psw,0,START_COL * 2,hstr) != ERR);
