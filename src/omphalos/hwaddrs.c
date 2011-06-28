@@ -11,6 +11,7 @@
 // same length of hardware address.
 typedef struct l2host {
 	uint64_t hwaddr;	// does anything have more than 64 bits at L2?
+	char *name;		// some textual description
 	struct l2host *next;
 	void *opaque;		// FIXME not sure about how this is being done
 } l2host;
@@ -26,6 +27,7 @@ create_l2host(const void *hwaddr,size_t addrlen){
 	if( (l2 = malloc(sizeof(*l2))) ){
 		l2->hwaddr = 0;
 		memcpy(&l2->hwaddr,hwaddr,addrlen);
+		l2->name = NULL;
 		l2->opaque = NULL;
 	}
 	return l2;
@@ -59,6 +61,7 @@ void cleanup_l2hosts(l2host **list){
 	l2host *l2,*tmp;
 
 	for(l2 = *list ; l2 ; l2 = tmp){
+		free(l2->name);
 		tmp = l2->next;
 		free(l2);
 	}

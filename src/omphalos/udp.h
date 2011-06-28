@@ -7,10 +7,10 @@ extern "C" {
 
 #include <stddef.h>
 
-struct interface;
 struct omphalos_iface;
+struct omphalos_packet;
 
-void handle_udp_packet(const struct omphalos_iface *,struct interface *,
+void handle_udp_packet(const struct omphalos_iface *,struct omphalos_packet *,
 					const void *,size_t);
 
 #ifdef __cplusplus
