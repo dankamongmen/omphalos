@@ -1189,10 +1189,11 @@ print_iface_state(const interface *i,const iface_state *is){
 	// FIXME broken if bps domain ever != fps domain. need unite those
 	// into one FTD stat by letting it take an object...
 	usecdomain = i->bps.usec * i->bps.total;
-	assert(mvwprintw(is->subwin,1,START_COL,"Last %lus: %7sb/s %7sp/s",
+	assert(mvwprintw(is->subwin,1,START_COL,"Last %lus: %7sb/s %7sp/s Nodes: %-5u",
 				usecdomain / 1000000,
 				prefix(timestat_val(&i->bps) * CHAR_BIT * 1000000 * 100 / usecdomain,100,buf,sizeof(buf),0),
-				prefix(timestat_val(&i->fps) * 1000000 * 100 / usecdomain,100,buf2,sizeof(buf2),0)) != ERR);
+				prefix(timestat_val(&i->fps) * 1000000 * 100 / usecdomain,100,buf2,sizeof(buf2),0),
+				is->l2ents) != ERR);
 	return 0;
 }
 
