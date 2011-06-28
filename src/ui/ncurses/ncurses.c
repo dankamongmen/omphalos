@@ -1198,16 +1198,18 @@ print_iface_state(const interface *i,const iface_state *is){
 
 static int
 print_iface_hosts(const interface *i,const iface_state *is){
+	int line = 1,idx = 0;
 	const l2obj *l;
-	int line = 1;
 
-	for(l = is->l2objs ; l ; l = l->next){
-		char *hw = l2addrstr(l->l2,i->addrlen);
+	for(l = is->l2objs ; l ; ++idx, l = l->next){
 		int cat = l2categorize(i,l->l2);
 		char legend;
+		char *hw;
 		
-		if(hw == NULL){
-			return ERR;
+		if(++idx < is->first_visible){
+			continue;
+		}else if(idx - is->first_visible > is->ysize){
+			break;
 		}
 		switch(cat){
 			case RTN_UNICAST:
@@ -1226,6 +1228,9 @@ print_iface_hosts(const interface *i,const iface_state *is){
 				assert(wattrset(is->subwin,COLOR_PAIR(BCAST_COLOR)) != ERR);
 				legend = 'B';
 				break;
+		}
+		if((hw = l2addrstr(l->l2,i->addrlen)) == NULL){
+			return ERR;
 		}
 		assert(mvwprintw(is->subwin,++line,START_COL," %c %s",legend,hw) != ERR);
 		free(hw);
@@ -1272,6 +1277,9 @@ resize_iface(const interface *i,iface_state *ret){
 	getmaxyx(stdscr,rows,cols);
 	// FIXME this only addresses expansion. need to handle shrinking, also.
 	// (which can make a panel visible, just as expansion can hide it)
+	if(!iface_visible_p(rows,ret)){
+		return 0;
+	}
 	nlines = lines_for_interface(i,ret);
 	if(nlines + ret->scrline >= rows){
 		// FIXME we can expand up in this case
@@ -1292,6 +1300,7 @@ resize_iface(const interface *i,iface_state *ret){
 					return ERR;
 				}
 			}else{
+				// FIXME see if we can shrink it first!
 				hide_panel(is->panel);
 			}
 		}
@@ -1391,6 +1400,7 @@ create_interface_state(interface *i){
 
 	if( (tstr = lookup_arptype(i->arptype,NULL)) ){
 		if( (ret = malloc(sizeof(*ret))) ){
+			ret->first_visible = 0;
 			ret->l2ents = 0;
 			ret->l2objs = NULL;
 			ret->ysize = lines_for_interface(i,ret);
