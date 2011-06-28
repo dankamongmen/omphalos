@@ -10,6 +10,7 @@
 #include <omphalos/hwaddrs.h>
 #include <omphalos/netlink.h>
 #include <omphalos/psocket.h>
+#include <omphalos/firewire.h>
 #include <omphalos/omphalos.h>
 #include <omphalos/ethernet.h>
 #include <omphalos/radiotap.h>
@@ -267,6 +268,10 @@ static arptype arptypes[] = {
 		.ifi_type = ARPHRD_IEEE80211_RADIOTAP,
 		.name = "Radiotap",
 		.analyze = handle_radiotap_packet,
+	},{
+		.ifi_type = ARPHRD_IEEE1394,
+		.name = "Firewire",			// RFC 2734 / 3146
+		.analyze = handle_firewire_packet,
 	},{
 		.ifi_type = ARPHRD_TUNNEL,
 		.name = "Tunnelv4",

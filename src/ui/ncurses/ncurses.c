@@ -610,16 +610,21 @@ iface_details(WINDOW *hw,const interface *i,int rows){
 					i->bytes,i->frames) != ERR);
 		--z;
 	}case 4:{
+		char b[PREFIXSTRLEN];
 		char buf[U64STRLEN];
-		assert(mvwprintw(hw,row + z,col,"RXfd: %-4d fbytes: %-6u fnum: %-8u bsize: %sB bnum: %-8u",
+		assert(mvwprintw(hw,row + z,col,"RXfd: %-4d fbytes: %-6u fnum: %-6u bsize: %5sB bnum: %-5u rxr: %5sB",
 					i->rfd,i->rtpr.tp_frame_size,i->rtpr.tp_frame_nr,
-					bprefix(i->rtpr.tp_block_size,1,buf,sizeof(buf),1),i->rtpr.tp_block_nr) != ERR);
+					bprefix(i->rtpr.tp_block_size,1,buf,sizeof(buf),1),i->rtpr.tp_block_nr,
+					bprefix(i->rs,1,b,sizeof(b),1)) != ERR);
 		--z;
 	}case 3:{
+		char b[PREFIXSTRLEN];
 		char buf[U64STRLEN];
-		assert(mvwprintw(hw,row + z,col,"TXfd: %-4d fbytes: %-6u fnum: %-8u bsize: %sB bnum: %-8u",
+
+		assert(mvwprintw(hw,row + z,col,"TXfd: %-4d fbytes: %-6u fnum: %-6u bsize: %5sB bnum: %-5u txr: %5sB",
 					i->fd,i->ttpr.tp_frame_size,i->ttpr.tp_frame_nr,
-					bprefix(i->ttpr.tp_block_size,1,buf,sizeof(buf),1),i->ttpr.tp_block_nr) != ERR);
+					bprefix(i->ttpr.tp_block_size,1,buf,sizeof(buf),1),i->ttpr.tp_block_nr,
+					bprefix(i->ts,1,b,sizeof(b),1)) != ERR);
 		--z;
 	}case 2:{
 		assert(offload_details(hw,i,row + z,col,"TSO",TCP_SEG_OFFLOAD) != ERR);
@@ -632,28 +637,22 @@ iface_details(WINDOW *hw,const interface *i,int rows){
 		assert(offload_details(hw,i,row + z,col + 36,"RCsm",RX_CSUM_OFFLOAD) != ERR);
 		assert(offload_details(hw,i,row + z,col + 42,"TVln",TXVLAN_OFFLOAD) != ERR);
 		assert(offload_details(hw,i,row + z,col + 48,"RVln",RXVLAN_OFFLOAD) != ERR);
+		assert(mvwprintw(hw,row + z,col + 53," mtu: %-6d",i->mtu) != ERR);
 		--z;
 	}case 1:{
 		assert(mvwprintw(hw,row + z,col,"%-*s",scrcols - 2,i->topinfo.devname ?
 					i->topinfo.devname : "Unknown device") != ERR);
 		--z;
 	}case 0:{
-		char buf[PREFIXSTRLEN],buf2[PREFIXSTRLEN];
 		if(i->flags & IFF_NOARP){
-			assert(mvwprintw(hw,row + z,col,"%-16s %*s txr: %sB\t rxr: %sB\t mtu: %-6d",
-						i->name,IFHWADDRLEN * 3 - 1,"",
-						bprefix(i->ts,1,buf,sizeof(buf),1),
-						bprefix(i->rs,1,buf2,sizeof(buf2),1),i->mtu) != ERR);
+			assert(mvwprintw(hw,row + z,col,"%-16s %*s",i->name,(IFHWADDRLEN + 2) * 3 - 1,"") != ERR);
 		}else{
 			char *mac;
 
 			if((mac = hwaddrstr(i)) == NULL){
 				return ERR;
 			}
-			assert(mvwprintw(hw,row + z,col,"%-16s %*s txr: %sB\t rxr: %sB\t mtu: %-6d",
-						i->name,IFHWADDRLEN * 3 - 1,mac,
-						bprefix(i->ts,1,buf,sizeof(buf),1),
-						bprefix(i->rs,1,buf2,sizeof(buf2),1),i->mtu) != ERR);
+			assert(mvwprintw(hw,row + z,col,"%-16s %*s",i->name,(IFHWADDRLEN + 2) * 3 - 1,mac) != ERR);
 			free(mac);
 		}
 		--z;
