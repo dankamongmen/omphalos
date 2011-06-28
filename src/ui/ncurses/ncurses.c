@@ -1291,7 +1291,7 @@ resize_iface(const interface *i,iface_state *ret){
 	getmaxyx(stdscr,rows,cols);
 	// FIXME this only addresses expansion. need to handle shrinking, also.
 	// (which can make a panel visible, just as expansion can hide it)
-	if(!iface_visible_p(rows,ret)){
+	if(iface_hidden_p(rows,ret)){
 		return 0;
 	}
 	if((nlines = lines_for_interface(i,ret)) == ret->ysize){
