@@ -1281,11 +1281,16 @@ resize_iface(const interface *i,iface_state *ret){
 	if(!iface_visible_p(rows,ret)){
 		return 0;
 	}
-	nlines = lines_for_interface(i,ret);
-	if(nlines + ret->scrline >= rows){
-		return 0; // FIXME we can expand up in this case
+	if((nlines = lines_for_interface(i,ret)) == ret->ysize){
+		return 0; // no change necessary
 	}
-	if(nlines != ret->ysize){ // aye, need resize
+	if(nlines + ret->scrline >= rows){
+		// fixme check to see if we can expand up instead
+		if(redraw_iface(i,ret)){ // might need change the host list
+			return ERR;
+		}
+		return 0;
+	}else{
 		int delta = nlines - ret->ysize;
 		iface_state *is;
 
