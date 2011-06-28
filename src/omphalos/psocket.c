@@ -22,8 +22,6 @@
 #define PACKET_TX_RING 13
 #endif
 
-static const unsigned MMAP_BLOCK_COUNT = 4096; // FIXME do better
-
 // See packet(7) and Documentation/networking/packet_mmap.txt
 int packet_socket(const omphalos_iface *pctx,unsigned protocol){
 	int fd;
@@ -68,8 +66,8 @@ size_mmap_psocket(const omphalos_iface *octx,struct tpacket_req *treq,unsigned m
 		return 0;
 	}
 	// Array of pointers to blocks, allocated via slab -- cannot be
-	// larger than largest slabbable allocation.
-	treq->tp_block_nr = MMAP_BLOCK_COUNT;
+	// larger than largest slabbable allocation. FIXME do better
+	treq->tp_block_nr = 4096 / (treq->tp_block_size / getpagesize());
 	// tp_frame_nr is derived from the other three parameters.
 	treq->tp_frame_nr = (treq->tp_block_size / treq->tp_frame_size)
 		* treq->tp_block_nr;
