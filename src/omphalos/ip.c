@@ -6,6 +6,7 @@
 #include <omphalos/ip.h>
 #include <omphalos/udp.h>
 #include <omphalos/util.h>
+#include <omphalos/hwaddrs.h>
 #include <omphalos/ethernet.h>
 #include <omphalos/netaddrs.h>
 #include <omphalos/omphalos.h>
@@ -34,6 +35,8 @@ void handle_ipv6_packet(const omphalos_iface *octx,omphalos_packet *op,
 		octx->diagnostic("%s malformed with %zu != %u",__func__,len,plen);
 		return;
 	}
+	name_l2host(op->l2s,AF_INET6,&ip->ip6_src);
+	name_l2host(op->l2d,AF_INET6,&ip->ip6_dst);
 	// FIXME check extension headers...
 	// FIXME...
 }
@@ -122,6 +125,8 @@ void handle_ipv4_packet(const omphalos_iface *octx,omphalos_packet *op,
 	}
 	/*ips = lookup_iphost(op->i,&ip->saddr);
 	ipd = lookup_iphost(op->i,&ip->daddr);*/
+	name_l2host(op->l2s,AF_INET,&ip->saddr);
+	name_l2host(op->l2d,AF_INET,&ip->daddr);
 
 	const void *nhdr = (const unsigned char *)frame + hlen;
 	const size_t nlen = ntohs(ip->tot_len) - hlen;

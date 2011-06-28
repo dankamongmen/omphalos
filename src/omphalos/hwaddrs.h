@@ -23,6 +23,7 @@ void l2host_set_opaque(struct l2host *,void *);
 // Predicates and comparators
 int l2hostcmp(const struct l2host *,const struct l2host *);
 int l2categorize(const struct interface *,const struct l2host *);
+void name_l2host(struct l2host *,int,const void *);
 
 #ifdef __cplusplus
 }
