@@ -18,6 +18,8 @@
 
 #define MAXINTERFACES (1u << 16) // lame FIXME
 
+typedef uint32_t uint128_t; // FIXME use 4 32's. this sucks; get rid of it.
+
 static interface interfaces[MAXINTERFACES];
 
 int init_interfaces(void){
@@ -227,7 +229,7 @@ int is_local4(const interface *i,uint32_t ip){
 }
 
 static inline int
-ip6_in_route(const ip6route *r,const uint32_t *i){
+ip6_in_route(const ip6route *r,const uint128_t *i){
 	if(!r || !i){
 		return 0;
 	}
@@ -377,5 +379,42 @@ int disable_promiscuity(const omphalos_iface *octx,const interface *i){
 	// FIXME we're not necessarily out of promiscuous mode yet...i->flags
 	// won't even be updated until we get the confirming netlink message.
 	// ought we block on that message? spin on interrogation?
+	return 0;
+}
+
+// FIXME these need to take into account priority (table number)
+// FIXME how to handle policy routing (rules)?
+int get_route4(const interface *i,const uint32_t *ip,uint32_t *r){
+	const ip4route *i4r;
+
+	for(i4r = i->ip4r ; i4r ; i4r = i4r->next){
+		if(ip4_in_route(i4r,*ip)){
+			if(i4r->via.s_addr){
+				*r = i4r->via.s_addr;
+			}else{
+				*r = *ip;
+			}
+			return 1;
+		}
+	}
+	return 0;
+}
+
+int get_route6(const interface *i,const uint32_t *ip,uint32_t *r){
+	const ip6route *i6r;
+
+	for(i6r = i->ip6r ; i6r ; i6r = i6r->next){
+		if(ip6_in_route(i6r,ip)){
+			/*
+			if(i6r->via.s_addr){
+				*r = i6r->via;
+			}else{
+				*r = ip;
+			}
+			*/
+			*r = *ip;// FIXME
+			return 1;
+		}
+	}
 	return 0;
 }
