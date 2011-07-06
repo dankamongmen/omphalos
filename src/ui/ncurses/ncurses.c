@@ -1393,19 +1393,23 @@ static void
 handle_l2(const interface *i,iface_state *is,omphalos_packet *op){
 	l2obj *news = NULL,*newd = NULL;
 
-	if(l2host_get_opaque(op->l2s) == NULL){
-		if((news = get_l2obj(op->l2s)) == NULL){
-			return;
+	if(get_name(op->l2s)){
+		if(l2host_get_opaque(op->l2s) == NULL){
+			if((news = get_l2obj(op->l2s)) == NULL){
+				return;
+			}
+			add_l2_to_iface(is,news);
+			l2host_set_opaque(op->l2s,news);
 		}
-		add_l2_to_iface(is,news);
-		l2host_set_opaque(op->l2s,news);
 	}
-	if(l2host_get_opaque(op->l2d) == NULL){
-		if((newd = get_l2obj(op->l2d)) == NULL){
-			return;
+	if(get_name(op->l2d)){
+		if(l2host_get_opaque(op->l2d) == NULL){
+			if((newd = get_l2obj(op->l2d)) == NULL){
+				return;
+			}
+			add_l2_to_iface(is,newd);
+			l2host_set_opaque(op->l2d,newd);
 		}
-		add_l2_to_iface(is,newd);
-		l2host_set_opaque(op->l2d,newd);
 	}
 	resize_iface(i,is);
 }
