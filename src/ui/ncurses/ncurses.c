@@ -1400,6 +1400,7 @@ add_l2_to_iface(iface_state *is,l2obj *l2){
 	*prev = l2;
 }
 
+// FIXME this needs go away, and instead we'll use neighbor callbacks
 static void
 handle_l2(const interface *i,iface_state *is,omphalos_packet *op){
 	l2obj *news = NULL,*newd = NULL;
