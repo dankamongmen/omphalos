@@ -147,6 +147,13 @@ wireless_event(interface *i,unsigned cmd,void *unsafe __attribute__ ((unused))){
 	return NULL;
 }
 
+static void
+packet_cb(void *v __attribute__ ((unused)),omphalos_packet *op){
+	printf("%s -> %s\n",
+			op->l2s ? get_name(op->l2s) : NULL,
+			op->l2d ? get_name(op->l2d) : NULL);
+}
+
 int main(int argc,char * const *argv){
 	omphalos_ctx pctx;
 
@@ -157,6 +164,7 @@ int main(int argc,char * const *argv){
 	pctx.iface.iface_removed = iface_removed;
 	pctx.iface.neigh_event = neigh_event;
 	pctx.iface.wireless_event = wireless_event;
+	pctx.iface.packet_read = packet_cb;
 	if(omphalos_init(&pctx)){
 		return EXIT_FAILURE;
 	}
