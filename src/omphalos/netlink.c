@@ -397,11 +397,11 @@ handle_rtm_newroute(const struct omphalos_iface *octx,const struct nlmsghdr *nl)
 			return -1;
 		}
 	}
-	/*
-	{
+	// FIXME need a route callback in octx
+	/*{
 		char str[INET6_ADDRSTRLEN];
 		inet_ntop(rt->rtm_family,ad,str,sizeof(str));
-	octx->diagnostic("[%8s] route to %s/%u %s\n",iface->name,str,r.maskbits,
+		octx->diagnostic("[%8s] route to %s/%u %s",iface->name,str,r.maskbits,
 			rt->rtm_type == RTN_LOCAL ? "(local)" :
 			rt->rtm_type == RTN_BROADCAST ? "(broadcast)" :
 			rt->rtm_type == RTN_UNREACHABLE ? "(unreachable)" :
@@ -411,8 +411,7 @@ handle_rtm_newroute(const struct omphalos_iface *octx,const struct nlmsghdr *nl)
 			rt->rtm_type == RTN_BLACKHOLE ? "(blackhole)" :
 			rt->rtm_type == RTN_MULTICAST ? "(multicast)" :
 			"");
-	}
-	*/
+	}*/
 	return 0;
 
 err:
