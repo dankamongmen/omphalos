@@ -120,8 +120,26 @@ int add_route6(interface *,const struct in6_addr *,const struct in6_addr *,
 int del_route4(interface *,const struct in_addr *,unsigned);
 int del_route6(interface *,const struct in6_addr *,unsigned);
 
+// These return 1 on a successful route lookup, 0 otherwise.
 int get_route4(const interface *,const uint32_t *,uint32_t *);
 int get_route6(const interface *,const uint32_t *,uint32_t *);
+
+static inline const void *
+get_route(const interface *i,int fam,const void *addr,void *r){
+	int ret = 0;
+
+	switch(fam){
+		case AF_INET:
+			ret = get_route4(i,addr,r);
+			break;
+		/* FIXME case AF_INET6:
+			ret = get_route6(i,addr,r);
+			break;
+		*/default:
+			return NULL;
+	}
+	return (ret != 1) ? NULL : r;
+}
 
 // predicates. racey against netlink messages.
 int is_local4(const interface *,uint32_t);
