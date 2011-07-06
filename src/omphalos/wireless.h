@@ -9,13 +9,13 @@ extern "C" {
 
 struct iw_event;
 struct interface;
-struct wireless_info;
+struct wless_info;
 struct omphalos_iface;
 
 int handle_wireless_event(const struct omphalos_iface *,struct interface *,
 				const struct iw_event *,size_t);
 int iface_wireless_info(const struct omphalos_iface *,const char *,
-				struct wireless_info *);
+				struct wless_info *);
 
 #ifdef __cplusplus
 }

@@ -30,10 +30,11 @@ typedef struct ip6route {
 	struct ip6route *next;
 } ip6route;
 
-typedef struct wireless_info {
+typedef struct wless_info {
 	unsigned bitrate;
 	unsigned mode;
-} wireless_info;
+	uintmax_t freq;			// 0..999: channel, 1000+: frequency
+} wless_info;
 
 typedef struct topdev_info {
 	char *devname;			// as in output from lspci or lsusb
@@ -93,7 +94,7 @@ typedef struct interface {
 	} settings_valid;	// set if the settings field can be trusted
 	union {
 		struct ethtool_cmd ethtool;	// ethtool settings info
-		struct wireless_info wext;	// wireless extensions info
+		struct wless_info wext;		// wireless extensions info
 	} settings;
 	topdev_info topinfo;
 	// Other interfaces might also offer routes to these same

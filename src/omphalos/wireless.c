@@ -1,4 +1,5 @@
 #include <errno.h>
+#include <iwlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <sys/ioctl.h>
@@ -62,7 +63,18 @@ get_wireless_extension(const omphalos_iface *octx,const char *name,int cmd,struc
 	return 0;
 }
 
-int iface_wireless_info(const omphalos_iface *octx,const char *name,wireless_info *wi){
+static inline uintmax_t
+iwfreq_defreak(const struct iw_freq *iwf){
+	uintmax_t ret = iwf->m;
+	unsigned e = iwf->e;
+
+	while(e--){
+		ret *= 10;
+	}
+	return ret;
+}
+
+int iface_wireless_info(const omphalos_iface *octx,const char *name,wless_info *wi){
 	const struct iw_param *ip;
 	struct iwreq req;
 
@@ -80,5 +92,9 @@ int iface_wireless_info(const omphalos_iface *octx,const char *name,wireless_inf
 		return -1;
 	}
 	wi->mode = req.u.mode;
+	if(get_wireless_extension(octx,name,SIOCGIWFREQ,&req)){
+		return -1;
+	}
+	wi->freq = iwfreq_defreak(&req.u.freq);
 	return 0;
 }
