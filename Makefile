@@ -97,7 +97,7 @@ clean:
 bless: all
 	$(ADDCAPS) $(BIN)
 
-sudobless: test $(ADDCAPS) $(SETUPCORE)
+sudobless: all $(ADDCAPS) $(SETUPCORE)
 	sudo $(ADDCAPS) $(BIN)
 	$(SETUPCORE)
 
