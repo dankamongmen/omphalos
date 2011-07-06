@@ -179,13 +179,25 @@ void name_l2host(const interface *i,l2host *l2,int family,const void *name){
 	if(l2 && l2->name == NULL){
 		struct sockaddr_storage ss;
 		char b[INET6_ADDRSTRLEN];
-		const void *route;
 
-		if( (route = get_route(i,family,name,&ss)) ){
-			assert(inet_ntop(family,route,b,sizeof(b)) == b);
-			if( (l2->name = malloc(strlen(b) + 1)) ){
-				strcpy(l2->name,b);
+		if(categorize_ethaddr(&l2->hwaddr) == RTN_UNICAST){
+			// FIXME need to check that the name we get actually
+			// responds to ARP requests at *this* l2 address.
+			// otherwise, we get things like 0.0.0.0 looked up on
+			// the default route and thus given the gateway addr.
+			// FIXME throwing out anything to which we have no
+			// route means we basically don't work pre-config.
+			// addresses pre-configuration have information, but
+			// are inferior to those post-configuration. we need a
+			// means of *updating* names whenever routes change,
+			// or as close to true route cache behavior as we like
+			if((name = get_route(i,family,name,&ss)) == NULL){
+				return;
 			}
+		}
+		assert(inet_ntop(family,name,b,sizeof(b)) == b);
+		if( (l2->name = malloc(strlen(b) + 1)) ){
+			strcpy(l2->name,b);
 		}
 	}
 }

@@ -37,6 +37,8 @@ check_ethernet_padup(size_t rx,size_t expected){
 	return 1;
 }
 
+// Categorize an Ethernet address independent of context (this function never
+// returns RTN_LOCAL, for instance).
 static inline int
 categorize_ethaddr(const void *mac){
 	static const unsigned char brd[] = "\xff\xff\xff\xff\xff\xff";
