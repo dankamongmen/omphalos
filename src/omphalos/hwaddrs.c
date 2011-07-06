@@ -175,10 +175,15 @@ int l2categorize(const interface *i,const l2host *l2){
 	return ret;
 }
 
-void name_l2host(l2host *l2,int family,const void *name){
+void name_l2host(const interface *i,l2host *l2,int family,const void *name){
 	if(l2 && l2->name == NULL){
+		struct sockaddr_storage ss;
 		char b[INET6_ADDRSTRLEN];
+		const void *route;
 
+		if( (route = get_route(i,family,name,&ss)) ){
+			name = route;
+		}
 		assert(inet_ntop(family,name,b,sizeof(b)) == b);
 		if( (l2->name = malloc(strlen(b) + 1)) ){
 			strcpy(l2->name,b);
