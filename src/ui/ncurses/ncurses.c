@@ -1262,7 +1262,8 @@ print_iface_hosts(const interface *i,const iface_state *is){
 			return ERR;
 		}
 		assert(mvwprintw(is->subwin,++line,START_COL," %c %s %*s",
-					legend,hw,INET6_ADDRSTRLEN,get_name(l->l2)) != ERR);
+					legend,hw,INET6_ADDRSTRLEN,
+					get_name(l->l2)) != ERR);
 		free(hw);
 	}
 	return OK;

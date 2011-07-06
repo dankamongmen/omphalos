@@ -124,6 +124,7 @@ int del_route6(interface *,const struct in6_addr *,unsigned);
 int get_route4(const interface *,const uint32_t *,uint32_t *);
 int get_route6(const interface *,const uint32_t *,uint32_t *);
 
+#include <assert.h>
 static inline const void *
 get_route(const interface *i,int fam,const void *addr,void *r){
 	int ret = 0;

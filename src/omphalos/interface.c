@@ -211,10 +211,10 @@ int del_route6(interface *i,const struct in6_addr *a,unsigned blen){
 
 static inline int
 ip4_in_route(const ip4route *r,uint32_t i){
-	uint32_t mask = ~0U;
+	uint64_t mask = ~0U;
 
 	mask <<= 32 - r->maskbits;
-	return (r->dst.s_addr & mask) == (i & mask);
+	return (ntohl(r->dst.s_addr) & mask) == (ntohl(i) & mask);
 }
 
 int is_local4(const interface *i,uint32_t ip){

@@ -182,11 +182,10 @@ void name_l2host(const interface *i,l2host *l2,int family,const void *name){
 		const void *route;
 
 		if( (route = get_route(i,family,name,&ss)) ){
-			name = route;
-		}
-		assert(inet_ntop(family,name,b,sizeof(b)) == b);
-		if( (l2->name = malloc(strlen(b) + 1)) ){
-			strcpy(l2->name,b);
+			assert(inet_ntop(family,route,b,sizeof(b)) == b);
+			if( (l2->name = malloc(strlen(b) + 1)) ){
+				strcpy(l2->name,b);
+			}
 		}
 	}
 }
