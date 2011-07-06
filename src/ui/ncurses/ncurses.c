@@ -362,7 +362,13 @@ iface_box(WINDOW *w,const interface *i,const iface_state *is){
 			assert(wprintw(w," (%sb %s)",prefix(i->settings.ethtool.speed * 1000000u,1,buf,sizeof(buf),1),
 						duplexstr(i->settings.ethtool.duplex)) != ERR);
 		}else if(i->settings_valid == SETTINGS_VALID_WEXT){
-			assert(wprintw(w," (%sb %s)",prefix(i->settings.wext.bitrate,1,buf,sizeof(buf),1),modestr(i->settings.wext.mode)) != ERR);
+			assert(wprintw(w," (%sb %s ",prefix(i->settings.wext.bitrate,1,buf,sizeof(buf),1),
+						modestr(i->settings.wext.mode)) != ERR);
+			if(i->settings.wext.freq <= MAX_WIRELESS_CHANNEL){
+				assert(wprintw(w,"ch %ju)",i->settings.wext.freq) != ERR);
+			}else{
+				assert(wprintw(w,"%sHz)",prefix(i->settings.wext.freq,1,buf,sizeof(buf),1)) != ERR);
+			}
 		}
 	}else{
 		assert(iface_optstr(w,"down",hcolor,bcolor) != ERR);

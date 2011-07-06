@@ -35,6 +35,7 @@ typedef struct wless_info {
 	unsigned mode;
 	uintmax_t freq;			// 0..999: channel, 1000+: frequency
 } wless_info;
+#define MAX_WIRELESS_CHANNEL		999
 
 typedef struct topdev_info {
 	char *devname;			// as in output from lspci or lsusb
