@@ -13,6 +13,8 @@
 
 #define ETH_P_ECTP	0x9000	// Ethernet Configuration Test Protocol
 
+#define LLC_MAX_LEN	1536 // one more than maximum length of 802.2 LLC
+
 static void
 handle_ectp_packet(const omphalos_iface *octx __attribute__ ((unused)),
 			interface *i __attribute__ ((unused)),
@@ -77,7 +79,7 @@ handle_8021q(const omphalos_iface *octx,omphalos_packet *op,const void *frame,
 		// At least Cisco PVST BDPU's under VLAN use 802.1q to directly
 		// encapsulate IEEE 802.2/SNAP. See:
 		// http://www.ciscopress.com/articles/article.asp?p=1016582
-		if(allowllc && op->l3proto < 1536){
+		if(allowllc && op->l3proto < LLC_MAX_LEN){
 			handle_8022(octx,op,frame,len);
 		}else{
 			++op->i->noprotocol;
@@ -216,10 +218,9 @@ void handle_ethernet_packet(const omphalos_iface *octx,omphalos_packet *op,
 			handle_ectp_packet(octx,op->i,dgram,dlen);
 			break;
 		}default:{
-			if(proto < 1536){ // 802.2 DSAP (and maybe SNAP/802.1q)
+			if(proto < LLC_MAX_LEN){ // 802.2 DSAP (and maybe SNAP/802.1q)
 				// FIXME check the proto (LLC length) field against framelen!
-				handle_8022(octx,op,(const char *)dgram - 2,
-						dlen + 2); // modifies op->l3proto
+				handle_8022(octx,op,(const char *)dgram,dlen); // modifies op->l3proto
 			}else{
 				++op->i->noprotocol;
 				octx->diagnostic("%s %s noproto for 0x%x",__func__,
