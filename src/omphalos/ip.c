@@ -104,23 +104,27 @@ void handle_ipv4_packet(const omphalos_iface *octx,omphalos_packet *op,
 
 	if(len < sizeof(*ip)){
 		++op->i->malformed;
-		octx->diagnostic("%s malformed with %zu",__func__,len);
+		octx->diagnostic("%s %s malformed with %zu",__func__,
+				op->i->name,len);
 		return;
 	}
 	if(ip->version != 4){
 		++op->i->noprotocol;
-		octx->diagnostic("%s noproto for %u",__func__,ip->version);
+		octx->diagnostic("%s %s noversion for %u",__func__,
+				op->i->name,ip->version);
 		return;
 	}
 	hlen = ip->ihl << 2u;
 	if(len < hlen){
 		++op->i->malformed;
-		octx->diagnostic("%s malformed with %zu vs %u",__func__,len,hlen);
+		octx->diagnostic("%s %s malformed with %zu vs %u",__func__,
+				op->i->name,len,hlen);
 		return;
 	}
 	if(check_ethernet_padup(len,ntohs(ip->tot_len))){
 		++op->i->malformed;
-		octx->diagnostic("%s malformed with %zu vs %hu",__func__,len,ntohs(ip->tot_len));
+		octx->diagnostic("%s %s malformed with %zu vs %hu",__func__,
+				op->i->name,len,ntohs(ip->tot_len));
 		return;
 	}
 	/*ips = lookup_iphost(op->i,&ip->saddr);
@@ -144,7 +148,8 @@ void handle_ipv4_packet(const omphalos_iface *octx,omphalos_packet *op,
 		handle_pim_packet(octx,op,nhdr,nlen);
 	break; }default:{
 		++op->i->noprotocol;
-		octx->diagnostic("%s noproto for %u",__func__,ip->protocol);
+		octx->diagnostic("%s %s noproto for %u",__func__,
+				op->i->name,ip->protocol);
 	break; } }
 	// FIXME...
 }
