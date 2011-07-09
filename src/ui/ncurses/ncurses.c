@@ -188,7 +188,7 @@ setup_statusbar(int cols){
 			struct tm tm;
 
 			if(localtime_r(&t,&tm)){
-				strftime(sm,s,"launched at %T",&tm);
+				strftime(sm,s,"launched at %T. 'h' toggles help.",&tm);
 			}else{
 				sm[0] = '\0';
 			}
@@ -382,10 +382,10 @@ iface_box(WINDOW *w,const interface *i,const iface_state *is){
 	if( (buslen = strlen(i->drv.bus_info)) ){
 		if(i->busname){
 			buslen += strlen(i->busname) + 1;
-			assert(mvwprintw(w,is->ysize - 1,scrcols - (buslen + 3 + START_COL),
+			assert(mvwprintw(w,is->ysize - 1,scrcols - (buslen + 3),
 					"%s:%s",i->busname,i->drv.bus_info) != ERR);
 		}else{
-			assert(mvwprintw(w,is->ysize - 1,scrcols - (buslen + 3 + START_COL),
+			assert(mvwprintw(w,is->ysize - 1,scrcols - (buslen + 3),
 					"%s",i->drv.bus_info) != ERR);
 		}
 	}
