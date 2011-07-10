@@ -13,7 +13,8 @@ struct interface;
 struct omphalos_iface;
 
 struct l2host *lookup_l2host(const struct omphalos_iface *,struct interface *,
-					const void *,size_t);
+				const void *,size_t)
+				__attribute__ ((nonnull (1,2,3)));
 
 void cleanup_l2hosts(struct l2host **);
 int print_l2hosts(FILE *,const struct l2host *);
@@ -26,7 +27,10 @@ int l2hostcmp(const struct l2host *,const struct l2host *);
 int l2categorize(const struct interface *,const struct l2host *);
 
 // Naming
-void name_l2host(const struct interface *,struct l2host *,int,const void *);
+void name_l2host(const struct omphalos_iface *,const struct interface *,
+				struct l2host *,int,const void *)
+				__attribute__ ((nonnull (1,2,3,5)));
+
 const char *get_name(const struct l2host *);
 
 #ifdef __cplusplus
