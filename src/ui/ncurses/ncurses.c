@@ -1560,11 +1560,20 @@ interface_removed_locked(iface_state *is){
 		del_panel(is->panel);
 		delwin(is->subwin);
 		if(is->next != is){
-			/* FIXME
 			int scrrows,scrcols;
 			int rows,cols;
 			iface_state *ci;
 
+			// First, splice it out of the list
+			is->next->prev = is->prev;
+			is->prev->next = is->next;
+			if(is == current_iface){
+				current_iface = is->prev;
+				// give the details window to new current_iface
+				if(details.p){
+					iface_details(panel_window(details.p),get_current_iface(),details.ysize);
+				}
+			}
 			getmaxyx(pad,scrrows,scrcols);
 			assert(scrcols);
 			getmaxyx(is->subwin,rows,cols);
@@ -1572,25 +1581,15 @@ interface_removed_locked(iface_state *is){
 			for(ci = is->next ; ci->scrline > is->scrline ; ci = ci->next){
 				interface *ii = ci->iface;
 
-				ci->scrline -= rows;
+				ci->scrline -= rows + 1; // blank line followed
 				assert(werase(ci->subwin) == OK);
 				if(iface_visible_p(scrrows,ci)){
 					assert(move_panel(ci->panel,ci->scrline,START_COL) != ERR);
-					assert(redraw_iface(ii,ci));
+					assert(redraw_iface(ii,ci) != ERR);
 				}
-			} */
-			is->next->prev = is->prev;
-			is->prev->next = is->next;
-			if(is == current_iface){
-				current_iface = is->prev;
-			}
-			// If we owned the details window, give it to the new
-			// current_iface.
-			if(details.p){
-				iface_details(panel_window(details.p),get_current_iface(),details.ysize);
 			}
 		}else{
-			// If we owned the details window, destroy it FIXME
+			// If details window exists, destroy it FIXME
 			current_iface = NULL;
 		}
 		free(is);
