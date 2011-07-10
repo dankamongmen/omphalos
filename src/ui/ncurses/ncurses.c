@@ -382,10 +382,10 @@ iface_box(WINDOW *w,const interface *i,const iface_state *is){
 	if( (buslen = strlen(i->drv.bus_info)) ){
 		if(i->busname){
 			buslen += strlen(i->busname) + 1;
-			assert(mvwprintw(w,is->ysize - 1,scrcols - (buslen + START_COL),
+			assert(mvwprintw(w,is->ysize - 1,scrcols - (buslen + START_COL * 2 + 1),
 					"%s:%s",i->busname,i->drv.bus_info) != ERR);
 		}else{
-			assert(mvwprintw(w,is->ysize - 1,scrcols - (buslen + START_COL),
+			assert(mvwprintw(w,is->ysize - 1,scrcols - (buslen + START_COL * 2 + 1),
 					"%s",i->drv.bus_info) != ERR);
 		}
 	}
