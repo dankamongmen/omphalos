@@ -109,15 +109,9 @@ iface_event(interface *i,void *unsafe __attribute__ ((unused))){
 }
 
 static void *
-neigh_event(const struct interface *i,const struct l2host *l2,
-		void *unsafe __attribute__ ((unused))){
+neigh_event(const struct interface *i,struct l2host *l2){
 	print_neigh(i,l2);
 	return NULL;
-}
-
-static void
-iface_removed(const interface *i,void *unsafe __attribute__ ((unused))){
-	printf("[%s] removed\n",i->name);
 }
 
 static int
@@ -161,7 +155,6 @@ int main(int argc,char * const *argv){
 		return EXIT_FAILURE;
 	}
 	pctx.iface.iface_event = iface_event;
-	pctx.iface.iface_removed = iface_removed;
 	pctx.iface.neigh_event = neigh_event;
 	pctx.iface.wireless_event = wireless_event;
 	pctx.iface.packet_read = packet_cb;

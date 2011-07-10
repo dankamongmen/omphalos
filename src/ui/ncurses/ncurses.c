@@ -1580,30 +1580,6 @@ interface_removed_locked(iface_state *is){
 	}
 }
 
-// FIXME this needs go away, and instead we'll use neighbor callbacks
-static void
-handle_l2(const interface *i,iface_state *is,omphalos_packet *op){
-	l2obj *news = NULL,*newd = NULL;
-
-	if(get_name(op->l2s)){
-		if(l2host_get_opaque(op->l2s) == NULL){
-			if((news = get_l2obj(op->l2s)) == NULL){
-				return;
-			}
-			add_l2_to_iface(is,news);
-		}
-	}
-	if(get_name(op->l2d)){
-		if(l2host_get_opaque(op->l2d) == NULL){
-			if((newd = get_l2obj(op->l2d)) == NULL){
-				return;
-			}
-			add_l2_to_iface(is,newd);
-		}
-	}
-	resize_iface(i,is);
-}
-
 static l2obj *
 neighbor_callback_locked(const interface *i,struct l2host *l2){
 	l2obj *ret;
@@ -1616,6 +1592,7 @@ neighbor_callback_locked(const interface *i,struct l2host *l2){
 			return NULL;
 		}
 		add_l2_to_iface(is,ret);
+		resize_iface(i,is);
 	}
 	return ret;
 }
@@ -1634,7 +1611,7 @@ neighbor_callback(const interface *i,struct l2host *l2){
 	void *ret;
 
 	pthread_mutex_lock(&bfl);
-	neighbor_callback_locked(i,l2);
+	ret = neighbor_callback_locked(i,l2);
 	pthread_mutex_unlock(&bfl);
 	return ret;
 }
