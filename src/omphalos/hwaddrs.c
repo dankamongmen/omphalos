@@ -165,6 +165,14 @@ void name_l2host(const omphalos_iface *octx,const interface *i,l2host *l2,
 			// responds to ARP requests at *this* l2 address.
 			// otherwise, we get things like 0.0.0.0 looked up on
 			// the default route and thus given the gateway addr.
+			// horrible workaround for ipv4 only:
+			if(family == AF_INET){
+				uint32_t nullip = 0;
+
+				if(*(const uint32_t *)name == nullip){
+					return;
+				}
+			}
 			// FIXME throwing out anything to which we have no
 			// route means we basically don't work pre-config.
 			// addresses pre-configuration have information, but
