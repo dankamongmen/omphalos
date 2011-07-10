@@ -175,7 +175,7 @@ handle_rtm_newneigh(const omphalos_iface *octx,const struct nlmsghdr *nl){
 		octx->diagnostic("%d excess bytes on %s newlink message",rlen,iface->name);
 	}
 	if(llen){
-		lookup_l2host(&iface->l2hosts,ll,sizeof(ll));
+		lookup_l2host(octx,iface,ll,sizeof(ll));
 	}
 	return 0;
 }
@@ -186,7 +186,6 @@ handle_rtm_delneigh(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	char ll[IFHWADDRLEN]; // FIXME get from selected interface
 	struct sockaddr_storage ssd;
 	struct rtattr *ra;
-	struct l2host *l2;
 	interface *iface;
 	int rlen,llen;
 	size_t flen;
@@ -244,7 +243,8 @@ handle_rtm_delneigh(const omphalos_iface *octx,const struct nlmsghdr *nl){
 		octx->diagnostic("%d excess bytes on %s newlink message",rlen,iface->name);
 	}
 	if(llen){
-		l2 = lookup_l2host(&iface->l2hosts,ll,sizeof(ll));
+		struct l2host *l2 = lookup_l2host(octx,iface,ll,sizeof(ll));
+
 		if(octx->neigh_removed){
 			octx->neigh_removed(iface,l2);
 		}

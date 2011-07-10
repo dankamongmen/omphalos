@@ -10,12 +10,14 @@ extern "C" {
 
 struct l2host;
 struct interface;
+struct omphalos_iface;
 
-struct l2host *lookup_l2host(struct l2host **,const void *,size_t);
+struct l2host *lookup_l2host(const struct omphalos_iface *,struct interface *,
+					const void *,size_t);
+
 void cleanup_l2hosts(struct l2host **);
 int print_l2hosts(FILE *,const struct l2host *);
 char *l2addrstr(const struct l2host *,size_t);
-int print_neigh(const struct interface *,const struct l2host *);
 
 void *l2host_get_opaque(struct l2host *);
 

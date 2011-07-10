@@ -108,6 +108,30 @@ iface_event(interface *i,void *unsafe __attribute__ ((unused))){
 	return NULL;
 }
 
+static int
+print_neigh(const interface *iface,const struct l2host *l2){
+	char *hwaddr;
+	int n;
+
+	// FIXME need real family! inet_ntop(nd->ndm_family,l2->hwaddr,str,sizeof(str));
+	hwaddr = l2addrstr(l2,IFHWADDRLEN);
+
+	n = printf("[%8s] neighbor %s\n",iface->name,hwaddr);
+	free(hwaddr);
+	/* FIXME printf("[%8s] neighbor %s %s%s%s%s%s%s%s%s\n",iface->name,str,
+			nd->ndm_state & NUD_INCOMPLETE ? "INCOMPLETE" : "",
+			nd->ndm_state & NUD_REACHABLE ? "REACHABLE" : "",
+			nd->ndm_state & NUD_STALE ? "STALE" : "",
+			nd->ndm_state & NUD_DELAY ? "DELAY" : "",
+			nd->ndm_state & NUD_PROBE ? "PROBE" : "",
+			nd->ndm_state & NUD_FAILED ? "FAILED" : "",
+			nd->ndm_state & NUD_NOARP ? "NOARP" : "",
+			nd->ndm_state & NUD_PERMANENT ? "PERMANENT" : ""
+			);
+		*/
+	return n;
+}
+
 static void *
 neigh_event(const struct interface *i,struct l2host *l2){
 	print_neigh(i,l2);
