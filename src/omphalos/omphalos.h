@@ -24,13 +24,38 @@ typedef struct omphalos_packet {
 
 // UI callback interface. Any number may be NULL, save diagnostic.
 typedef struct omphalos_iface {
-	void (*packet_read)(struct omphalos_packet *);
-	void *(*iface_event)(struct interface *,void *);
-	void (*iface_removed)(const struct interface *,void *);
-	void *(*neigh_event)(const struct interface *,const struct l2host *,void *);
-	void (*neigh_removed)(const struct interface *,const struct l2host *,void *);
-	void *(*wireless_event)(struct interface *,unsigned,void *);
+	// Free-form diagnostics using standard print(3)-style format strings.
 	void (*diagnostic)(const char *,...);
+
+	// Device event callback. Called upon device detection or change. A
+	// value returned will be associated with the interface's "opaque"
+	// member. Until this has happened, the interface's "opaque" member
+	// will be NULL. Only upon a non-NULL return will packet callbacks be
+	// invoked for this device.
+	void *(*iface_event)(struct interface *,void *);
+
+	// A device event augmented with wireless datails.
+	void *(*wireless_event)(struct interface *,unsigned,void *);
+
+	// Called for each packet read. Will not be called prior to a successful
+	// invocation of the device event callback, without an intervening 
+	// device removal callback.
+	void (*packet_read)(struct omphalos_packet *);
+
+	// Device removal callback. Following this call, no packet callbacks
+	// will be invoked for this interface until a succesful device event
+	// callback is performed. This callback will not be invoked while a
+	// packet or device event callback is being invoked for the interface.
+	// It might be invoked without a corresponding device event callback.
+	void (*iface_removed)(const struct interface *,void *);
+
+	// Neighbor event callback, fed by packet analysis and netlink neighbor
+	// cache events. The return value is treated similarly to that of the
+	// device event callback.
+	void *(*neigh_event)(const struct interface *,const struct l2host *,void *);
+
+	// Neighbor removal callback. Fed by LRU and timeouts.
+	void (*neigh_removed)(const struct interface *,const struct l2host *,void *);
 } omphalos_iface;
 
 // Process-scope settings, generally configured on startup based off
