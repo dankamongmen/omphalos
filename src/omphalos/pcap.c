@@ -39,7 +39,7 @@ handle_pcap_ethernet(u_char *gi,const struct pcap_pkthdr *h,const u_char *bytes)
 	packet.i = iface;
 	handle_ethernet_packet(pm->octx,&packet,bytes,h->len);
 	if(pm->octx->packet_read){
-		pm->octx->packet_read(iface->opaque,&packet);
+		pm->octx->packet_read(&packet);
 	}
 }
 
@@ -88,7 +88,7 @@ handle_pcap_cooked(u_char *gi,const struct pcap_pkthdr *h,const u_char *bytes){
 		}
 	}
 	if(pm->octx->packet_read){
-		pm->octx->packet_read(iface->opaque,&packet);
+		pm->octx->packet_read(&packet);
 	}
 }
 

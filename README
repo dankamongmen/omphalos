@@ -112,6 +112,12 @@ default fprintf(stderr,...) callback; you can change it prior to calling
 omphalos_init(), but omphalos_init() will error out if it is set to NULL.
 There is not yet any means to manage diagnostic output in omphalos_setup().
 
+A packet callback will only reference an incoming interface for which the
+device event callback has been successfully invoked, without an intervening
+device removal callback invocation. A device removal callback can be invoked
+with no corresponding device event callback. Host callbacks follow the same
+rules as packet callbacks with regard to device callbacks.
+
 =======================================
 IV.C Porting
 =======================================

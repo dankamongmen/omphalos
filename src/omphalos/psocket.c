@@ -222,7 +222,7 @@ int handle_ring_packet(const omphalos_iface *octx,interface *iface,int fd,void *
 	packet.i = iface;
 	iface->analyzer(octx,&packet,frame,len);
 	if(octx->packet_read){
-		octx->packet_read(iface->opaque,&packet);
+		octx->packet_read(&packet);
 	}
 	thdr->tp_status = TP_STATUS_KERNEL; // return the frame
 	return 0;

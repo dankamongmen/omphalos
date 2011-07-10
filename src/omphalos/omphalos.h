@@ -22,10 +22,9 @@ typedef struct omphalos_packet {
 	} l3s,l3d;
 } omphalos_packet;
 
-// UI callback interface. Any number may be NULL.
+// UI callback interface. Any number may be NULL, save diagnostic.
 typedef struct omphalos_iface {
-	// FIXME get rid of first argument, passing only omphalos_packet
-	void (*packet_read)(void *,struct omphalos_packet *);
+	void (*packet_read)(struct omphalos_packet *);
 	void *(*iface_event)(struct interface *,void *);
 	void (*iface_removed)(const struct interface *,void *);
 	void *(*neigh_event)(const struct interface *,const struct l2host *,void *);

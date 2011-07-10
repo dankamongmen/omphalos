@@ -1427,7 +1427,9 @@ handle_l2(const interface *i,iface_state *is,omphalos_packet *op){
 }
 
 static inline void
-packet_cb_locked(const interface *i,iface_state *is,omphalos_packet *op){
+packet_cb_locked(const interface *i,omphalos_packet *op){
+	iface_state *is = op->i->opaque;
+
 	if(is){
 		struct timeval tdiff;
 		unsigned long udiff;
@@ -1452,9 +1454,9 @@ packet_cb_locked(const interface *i,iface_state *is,omphalos_packet *op){
 }
 
 static void
-packet_callback(void *unsafe,omphalos_packet *op){
+packet_callback(omphalos_packet *op){
 	pthread_mutex_lock(&bfl);
-	packet_cb_locked(op->i,unsafe,op);
+	packet_cb_locked(op->i,op);
 	pthread_mutex_unlock(&bfl);
 }
 
