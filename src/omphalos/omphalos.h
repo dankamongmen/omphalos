@@ -52,10 +52,10 @@ typedef struct omphalos_iface {
 	// Neighbor event callback, fed by packet analysis and netlink neighbor
 	// cache events. The return value is treated similarly to that of the
 	// device event callback.
-	void *(*neigh_event)(const struct interface *,const struct l2host *,void *);
+	void *(*neigh_event)(const struct interface *,struct l2host *);
 
 	// Neighbor removal callback. Fed by LRU and timeouts.
-	void (*neigh_removed)(const struct interface *,const struct l2host *,void *);
+	void (*neigh_removed)(const struct interface *,struct l2host *);
 } omphalos_iface;
 
 // Process-scope settings, generally configured on startup based off

@@ -1386,6 +1386,11 @@ get_l2obj(struct l2host *l2){
 	return l;
 }
 
+static inline void
+free_l2obj(l2obj *l){
+	free(l);
+}
+
 static void
 add_l2_to_iface(iface_state *is,l2obj *l2){
 	l2obj **prev;
@@ -1400,32 +1405,6 @@ add_l2_to_iface(iface_state *is,l2obj *l2){
 	*prev = l2;
 }
 
-// FIXME this needs go away, and instead we'll use neighbor callbacks
-static void
-handle_l2(const interface *i,iface_state *is,omphalos_packet *op){
-	l2obj *news = NULL,*newd = NULL;
-
-	if(get_name(op->l2s)){
-		if(l2host_get_opaque(op->l2s) == NULL){
-			if((news = get_l2obj(op->l2s)) == NULL){
-				return;
-			}
-			add_l2_to_iface(is,news);
-			l2host_set_opaque(op->l2s,news);
-		}
-	}
-	if(get_name(op->l2d)){
-		if(l2host_get_opaque(op->l2d) == NULL){
-			if((newd = get_l2obj(op->l2d)) == NULL){
-				return;
-			}
-			add_l2_to_iface(is,newd);
-			l2host_set_opaque(op->l2d,newd);
-		}
-	}
-	resize_iface(i,is);
-}
-
 static inline void
 packet_cb_locked(const interface *i,omphalos_packet *op){
 	iface_state *is = op->i->opaque;
@@ -1434,7 +1413,6 @@ packet_cb_locked(const interface *i,omphalos_packet *op){
 		struct timeval tdiff;
 		unsigned long udiff;
 
-		handle_l2(i,is,op);
 		timersub(&i->lastseen,&is->lastprinted,&tdiff);
 		udiff = timerusec(&tdiff);
 		if(udiff < 500000){ // At most one update every 1/2s
@@ -1602,6 +1580,72 @@ interface_removed_locked(iface_state *is){
 	}
 }
 
+// FIXME this needs go away, and instead we'll use neighbor callbacks
+static void
+handle_l2(const interface *i,iface_state *is,omphalos_packet *op){
+	l2obj *news = NULL,*newd = NULL;
+
+	if(get_name(op->l2s)){
+		if(l2host_get_opaque(op->l2s) == NULL){
+			if((news = get_l2obj(op->l2s)) == NULL){
+				return;
+			}
+			add_l2_to_iface(is,news);
+		}
+	}
+	if(get_name(op->l2d)){
+		if(l2host_get_opaque(op->l2d) == NULL){
+			if((newd = get_l2obj(op->l2d)) == NULL){
+				return;
+			}
+			add_l2_to_iface(is,newd);
+		}
+	}
+	resize_iface(i,is);
+}
+
+static l2obj *
+neighbor_callback_locked(const interface *i,struct l2host *l2){
+	l2obj *ret;
+
+	if((ret = l2host_get_opaque(l2)) == NULL){
+		iface_state *is;
+
+		assert( (is = i->opaque) );
+		if((ret = get_l2obj(l2)) == NULL){
+			return NULL;
+		}
+		add_l2_to_iface(is,ret);
+	}
+	return ret;
+}
+
+static void
+neighbor_removed_callback_locked(const interface *i __attribute__ ((unused)),struct l2host *l2){
+	l2obj *ret;
+
+	if( (ret = l2host_get_opaque(l2)) ){
+		free_l2obj(ret);
+	}
+}
+
+static void *
+neighbor_callback(const interface *i,struct l2host *l2){
+	void *ret;
+
+	pthread_mutex_lock(&bfl);
+	neighbor_callback_locked(i,l2);
+	pthread_mutex_unlock(&bfl);
+	return ret;
+}
+
+static void
+neighbor_removed_callback(const interface *i,struct l2host *l2){
+	pthread_mutex_lock(&bfl);
+	neighbor_removed_callback_locked(i,l2);
+	pthread_mutex_unlock(&bfl);
+}
+
 static void
 interface_removed_callback(const interface *i __attribute__ ((unused)),void *unsafe){
 	pthread_mutex_lock(&bfl);
@@ -1644,6 +1688,8 @@ int main(int argc,char * const *argv){
 	pctx.iface.iface_removed = interface_removed_callback;
 	pctx.iface.diagnostic = diag_callback;
 	pctx.iface.wireless_event = wireless_callback;
+	pctx.iface.neigh_event = neighbor_callback;
+	pctx.iface.neigh_removed = neighbor_removed_callback;
 	if((pad = ncurses_setup(&pctx.iface)) == NULL){
 		return EXIT_FAILURE;
 	}

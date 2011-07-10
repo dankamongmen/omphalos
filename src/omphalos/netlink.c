@@ -178,7 +178,7 @@ handle_rtm_newneigh(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	if(llen){
 		l2 = lookup_l2host(&iface->l2hosts,ll,sizeof(ll));
 		if(octx->neigh_event){
-			iface->opaque = octx->neigh_event(iface,l2,iface->opaque);
+			iface->opaque = octx->neigh_event(iface,l2);
 		}
 		// FIXME and do what else with it?
 	}
@@ -251,7 +251,7 @@ handle_rtm_delneigh(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	if(llen){
 		l2 = lookup_l2host(&iface->l2hosts,ll,sizeof(ll));
 		if(octx->neigh_removed){
-			octx->neigh_removed(iface,l2,iface->opaque);
+			octx->neigh_removed(iface,l2);
 		}
 	}
 	return 0;
