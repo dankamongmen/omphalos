@@ -175,6 +175,9 @@ void name_l2host(const omphalos_iface *octx,const interface *i,l2host *l2,
 				return;
 			}
 		}
+
+		else { fprintf(stderr,"MULTI/BROADCAST! %s\n",i->name); } 
+
 		assert(inet_ntop(family,name,b,sizeof(b)) == b);
 		if( (l2->name = malloc(strlen(b) + 1)) ){
 			strcpy(l2->name,b);

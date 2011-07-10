@@ -1595,6 +1595,7 @@ neighbor_callback_locked(const interface *i,struct l2host *l2){
 		add_l2_to_iface(is,ret);
 		assert(resize_iface(i,is) != ERR);
 	}else{
+		assert(werase(is->subwin) != ERR);
 		assert(redraw_iface(i,is) != ERR);
 	}
 	return ret;

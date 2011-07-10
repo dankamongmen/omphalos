@@ -68,7 +68,7 @@ handle_8021q(const omphalos_iface *octx,omphalos_packet *op,const void *frame,
 	case ETH_P_IP:{
 		handle_ipv4_packet(octx,op,dgram,dlen);
 	break;}case ETH_P_ARP:{
-		handle_arp_packet(octx,op->i,dgram,dlen);
+		handle_arp_packet(octx,op,dgram,dlen);
 	break;}case ETH_P_IPV6:{
 		handle_ipv6_packet(octx,op,dgram,dlen);
 	break;}case ETH_P_PAE:{
@@ -117,7 +117,7 @@ handle_snap(const omphalos_iface *octx,omphalos_packet *op,const void *frame,siz
 			handle_ipv4_packet(octx,op,dgram,dlen);
 			break;
 		}case ETH_P_ARP:{
-			handle_arp_packet(octx,op->i,dgram,dlen);
+			handle_arp_packet(octx,op,dgram,dlen);
 			break;
 		}case ETH_P_IPV6:{
 			handle_ipv6_packet(octx,op,dgram,dlen);
@@ -202,7 +202,7 @@ void handle_ethernet_packet(const omphalos_iface *octx,omphalos_packet *op,
 			handle_ipv4_packet(octx,op,dgram,dlen);
 			break;
 		}case ETH_P_ARP:{
-			handle_arp_packet(octx,op->i,dgram,dlen);
+			handle_arp_packet(octx,op,dgram,dlen);
 			break;
 		}case ETH_P_IPV6:{
 			handle_ipv6_packet(octx,op,dgram,dlen);
