@@ -1334,17 +1334,17 @@ resize_iface(const interface *i,iface_state *ret){
 	// FIXME this only addresses expansion. need to handle shrinking, also.
 	// (which can make a panel visible, just as expansion can hide it)
 	if(iface_hidden_p(rows,ret)){
-		return 0;
+		return OK;
 	}
 	if((nlines = lines_for_interface(i,ret)) == ret->ysize){
-		return 0; // no change necessary
+		return OK; // no change necessary
 	}
 	if(nlines + ret->scrline >= rows){
 		// fixme check to see if we can expand up instead
 		if(redraw_iface(i,ret)){ // might need change the host list
 			return ERR;
 		}
-		return 0;
+		return OK;
 	}else{
 		int delta = nlines - ret->ysize;
 		iface_state *is;
@@ -1582,17 +1582,20 @@ interface_removed_locked(iface_state *is){
 
 static l2obj *
 neighbor_callback_locked(const interface *i,struct l2host *l2){
+	iface_state *is;
 	l2obj *ret;
 
+	// Guaranteed by callback properties -- we don't get neighbor callbacks
+	// until there's been a successful device callback.
+	assert( (is = i->opaque) );
 	if((ret = l2host_get_opaque(l2)) == NULL){
-		iface_state *is;
-
-		assert( (is = i->opaque) );
 		if((ret = get_l2obj(l2)) == NULL){
 			return NULL;
 		}
 		add_l2_to_iface(is,ret);
-		resize_iface(i,is);
+		assert(resize_iface(i,is) != ERR);
+	}else{
+		assert(redraw_iface(i,is) != ERR);
 	}
 	return ret;
 }
