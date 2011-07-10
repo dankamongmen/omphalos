@@ -1560,6 +1560,25 @@ interface_removed_locked(iface_state *is){
 		del_panel(is->panel);
 		delwin(is->subwin);
 		if(is->next != is){
+			/* FIXME
+			int scrrows,scrcols;
+			int rows,cols;
+			iface_state *ci;
+
+			getmaxyx(pad,scrrows,scrcols);
+			assert(scrcols);
+			getmaxyx(is->subwin,rows,cols);
+			assert(cols);
+			for(ci = is->next ; ci->scrline > is->scrline ; ci = ci->next){
+				interface *ii = ci->iface;
+
+				ci->scrline -= rows;
+				assert(werase(ci->subwin) == OK);
+				if(iface_visible_p(scrrows,ci)){
+					assert(move_panel(ci->panel,ci->scrline,START_COL) != ERR);
+					assert(redraw_iface(ii,ci));
+				}
+			} */
 			is->next->prev = is->prev;
 			is->prev->next = is->next;
 			if(is == current_iface){
@@ -1575,7 +1594,6 @@ interface_removed_locked(iface_state *is){
 			current_iface = NULL;
 		}
 		free(is);
-		// FIXME need move other ifaces up
 		full_screen_update();
 	}
 }
