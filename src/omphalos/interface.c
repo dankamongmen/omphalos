@@ -18,8 +18,6 @@
 
 #define MAXINTERFACES (1u << 16) // lame FIXME
 
-typedef uint32_t uint128_t; // FIXME use 4 32's. this sucks; get rid of it.
-
 static interface interfaces[MAXINTERFACES];
 
 int init_interfaces(void){
@@ -229,11 +227,20 @@ int is_local4(const interface *i,uint32_t ip){
 }
 
 static inline int
-ip6_in_route(const ip6route *r,const uint128_t *i){
-	if(!r || !i){
-		return 0;
+ip6_in_route(const ip6route *r,const uint32_t *i){
+	const uint32_t *dst = r->dst.s6_addr32;
+	unsigned mbits = r->maskbits;
+	unsigned word = 0;
+
+	while(mbits){
+		// FIXME broken for subnet masks that aren't multiples of 32
+		if(i[word] != dst[word]){
+			return 0;
+		}
+		mbits -= 32;
+		++word;
 	}
-	return 1; // FIXME
+	return 1;
 }
 
 int is_local6(const interface *i,const struct in6_addr *a){
@@ -405,6 +412,7 @@ int get_route6(const interface *i,const uint32_t *ip,uint32_t *r){
 
 	for(i6r = i->ip6r ; i6r ; i6r = i6r->next){
 		if(ip6_in_route(i6r,ip)){
+			// FIXME and this is just broken
 			/*
 			if(i6r->via.s_addr){
 				*r = i6r->via;

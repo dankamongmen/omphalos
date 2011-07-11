@@ -142,10 +142,10 @@ get_route(const interface *i,int fam,const void *addr,void *r){
 				ret = 0;
 			}
 			break;
-		/* FIXME case AF_INET6:
+		case AF_INET6:
 			ret = get_route6(i,addr,r);
 			break;
-		*/default:
+		default:
 			return NULL;
 	}
 	return (ret != 1) ? NULL : r;
