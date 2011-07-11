@@ -172,7 +172,7 @@ void name_l2host_local(const omphalos_iface *octx,const interface *i,l2host *l2,
 			strcpy(l2->name,b);
 		}
 		if(octx->neigh_event){
-			octx->neigh_event(i,l2);
+			l2->opaque = octx->neigh_event(i,l2);
 		}
 	}
 }
