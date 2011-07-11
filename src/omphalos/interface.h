@@ -58,6 +58,7 @@ typedef struct interface {
 	uintmax_t noprotocol;		// Packets without protocol handler
 	uintmax_t bytes;		// Total bytes sniffed
 	uintmax_t drops;		// PACKET_STATISTICS @ TP_STATUS_LOSING
+	uintmax_t txframes;		// Frames we've generated
 
 	// Finite time domain stats
 	timestat fps,bps;		// frames and bits per second
@@ -86,6 +87,7 @@ typedef struct interface {
 	void *txm;		// TX packet ring buffer
 	size_t ts;		// TX packet ring size in bytes
 	struct tpacket_req ttpr;// TX packet ring descriptor
+	unsigned txidx;		// Next frame for TX
 	struct ethtool_drvinfo drv;	// ethtool driver info
 	unsigned offload;	// offloading settings
 	unsigned offloadmask;	// which offloading settings are valid

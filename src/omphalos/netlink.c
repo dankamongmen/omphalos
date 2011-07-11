@@ -592,6 +592,7 @@ prepare_packet_sockets(const omphalos_iface *octx,interface *iface,int idx){
 							iface->mtu,&iface->txm,&iface->ttpr)) ){
 						iface->pmarsh->octx = octx;
 						iface->pmarsh->i = iface;
+						iface->txidx = 0;
 						if(pthread_create(&iface->pmarsh->tid,NULL,
 								psocket_thread,iface->pmarsh) == 0){
 							return 0;
