@@ -67,11 +67,8 @@ handle_pcap_cooked(u_char *gi,const struct pcap_pkthdr *h,const u_char *bytes){
 		++iface->malformed;
 		return;
 	}
-	// FIXME what to do about l2d?
-	if((packet.l2s = lookup_l2host(pm->octx,iface,sll->hwaddr,ntohs(sll->hwlen),AF_UNSPEC,NULL)) == NULL){
-		return;
-	}
-	packet.l2d = NULL;
+	packet.l2s = lookup_l2host(pm->octx,iface,sll->hwaddr,ntohs(sll->hwlen),AF_UNSPEC,NULL);
+	packet.l2d = packet.l2s;
 	packet.i = iface;
 	// proto is in network byte-order. rather than possibly switch it
 	// every time, we provide the cases in network byte-order
