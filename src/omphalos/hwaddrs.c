@@ -54,11 +54,11 @@ l2host *lookup_l2host(const omphalos_iface *octx,interface *i,
 		}
 	}
 	if( (l2 = create_l2host(hwaddr,addrlen)) ){
+		l2->next = i->l2hosts;
+		i->l2hosts = l2;
 		if(octx->neigh_event){
 			l2->opaque = octx->neigh_event(i,l2);
 		}
-		l2->next = i->l2hosts;
-		i->l2hosts = l2;
 	}
 	return l2;
 }
@@ -138,6 +138,10 @@ int print_l2hosts(FILE *fp,const l2host *list){
 
 void *l2host_get_opaque(l2host *l2){
 	return l2->opaque;
+}
+
+void *l2host_set_opaque(l2host *l2,void *opaque){
+	return l2->opaque = opaque;
 }
 
 int l2hostcmp(const l2host *l21,const l2host *l22){

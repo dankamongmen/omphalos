@@ -181,7 +181,7 @@ handle_rtm_newneigh(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	return 0;
 }
 
-static int
+/* static int
 handle_rtm_delneigh(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	const struct ndmsg *nd = NLMSG_DATA(nl);
 	char ll[IFHWADDRLEN]; // FIXME get from selected interface
@@ -243,15 +243,8 @@ handle_rtm_delneigh(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	if(rlen){
 		octx->diagnostic("%d excess bytes on %s newlink message",rlen,iface->name);
 	}
-	if(llen){
-		struct l2host *l2 = lookup_l2host(octx,iface,ll,sizeof(ll));
-
-		if(octx->neigh_removed){
-			octx->neigh_removed(iface,l2);
-		}
-	}
 	return 0;
-}
+}*/
 
 static int
 handle_rtm_delroute(const struct omphalos_iface *octx,const struct nlmsghdr *nl){
@@ -859,7 +852,7 @@ handle_netlink_event(const omphalos_iface *octx,int fd){
 			break;}case RTM_NEWNEIGH:{
 				res |= handle_rtm_newneigh(octx,nh);
 			break;}case RTM_DELNEIGH:{
-				res |= handle_rtm_delneigh(octx,nh);
+				//res |= handle_rtm_delneigh(octx,nh);
 			break;}case RTM_NEWROUTE:{
 				res |= handle_rtm_newroute(octx,nh);
 			break;}case RTM_DELROUTE:{

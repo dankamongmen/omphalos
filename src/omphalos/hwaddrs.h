@@ -21,6 +21,7 @@ int print_l2hosts(FILE *,const struct l2host *);
 char *l2addrstr(const struct l2host *,size_t);
 
 void *l2host_get_opaque(struct l2host *);
+void *l2host_set_opaque(struct l2host *l2,void *);
 
 // Predicates and comparators
 int l2hostcmp(const struct l2host *,const struct l2host *);

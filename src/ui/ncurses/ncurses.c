@@ -1618,15 +1618,6 @@ neighbor_callback_locked(const interface *i,struct l2host *l2){
 	return ret;
 }
 
-static void
-neighbor_removed_callback_locked(const interface *i __attribute__ ((unused)),struct l2host *l2){
-	l2obj *ret;
-
-	if( (ret = l2host_get_opaque(l2)) ){
-		free_l2obj(ret);
-	}
-}
-
 static void *
 neighbor_callback(const interface *i,struct l2host *l2){
 	void *ret;
@@ -1635,13 +1626,6 @@ neighbor_callback(const interface *i,struct l2host *l2){
 	ret = neighbor_callback_locked(i,l2);
 	pthread_mutex_unlock(&bfl);
 	return ret;
-}
-
-static void
-neighbor_removed_callback(const interface *i,struct l2host *l2){
-	pthread_mutex_lock(&bfl);
-	neighbor_removed_callback_locked(i,l2);
-	pthread_mutex_unlock(&bfl);
 }
 
 static void
@@ -1687,7 +1671,6 @@ int main(int argc,char * const *argv){
 	pctx.iface.diagnostic = diag_callback;
 	pctx.iface.wireless_event = wireless_callback;
 	pctx.iface.neigh_event = neighbor_callback;
-	pctx.iface.neigh_removed = neighbor_removed_callback;
 	if((pad = ncurses_setup(&pctx.iface)) == NULL){
 		return EXIT_FAILURE;
 	}
