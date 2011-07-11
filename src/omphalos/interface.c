@@ -170,7 +170,10 @@ int add_route6(interface *i,const struct in6_addr *s,const struct in6_addr *via,
 	}
 	memcpy(&r->dst,s,sizeof(*s));
 	if(via){
+		r->hasvia = 1;
 		memcpy(&r->via,via,sizeof(*via));
+	}else{
+		r->hasvia = 0;
 	}
 	r->iif = iif;
 	r->maskbits = blen;
@@ -412,15 +415,11 @@ int get_route6(const interface *i,const uint32_t *ip,uint32_t *r){
 
 	for(i6r = i->ip6r ; i6r ; i6r = i6r->next){
 		if(ip6_in_route(i6r,ip)){
-			// FIXME and this is just broken
-			/*
-			if(i6r->via.s_addr){
-				*r = i6r->via;
+			if(i6r->hasvia){
+				memcpy(r,i6r->via.s6_addr,sizeof(uint32_t) * 4);
 			}else{
-				*r = ip;
+				memcpy(r,ip,sizeof(uint32_t) * 4);
 			}
-			*/
-			*r = *ip;// FIXME
 			return 1;
 		}
 	}

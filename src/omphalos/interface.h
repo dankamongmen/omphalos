@@ -26,6 +26,7 @@ typedef struct ip4route {
 
 typedef struct ip6route {
 	struct in6_addr dst,via;
+	int hasvia;
 	unsigned maskbits;		// 0..127
 	int iif;			// input iface, -1 if unspecified
 	struct ip6route *next;
