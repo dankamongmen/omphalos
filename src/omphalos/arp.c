@@ -29,7 +29,7 @@ void handle_arp_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 		return;
 	}
 	switch(ap->ar_pro){
-		case ETH_P_IP:
+		case __constant_htons(ETH_P_IP):
 			if(ap->ar_pln == sizeof(uint32_t)){
 				fam = AF_INET;
 			}else if(ap->ar_pln == sizeof(uint32_t) * 4){
