@@ -174,10 +174,9 @@ handle_rtm_newneigh(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	if(rlen){
 		octx->diagnostic("%d excess bytes on %s newlink message",rlen,iface->name);
 	}
-	/*if(llen){
-		fprintf(stderr,"LOOKUP FROM ARP %s\n",iface->name);
-		lookup_l2host(octx,iface,ll,sizeof(ll));
-	}*/
+	if(llen){
+		lookup_l2host(octx,iface,ll,sizeof(ll),nd->ndm_family,ad);
+	}
 	return 0;
 }
 

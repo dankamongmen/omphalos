@@ -13,7 +13,7 @@ struct interface;
 struct omphalos_iface;
 
 struct l2host *lookup_l2host(const struct omphalos_iface *,struct interface *,
-				const void *,size_t)
+				const void *,size_t,int,const void *)
 				__attribute__ ((nonnull (1,2,3)));
 
 void cleanup_l2hosts(struct l2host **);

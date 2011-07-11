@@ -38,7 +38,8 @@ create_l2host(const void *hwaddr,size_t addrlen){
 // FIXME strictly proof-of-concept. we'll want a trie- or hash-based
 // lookup, backed by an arena-allocated LRU, etc...
 l2host *lookup_l2host(const omphalos_iface *octx,interface *i,
-			const void *hwaddr,size_t addrlen){
+			const void *hwaddr,size_t addrlen,
+			int family,const void *name){
 	l2host *l2,**prev;
 	uint64_t hwcmp;
 
@@ -56,6 +57,9 @@ l2host *lookup_l2host(const omphalos_iface *octx,interface *i,
 	if( (l2 = create_l2host(hwaddr,addrlen)) ){
 		l2->next = i->l2hosts;
 		i->l2hosts = l2;
+		if(name){
+			name_l2host_local(octx,i,l2,family,name);
+		}
 		if(octx->neigh_event){
 			l2->opaque = octx->neigh_event(i,l2);
 		}
@@ -160,14 +164,16 @@ int l2categorize(const interface *i,const l2host *l2){
 
 void name_l2host_local(const omphalos_iface *octx,const interface *i,l2host *l2,
 					int family,const void *name){
-	char b[INET6_ADDRSTRLEN];
+	if(l2->name == NULL){
+		char b[INET6_ADDRSTRLEN];
 
-	assert(inet_ntop(family,name,b,sizeof(b)) == b);
-	if( (l2->name = malloc(strlen(b) + 1)) ){
-		strcpy(l2->name,b);
-	}
-	if(octx->neigh_event){
-		octx->neigh_event(i,l2);
+		assert(inet_ntop(family,name,b,sizeof(b)) == b);
+		if( (l2->name = malloc(strlen(b) + 1)) ){
+			strcpy(l2->name,b);
+		}
+		if(octx->neigh_event){
+			octx->neigh_event(i,l2);
+		}
 	}
 }
 
@@ -180,7 +186,7 @@ void name_l2host_local(const omphalos_iface *octx,const interface *i,l2host *l2,
 // replies are link-layer only, and thus processed directly (name_l2host_local()).
 void name_l2host(const omphalos_iface *octx,const interface *i,l2host *l2,
 					int family,const void *name){
-	if(l2 && l2->name == NULL){
+	if(l2->name == NULL){
 		struct sockaddr_storage ss;
 
 		if(categorize_ethaddr(&l2->hwaddr) == RTN_UNICAST){
