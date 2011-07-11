@@ -31,6 +31,9 @@ int l2categorize(const struct interface *,const struct l2host *);
 void name_l2host(const struct omphalos_iface *,const struct interface *,
 				struct l2host *,int,const void *)
 				__attribute__ ((nonnull (1,2,3,5)));
+void name_l2host_local(const struct omphalos_iface *,const struct interface *,
+				struct l2host *,int,const void *)
+				__attribute__ ((nonnull (1,2,3,5)));
 
 const char *get_name(const struct l2host *);
 
