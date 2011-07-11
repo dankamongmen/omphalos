@@ -735,25 +735,27 @@ handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 		octx->diagnostic("No MTU in new link message for %s",iface->name);
 		return -1;
 	}
-	// These can fail for a given interface if it lacks ethtool
-	// support, including many wireless cards and loopback.
+	iface->flags = ii->ifi_flags;
+	iface->settings_valid = SETTINGS_INVALID;
+	// Ethtool can fail for any given command depending on the device's
+	// level of support. All but loopback seem to provide driver info...
 	if(iface_driver_info(octx,iface->name,&iface->drv)){
 		memset(&iface->drv,0,sizeof(iface->drv));
 		iface->topinfo.devname = name_virtual_device(ii,NULL);
 	}else{
 		if((iface->busname = lookup_bus(iface->drv.bus_info,&iface->topinfo)) == NULL){
 			iface->topinfo.devname = name_virtual_device(ii,&iface->drv);
+		}else{
+			// Try to get detailed wireless info first, falling back to ethtool.
+			if(iface_wireless_info(octx,iface->name,&iface->settings.wext) == 0){
+				iface->settings_valid = SETTINGS_VALID_WEXT;
+			}else if(iface_ethtool_info(octx,iface->name,&iface->settings.ethtool) == 0){
+				iface->settings_valid = SETTINGS_VALID_ETHTOOL;
+			}
 		}
 	}
+	// Offload info seems available for everything, even loopback.
 	iface_offload_info(octx,iface->name,&iface->offload,&iface->offloadmask);
-	if(iface_ethtool_info(octx,iface->name,&iface->settings.ethtool) == 0){
-		iface->settings_valid = SETTINGS_VALID_ETHTOOL;
-	}else if(iface_wireless_info(octx,iface->name,&iface->settings.wext) == 0){
-		iface->settings_valid = SETTINGS_VALID_WEXT;
-	}else{
-		iface->settings_valid = SETTINGS_INVALID;
-	}
-	iface->flags = ii->ifi_flags;
 	if(iface->fd < 0 && (iface->flags & IFF_UP)){
 		prepare_packet_sockets(octx,iface,ii->ifi_index);
 	}else if(iface->pmarsh && !(iface->flags & IFF_UP)){
