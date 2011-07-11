@@ -6,6 +6,7 @@ extern "C" {
 #endif
 
 #include <stdio.h>
+#include <string.h>
 #include <stdint.h>
 #include <netinet/in.h>
 #include <linux/ethtool.h>
@@ -134,6 +135,12 @@ get_route(const interface *i,int fam,const void *addr,void *r){
 	switch(fam){
 		case AF_INET:
 			ret = get_route4(i,addr,r);
+			// A result different from the input requires a directed
+			// ARP probe to verify the local network address.
+			if(memcmp(addr,r,sizeof(uint32_t))){
+				// FIXME issue ARP request
+				ret = 0;
+			}
 			break;
 		/* FIXME case AF_INET6:
 			ret = get_route6(i,addr,r);

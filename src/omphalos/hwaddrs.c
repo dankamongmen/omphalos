@@ -158,25 +158,32 @@ int l2categorize(const interface *i,const l2host *l2){
 	return ret;
 }
 
+void name_l2host_local(const omphalos_iface *octx,const interface *i,l2host *l2,
+					int family,const void *name){
+	char b[INET6_ADDRSTRLEN];
+
+	assert(inet_ntop(family,name,b,sizeof(b)) == b);
+	if( (l2->name = malloc(strlen(b) + 1)) ){
+		strcpy(l2->name,b);
+	}
+	if(octx->neigh_event){
+		octx->neigh_event(i,l2);
+	}
+}
+
+// This is for raw network addresses as seen on the wire, which may be from
+// outside the local network. We want only the local network address(es) of the
+// link address (in a rare case, it might not have any). For unicast link
+// addresses, a route lookup will be performed using the wire network address.
+// If the route returned is different from the wire address, an ARP probe is
+// directed to the link-layer address (this is all handled by get_route()). ARP
+// replies are link-layer only, and thus processed directly (name_l2host_local()).
 void name_l2host(const omphalos_iface *octx,const interface *i,l2host *l2,
 					int family,const void *name){
 	if(l2 && l2->name == NULL){
 		struct sockaddr_storage ss;
-		char b[INET6_ADDRSTRLEN];
 
 		if(categorize_ethaddr(&l2->hwaddr) == RTN_UNICAST){
-			// FIXME need to check that the name we get actually
-			// responds to ARP requests at *this* l2 address.
-			// otherwise, we get things like 0.0.0.0 looked up on
-			// the default route and thus given the gateway addr.
-			// horrible workaround for ipv4 only:
-			if(family == AF_INET){
-				uint32_t nullip = 0;
-
-				if(*(const uint32_t *)name == nullip){
-					return;
-				}
-			}
 			// FIXME throwing out anything to which we have no
 			// route means we basically don't work pre-config.
 			// addresses pre-configuration have information, but
@@ -187,13 +194,7 @@ void name_l2host(const omphalos_iface *octx,const interface *i,l2host *l2,
 				return;
 			}
 		}
-		assert(inet_ntop(family,name,b,sizeof(b)) == b);
-		if( (l2->name = malloc(strlen(b) + 1)) ){
-			strcpy(l2->name,b);
-		}
-		if(octx->neigh_event){
-			octx->neigh_event(i,l2);
-		}
+		name_l2host_local(octx,i,l2,family,name);
 	}
 }
 
