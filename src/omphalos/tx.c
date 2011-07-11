@@ -1,14 +1,21 @@
+#include <stdio.h>
 #include <omphalos/tx.h>
+#include <linux/if_packet.h>
+#include <omphalos/psocket.h>
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
 
 // Acquire a frame from the ringbuffer
 void *get_tx_frame(const omphalos_iface *octx,interface *i){
-	if(i->fd < 0){
-		octx->diagnostic("%s is not prepared for transmission",i->name);
+	struct tpacket_hdr *thdr = i->curtxm;
+
+	// FIXME need also check for TP_WRONG_FORMAT methinks?
+	if(thdr->tp_status != TP_STATUS_AVAILABLE){
+		octx->diagnostic("No available TX frames on %s",i->name);
 		return NULL;
 	}
-	return NULL; // FIXME
+	i->curtxm += inclen(&i->txidx,&i->ttpr);
+	return NULL;
 }
 
 // Mark a frame as ready-to-send. Must have come from get_tx_frame() using this

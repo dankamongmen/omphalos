@@ -457,24 +457,6 @@ typedef struct psocket_marsh {
 	pthread_t tid;
 } psocket_marsh;
 
-static inline
-ssize_t inclen(unsigned *idx,const struct tpacket_req *treq){
-	ssize_t inc = treq->tp_frame_size; // advance at least this much
-	unsigned fperb = treq->tp_block_size / treq->tp_frame_size;
-
-	++*idx;
-	if(*idx == treq->tp_frame_nr){
-		inc -= fperb * inc;
-		if(treq->tp_block_nr > 1){
-			inc -= (treq->tp_block_nr - 1) * treq->tp_block_size;
-		}
-		*idx = 0;
-	}else if(*idx % fperb == 0){
-		inc += treq->tp_block_size - fperb * inc;
-	}
-	return inc;
-}
-
 static int
 ring_packet_loop(psocket_marsh *pm){
 	// FIXME either send pm and nothing or everything else this aliases
@@ -592,6 +574,7 @@ prepare_packet_sockets(const omphalos_iface *octx,interface *iface,int idx){
 							iface->mtu,&iface->txm,&iface->ttpr)) ){
 						iface->pmarsh->octx = octx;
 						iface->pmarsh->i = iface;
+						iface->curtxm = iface->txm;
 						iface->txidx = 0;
 						if(pthread_create(&iface->pmarsh->tid,NULL,
 								psocket_thread,iface->pmarsh) == 0){

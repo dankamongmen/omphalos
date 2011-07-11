@@ -5,6 +5,8 @@
 extern "C" {
 #endif
 
+#include <linux/if_packet.h>
+
 struct interface;
 struct tpacket_req;
 struct omphalos_ctx;
@@ -27,6 +29,25 @@ int unmap_psocket(const struct omphalos_iface *,void *,size_t);
 
 // Loop on a packet socket according to provided program parameters
 int handle_packet_socket(const struct omphalos_ctx *);
+
+// Calculate the relative address of the next frame, respecting blocks.
+static inline
+ssize_t inclen(unsigned *idx,const struct tpacket_req *treq){
+	ssize_t inc = treq->tp_frame_size; // advance at least this much
+	unsigned fperb = treq->tp_block_size / treq->tp_frame_size;
+
+	++*idx;
+	if(*idx == treq->tp_frame_nr){
+		inc -= fperb * inc;
+		if(treq->tp_block_nr > 1){
+			inc -= (treq->tp_block_nr - 1) * treq->tp_block_size;
+		}
+		*idx = 0;
+	}else if(*idx % fperb == 0){
+		inc += treq->tp_block_size - fperb * inc;
+	}
+	return inc;
+}
 
 #ifdef __cplusplus
 }

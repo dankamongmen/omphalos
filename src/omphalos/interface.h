@@ -87,7 +87,8 @@ typedef struct interface {
 	void *txm;		// TX packet ring buffer
 	size_t ts;		// TX packet ring size in bytes
 	struct tpacket_req ttpr;// TX packet ring descriptor
-	unsigned txidx;		// Next frame for TX
+	unsigned txidx;		// Index of next frame for TX
+	void *curtxm;		// Location of next frame for TX
 	struct ethtool_drvinfo drv;	// ethtool driver info
 	unsigned offload;	// offloading settings
 	unsigned offloadmask;	// which offloading settings are valid
