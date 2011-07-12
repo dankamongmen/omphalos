@@ -354,6 +354,13 @@ handle_rtm_newroute(const struct omphalos_iface *octx,const struct nlmsghdr *nl)
 			pag = ag;
 		break;}case RTA_PRIORITY:{
 		break;}case RTA_PREFSRC:{
+			if(RTA_PAYLOAD(ra) != flen){
+				octx->diagnostic("Expected %zu src bytes, got %lu",
+						flen,RTA_PAYLOAD(ra));
+				break;
+			}
+			memcpy(as,RTA_DATA(ra),flen);
+			pas = as;
 		break;}case RTA_METRICS:{
 		break;}case RTA_MULTIPATH:{
 		// break;}case RTA_PROTOINFO:{ // unused
