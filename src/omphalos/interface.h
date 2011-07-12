@@ -151,11 +151,13 @@ get_route(const struct omphalos_iface *octx,interface *i,const void *hwaddr,
 				// A routed result requires a directed ARP
 				// probe to verify the local network address.
 				if(i4r->via.s_addr){
-				       	if(i4r->src.s_addr){
-						send_arp_probe(octx,i,hwaddr,
-								&i4r->via.s_addr,
-								sizeof(uint32_t),
-								&i4r->src.s_addr);
+					if( (i4r = get_route4(i,&i4r->via.s_addr)) ){
+						if(i4r->src.s_addr){
+							send_arp_probe(octx,i,hwaddr,
+									&i4r->via.s_addr,
+									sizeof(uint32_t),
+									&i4r->src.s_addr);
+						}
 					}
 				}else{
 					ret = 1;
