@@ -59,6 +59,7 @@ typedef struct interface {
 	uintmax_t bytes;		// Total bytes sniffed
 	uintmax_t drops;		// PACKET_STATISTICS @ TP_STATUS_LOSING
 	uintmax_t txframes;		// Frames we've generated
+	uintmax_t txaborts;		// Frames requested for TX but aborted
 
 	// Finite time domain stats
 	timestat fps,bps;		// frames and bits per second
