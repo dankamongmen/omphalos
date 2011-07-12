@@ -437,6 +437,7 @@ void send_arp_probe(const omphalos_iface *octx,interface *i,const void *hwaddr,
 	if( (frame = get_tx_frame(octx,i,&flen)) ){
 		prepare_arp_probe(octx,i,frame,&flen,hwaddr,i->addrlen,
 					addr,addrlen);
+		send_tx_frame(octx,i,frame);
 	}
 }
 
