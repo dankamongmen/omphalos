@@ -31,7 +31,7 @@ void prepare_arp_req(const struct omphalos_iface *,const struct interface *,
 // ARP probe. Sent to the specified link address.
 void prepare_arp_probe(const struct omphalos_iface *,const struct interface *,
 			void *,size_t *,const void *,size_t,
-			const void *,size_t);
+			const void *,size_t,const void *);
 
 #ifdef __cplusplus
 }

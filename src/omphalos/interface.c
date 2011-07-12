@@ -144,15 +144,22 @@ int print_all_iface_stats(FILE *fp,interface *agg){
 
 // FIXME need to check and ensure they don't overlap with existing routes
 int add_route4(interface *i,const struct in_addr *s,const struct in_addr *via,
-						unsigned blen,int iif){
+			const struct in_addr *src,unsigned blen,int iif){
 	ip4route *r;
 
 	if((r = malloc(sizeof(*r))) == NULL){
 		return -1;
 	}
 	memcpy(&r->dst,s,sizeof(*s));
+	if(src){
+		memcpy(&r->src,src,sizeof(*src));
+	}else{
+		r->src.s_addr = 0; // FIXME doubtful that this is safe
+	}
 	if(via){
 		memcpy(&r->via,via,sizeof(*via));
+	}else{
+		r->via.s_addr = 0;
 	}
 	r->iif = iif;
 	r->maskbits = blen;
@@ -162,13 +169,16 @@ int add_route4(interface *i,const struct in_addr *s,const struct in_addr *via,
 }
 
 int add_route6(interface *i,const struct in6_addr *s,const struct in6_addr *via,
-						unsigned blen,int iif){
+			const struct in6_addr *src,unsigned blen,int iif){
 	ip6route *r;
 
 	if((r = malloc(sizeof(*r))) == NULL){
 		return -1;
 	}
 	memcpy(&r->dst,s,sizeof(*s));
+	if(src){
+		memcpy(&r->src,src,sizeof(*src)); // FIXME
+	}
 	if(via){
 		r->hasvia = 1;
 		memcpy(&r->via,via,sizeof(*via));
@@ -394,20 +404,16 @@ int disable_promiscuity(const omphalos_iface *octx,const interface *i){
 
 // FIXME these need to take into account priority (table number)
 // FIXME how to handle policy routing (rules)?
-int get_route4(const interface *i,const uint32_t *ip,uint32_t *r){
+const ip4route *
+get_route4(const interface *i,const uint32_t *ip){
 	const ip4route *i4r;
 
 	for(i4r = i->ip4r ; i4r ; i4r = i4r->next){
 		if(ip4_in_route(i4r,*ip)){
-			if(i4r->via.s_addr){
-				*r = i4r->via.s_addr;
-			}else{
-				*r = *ip;
-			}
-			return 1;
+			break;
 		}
 	}
-	return 0;
+	return i4r;
 }
 
 int get_route6(const interface *i,const uint32_t *ip,uint32_t *r){
@@ -430,13 +436,13 @@ int get_route6(const interface *i,const uint32_t *ip,uint32_t *r){
 #include <omphalos/tx.h>
 // FIXME this doesn't belong here at all
 void send_arp_probe(const omphalos_iface *octx,interface *i,const void *hwaddr,
-		const void *addr,size_t addrlen){
+		const void *addr,size_t addrlen,const void *saddr){
 	void *frame;
 	size_t flen;
 
 	if( (frame = get_tx_frame(octx,i,&flen)) ){
 		prepare_arp_probe(octx,i,frame,&flen,hwaddr,i->addrlen,
-					addr,addrlen);
+					addr,addrlen,saddr);
 		send_tx_frame(octx,i,frame);
 	}
 }

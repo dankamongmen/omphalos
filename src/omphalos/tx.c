@@ -56,7 +56,7 @@ void prepare_arp_req(const omphalos_iface *octx,const interface *i,
 
 void prepare_arp_probe(const omphalos_iface *octx,const interface *i,
 		void *frame,size_t *flen,const void *haddr,size_t hln,
-		const void *paddr,size_t pln){
+		const void *paddr,size_t pln,const void *saddr){
 	struct tpacket_hdr *thdr;
 	unsigned char *payload;
 	struct ethhdr *ehdr;
@@ -88,6 +88,7 @@ void prepare_arp_probe(const omphalos_iface *octx,const interface *i,
 	payload = (unsigned char *)ahdr + sizeof(*ahdr);
 	// FIXME allow for spoofing
 	memcpy(payload,i->addr,hln);
+	memcpy(payload + hln,saddr,pln);
 	// FIXME need a source network address
 	memcpy(payload + hln + pln,haddr,hln);
 	memcpy(payload + hln + pln + hln,paddr,pln);

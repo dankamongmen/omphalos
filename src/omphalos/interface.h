@@ -18,14 +18,14 @@ struct omphalos_iface;
 struct omphalos_packet;
 
 typedef struct ip4route {
-	struct in_addr dst,via;
+	struct in_addr dst,via,src;
 	unsigned maskbits;		// 0..31
 	int iif;			// input iface, -1 if unspecified
 	struct ip4route *next;
 } ip4route;
 
 typedef struct ip6route {
-	struct in6_addr dst,via;
+	struct in6_addr dst,via,src;
 	int hasvia;
 	unsigned maskbits;		// 0..127
 	int iif;			// input iface, -1 if unspecified
@@ -123,19 +123,19 @@ void free_iface(const struct omphalos_iface *,interface *);
 void cleanup_interfaces(const struct omphalos_iface *);
 int print_all_iface_stats(FILE *,interface *);
 int add_route4(interface *,const struct in_addr *,const struct in_addr *,
-						unsigned,int);
+				const struct in_addr *,unsigned,int);
 int add_route6(interface *,const struct in6_addr *,const struct in6_addr *,
-						unsigned,int);
+				const struct in6_addr *,unsigned,int);
 int del_route4(interface *,const struct in_addr *,unsigned);
 int del_route6(interface *,const struct in6_addr *,unsigned);
 
 // These return 1 on a successful route lookup, 0 otherwise.
-int get_route4(const interface *,const uint32_t *,uint32_t *);
+const ip4route *get_route4(const interface *,const uint32_t *);
 int get_route6(const interface *,const uint32_t *,uint32_t *);
 
 // FIXME this doesn't belong here. move it.
 void send_arp_probe(const struct omphalos_iface *,interface *,
-			const void *,const void *,size_t);
+			const void *,const void *,size_t,const void *);
 
 #include <assert.h>
 static inline const void *
@@ -144,16 +144,26 @@ get_route(const struct omphalos_iface *octx,interface *i,const void *hwaddr,
 	int ret = 0;
 
 	switch(fam){
-		case AF_INET:
-			ret = get_route4(i,addr,r);
-			// A result different from the input requires a directed
-			// ARP probe to verify the local network address.
-			if(memcmp(addr,r,sizeof(uint32_t))){
-				send_arp_probe(octx,i,hwaddr,r,sizeof(uint32_t));
-				ret = 0;
+		case AF_INET:{
+			const ip4route *i4r = get_route4(i,addr);
+
+			if(i4r){
+				// A routed result requires a directed ARP
+				// probe to verify the local network address.
+				if(i4r->via.s_addr){
+				       	if(i4r->src.s_addr){
+						send_arp_probe(octx,i,hwaddr,
+								&i4r->via.s_addr,
+								sizeof(uint32_t),
+								&i4r->src.s_addr);
+					}
+				}else{
+					ret = 1;
+					memcpy(r,addr,sizeof(uint32_t));
+				}
 			}
 			break;
-		case AF_INET6:
+		}case AF_INET6:
 			ret = get_route6(i,addr,r);
 			break;
 		default:

@@ -282,14 +282,15 @@ typedef struct route {
 static int
 handle_rtm_newroute(const struct omphalos_iface *octx,const struct nlmsghdr *nl){
 	const struct rtmsg *rt = NLMSG_DATA(nl);
+	void *as,*ad,*ag,*pag,*pas;
 	struct rtattr *ra;
 	int rlen,iif,oif;
-	void *as,*ad,*ag;
 	interface *iface;
 	size_t flen;
 	route r;
 
 	iif = oif = -1;
+	pas = pag = NULL; // pointers set only once as/ag are copied into
 	memset(&r,0,sizeof(r));
 	switch( (r.family = rt->rtm_family) ){
 	case AF_INET:{
@@ -328,6 +329,7 @@ handle_rtm_newroute(const struct omphalos_iface *octx,const struct nlmsghdr *nl)
 				break;
 			}
 			memcpy(as,RTA_DATA(ra),flen);
+			pas = as;
 		break;}case RTA_IIF:{
 			if(RTA_PAYLOAD(ra) != sizeof(int)){
 				octx->diagnostic("Expected %zu iface bytes, got %lu",
@@ -349,6 +351,7 @@ handle_rtm_newroute(const struct omphalos_iface *octx,const struct nlmsghdr *nl)
 				break;
 			}
 			memcpy(ag,RTA_DATA(ra),flen);
+			pag = ag;
 		break;}case RTA_PRIORITY:{
 		break;}case RTA_PREFSRC:{
 		break;}case RTA_METRICS:{
@@ -379,11 +382,11 @@ handle_rtm_newroute(const struct omphalos_iface *octx,const struct nlmsghdr *nl)
 		goto err;
 	}
 	if(r.family == AF_INET){
-		if(add_route4(iface,ad,ag,r.maskbits,iif)){
+		if(add_route4(iface,ad,pag,pas,r.maskbits,iif)){
 			return -1;
 		}
 	}else if(r.family == AF_INET6){
-		if(add_route6(iface,ad,ag,r.maskbits,iif)){
+		if(add_route6(iface,ad,pag,pas,r.maskbits,iif)){
 			return -1;
 		}
 	}
