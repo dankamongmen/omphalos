@@ -1,12 +1,12 @@
 #include <stdio.h>
+#include <assert.h>
 #include <omphalos/tx.h>
-#include <linux/if_packet.h>
 #include <omphalos/psocket.h>
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
 
 // Acquire a frame from the ringbuffer
-void *get_tx_frame(const omphalos_iface *octx,interface *i){
+void *get_tx_frame(const omphalos_iface *octx,interface *i,size_t *fsize){
 	struct tpacket_hdr *thdr = i->curtxm;
 
 	// FIXME need also check for TP_WRONG_FORMAT methinks?
@@ -15,6 +15,7 @@ void *get_tx_frame(const omphalos_iface *octx,interface *i){
 		return NULL;
 	}
 	i->curtxm += inclen(&i->txidx,&i->ttpr);
+	*fsize = i->ttpr.tp_frame_size;
 	return NULL;
 }
 
@@ -28,4 +29,9 @@ void send_tx_frame(const omphalos_iface *octx,interface *i,void *frame){
 	if(send(i->fd,NULL,0,0) < 0){
 		octx->diagnostic("Error transmitting on %s",i->name);
 	}
+}
+
+void prepare_arp_req(const omphalos_iface *octx,const interface *i,
+			void *frame,const void *paddr,size_t pln){
+	assert(octx && i && frame && paddr && pln);
 }
