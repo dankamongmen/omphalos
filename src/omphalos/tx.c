@@ -32,6 +32,6 @@ void send_tx_frame(const omphalos_iface *octx,interface *i,void *frame){
 }
 
 void prepare_arp_req(const omphalos_iface *octx,const interface *i,
-			void *frame,const void *paddr,size_t pln){
-	assert(octx && i && frame && paddr && pln);
+		void *frame,size_t *flen,const void *paddr,size_t pln){
+	assert(octx && i && frame && flen && paddr && pln);
 }

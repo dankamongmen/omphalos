@@ -18,9 +18,13 @@ void send_tx_frame(const struct omphalos_iface *,struct interface *,void *);
 
 // Frame preparation
 
-// ARP
+// ------------ ARP ------------
+
+// ARP request. Sent to the broadcast link address for the interface, and the
+// broadcast network address for the network family (currently only IPv4 is
+// supported). Does not observe the NOARP flag.
 void prepare_arp_req(const struct omphalos_iface *,const struct interface *,
-			void *,const void *,size_t);
+			void *,size_t *,const void *,size_t);
 
 #ifdef __cplusplus
 }
