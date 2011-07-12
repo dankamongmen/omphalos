@@ -63,6 +63,7 @@ handle_pcap_cooked(u_char *gi,const struct pcap_pkthdr *h,const u_char *bytes){
 		return;
 	}
 	sll = (const struct pcapsll *)bytes;
+	iface->addrlen = sll->hwlen;
 	if(h->len < sizeof(*sll) || ntohs(sll->hwlen) > sizeof(sll->hwaddr)){
 		++iface->malformed;
 		return;
@@ -113,6 +114,7 @@ int handle_pcap_file(const omphalos_ctx *pctx){
 	switch(pcap_datalink(pcap)){
 		case DLT_EN10MB:{
 			fxn = handle_pcap_ethernet;
+			pmarsh.i->addrlen = ETH_ALEN;
 			break;
 		}case DLT_LINUX_SLL:{
 			fxn = handle_pcap_cooked;
