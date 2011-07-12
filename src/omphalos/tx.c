@@ -1,6 +1,10 @@
 #include <stdio.h>
 #include <assert.h>
+#include <sys/socket.h>
 #include <omphalos/tx.h>
+#include <linux/if_arp.h>
+#include <linux/if_ether.h>
+#include <linux/if_packet.h>
 #include <omphalos/psocket.h>
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
@@ -35,6 +39,13 @@ void send_tx_frame(const omphalos_iface *octx,interface *i,void *frame){
 	}
 }
 
+void abort_tx_frame(interface *i,void *frame){
+	struct tpacket_hdr *thdr = frame;
+
+	++i->txaborts;
+	thdr->tp_status = TP_STATUS_AVAILABLE;
+}
+
 void prepare_arp_req(const omphalos_iface *octx,const interface *i,
 		void *frame,size_t *flen,const void *paddr,size_t pln){
 	assert(octx && i && frame && flen && paddr && pln);
@@ -43,5 +54,36 @@ void prepare_arp_req(const omphalos_iface *octx,const interface *i,
 void prepare_arp_probe(const omphalos_iface *octx,const interface *i,
 		void *frame,size_t *flen,const void *haddr,size_t hln,
 		const void *paddr,size_t pln){
-	assert(octx && i && frame && flen && paddr && pln && haddr && hln);
+	struct tpacket_hdr *thdr;
+	unsigned char *payload;
+	struct ethhdr *ehdr;
+	struct arphdr *ahdr;
+	size_t tlen;
+
+	tlen = sizeof(*thdr) + sizeof(*ehdr) + sizeof(*ahdr)
+			+ 2 * hln + 2 * pln;
+	if(*flen < tlen){
+		octx->diagnostic("%s %s frame too small for tx",__func__,i->name);
+		return;
+	}
+	assert(hln == i->addrlen); // FIXME handle this case
+	thdr = frame;
+	ehdr = (struct ethhdr *)((char *)frame + sizeof(*thdr));
+	// FIXME what about non-ethernet
+	thdr->tp_len = sizeof(struct ethhdr) + sizeof(struct arphdr)
+		+ hln * 2 + pln * 2;
+	ahdr = (struct arphdr *)((char *)ehdr + sizeof(*ehdr));
+	ahdr->ar_hrd = htons(ARPHRD_ETHER);
+	ahdr->ar_pro = htons(ETH_P_IP);
+	ahdr->ar_hln = hln;
+	ahdr->ar_pln = pln;
+	ahdr->ar_op = htons(ARPOP_REQUEST);
+	// FIXME this is all horribly unsafe
+	payload = (unsigned char *)ahdr + sizeof(*ahdr);
+	// FIXME allow for spoofing
+	memcpy(payload,i->addr,hln);
+	// FIXME need a source network address
+	memcpy(payload + hln + pln,haddr,hln);
+	memcpy(payload + hln + pln + hln,paddr,pln);
+	*flen = tlen;
 }
