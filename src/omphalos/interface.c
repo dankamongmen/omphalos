@@ -145,7 +145,7 @@ int print_all_iface_stats(FILE *fp,interface *agg){
 // FIXME need to check and ensure they don't overlap with existing routes
 int add_route4(interface *i,const struct in_addr *s,const struct in_addr *via,
 			const struct in_addr *src,unsigned blen,int iif){
-	ip4route *r;
+	ip4route *r,**prev;
 
 	if((r = malloc(sizeof(*r))) == NULL){
 		return -1;
@@ -163,8 +163,15 @@ int add_route4(interface *i,const struct in_addr *s,const struct in_addr *via,
 	}
 	r->iif = iif;
 	r->maskbits = blen;
-	r->next = i->ip4r;
-	i->ip4r = r;
+	prev = &i->ip4r;
+	while(*prev){
+		if(r->maskbits > (*prev)->maskbits){
+			break;
+		}
+		prev = &(*prev)->next;
+	}
+	r->next = *prev;
+	*prev = r;
 	return 0;
 }
 
@@ -187,6 +194,7 @@ int add_route6(interface *i,const struct in6_addr *s,const struct in6_addr *via,
 	}
 	r->iif = iif;
 	r->maskbits = blen;
+	// FIXME need to sort most-to-least specific
 	r->next = i->ip6r;
 	i->ip6r = r;
 	return 0;
