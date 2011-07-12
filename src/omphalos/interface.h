@@ -149,7 +149,7 @@ get_route(const struct omphalos_iface *octx,interface *i,const void *hwaddr,
 			// A result different from the input requires a directed
 			// ARP probe to verify the local network address.
 			if(memcmp(addr,r,sizeof(uint32_t))){
-				send_arp_probe(octx,i,hwaddr,addr,sizeof(uint32_t));
+				send_arp_probe(octx,i,hwaddr,r,sizeof(uint32_t));
 				ret = 0;
 			}
 			break;
