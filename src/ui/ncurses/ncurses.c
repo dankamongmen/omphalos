@@ -653,7 +653,7 @@ iface_details(WINDOW *hw,const interface *i,int rows){
 		--z;
 	}case 4:{
 		assert(mvwprintw(hw,row + z,col,"Tbyte: "U64FMT" frames: "U64FMT,
-					i->txframes,i->txframes) != ERR);
+					i->txbytes,i->txframes) != ERR);
 		--z;
 	}case 3:{
 		char b[PREFIXSTRLEN];

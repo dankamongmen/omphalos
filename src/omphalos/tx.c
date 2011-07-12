@@ -30,11 +30,12 @@ void *get_tx_frame(const omphalos_iface *octx,interface *i,size_t *fsize){
 }
 
 // Mark a frame as ready-to-send. Must have come from get_tx_frame() using this
-// same interface.
+// same interface. Yes, we will see packets we generate on the RX ring.
 void send_tx_frame(const omphalos_iface *octx,interface *i,void *frame){
 	struct tpacket_hdr *thdr = frame;
 
 	++i->txframes;
+	i->txbytes += thdr->tp_len;
 	thdr->tp_status = TP_STATUS_SEND_REQUEST;
 	if(send(i->fd,NULL,0,0) < 0){
 		octx->diagnostic("Error transmitting on %s",i->name);
@@ -70,8 +71,11 @@ void prepare_arp_probe(const omphalos_iface *octx,const interface *i,
 	}
 	assert(hln == i->addrlen); // FIXME handle this case
 	thdr = frame;
-	ehdr = (struct ethhdr *)((char *)frame + sizeof(*thdr));
 	// FIXME what about non-ethernet
+	ehdr = (struct ethhdr *)((char *)frame + sizeof(*thdr));
+	memcpy(ehdr->h_dest,haddr,hln);
+	memcpy(ehdr->h_source,i->addr,hln);
+	ehdr->h_proto = ntohs(ETH_P_ARP);
 	thdr->tp_len = sizeof(struct ethhdr) + sizeof(struct arphdr)
 		+ hln * 2 + pln * 2;
 	ahdr = (struct arphdr *)((char *)ehdr + sizeof(*ehdr));
