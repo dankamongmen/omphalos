@@ -612,7 +612,7 @@ offload_details(WINDOW *w,const interface *i,int row,int col,const char *name,
 	return mvwprintw(w,row,col,"%s%c",name,r > 0 ? '+' : r < 0 ? '?' : '-');
 }
 
-#define DETAILROWS 8
+#define DETAILROWS 9
 
 // FIXME need to support scrolling through the output
 static int
@@ -632,15 +632,15 @@ iface_details(WINDOW *hw,const interface *i,int rows){
 		assert(mvwprintw(hw,row + z,col,"drops: "U64FMT" truncs: "U64FMT" (%ju recov)",
 					i->drops,i->truncated,i->truncated_recovered) != ERR);
 		--z;
-	}case 6:{
+	}case 7:{
 		assert(mvwprintw(hw,row + z,col,"mform: "U64FMT" noprot: "U64FMT,
 					i->malformed,i->noprotocol) != ERR);
 		--z;
-	}case 5:{
-		assert(mvwprintw(hw,row + z,col,"bytes: "U64FMT" frames: "U64FMT,
+	}case 6:{
+		assert(mvwprintw(hw,row + z,col,"Rbyte: "U64FMT" frames: "U64FMT,
 					i->bytes,i->frames) != ERR);
 		--z;
-	}case 4:{
+	}case 5:{
 		char b[PREFIXSTRLEN];
 		char fb[PREFIXSTRLEN];
 		char buf[U64STRLEN];
@@ -650,6 +650,10 @@ iface_details(WINDOW *hw,const interface *i,int rows){
 					bprefix(i->rtpr.tp_block_size,1,buf,sizeof(buf),1),
 					i->rtpr.tp_block_nr,
 					bprefix(i->rs,1,b,sizeof(b),1)) != ERR);
+		--z;
+	}case 4:{
+		assert(mvwprintw(hw,row + z,col,"Tbyte: "U64FMT" frames: "U64FMT,
+					i->txframes,i->txframes) != ERR);
 		--z;
 	}case 3:{
 		char b[PREFIXSTRLEN];
