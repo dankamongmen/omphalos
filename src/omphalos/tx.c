@@ -12,6 +12,7 @@
 // Acquire a frame from the ringbuffer
 void *get_tx_frame(const omphalos_iface *octx,interface *i,size_t *fsize){
 	struct tpacket_hdr *thdr = i->curtxm;
+	void *ret;
 
 	if(thdr == NULL){
 		octx->diagnostic("Can't transmit on %s",i->name);
@@ -22,9 +23,10 @@ void *get_tx_frame(const omphalos_iface *octx,interface *i,size_t *fsize){
 		octx->diagnostic("No available TX frames on %s",i->name);
 		return NULL;
 	}
+	ret = i->curtxm;
 	i->curtxm += inclen(&i->txidx,&i->ttpr);
 	*fsize = i->ttpr.tp_frame_size;
-	return NULL;
+	return ret;
 }
 
 // Mark a frame as ready-to-send. Must have come from get_tx_frame() using this
