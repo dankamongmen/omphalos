@@ -184,8 +184,8 @@ void name_l2host_local(const omphalos_iface *octx,const interface *i,l2host *l2,
 // If the route returned is different from the wire address, an ARP probe is
 // directed to the link-layer address (this is all handled by get_route()). ARP
 // replies are link-layer only, and thus processed directly (name_l2host_local()).
-void name_l2host(const omphalos_iface *octx,const interface *i,l2host *l2,
-					int family,const void *name){
+void name_l2host(const omphalos_iface *octx,interface *i,l2host *l2,
+				int family,const void *name){
 	if(l2->name == NULL){
 		struct sockaddr_storage ss;
 
@@ -196,7 +196,7 @@ void name_l2host(const omphalos_iface *octx,const interface *i,l2host *l2,
 			// are inferior to those post-configuration. we need a
 			// means of *updating* names whenever routes change,
 			// or as close to true route cache behavior as we like
-			if((name = get_route(i,family,name,&ss)) == NULL){
+			if((name = get_route(octx,i,&l2->hwaddr,family,name,&ss)) == NULL){
 				return;
 			}
 		}

@@ -9,6 +9,10 @@
 void *get_tx_frame(const omphalos_iface *octx,interface *i,size_t *fsize){
 	struct tpacket_hdr *thdr = i->curtxm;
 
+	if(thdr == NULL){
+		octx->diagnostic("Can't transmit on %s",i->name);
+		return NULL;
+	}
 	// FIXME need also check for TP_WRONG_FORMAT methinks?
 	if(thdr->tp_status != TP_STATUS_AVAILABLE){
 		octx->diagnostic("No available TX frames on %s",i->name);
@@ -34,4 +38,10 @@ void send_tx_frame(const omphalos_iface *octx,interface *i,void *frame){
 void prepare_arp_req(const omphalos_iface *octx,const interface *i,
 		void *frame,size_t *flen,const void *paddr,size_t pln){
 	assert(octx && i && frame && flen && paddr && pln);
+}
+
+void prepare_arp_probe(const omphalos_iface *octx,const interface *i,
+		void *frame,size_t *flen,const void *haddr,size_t hln,
+		const void *paddr,size_t pln){
+	assert(octx && i && frame && flen && paddr && pln && haddr && hln);
 }

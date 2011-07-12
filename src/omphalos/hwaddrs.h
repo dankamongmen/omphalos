@@ -28,7 +28,7 @@ int l2hostcmp(const struct l2host *,const struct l2host *);
 int l2categorize(const struct interface *,const struct l2host *);
 
 // Naming
-void name_l2host(const struct omphalos_iface *,const struct interface *,
+void name_l2host(const struct omphalos_iface *,struct interface *,
 				struct l2host *,int,const void *)
 				__attribute__ ((nonnull (1,2,3,5)));
 void name_l2host_local(const struct omphalos_iface *,const struct interface *,

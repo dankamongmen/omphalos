@@ -131,9 +131,14 @@ int del_route6(interface *,const struct in6_addr *,unsigned);
 int get_route4(const interface *,const uint32_t *,uint32_t *);
 int get_route6(const interface *,const uint32_t *,uint32_t *);
 
+// FIXME this doesn't belong here. move it.
+void send_arp_probe(const struct omphalos_iface *,interface *,
+			const void *,const void *,size_t);
+
 #include <assert.h>
 static inline const void *
-get_route(const interface *i,int fam,const void *addr,void *r){
+get_route(const struct omphalos_iface *octx,interface *i,const void *hwaddr,
+			int fam,const void *addr,void *r){
 	int ret = 0;
 
 	switch(fam){
@@ -142,7 +147,7 @@ get_route(const interface *i,int fam,const void *addr,void *r){
 			// A result different from the input requires a directed
 			// ARP probe to verify the local network address.
 			if(memcmp(addr,r,sizeof(uint32_t))){
-				// FIXME issue ARP request
+				send_arp_probe(octx,i,hwaddr,addr,sizeof(uint32_t));
 				ret = 0;
 			}
 			break;
