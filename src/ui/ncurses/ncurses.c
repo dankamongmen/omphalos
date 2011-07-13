@@ -739,7 +739,7 @@ static const wchar_t *helps[] = {
 	L"'n': network configuration",
 	L"       configure addresses, routes, bridges, and wireless",
 	L"'a': attack configuration",
-	L"       configure source quenching, assassinations, and deauthentication",
+	L"       configure quenching, assassinations, and deauth/disassoc",
 	L"'J': hijack configuration",
 	L"       configure fake APs, rogue DHCP/DNS, and ARP MitM",
 	L"'D': defense configuration",
