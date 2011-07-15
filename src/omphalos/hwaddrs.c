@@ -162,18 +162,24 @@ int l2categorize(const interface *i,const l2host *l2){
 	return ret;
 }
 
+static inline void
+name_l2host_absolute(const omphalos_iface *octx,const interface *i,l2host *l2,
+					const char *name){
+	if( (l2->name = malloc(strlen(name) + 1)) ){
+		strcpy(l2->name,name);
+	}
+	if(octx->neigh_event){
+		l2->opaque = octx->neigh_event(i,l2);
+	}
+}
+
 void name_l2host_local(const omphalos_iface *octx,const interface *i,l2host *l2,
 					int family,const void *name){
 	if(l2->name == NULL){
 		char b[INET6_ADDRSTRLEN];
 
 		assert(inet_ntop(family,name,b,sizeof(b)) == b);
-		if( (l2->name = malloc(strlen(b) + 1)) ){
-			strcpy(l2->name,b);
-		}
-		if(octx->neigh_event){
-			l2->opaque = octx->neigh_event(i,l2);
-		}
+		name_l2host_absolute(octx,i,l2,b);
 	}
 }
 
@@ -188,8 +194,9 @@ void name_l2host(const omphalos_iface *octx,interface *i,l2host *l2,
 				int family,const void *name){
 	if(l2->name == NULL){
 		struct sockaddr_storage ss;
+		int cat;
 
-		if(categorize_ethaddr(&l2->hwaddr) == RTN_UNICAST){
+		if((cat = categorize_ethaddr(&l2->hwaddr)) == RTN_UNICAST){
 			// FIXME throwing out anything to which we have no
 			// route means we basically don't work pre-config.
 			// addresses pre-configuration have information, but
@@ -198,6 +205,12 @@ void name_l2host(const omphalos_iface *octx,interface *i,l2host *l2,
 			// or as close to true route cache behavior as we like
 			if((name = get_route(octx,i,&l2->hwaddr,family,name,&ss)) == NULL){
 				return;
+			}
+		}else if(cat == RTN_MULTICAST){
+			const char *mname;
+
+			if( (mname = name_ethmcastaddr(&l2->hwaddr)) ){
+				name_l2host_absolute(octx,i,l2,mname);
 			}
 		}
 		name_l2host_local(octx,i,l2,family,name);
