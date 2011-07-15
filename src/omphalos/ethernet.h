@@ -37,6 +37,28 @@ check_ethernet_padup(size_t rx,size_t expected){
 	return 1;
 }
 
+// FIXME use a trie or bsearch
+// FIXME generate data from a text file, preferably one taken from IANA or
+// whoever administers the multicast address space
+static inline const char *
+name_ethmcastaddr(const void *mac){
+	static const struct mcast {
+		const unsigned char mac[ETH_ALEN];
+		const char *name;
+	} mcasts[] = {
+		{	.mac = "\x01\x80\xc2\x00\x00\x00",
+			.name = "Spanning Tree Protocol",
+		},
+	},*mc;
+
+	for(mc = mcasts ; mc->name ; ++mc){
+		if(memcmp(mac,mc->mac,ETH_ALEN) == 0){
+			return mc->name;
+		}
+	}
+	return NULL;
+}
+
 // Categorize an Ethernet address independent of context (this function never
 // returns RTN_LOCAL, for instance).
 static inline int
@@ -45,7 +67,7 @@ categorize_ethaddr(const void *mac){
 
 	if(((const unsigned char *)mac)[0] & 0x1){
 		// Can't use sizeof(brd), since it has a terminating NUL :/
-		if(memcmp(mac,brd,IFHWADDRLEN) == 0){
+		if(memcmp(mac,brd,ETH_ALEN) == 0){
 			return RTN_BROADCAST;
 		}
 		return RTN_MULTICAST;
