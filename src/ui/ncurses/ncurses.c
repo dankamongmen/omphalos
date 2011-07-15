@@ -572,16 +572,21 @@ hide_panel_locked(WINDOW *w,struct panel_state *ps){
 // Only one can currently be active at a time. Window decoration and placement
 // is managed here; only the rows needed for display ought be provided.
 static int
-new_display_panel(WINDOW *w,struct panel_state *ps,int rows,const wchar_t *hstr){
+new_display_panel(WINDOW *w,struct panel_state *ps,int rows,int cols,const wchar_t *hstr){
 	const wchar_t crightstr[] = L"copyright © 2011 nick black";
 	const int crightlen = wcslen(crightstr);
 	WINDOW *psw;
 	int x,y;
 
 	getmaxyx(w,y,x);
+	if(cols == 0){
+		cols = x - (START_COL * 2);
+	}
 	assert(y >= rows + 3);
-	assert(x >= crightlen + START_COL * 3);
-	assert( (psw = newwin(rows + 2,x - START_COL * 2,y - (rows + 3),1)) );
+	assert((x >= cols + START_COL * 2) && (x >= crightlen + START_COL * 2));
+	assert( (psw = newwin(rows + 2,cols,
+					y - (rows + 3),
+					x - (START_COL * 2 + cols))) );
 	if(psw == NULL){
 		return ERR;
 	}
@@ -706,7 +711,7 @@ iface_details(WINDOW *hw,const interface *i,int rows){
 static int
 display_details_locked(WINDOW *mainw,struct panel_state *ps,iface_state *is){
 	memset(ps,0,sizeof(*ps));
-	if(new_display_panel(mainw,ps,DETAILROWS,L"press 'v' to dismiss details")){
+	if(new_display_panel(mainw,ps,DETAILROWS,0,L"press 'v' to dismiss details")){
 		ERREXIT;
 	}
 	if(is){
@@ -775,12 +780,26 @@ helpstrs(WINDOW *hw,int row,int rows){
 	return OK;
 }
 
+static size_t
+max_helpstr_len(const wchar_t **helps){
+	size_t max = 0;
+
+	while(*helps){
+		if(wcslen(*helps) > max){
+			max = wcslen(*helps);
+		}
+		++helps;
+	}
+	return max;
+}
+
 static int
 display_help_locked(WINDOW *mainw,struct panel_state *ps){
-	const int helprows = sizeof(helps) / sizeof(*helps) - 1; // NULL != row
+	static const int helprows = sizeof(helps) / sizeof(*helps) - 1; // NULL != row
+	const int helpcols = max_helpstr_len(helps) + 4; // spacing + borders
 
 	memset(ps,0,sizeof(*ps));
-	if(new_display_panel(mainw,ps,helprows,L"press 'h' to dismiss help")){
+	if(new_display_panel(mainw,ps,helprows,helpcols,L"press 'h' to dismiss help")){
 		ERREXIT;
 	}
 	if(helpstrs(panel_window(ps->p),1,ps->ysize)){
