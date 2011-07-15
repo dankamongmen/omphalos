@@ -382,10 +382,10 @@ iface_box(WINDOW *w,const interface *i,const iface_state *is){
 	if( (buslen = strlen(i->drv.bus_info)) ){
 		if(i->busname){
 			buslen += strlen(i->busname) + 1;
-			assert(mvwprintw(w,is->ysize - 1,scrcols - (buslen + START_COL * 2 + 1),
+			assert(mvwprintw(w,is->ysize - 1,scrcols - (buslen + START_COL * 2),
 					"%s:%s",i->busname,i->drv.bus_info) != ERR);
 		}else{
-			assert(mvwprintw(w,is->ysize - 1,scrcols - (buslen + START_COL * 2 + 1),
+			assert(mvwprintw(w,is->ysize - 1,scrcols - (buslen + START_COL * 2),
 					"%s",i->drv.bus_info) != ERR);
 		}
 	}
@@ -586,7 +586,7 @@ new_display_panel(WINDOW *w,struct panel_state *ps,int rows,int cols,const wchar
 	assert((x >= cols + START_COL * 2) && (x >= crightlen + START_COL * 2));
 	assert( (psw = newwin(rows + 2,cols,
 					y - (rows + 3),
-					x - (START_COL * 2 + cols))) );
+					x - (START_COL + cols))) );
 	if(psw == NULL){
 		return ERR;
 	}
@@ -603,7 +603,7 @@ new_display_panel(WINDOW *w,struct panel_state *ps,int rows,int cols,const wchar
 	assert(wattroff(psw,A_BOLD) != ERR);
 	assert(wcolor_set(psw,PHEADING_COLOR,NULL) == OK);
 	assert(mvwaddwstr(psw,0,START_COL * 2,hstr) != ERR);
-	assert(mvwaddwstr(psw,rows + 1,x - (crightlen + START_COL * 4),crightstr) != ERR);
+	assert(mvwaddwstr(psw,rows + 1,cols - (crightlen + START_COL * 2),crightstr) != ERR);
 	assert(wcolor_set(psw,BULKTEXT_COLOR,NULL) == OK);
 	return OK;
 }
@@ -802,7 +802,7 @@ display_help_locked(WINDOW *mainw,struct panel_state *ps){
 	if(new_display_panel(mainw,ps,helprows,helpcols,L"press 'h' to dismiss help")){
 		ERREXIT;
 	}
-	if(helpstrs(panel_window(ps->p),1,ps->ysize)){
+	if(helpstrs(panel_window(ps->p),1,ps->ysize) != OK){
 		ERREXIT;
 	}
 	if(start_screen_update() == ERR){
