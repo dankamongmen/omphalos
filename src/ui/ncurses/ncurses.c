@@ -36,6 +36,8 @@
 #include <omphalos/interface.h>
 #include <gnu/libc-version.h>
 
+#define ERREXIT endwin() ; fprintf(stderr,"ncurses failure|%s|%d\n",__func__,__LINE__); abort() ; goto err
+
 // Add ((format (printf))) attributes to ncurses functions, which sadly
 // lack them (at least as of Debian's 5.9-1).
 extern int wprintw(WINDOW *,const char *,...) __attribute__ ((format (printf,2,3)));
@@ -314,86 +316,6 @@ bprefix(uintmax_t val,unsigned decimal,char *buf,size_t bsize,int omitdec){
 	return genprefix(val,decimal,buf,bsize,omitdec,1024,'i');
 }
 
-#define ERREXIT endwin() ; fprintf(stderr,"ncurses failure|%s|%d\n",__func__,__LINE__); abort() ; goto err
-// to be called only while ncurses lock is held
-static int
-iface_box(WINDOW *w,const interface *i,const iface_state *is){
-	int bcolor,hcolor,scrrows,scrcols;
-	size_t buslen;
-	int attrs;
-
-	getmaxyx(w,scrrows,scrcols);
-	assert(scrrows); // FIXME
-	bcolor = interface_up_p(i) ? UBORDER_COLOR : DBORDER_COLOR;
-	hcolor = interface_up_p(i) ? UHEADING_COLOR : DHEADING_COLOR;
-	attrs = ((is == current_iface) ? A_REVERSE : 0) | A_BOLD;
-	assert(wattron(w,attrs | COLOR_PAIR(bcolor)) == OK);
-	assert(bevel(w,0,0) == OK);
-	assert(wattroff(w,A_REVERSE) == OK);
-	assert(mvwprintw(w,0,START_COL,"[") != ERR);
-	assert(wcolor_set(w,hcolor,NULL) == OK);
-	assert(waddstr(w,i->name) != ERR);
-	assert(wprintw(w," (%s",is->typestr) != ERR);
-	if(strlen(i->drv.driver)){
-		assert(waddch(w,' ') != ERR);
-		assert(waddstr(w,i->drv.driver) != ERR);
-		if(strlen(i->drv.version)){
-			assert(wprintw(w," %s",i->drv.version) != ERR);
-		}
-		if(strlen(i->drv.fw_version)){
-			assert(wprintw(w," fw %s",i->drv.fw_version) != ERR);
-		}
-	}
-	assert(waddch(w,')') != ERR);
-	assert(wcolor_set(w,bcolor,NULL) != ERR);
-	assert(wprintw(w,"]") != ERR);
-	assert(wattron(w,attrs) != ERR);
-	assert(wattroff(w,A_REVERSE) != ERR);
-	assert(mvwprintw(w,is->ysize - 1,START_COL * 2,"[") != ERR);
-	assert(wcolor_set(w,hcolor,NULL) != ERR);
-	assert(wprintw(w,"mtu %d",i->mtu) != ERR);
-	if(interface_up_p(i)){
-		char buf[U64STRLEN + 1];
-
-		assert(iface_optstr(w,"up",hcolor,bcolor) != ERR);
-		if(!interface_carrier_p(i)){
-			assert(waddstr(w," (no carrier)") != ERR);
-		}else if(i->settings_valid == SETTINGS_VALID_ETHTOOL){
-			assert(wprintw(w," (%sb %s)",prefix(i->settings.ethtool.speed * 1000000u,1,buf,sizeof(buf),1),
-						duplexstr(i->settings.ethtool.duplex)) != ERR);
-		}else if(i->settings_valid == SETTINGS_VALID_WEXT){
-			assert(wprintw(w," (%sb %s ",prefix(i->settings.wext.bitrate,1,buf,sizeof(buf),1),
-						modestr(i->settings.wext.mode)) != ERR);
-			if(i->settings.wext.freq <= MAX_WIRELESS_CHANNEL){
-				assert(wprintw(w,"ch %ju)",i->settings.wext.freq) != ERR);
-			}else{
-				assert(wprintw(w,"%sHz)",prefix(i->settings.wext.freq,1,buf,sizeof(buf),1)) != ERR);
-			}
-		}
-	}else{
-		assert(iface_optstr(w,"down",hcolor,bcolor) != ERR);
-	}
-	if(interface_promisc_p(i)){
-		assert(iface_optstr(w,"promisc",hcolor,bcolor) != ERR);
-	}
-	assert(wcolor_set(w,bcolor,NULL) != ERR);
-	assert(wprintw(w,"]") != ERR);
-	assert(wattroff(w,A_BOLD) != ERR);
-	if( (buslen = strlen(i->drv.bus_info)) ){
-		if(i->busname){
-			buslen += strlen(i->busname) + 1;
-			assert(mvwprintw(w,is->ysize - 1,scrcols - (buslen + START_COL * 2),
-					"%s:%s",i->busname,i->drv.bus_info) != ERR);
-		}else{
-			assert(mvwprintw(w,is->ysize - 1,scrcols - (buslen + START_COL * 2),
-					"%s",i->drv.bus_info) != ERR);
-		}
-	}
-	assert(wcolor_set(w,0,NULL) != ERR);
-	assert(wattroff(w,attrs) != ERR);
-	return 0;
-}
-
 // to be called only while ncurses lock is held
 static int
 draw_main_window(WINDOW *w,const char *name,const char *ver){
@@ -504,6 +426,95 @@ get_current_iface(void){
 		return current_iface->iface;
 	}
 	return NULL;
+}
+
+// to be called only while ncurses lock is held
+static int
+iface_box(WINDOW *w,const interface *i,const iface_state *is){
+	int bcolor,hcolor,scrrows,scrcols;
+	size_t buslen;
+	int attrs;
+
+	getmaxyx(w,scrrows,scrcols);
+	assert(scrrows); // FIXME
+	bcolor = interface_up_p(i) ? UBORDER_COLOR : DBORDER_COLOR;
+	hcolor = interface_up_p(i) ? UHEADING_COLOR : DHEADING_COLOR;
+	attrs = ((is == current_iface) ? A_REVERSE : 0) | A_BOLD;
+	assert(wattron(w,attrs | COLOR_PAIR(bcolor)) == OK);
+	assert(bevel(w,0,0) == OK);
+	assert(wattroff(w,A_REVERSE) == OK);
+	assert(mvwprintw(w,0,START_COL,"[") != ERR);
+	assert(wcolor_set(w,hcolor,NULL) == OK);
+	assert(waddstr(w,i->name) != ERR);
+	assert(wprintw(w," (%s",is->typestr) != ERR);
+	if(strlen(i->drv.driver)){
+		assert(waddch(w,' ') != ERR);
+		assert(waddstr(w,i->drv.driver) != ERR);
+		if(strlen(i->drv.version)){
+			assert(wprintw(w," %s",i->drv.version) != ERR);
+		}
+		if(strlen(i->drv.fw_version)){
+			assert(wprintw(w," fw %s",i->drv.fw_version) != ERR);
+		}
+	}
+	assert(waddch(w,')') != ERR);
+	assert(wcolor_set(w,bcolor,NULL) != ERR);
+	assert(wprintw(w,"]") != ERR);
+	assert(wattron(w,attrs) != ERR);
+	assert(wattroff(w,A_REVERSE) != ERR);
+	assert(mvwprintw(w,is->ysize - 1,START_COL * 2,"[") != ERR);
+	assert(wcolor_set(w,hcolor,NULL) != ERR);
+	assert(wprintw(w,"mtu %d",i->mtu) != ERR);
+	if(interface_up_p(i)){
+		char buf[U64STRLEN + 1];
+
+		assert(iface_optstr(w,"up",hcolor,bcolor) != ERR);
+		if(i->settings_valid == SETTINGS_VALID_ETHTOOL){
+			if(!interface_carrier_p(i)){
+				assert(waddstr(w," (no carrier)") != ERR);
+			}else{
+				assert(wprintw(w," (%sb %s)",prefix(i->settings.ethtool.speed * 1000000u,1,buf,sizeof(buf),1),
+							duplexstr(i->settings.ethtool.duplex)) != ERR);
+			}
+		}else if(i->settings_valid == SETTINGS_VALID_WEXT){
+			if(!interface_carrier_p(i)){
+				if(i->settings.wext.mode != NL80211_IFTYPE_MONITOR){
+					assert(wprintw(w," (%s, no carrier)",modestr(i->settings.wext.mode)) != ERR);
+				}else{
+					assert(wprintw(w," (%s)",modestr(i->settings.wext.mode)) != ERR);
+				}
+			}else{
+				assert(wprintw(w," (%sb %s ",prefix(i->settings.wext.bitrate,1,buf,sizeof(buf),1),
+							modestr(i->settings.wext.mode)) != ERR);
+				if(i->settings.wext.freq <= MAX_WIRELESS_CHANNEL){
+					assert(wprintw(w,"ch %ju)",i->settings.wext.freq) != ERR);
+				}else{
+					assert(wprintw(w,"%sHz)",prefix(i->settings.wext.freq,1,buf,sizeof(buf),1)) != ERR);
+				}
+			}
+		}
+	}else{
+		assert(iface_optstr(w,"down",hcolor,bcolor) != ERR);
+	}
+	if(interface_promisc_p(i)){
+		assert(iface_optstr(w,"promisc",hcolor,bcolor) != ERR);
+	}
+	assert(wcolor_set(w,bcolor,NULL) != ERR);
+	assert(wprintw(w,"]") != ERR);
+	assert(wattroff(w,A_BOLD) != ERR);
+	if( (buslen = strlen(i->drv.bus_info)) ){
+		if(i->busname){
+			buslen += strlen(i->busname) + 1;
+			assert(mvwprintw(w,is->ysize - 1,scrcols - (buslen + START_COL * 2),
+					"%s:%s",i->busname,i->drv.bus_info) != ERR);
+		}else{
+			assert(mvwprintw(w,is->ysize - 1,scrcols - (buslen + START_COL * 2),
+					"%s",i->drv.bus_info) != ERR);
+		}
+	}
+	assert(wcolor_set(w,0,NULL) != ERR);
+	assert(wattroff(w,attrs) != ERR);
+	return 0;
 }
 
 static void
