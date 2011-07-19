@@ -111,8 +111,9 @@ int iface_wireless_info(const omphalos_iface *octx,const char *name,wless_info *
 	}
 	wi->mode = req.u.mode;
 	if(get_wireless_extension(octx,name,SIOCGIWFREQ,&req)){
-		return -1;
+		wi->freq = 0; // no frequency for eg unassociated managed mode
+	}else{
+		wi->freq = iwfreq_defreak(&req.u.freq);
 	}
-	wi->freq = iwfreq_defreak(&req.u.freq);
 	return 0;
 }
