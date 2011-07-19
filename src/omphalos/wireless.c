@@ -20,6 +20,10 @@ int handle_wireless_event(const omphalos_iface *octx,interface *i,
 		// FIXME handle scan results
 	break;}case SIOCGIWAP:{
 		// FIXME handle AP results
+	break;}case SIOCSIWMODE:{
+		// FIXME handle wireless mode change
+	break;}case SIOCSIWFREQ:{
+		// FIXME handle frequency/channel change
 	break;}case IWEVASSOCRESPIE:{
 		// FIXME handle IE reassociation results
 	break;}case SIOCSIWESSID:{
