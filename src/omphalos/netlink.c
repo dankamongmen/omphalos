@@ -182,16 +182,16 @@ handle_rtm_newneigh(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	return 0;
 }
 
-/* static int
+static int
 handle_rtm_delneigh(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	const struct ndmsg *nd = NLMSG_DATA(nl);
-	char ll[IFHWADDRLEN]; // FIXME get from selected interface
 	struct sockaddr_storage ssd;
-	struct rtattr *ra;
 	interface *iface;
-	int rlen,llen;
 	size_t flen;
 	void *ad;
+	//char ll[IFHWADDRLEN]; // FIXME get from selected interface
+	struct rtattr *ra;
+	int rlen;
 
 	if((iface = iface_by_idx(nd->ndm_ifindex)) == NULL){
 		octx->diagnostic("Invalid interface index: %d",nd->ndm_ifindex);
@@ -211,7 +211,6 @@ handle_rtm_delneigh(const omphalos_iface *octx,const struct nlmsghdr *nl){
 		octx->diagnostic("Unknown route family %u",nd->ndm_family);
 		return -1;
 	}
-	llen = 0;
 	rlen = nl->nlmsg_len - NLMSG_LENGTH(sizeof(*nd));
 	ra = (struct rtattr *)((char *)(NLMSG_DATA(nl)) + sizeof(*nd));
 	while(RTA_OK(ra,rlen)){
@@ -223,12 +222,11 @@ handle_rtm_delneigh(const omphalos_iface *octx,const struct nlmsghdr *nl){
 				break;
 			}
 			memcpy(ad,RTA_DATA(ra),flen);
-		break;}case NDA_LLADDR:{
-			llen = RTA_PAYLOAD(ra);
-			if(llen){
-				if(llen != sizeof(ll)){
+		break;}/*case NDA_LLADDR:{
+			if(RTA_PAYLOAD(ra)){
+				if(RTA_PAYLOAD(ra) != sizeof(ll)){
 					octx->diagnostic("Expected %zu ll bytes on %s, got %d",
-						sizeof(ll),iface->name,llen);
+						sizeof(ll),iface->name,RTA_PAYLOAD(ra));
 					llen = 0;
 					break;
 				}
@@ -238,14 +236,15 @@ handle_rtm_delneigh(const omphalos_iface *octx,const struct nlmsghdr *nl){
 		break;}case NDA_PROBES:{
 		break;}default:{
 			octx->diagnostic("Unknown ndatype %u on %s",ra->rta_type,iface->name);
-		break;}}
+		break;}
+		*/}
 		ra = RTA_NEXT(ra,rlen);
 	}
 	if(rlen){
 		octx->diagnostic("%d excess bytes on %s newlink message",rlen,iface->name);
 	}
 	return 0;
-}*/
+}
 
 static int
 handle_rtm_delroute(const struct omphalos_iface *octx,const struct nlmsghdr *nl){
@@ -849,7 +848,7 @@ handle_netlink_event(const omphalos_iface *octx,int fd){
 			break;}case RTM_NEWNEIGH:{
 				res |= handle_rtm_newneigh(octx,nh);
 			break;}case RTM_DELNEIGH:{
-				//res |= handle_rtm_delneigh(octx,nh);
+				res |= handle_rtm_delneigh(octx,nh);
 			break;}case RTM_NEWROUTE:{
 				res |= handle_rtm_newroute(octx,nh);
 			break;}case RTM_DELROUTE:{
@@ -867,7 +866,6 @@ handle_netlink_event(const omphalos_iface *octx,int fd){
 				octx->diagnostic("Unknown netlink msgtype %u on %d",nh->nlmsg_type,fd);
 				res = -1;
 			break;}}
-			// FIXME handle read data
 		}
 	}
 	if(inmulti){
