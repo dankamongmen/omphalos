@@ -104,8 +104,7 @@ int iface_wireless_info(const omphalos_iface *octx,const char *name,wless_info *
 		return -1;
 	}
 	if(wireless_rate_info(octx,name,wi)){
-		octx->diagnostic("rate info failed on %s",name);
-		return -1;
+		wi->bitrate = 0; // no bitrate for eg monitor mode
 	}
 	if(get_wireless_extension(octx,name,SIOCGIWMODE,&req)){
 		return -1;
