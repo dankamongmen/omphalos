@@ -9,39 +9,6 @@
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
 
-int handle_wireless_event(const omphalos_iface *octx,interface *i,
-				const struct iw_event *iw,size_t len){
-	if(len < IW_EV_LCP_LEN){
-		octx->diagnostic("Wireless msg too short on %s (%zu)",i->name,len);
-		return -1;
-	}
-	switch(iw->cmd){
-	case SIOCGIWSCAN:{
-		// FIXME handle scan results
-	break;}case SIOCGIWAP:{
-		// FIXME handle AP results
-	break;}case SIOCSIWMODE:{
-		// FIXME handle wireless mode change
-	break;}case SIOCSIWFREQ:{
-		// FIXME handle frequency/channel change
-	break;}case IWEVASSOCRESPIE:{
-		// FIXME handle IE reassociation results
-	break;}case SIOCSIWESSID:{
-		// FIXME handle ESSID change
-	break;}case SIOCSIWRATE:{
-		// FIXME handle rate change
-	break;}case SIOCSIWTXPOW:{
-		// FIXME handle TX power change
-	break;}default:{
-		octx->diagnostic("Unknown wireless event on %s: 0x%x",i->name,iw->cmd);
-		return -1;
-	} }
-	if(octx->wireless_event){
-		i->opaque = octx->wireless_event(i,iw->cmd,i->opaque);
-	}
-	return 0;
-}
-
 static inline int
 get_wireless_extension(const omphalos_iface *octx,const char *name,int cmd,struct iwreq *req){
 	int fd;
@@ -67,6 +34,54 @@ get_wireless_extension(const omphalos_iface *octx,const char *name,int cmd,struc
 	return 0;
 }
 
+static int
+wireless_rate_info(const omphalos_iface *octx,const char *name,wless_info *wi){
+	const struct iw_param *ip;
+	struct iwreq req;
+
+	if(get_wireless_extension(octx,name,SIOCGIWRATE,&req)){
+		return -1;
+	}
+	ip = &req.u.bitrate;
+	wi->bitrate = ip->value;
+	return 0;
+}
+
+int handle_wireless_event(const omphalos_iface *octx,interface *i,
+				const struct iw_event *iw,size_t len){
+	if(len < IW_EV_LCP_LEN){
+		octx->diagnostic("Wireless msg too short on %s (%zu)",i->name,len);
+		return -1;
+	}
+	switch(iw->cmd){
+	case SIOCGIWSCAN:{
+		// FIXME handle scan results
+	break;}case SIOCGIWAP:{
+		// FIXME handle AP results
+	break;}case SIOCGIWSPY:{
+		// FIXME handle AP results
+	break;}case SIOCSIWMODE:{
+		// FIXME handle wireless mode change
+	break;}case SIOCSIWFREQ:{
+		// FIXME handle frequency/channel change
+	break;}case IWEVASSOCRESPIE:{
+		// FIXME handle IE reassociation results
+	break;}case SIOCSIWESSID:{
+		// FIXME handle ESSID change
+	break;}case SIOCSIWRATE:{
+		wireless_rate_info(octx,i->name,&i->settings.wext);
+	break;}case SIOCSIWTXPOW:{
+		// FIXME handle TX power change
+	break;}default:{
+		octx->diagnostic("Unknown wireless event on %s: 0x%x",i->name,iw->cmd);
+		return -1;
+	} }
+	if(octx->wireless_event){
+		i->opaque = octx->wireless_event(i,iw->cmd,i->opaque);
+	}
+	return 0;
+}
+
 static inline uintmax_t
 iwfreq_defreak(const struct iw_freq *iwf){
 	uintmax_t ret = iwf->m;
@@ -79,7 +94,6 @@ iwfreq_defreak(const struct iw_freq *iwf){
 }
 
 int iface_wireless_info(const omphalos_iface *octx,const char *name,wless_info *wi){
-	const struct iw_param *ip;
 	struct iwreq req;
 
 	memset(wi,0,sizeof(*wi));
@@ -87,11 +101,10 @@ int iface_wireless_info(const omphalos_iface *octx,const char *name,wless_info *
 	if(get_wireless_extension(octx,name,SIOCGIWNAME,&req)){
 		return -1;
 	}
-	if(get_wireless_extension(octx,name,SIOCGIWRATE,&req)){
+	if(wireless_rate_info(octx,name,wi)){
+		octx->diagnostic("rate info failed on %s",name);
 		return -1;
 	}
-	ip = &req.u.bitrate;
-	wi->bitrate = ip->value;
 	if(get_wireless_extension(octx,name,SIOCGIWMODE,&req)){
 		return -1;
 	}
