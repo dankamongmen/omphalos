@@ -69,6 +69,8 @@ int handle_wireless_event(const omphalos_iface *octx,interface *i,
 	break;}case SIOCSIWESSID:{
 		// FIXME handle ESSID change
 	break;}case SIOCSIWRATE:{
+		// FIXME doesn't this come as part of the netlink message? this
+		// is an extra 3 system calls...
 		wireless_rate_info(octx,i->name,&i->settings.wext);
 	break;}case SIOCSIWTXPOW:{
 		// FIXME handle TX power change
