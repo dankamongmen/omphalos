@@ -144,10 +144,6 @@ void *l2host_get_opaque(l2host *l2){
 	return l2->opaque;
 }
 
-void *l2host_set_opaque(l2host *l2,void *opaque){
-	return l2->opaque = opaque;
-}
-
 int l2hostcmp(const l2host *l21,const l2host *l22){
 	return memcmp(&l21->hwaddr,&l22->hwaddr,IFHWADDRLEN); // FIXME len-param
 }

@@ -85,7 +85,6 @@ typedef struct iface_state {
 	PANEL *panel;			// panel
 	const char *typestr;		// looked up using iface->arptype
 	struct timeval lastprinted;	// last time we printed the iface
-	int alarmset;			// alarm set for UI update?
 	int devaction;			// 1 == down, -1 == up, 0 == nothing
 	l2obj *l2objs;			// l2 entity list
 	struct iface_state *next,*prev;
@@ -1421,10 +1420,6 @@ packet_cb_locked(const interface *i,omphalos_packet *op){
 		timersub(&i->lastseen,&is->lastprinted,&tdiff);
 		udiff = timerusec(&tdiff);
 		if(udiff < 500000){ // At most one update every 1/2s
-			if(!is->alarmset){
-				// FIXME register the alarm
-				is->alarmset = 1;
-			}
 			return;
 		}
 		is->lastprinted = i->lastseen;
@@ -1454,7 +1449,7 @@ create_interface_state(interface *i){
 			ret->l2ents = 0;
 			ret->l2objs = NULL;
 			ret->ysize = lines_for_interface(i,ret);
-			ret->alarmset = ret->devaction = 0;
+			ret->devaction = 0;
 			ret->typestr = tstr;
 			ret->lastprinted.tv_sec = ret->lastprinted.tv_usec = 0;
 			ret->iface = i;
