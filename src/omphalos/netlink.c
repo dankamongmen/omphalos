@@ -31,7 +31,8 @@
 // setprocmask() followed by pthread_sigmask() in these threads only). 
 static volatile unsigned cancelled;
 
-void cancellation_signal_handler(int signo __attribute__ ((unused))){
+static void
+cancellation_signal_handler(int signo __attribute__ ((unused))){
 	cancelled = 1;
 }
 // End nasty signals-based cancellation.
@@ -884,7 +885,8 @@ handle_netlink_event(const omphalos_iface *octx,int fd){
 	return res;
 }
 
-int netlink_thread(const omphalos_iface *octx){
+static int
+netlink_thread(const omphalos_iface *octx){
 	struct pollfd pfd[1] = {
 		{
 			.events = POLLIN | POLLRDNORM | POLLERR,
@@ -932,4 +934,70 @@ int netlink_thread(const omphalos_iface *octx){
 	}
 	close(pfd[0].fd);
 	return 0;
+}
+
+static int
+restore_sigmask(const omphalos_iface *octx){
+	sigset_t csigs;
+
+	if(sigemptyset(&csigs) || sigaddset(&csigs,SIGINT)){
+		octx->diagnostic("Couldn't prepare sigset (%s?)",strerror(errno));
+		return -1;
+	}
+	if(pthread_sigmask(SIG_BLOCK,&csigs,NULL)){
+		octx->diagnostic("Couldn't mask signals (%s?)",strerror(errno));
+		return -1;
+	}
+	return 0;
+}
+
+static int
+restore_sighandler(const omphalos_iface *pctx){
+	struct sigaction sa = {
+		.sa_handler = SIG_DFL,
+		.sa_flags = SA_RESTART,
+	};
+
+	if(sigaction(SIGINT,&sa,NULL)){
+		pctx->diagnostic("Couldn't restore sighandler (%s?)",strerror(errno));
+		return -1;
+	}
+	return 0;
+}
+
+static int
+setup_sighandler(const omphalos_iface *octx){
+	struct sigaction sa = {
+		.sa_handler = cancellation_signal_handler,
+		// SA_RESTART doesn't apply to all functions; most of the time,
+		// we're sitting in poll(), which is *not* restarted...
+		.sa_flags = SA_ONSTACK | SA_RESTART,
+	};
+	sigset_t csigs;
+
+	if(sigemptyset(&csigs) || sigaddset(&csigs,SIGINT)){
+		octx->diagnostic("Couldn't prepare sigset (%s?)",strerror(errno));
+		return -1;
+	}
+	if(sigaction(SIGINT,&sa,NULL)){
+		octx->diagnostic("Couldn't install sighandler (%s?)",strerror(errno));
+		return -1;
+	}
+	if(pthread_sigmask(SIG_UNBLOCK,&csigs,NULL)){
+		octx->diagnostic("Couldn't unmask signals (%s?)",strerror(errno));
+		restore_sighandler(octx);
+		return -1;
+	}
+	return 0;
+}
+
+int handle_netlink_socket(const omphalos_ctx *pctx){
+	int ret;
+
+	if(setup_sighandler(&pctx->iface)){
+		return -1;
+	}
+	ret = netlink_thread(&pctx->iface);
+	ret |= restore_sigmask(&pctx->iface);
+	return ret;
 }

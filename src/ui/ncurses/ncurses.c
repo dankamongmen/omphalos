@@ -1317,7 +1317,7 @@ print_iface_hosts(const interface *i,const iface_state *is){
 // This is the number of lines we'd have in an optimal world; we might get less.
 static inline int
 lines_for_interface(const interface *i,const iface_state *is){
-	if(i->flags & IFF_UP){
+	if(interface_up_p(i)){
 		return PAD_LINES + is->l2ents;
 	}else{
 		return PAD_LINES - 1;
@@ -1327,13 +1327,13 @@ lines_for_interface(const interface *i,const iface_state *is){
 static int
 redraw_iface(const interface *i,iface_state *is){
 	assert(iface_box(is->subwin,i,is) != ERR);
-	if(i->flags & IFF_UP){
+	if(interface_up_p(i)){
 		if(print_iface_state(i,is)){
 			return ERR;
 		}
-		if(print_iface_hosts(i,is)){
-			return ERR;
-		}
+	}
+	if(print_iface_hosts(i,is)){
+		return ERR;
 	}
 	return OK;
 }
@@ -1543,13 +1543,13 @@ interface_cb_locked(interface *i,iface_state *ret){
 			iface_details(panel_window(details.p),i,details.ysize);
 		}
 		iface_box(ret->subwin,i,ret);
-		if(i->flags & IFF_UP){
+		if(interface_up_p(i)){
 			print_iface_state(i,ret);
 			if(ret->devaction < 0){
 				wstatus_locked(pad,"");
 				ret->devaction = 0;
+				full_screen_update();
 			}
-			full_screen_update();
 		}else if(ret->devaction > 0){
 			wstatus_locked(pad,"");
 			ret->devaction = 0;

@@ -13,7 +13,7 @@
 #include <sys/capability.h>
 #include <omphalos/privs.h>
 #include <omphalos/hwaddrs.h>
-#include <omphalos/psocket.h>
+#include <omphalos/netlink.h>
 #include <omphalos/omphalos.h>
 #include <omphalos/netaddrs.h>
 #include <omphalos/ethernet.h>
@@ -143,7 +143,7 @@ int omphalos_init(const omphalos_ctx *pctx){
 		if(init_usb_support()){
 			return -1;
 		}
-		if(handle_packet_socket(pctx)){
+		if(handle_netlink_socket(pctx)){
 			return -1;
 		}
 	}

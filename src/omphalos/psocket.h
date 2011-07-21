@@ -9,7 +9,6 @@ extern "C" {
 
 struct interface;
 struct tpacket_req;
-struct omphalos_ctx;
 struct omphalos_iface;
 
 // Open a packet socket. Requires superuser or network admin capabilities.
@@ -26,9 +25,6 @@ int handle_ring_packet(const struct omphalos_iface *,struct interface *,int,void
 
 // map and size ought have been returned by mmap_*_psocket().
 int unmap_psocket(const struct omphalos_iface *,void *,size_t);
-
-// Loop on a packet socket according to provided program parameters
-int handle_packet_socket(const struct omphalos_ctx *);
 
 // Calculate the relative address of the next frame, respecting blocks.
 static inline
