@@ -642,10 +642,10 @@ handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	// FIXME this is all crap
 	if(iface->name == NULL){
 		gettimeofday(&iface->firstseen,NULL);
-		if(timestat_prep(&iface->fps,20000,250)){
+		if(timestat_prep(&iface->fps,IFACE_TIMESTAT_USECS,IFACE_TIMESTAT_SLOTS)){
 			return -1;
 		}
-		if(timestat_prep(&iface->bps,20000,250)){
+		if(timestat_prep(&iface->bps,IFACE_TIMESTAT_USECS,IFACE_TIMESTAT_SLOTS)){
 			timestat_destroy(&iface->fps);
 			return -1;
 		}

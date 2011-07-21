@@ -162,14 +162,19 @@ int handle_ring_packet(const omphalos_iface *octx,interface *iface,int fd,void *
 
 	while(thdr->tp_status == 0){
 		struct pollfd pfd[1];
-		int events;
+		int events,msec;
 
 		pfd[0].fd = fd;
 		pfd[0].revents = 0;
 		pfd[0].events = POLLIN | POLLRDNORM | POLLERR;
-		if((events = poll(pfd,sizeof(pfd) / sizeof(*pfd),-1)) == 0){
-			octx->diagnostic("Interrupted polling packet socket %d",fd);
-			return -1;
+		msec = IFACE_TIMESTAT_USECS / 1000;
+		if((events = poll(pfd,sizeof(pfd) / sizeof(*pfd),msec)) == 0){
+			gettimeofday(&tv,NULL);
+			timestat_inc(&iface->fps,&tv,0);
+			timestat_inc(&iface->bps,&tv,0);
+			if(octx->iface_event){
+				iface->opaque = octx->iface_event(iface,iface->opaque);
+			}
 		}else if(events < 0){
 			if(errno != EINTR){
 				octx->diagnostic("Error in poll() on %s (%s?)",

@@ -46,6 +46,9 @@ typedef struct topdev_info {
 typedef void (*analyzefxn)(const struct omphalos_iface *,
 		struct omphalos_packet *,const void *,size_t);
 
+#define IFACE_TIMESTAT_USECS 50000
+#define IFACE_TIMESTAT_SLOTS 100
+
 typedef struct interface {
 	// Packet analysis entry point
 	analyzefxn analyzer;

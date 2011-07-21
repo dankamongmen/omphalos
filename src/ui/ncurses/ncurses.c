@@ -1205,6 +1205,7 @@ print_iface_state(const interface *i,const iface_state *is){
 	assert(wattrset(is->subwin,A_BOLD | COLOR_PAIR(IFACE_COLOR)) == OK);
 	// FIXME broken if bps domain ever != fps domain. need unite those
 	// into one FTD stat by letting it take an object...
+	// FIXME this leads to a "ramp-up" period where we approach steady state
 	usecdomain = i->bps.usec * i->bps.total;
 	assert(mvwprintw(is->subwin,1,START_COL,"Last %lus: %7sb/s %7sp/s Nodes: %-5u",
 				usecdomain / 1000000,
