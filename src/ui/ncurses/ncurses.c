@@ -64,6 +64,7 @@ struct panel_state {
 typedef struct l2obj {
 	struct l2obj *next;
 	struct l2host *l2;
+	int cat;			// cached result of l2categorize()
 } l2obj;
 
 #define PANEL_STATE_INITIALIZER { .p = NULL, .ysize = -1, }
@@ -1276,7 +1277,6 @@ print_iface_hosts(const interface *i,const iface_state *is){
 	const l2obj *l;
 
 	for(l = is->l2objs ; l ; ++idx, l = l->next){
-		int cat = l2categorize(i,l->l2);
 		char legend;
 		char *hw;
 		
@@ -1285,7 +1285,7 @@ print_iface_hosts(const interface *i,const iface_state *is){
 		}else if(idx - is->first_visible >= is->ysize - PAD_LINES){
 			break;
 		}
-		switch(cat){
+		switch(l->cat){
 			case RTN_UNICAST:
 				assert(wattrset(is->subwin,COLOR_PAIR(MCAST_COLOR)) != ERR);
 				legend = 'U';
@@ -1411,11 +1411,12 @@ resize_iface(const interface *i,iface_state *ret){
 }
 
 static l2obj *
-get_l2obj(struct l2host *l2){
+get_l2obj(const interface *i,struct l2host *l2){
 	l2obj *l;
 
 	if( (l = malloc(sizeof(*l))) ){
 		l->l2 = l2;
+		l->cat = l2categorize(i,l2);
 	}
 	return l;
 }
@@ -1637,7 +1638,7 @@ neighbor_callback_locked(const interface *i,struct l2host *l2){
 	// until there's been a successful device callback.
 	assert( (is = i->opaque) );
 	if((ret = l2host_get_opaque(l2)) == NULL){
-		if((ret = get_l2obj(l2)) == NULL){
+		if((ret = get_l2obj(i,l2)) == NULL){
 			return NULL;
 		}
 		add_l2_to_iface(is,ret);
