@@ -748,12 +748,7 @@ err:
 }
 
 static const wchar_t *helps[] = {
-	L"'k'/'↑' (up arrow): previous interface",
-	L"'j'/'↓' (down arrow): next interface",
-	L"'^L' (ctrl + 'L'): redraw the screen",
-	L"'P': preferences",
-	L"       configure persistent or temporary program settings",
-	L"'n': network configuration",
+	/*L"'n': network configuration",
 	L"       configure addresses, routes, bridges, and wireless",
 	L"'a': attack configuration",
 	L"       configure quenching, assassinations, and deauth/disassoc",
@@ -764,17 +759,17 @@ static const wchar_t *helps[] = {
 	L"'S': secrets database",
 	L"       export pilfered passwords, cookies, and identifying data",
 	L"'c': crypto configuration",
-	L"       configure algorithm stepdown, WEP/WPA cracking, SSL MitM",
-	L"'r': reset interface's stats",
-	L"'R': reset all interfaces' stats",
-	L"'p': toggle promiscuity",
+	L"       configure algorithm stepdown, WEP/WPA cracking, SSL MitM", */
+	L"'k'/'↑': previous interface   'j'/'↓': next interface",
+	L"'m': change device MAC        'u': change device MTU",
+	L"'r': reset interface's stats  'R': reset all interfaces' stats",
 	L"'s': toggle sniffing, bringing up interface if down",
 	L"'d': bring down device",
+	L"'p': toggle promiscuity",
 	L"'v': view detailed interface info/statistics",
-	L"'m': change device MAC",
-	L"'u': change device MTU",
 	L"'h': toggle this help display",
-	L"'q': quit",
+	L"'C': configuration",
+	L"'q': quit                     ctrl+'L': redraw the screen",
 	NULL
 };
 
@@ -845,36 +840,6 @@ unimplemented(WINDOW *w,const void *v){
 
 static void
 configure_prefs(WINDOW *w){
-	unimplemented(w,NULL);
-}
-
-static void
-configure_network(WINDOW *w){
-	unimplemented(w,NULL);
-}
-
-static void
-configure_attacks(WINDOW *w){
-	unimplemented(w,NULL);
-}
-
-static void
-configure_hijacks(WINDOW *w){
-	unimplemented(w,NULL);
-}
-
-static void
-configure_defence(WINDOW *w){
-	unimplemented(w,NULL);
-}
-
-static void
-configure_secrets(WINDOW *w){
-	unimplemented(w,NULL);
-}
-
-static void
-configure_crypto(WINDOW *w){
 	unimplemented(w,NULL);
 }
 
@@ -990,39 +955,9 @@ ncurses_input_thread(void *unsafe_marsh){
 				finish_screen_update();
 			pthread_mutex_unlock(&bfl);
 			break;
-		case 'P':
+		case 'C':
 			pthread_mutex_lock(&bfl);
 				configure_prefs(w);
-			pthread_mutex_unlock(&bfl);
-			break;
-		case 'n':
-			pthread_mutex_lock(&bfl);
-				configure_network(w);
-			pthread_mutex_unlock(&bfl);
-			break;
-		case 'a':
-			pthread_mutex_lock(&bfl);
-				configure_attacks(w);
-			pthread_mutex_unlock(&bfl);
-			break;
-		case 'J':
-			pthread_mutex_lock(&bfl);
-				configure_hijacks(w);
-			pthread_mutex_unlock(&bfl);
-			break;
-		case 'D':
-			pthread_mutex_lock(&bfl);
-				configure_defence(w);
-			pthread_mutex_unlock(&bfl);
-			break;
-		case 'S':
-			pthread_mutex_lock(&bfl);
-				configure_secrets(w);
-			pthread_mutex_unlock(&bfl);
-			break;
-		case 'c':
-			pthread_mutex_lock(&bfl);
-				configure_crypto(w);
 			pthread_mutex_unlock(&bfl);
 			break;
 		case 'R':
@@ -1327,7 +1262,9 @@ lines_for_interface(const interface *i,const iface_state *is){
 static int
 redraw_iface(const interface *i,iface_state *is){
 	assert(werase(is->subwin) != ERR);
-	assert(iface_box(is->subwin,i,is) != ERR);
+	if(iface_box(is->subwin,i,is) == ERR){
+		return ERR;
+	}
 	if(interface_up_p(i)){
 		if(print_iface_state(i,is)){
 			return ERR;
@@ -1339,7 +1276,8 @@ redraw_iface(const interface *i,iface_state *is){
 	return OK;
 }
 
-// Is the interface window entirely visible?
+// Is the interface window entirely visible? We can't draw it otherwise, as it
+// will obliterate the global bounding box.
 static int
 iface_visible_p(int rows,const iface_state *ret){
 	if(ret->scrline + ret->ysize >= rows){
@@ -1350,7 +1288,8 @@ iface_visible_p(int rows,const iface_state *ret){
 	return 1;
 }
 
-// Is the interface window entirely invisible?
+// Is the interface window (not) being drawn, due to being above or below the
+// visible screen? FIXME ncurses "pads" are supposedly designed for this...
 static int
 iface_hidden_p(int rows,const iface_state *ret){
 	if(ret->scrline < rows && ret->scrline + ret->ysize >= START_LINE){
@@ -1359,55 +1298,49 @@ iface_hidden_p(int rows,const iface_state *ret){
 	return 1; // hidden below
 }
 
-// FIXME this only addresses expansion. need to handle shrinking, also (which
-// can make a panel visible, just as expansion can hide it).
+// Upon entry, ret->ysize (and the actual display) might not have been updated
+// to reflect a change in the interface's data. If so, the interface panel is
+// resized (subject to the containing window's constraints) and other panels
+// are moved as necessary. The interface's display is synchronized via
+// redraw_iface() whether a resize is performed or not (unless it's invisible).
 static int
 resize_iface(const interface *i,iface_state *ret){
 	int rows,cols,nlines;
 
 	getmaxyx(stdscr,rows,cols);
-	// FIXME this only addresses expansion. need to handle shrinking, also.
-	// (which can make a panel visible, just as expansion can hide it)
 	if(iface_hidden_p(rows,ret)){
 		return OK;
 	}
-	if((nlines = lines_for_interface(i,ret)) == ret->ysize){
-		return OK; // no change necessary
-	}
-	if(nlines + ret->scrline >= rows){
-		// fixme check to see if we can expand up instead
-		if(redraw_iface(i,ret)){ // might need change the host list
-			return ERR;
-		}
-		return OK;
-	}else{
-		int delta = nlines - ret->ysize;
-		iface_state *is;
+	if((nlines = lines_for_interface(i,ret)) != ret->ysize){
+		if(nlines + ret->scrline < rows){
+			int delta = nlines - ret->ysize;
+			iface_state *is;
 
-		for(is = ret->next ; is->scrline > ret->scrline ; is = is->next){
-			interface *ii = is->iface;
+			ret->ysize = nlines;
+			for(is = ret->next ; is->scrline > ret->scrline ; is = is->next){
+				interface *ii = is->iface;
 
-			is->scrline += delta;
-			if(iface_visible_p(rows,is)){
-				assert(move_panel(is->panel,is->scrline,START_COL) != ERR);
-				if(redraw_iface(ii,is)){
-					return ERR;
+				is->scrline += delta;
+				if(iface_visible_p(rows,is)){
+					assert(move_panel(is->panel,is->scrline,START_COL) != ERR);
+					if(redraw_iface(ii,is)){
+						return ERR;
+					}
+				}else{
+					// FIXME don't do this if it wasn't visible in the first place
+					// FIXME see if we can shrink it first!
+					assert(werase(is->subwin) != ERR);
+					assert(hide_panel(is->panel) != ERR);
 				}
-			}else{
-				// FIXME see if we can shrink it first!
-				assert(werase(is->subwin) != ERR);
-				hide_panel(is->panel);
 			}
+			assert(wresize(ret->subwin,ret->ysize,PAD_COLS(cols)) != ERR);
+			assert(replace_panel(ret->panel,ret->subwin) != ERR);
 		}
-		ret->ysize = nlines;
-		assert(wresize(ret->subwin,ret->ysize,PAD_COLS(cols)) != ERR);
-		assert(replace_panel(ret->panel,ret->subwin) != ERR);
-		if(redraw_iface(i,ret)){
-			return ERR;
-		}
-		full_screen_update();
 	}
-	return OK;
+	if(redraw_iface(i,ret) == ERR){
+		return ERR;
+	}
+	return full_screen_update();
 }
 
 static l2obj *
@@ -1565,7 +1498,6 @@ interface_cb_locked(interface *i,iface_state *ret){
 		iface_details(panel_window(details.p),i,details.ysize);
 	}
 	resize_iface(i,ret);
-	iface_box(ret->subwin,i,ret);
 	if(interface_up_p(i)){
 		print_iface_state(i,ret);
 		if(ret->devaction < 0){
@@ -1668,6 +1600,7 @@ neighbor_callback_locked(const interface *i,struct l2host *l2){
 		assert(resize_iface(i,is) != ERR);
 	}else{
 		assert(redraw_iface(i,is) != ERR);
+		assert(full_screen_update() != ERR);
 	}
 	return ret;
 }
