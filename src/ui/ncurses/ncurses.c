@@ -1418,12 +1418,12 @@ packet_cb_locked(const interface *i,omphalos_packet *op){
 		struct timeval tdiff;
 		unsigned long udiff;
 
-		timersub(&i->lastseen,&is->lastprinted,&tdiff);
+		timersub(&op->tv,&is->lastprinted,&tdiff);
 		udiff = timerusec(&tdiff);
 		if(udiff < 500000){ // At most one update every 1/2s
 			return;
 		}
-		is->lastprinted = i->lastseen;
+		is->lastprinted = op->tv;
 		if(is == current_iface && details.p){
 			iface_details(panel_window(details.p),i,details.ysize);
 		}

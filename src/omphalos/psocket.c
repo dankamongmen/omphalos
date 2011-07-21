@@ -156,8 +156,9 @@ recover_truncated_packet(const omphalos_iface *octx,interface *iface,int fd,unsi
 // return for a cancellation check, and the frameptr oughtn't be advanced.
 int handle_ring_packet(const omphalos_iface *octx,interface *iface,int fd,void *frame){
 	struct tpacket_hdr *thdr = frame;
-	omphalos_packet packet;
-	struct timeval tv;
+	omphalos_packet packet = {
+		.i = iface,
+	};
 	int len;
 
 	while(thdr->tp_status == 0){
@@ -169,12 +170,13 @@ int handle_ring_packet(const omphalos_iface *octx,interface *iface,int fd,void *
 		pfd[0].events = POLLIN | POLLRDNORM | POLLERR;
 		msec = IFACE_TIMESTAT_USECS / 1000;
 		if((events = poll(pfd,sizeof(pfd) / sizeof(*pfd),msec)) == 0){
-			gettimeofday(&tv,NULL);
-			timestat_inc(&iface->fps,&tv,0);
-			timestat_inc(&iface->bps,&tv,0);
-			if(octx->iface_event){
-				iface->opaque = octx->iface_event(iface,iface->opaque);
+			gettimeofday(&packet.tv,NULL);
+			timestat_inc(&iface->fps,&packet.tv,0);
+			timestat_inc(&iface->bps,&packet.tv,0);
+			if(octx->packet_read){
+				octx->packet_read(&packet);
 			}
+			return 1;
 		}else if(events < 0){
 			if(errno != EINTR){
 				octx->diagnostic("Error in poll() on %s (%s?)",
@@ -192,11 +194,9 @@ int handle_ring_packet(const omphalos_iface *octx,interface *iface,int fd,void *
 		}
 	}
 	++iface->frames;
-	tv.tv_sec = thdr->tp_sec;
-	tv.tv_usec = thdr->tp_usec;
-	timestat_inc(&iface->fps,&tv,1);
-	iface->lastseen.tv_sec = thdr->tp_sec;
-	iface->lastseen.tv_usec = thdr->tp_usec;
+	packet.tv.tv_sec = thdr->tp_sec;
+	packet.tv.tv_usec = thdr->tp_usec;
+	timestat_inc(&iface->fps,&packet.tv,1);
 	if(thdr->tp_status & TP_STATUS_LOSING){
 		struct tpacket_stats tstats;
 		socklen_t slen;
@@ -227,9 +227,8 @@ int handle_ring_packet(const omphalos_iface *octx,interface *iface,int fd,void *
 		frame = (char *)frame + thdr->tp_mac;
 		len = thdr->tp_len;
 	}
-	timestat_inc(&iface->bps,&tv,len);
+	timestat_inc(&iface->bps,&packet.tv,len);
 	iface->bytes += len;
-	packet.i = iface;
 	iface->analyzer(octx,&packet,frame,len);
 	if(octx->packet_read){
 		octx->packet_read(&packet);

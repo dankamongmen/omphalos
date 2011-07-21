@@ -46,8 +46,8 @@ typedef struct topdev_info {
 typedef void (*analyzefxn)(const struct omphalos_iface *,
 		struct omphalos_packet *,const void *,size_t);
 
-#define IFACE_TIMESTAT_USECS 50000
-#define IFACE_TIMESTAT_SLOTS 100
+#define IFACE_TIMESTAT_USECS 40000
+#define IFACE_TIMESTAT_SLOTS 125
 
 typedef struct interface {
 	// Packet analysis entry point
@@ -67,10 +67,6 @@ typedef struct interface {
 
 	// Finite time domain stats
 	timestat fps,bps;		// frames and bits per second
-	// FIXME can get rid of these two, i think
-	struct timeval firstseen;	// Interface registration time
-	struct timeval lastseen;	// Last time we saw a packet/event here
-	
 
 	struct psocket_marsh *pmarsh;	// State for packet socket thread
 

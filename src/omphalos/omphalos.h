@@ -6,6 +6,7 @@ extern "C" {
 #endif
 
 #include <stdint.h>
+#include <sys/time.h>
 
 struct l2host;
 struct iphost;
@@ -13,6 +14,7 @@ struct ipv6host;
 struct interface;
 
 typedef struct omphalos_packet {
+	struct timeval tv;
 	struct interface *i;
 	struct l2host *l2s,*l2d;
 	uint16_t l3proto;
