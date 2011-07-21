@@ -1203,7 +1203,7 @@ print_iface_state(const interface *i,const iface_state *is){
 	char buf[U64STRLEN + 1],buf2[U64STRLEN + 1];
 	unsigned long usecdomain;
 
-	assert(wattron(is->subwin,A_BOLD | COLOR_PAIR(IFACE_COLOR)) == OK);
+	assert(wattrset(is->subwin,A_BOLD | COLOR_PAIR(IFACE_COLOR)) == OK);
 	// FIXME broken if bps domain ever != fps domain. need unite those
 	// into one FTD stat by letting it take an object...
 	usecdomain = i->bps.usec * i->bps.total;
@@ -1250,7 +1250,7 @@ print_iface_hosts(const interface *i,const iface_state *is){
 				break;
 		}
 		if(!interface_up_p(i)){
-			assert(wattron(is->subwin,COLOR_PAIR(DBORDER_COLOR)) != ERR);
+			assert(wcolor_set(is->subwin,DBORDER_COLOR,NULL) != ERR);
 		}
 		if((hw = l2addrstr(l->l2,i->addrlen)) == NULL){
 			return ERR;
