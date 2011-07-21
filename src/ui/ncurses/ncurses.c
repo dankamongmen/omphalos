@@ -1326,6 +1326,7 @@ lines_for_interface(const interface *i,const iface_state *is){
 
 static int
 redraw_iface(const interface *i,iface_state *is){
+	assert(werase(is->subwin) != ERR);
 	assert(iface_box(is->subwin,i,is) != ERR);
 	if(interface_up_p(i)){
 		if(print_iface_state(i,is)){
@@ -1387,7 +1388,6 @@ resize_iface(const interface *i,iface_state *ret){
 			interface *ii = is->iface;
 
 			is->scrline += delta;
-			assert(werase(is->subwin) == OK);
 			if(iface_visible_p(rows,is)){
 				assert(move_panel(is->panel,is->scrline,START_COL) != ERR);
 				if(redraw_iface(ii,is)){
@@ -1395,11 +1395,11 @@ resize_iface(const interface *i,iface_state *ret){
 				}
 			}else{
 				// FIXME see if we can shrink it first!
+				assert(werase(is->subwin) != ERR);
 				hide_panel(is->panel);
 			}
 		}
 		ret->ysize = nlines;
-		assert(werase(ret->subwin) != ERR);
 		assert(wresize(ret->subwin,ret->ysize,PAD_COLS(cols)) != ERR);
 		assert(replace_panel(ret->panel,ret->subwin) != ERR);
 		if(redraw_iface(i,ret)){
@@ -1415,8 +1415,8 @@ get_l2obj(const interface *i,struct l2host *l2){
 	l2obj *l;
 
 	if( (l = malloc(sizeof(*l))) ){
-		l->l2 = l2;
 		l->cat = l2categorize(i,l2);
+		l->l2 = l2;
 	}
 	return l;
 }
@@ -1426,14 +1426,38 @@ free_l2obj(l2obj *l){
 	free(l);
 }
 
+// returns < 0 if c0 < c1, 0 if c0 == c1, > 0 if c0 > c1
+static inline int
+l2catcmp(int c0,int c1){
+	// not a surjection! some values are shared.
+	static const int vals[__RTN_MAX] = {
+		0,			// RTN_UNSPEC
+		__RTN_MAX - 1,		// RTN_UNICAST
+		__RTN_MAX,		// RTN_LOCAL
+		__RTN_MAX - 5,		// RTN_BROADCAST
+		__RTN_MAX - 4,		// RTN_ANYCAST
+		__RTN_MAX - 3,		// RTN_MULTICAST
+		__RTN_MAX - 2,		// RTN_BLACKHOLE
+		__RTN_MAX - 2,		// RTN_UNREACHABLE
+		__RTN_MAX - 2,		// RTN_PROHIBIT
+					// 0 the rest of the way...
+	};
+	return vals[c0] - vals[c1];
+}
+
 static void
 add_l2_to_iface(iface_state *is,l2obj *l2){
 	l2obj **prev;
 
 	++is->l2ents;
 	for(prev = &is->l2objs ; *prev ; prev = &(*prev)->next){
-		if(l2hostcmp(l2->l2,(*prev)->l2) < 0){
+		// we want the inverse of l2catcmp()'s priorities
+		if(l2catcmp(l2->cat,(*prev)->cat) > 0){
 			break;
+		}else if(l2catcmp(l2->cat,(*prev)->cat) == 0){
+			if(l2hostcmp(l2->l2,(*prev)->l2) <= 0){
+				break;
+			}
 		}
 	}
 	l2->next = *prev;
@@ -1614,7 +1638,6 @@ interface_removed_locked(iface_state *is){
 				interface *ii = ci->iface;
 
 				ci->scrline -= rows + 1; // blank line followed
-				assert(werase(ci->subwin) == OK);
 				if(iface_visible_p(scrrows,ci)){
 					assert(move_panel(ci->panel,ci->scrline,START_COL) != ERR);
 					assert(redraw_iface(ii,ci) != ERR);
@@ -1644,7 +1667,6 @@ neighbor_callback_locked(const interface *i,struct l2host *l2){
 		add_l2_to_iface(is,ret);
 		assert(resize_iface(i,is) != ERR);
 	}else{
-		assert(werase(is->subwin) != ERR);
 		assert(redraw_iface(i,is) != ERR);
 	}
 	return ret;
