@@ -1232,6 +1232,9 @@ print_iface_hosts(const interface *i,const iface_state *is){
 				legend = 'B';
 				break;
 		}
+		if(!interface_up_p(i)){
+			assert(wattron(is->subwin,COLOR_PAIR(DBORDER_COLOR)) != ERR);
+		}
 		if((hw = l2addrstr(l->l2,i->addrlen)) == NULL){
 			return ERR;
 		}
