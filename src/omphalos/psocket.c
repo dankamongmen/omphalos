@@ -172,12 +172,17 @@ int handle_ring_packet(const omphalos_iface *octx,interface *iface,int fd,void *
 			return -1;
 		}else if(events < 0){
 			if(errno != EINTR){
-				octx->diagnostic("Error polling packet socket %d (%s?)",fd,strerror(errno));
+				octx->diagnostic("Error in poll() on %s (%s?)",
+						iface->name,strerror(errno));
 				return -1;
 			}
 			return 1;
 		}else if(pfd[0].revents & POLLERR){
-			octx->diagnostic("Error polling packet socket %d",fd);
+			// FIXME don't want to print this every time a device
+			// is removed from underneath us, but also don't want
+			// to race against notification...check to see if
+			// device is down here? FIXME
+			//octx->diagnostic("Error polling psocket %d on %s",fd,i->name);
 			return -1;
 		}
 	}

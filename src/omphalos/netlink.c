@@ -545,10 +545,9 @@ void reap_thread(const omphalos_iface *octx,interface *i){
 	pthread_mutex_unlock(&i->pmarsh->lock);
 	if( (errno = pthread_join(i->pmarsh->tid,&ret)) ){
 		octx->diagnostic("Couldn't join thread (%s?)",strerror(errno));
-	}else if(ret != PTHREAD_CANCELED){
+	/*}else if(ret != PTHREAD_CANCELED){
 		octx->diagnostic("%s thread returned error on exit (%s)",
-				i->name,(char *)ret);
-	}else{
+				i->name,(char *)ret);*/
 	}
 	pmarsh_destroy(octx,i->pmarsh);
 	i->pmarsh = NULL;
