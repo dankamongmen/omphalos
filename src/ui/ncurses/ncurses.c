@@ -1280,14 +1280,14 @@ iface_visible_p(int rows,const iface_state *ret){
 	return 1;
 }
 
-// Is the interface window (not) being drawn, due to being above or below the
-// visible screen? FIXME ncurses "pads" are supposedly designed for this...
 static int
-iface_hidden_p(int rows,const iface_state *ret){
-	if(ret->scrline < rows && ret->scrline + ret->ysize >= START_LINE){
+iface_will_be_visible_p(int rows,const iface_state *ret,int nlines){
+	if(ret->scrline + nlines >= rows){
+		return 0;
+	}else if(ret->scrline < START_LINE){
 		return 0;
 	}
-	return 1; // hidden below
+	return 1;
 }
 
 // Upon entry, ret->ysize (and the actual display) might not have been updated
@@ -1297,13 +1297,16 @@ iface_hidden_p(int rows,const iface_state *ret){
 // redraw_iface() whether a resize is performed or not (unless it's invisible).
 static int
 resize_iface(const interface *i,iface_state *ret){
-	int rows,cols,nlines;
+	const int nlines = lines_for_interface(i,ret);
+	int rows,cols;
 
 	getmaxyx(stdscr,rows,cols);
-	if(iface_hidden_p(rows,ret)){
-		return OK;
+	if(!iface_will_be_visible_p(rows,ret,nlines)){
+		if(!iface_visible_p(rows,ret)){ // we weren't visible to begin with
+			return OK;
+		} // else need to erase it
 	}
-	if((nlines = lines_for_interface(i,ret)) != ret->ysize){
+	if(nlines != ret->ysize){
 		if(nlines + ret->scrline < rows){
 			int delta = nlines - ret->ysize;
 			iface_state *is;
@@ -1318,8 +1321,8 @@ resize_iface(const interface *i,iface_state *ret){
 					if(redraw_iface(ii,is)){
 						return ERR;
 					}
-				}else{
-					// FIXME don't do this if it wasn't visible in the first place
+				// use "will_be_visible" as "would_be_visible" here, heh
+				}else if(iface_will_be_visible_p(rows,is,is->ysize - delta)){
 					// FIXME see if we can shrink it first!
 					assert(werase(is->subwin) != ERR);
 					assert(hide_panel(is->panel) != ERR);
@@ -1448,8 +1451,9 @@ interface_cb_locked(interface *i,iface_state *ret){
 		if( (ret = create_interface_state(i)) ){
 			int rows,cols;
 
+			getmaxyx(stdscr,rows,cols);
+			// need find our location on the screen before newwin()
 			if((ret->prev = current_iface) == NULL){
-				current_iface = ret->prev = ret->next = ret;
 				ret->scrline = START_LINE;
 			}else{
 				// The order on screen must match the list order, so splice it onto
@@ -1457,32 +1461,29 @@ interface_cb_locked(interface *i,iface_state *ret){
 				while(ret->prev->next->scrline > ret->prev->scrline){
 					ret->prev = ret->prev->next;
 				}
-				ret->scrline = lines_for_interface(ret->prev->iface,ret->prev)
-					+ ret->prev->scrline + 1;
+				ret->scrline = lines_for_interface(ret->prev->iface,ret->prev) + ret->prev->scrline + 1;
+			}
+			// we're not yet in the list -- nothing points to us --
+			// though ret->prev is valid.
+			if((ret->subwin = newwin(ret->ysize,PAD_COLS(cols),ret->scrline,START_COL)) == NULL ||
+					(ret->panel = new_panel(ret->subwin)) == NULL){
+				delwin(ret->subwin);
+				free(ret);
+				return NULL;
+			}
+			if(current_iface == NULL){
+				current_iface = ret->prev = ret->next = ret;
+			}else{
 				ret->next = ret->prev->next;
 				ret->next->prev = ret;
 				ret->prev->next = ret;
 			}
-			getmaxyx(stdscr,rows,cols);
-			// FIXME check rows; might need kick an iface
-			// off or start hidden.
-			assert(rows); // FIXME
-			if( (ret->subwin = newwin(ret->ysize,PAD_COLS(cols),ret->scrline,START_COL)) &&
-					(ret->panel = new_panel(ret->subwin)) ){
-				// Want the subdisplay left above this
-				// new iface, should they intersect.
-				assert(bottom_panel(ret->panel) == OK);
-				++count_interface;
-			}else{
-				delwin(ret->subwin);
-				if(current_iface == ret){
-					current_iface = NULL;
-				}else{
-					ret->next->prev = ret->prev;
-					ret->prev->next = ret->next;
-				}
-				free(ret);
-				return NULL;
+			++count_interface;
+			// Want the subdisplay left above this new iface,
+			// should they intersect.
+			assert(bottom_panel(ret->panel) == OK);
+			if(!iface_visible_p(rows,ret)){
+				assert(hide_panel(ret->panel) != ERR);
 			}
 		}
 	}
