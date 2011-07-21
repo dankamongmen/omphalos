@@ -434,12 +434,20 @@ iface_box(WINDOW *w,const interface *i,const iface_state *is){
 	assert(scrrows); // FIXME
 	bcolor = interface_up_p(i) ? UBORDER_COLOR : DBORDER_COLOR;
 	hcolor = interface_up_p(i) ? UHEADING_COLOR : DHEADING_COLOR;
-	attrs = ((is == current_iface) ? A_REVERSE : 0) | A_BOLD;
-	assert(wattron(w,attrs | COLOR_PAIR(bcolor)) == OK);
+	attrs = ((is == current_iface) ? A_REVERSE : A_BOLD);
+	assert(wattrset(w,attrs | COLOR_PAIR(bcolor)) == OK);
 	assert(bevel(w,0,0) == OK);
 	assert(wattroff(w,A_REVERSE) == OK);
+	if(is == current_iface){
+		assert(wattron(w,A_BOLD) == OK);
+	}
 	assert(mvwprintw(w,0,START_COL,"[") != ERR);
 	assert(wcolor_set(w,hcolor,NULL) == OK);
+	if(is == current_iface){
+		assert(wattron(w,A_BOLD) == OK);
+	}else{
+		assert(wattroff(w,A_BOLD) == OK);
+	}
 	assert(waddstr(w,i->name) != ERR);
 	assert(wprintw(w," (%s",is->typestr) != ERR);
 	if(strlen(i->drv.driver)){
@@ -454,11 +462,19 @@ iface_box(WINDOW *w,const interface *i,const iface_state *is){
 	}
 	assert(waddch(w,')') != ERR);
 	assert(wcolor_set(w,bcolor,NULL) != ERR);
+	if(is != current_iface){
+		assert(wattron(w,A_BOLD) == OK);
+	}
 	assert(wprintw(w,"]") != ERR);
 	assert(wattron(w,attrs) != ERR);
 	assert(wattroff(w,A_REVERSE) != ERR);
 	assert(mvwprintw(w,is->ysize - 1,START_COL * 2,"[") != ERR);
 	assert(wcolor_set(w,hcolor,NULL) != ERR);
+	if(is == current_iface){
+		assert(wattron(w,A_BOLD) == OK);
+	}else{
+		assert(wattroff(w,A_BOLD) == OK);
+	}
 	assert(wprintw(w,"mtu %d",i->mtu) != ERR);
 	if(interface_up_p(i)){
 		char buf[U64STRLEN + 1];
@@ -495,9 +511,12 @@ iface_box(WINDOW *w,const interface *i,const iface_state *is){
 		assert(iface_optstr(w,"promisc",hcolor,bcolor) != ERR);
 	}
 	assert(wcolor_set(w,bcolor,NULL) != ERR);
+	if(is != current_iface){
+		assert(wattron(w,A_BOLD) == OK);
+	}
 	assert(wprintw(w,"]") != ERR);
-	assert(wattroff(w,A_BOLD) != ERR);
 	if( (buslen = strlen(i->drv.bus_info)) ){
+		assert(wattrset(w,COLOR_PAIR(bcolor) | A_BOLD) != ERR);
 		if(i->busname){
 			buslen += strlen(i->busname) + 1;
 			assert(mvwprintw(w,is->ysize - 1,scrcols - (buslen + START_COL * 2),
@@ -507,8 +526,6 @@ iface_box(WINDOW *w,const interface *i,const iface_state *is){
 					"%s",i->drv.bus_info) != ERR);
 		}
 	}
-	assert(wcolor_set(w,0,NULL) != ERR);
-	assert(wattroff(w,attrs) != ERR);
 	return 0;
 }
 
