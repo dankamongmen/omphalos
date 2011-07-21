@@ -520,7 +520,7 @@ pmarsh_destroy(const omphalos_iface *octx,psocket_marsh *pm){
 }
 
 #include <assert.h>
-int reap_thread(const omphalos_iface *octx,interface *i){
+void reap_thread(const omphalos_iface *octx,interface *i){
 	void *ret;
 
 	// See psocket_thread(); we disable pthread cancellation. Send a
@@ -545,16 +545,13 @@ int reap_thread(const omphalos_iface *octx,interface *i){
 	pthread_mutex_unlock(&i->pmarsh->lock);
 	if( (errno = pthread_join(i->pmarsh->tid,&ret)) ){
 		octx->diagnostic("Couldn't join thread (%s?)",strerror(errno));
-		return -1;
-	}
-	if(ret != PTHREAD_CANCELED){
+	}else if(ret != PTHREAD_CANCELED){
 		octx->diagnostic("%s thread returned error on exit (%s)",
 				i->name,(char *)ret);
-		return -1;
+	}else{
 	}
 	pmarsh_destroy(octx,i->pmarsh);
 	i->pmarsh = NULL;
-	return 0;
 }
 
 static psocket_marsh *
