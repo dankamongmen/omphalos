@@ -916,8 +916,10 @@ netlink_thread(const omphalos_iface *octx){
 			if(!cancelled){
 				octx->diagnostic("Error polling netlink socket %d (%s?)",
 						pfd[0].fd,strerror(errno));
+				continue;
+			}else{
+				break;
 			}
-			break;
 		}
 		for(z = 0 ; z < sizeof(pfd) / sizeof(*pfd) ; ++z){
 			if(pfd[z].revents & POLLERR){
