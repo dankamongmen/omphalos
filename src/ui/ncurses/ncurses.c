@@ -1200,16 +1200,18 @@ print_iface_state(const interface *i,const iface_state *is){
 
 static int
 print_iface_hosts(const interface *i,const iface_state *is){
-	int line = 1,idx = 0;
+	int line,idx = 0;
 	const l2obj *l;
 
+	// If the interface is down, we don't lead with the summary line
+	line = !!interface_up_p(i);
 	for(l = is->l2objs ; l ; ++idx, l = l->next){
 		char legend;
 		char *hw;
 		
 		if(idx < is->first_visible){
 			continue;
-		}else if(idx - is->first_visible >= is->ysize - PAD_LINES){
+		}else if(idx - is->first_visible >= is->ysize - (PAD_LINES - !interface_up_p(i))){
 			break;
 		}
 		switch(l->cat){
@@ -1244,11 +1246,7 @@ print_iface_hosts(const interface *i,const iface_state *is){
 // This is the number of lines we'd have in an optimal world; we might get less.
 static inline int
 lines_for_interface(const interface *i,const iface_state *is){
-	if(interface_up_p(i)){
-		return PAD_LINES + is->l2ents;
-	}else{
-		return PAD_LINES - 1;
-	}
+	return PAD_LINES + is->l2ents - !interface_up_p(i);
 }
 
 static int
