@@ -1532,29 +1532,26 @@ interface_cb_locked(interface *i,iface_state *ret){
 					ret->prev->next = ret->next;
 				}
 				free(ret);
-				ret = NULL;
+				return NULL;
 			}
 		}
-	}else{ // preexisting interface might need be expanded / collapsed
-		resize_iface(i,ret);
 	}
-	if(ret){
-		if(ret == current_iface && details.p){
-			iface_details(panel_window(details.p),i,details.ysize);
-		}
-		iface_box(ret->subwin,i,ret);
-		if(interface_up_p(i)){
-			print_iface_state(i,ret);
-			if(ret->devaction < 0){
-				wstatus_locked(pad,"");
-				ret->devaction = 0;
-				full_screen_update();
-			}
-		}else if(ret->devaction > 0){
+	if(ret == current_iface && details.p){
+		iface_details(panel_window(details.p),i,details.ysize);
+	}
+	resize_iface(i,ret);
+	iface_box(ret->subwin,i,ret);
+	if(interface_up_p(i)){
+		print_iface_state(i,ret);
+		if(ret->devaction < 0){
 			wstatus_locked(pad,"");
 			ret->devaction = 0;
 			full_screen_update();
 		}
+	}else if(ret->devaction > 0){
+		wstatus_locked(pad,"");
+		ret->devaction = 0;
+		full_screen_update();
 	}
 	return ret;
 }
