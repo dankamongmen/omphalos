@@ -364,13 +364,7 @@ draw_main_window(WINDOW *w,const char *name,const char *ver){
 	if(wcolor_set(w,0,NULL) != OK){
 		ERREXIT;
 	}
-	if(start_screen_update() == ERR){
-		ERREXIT;
-	}
-	if(finish_screen_update() == ERR){
-		ERREXIT;
-	}
-	return 0;
+	return full_screen_update();
 
 err:
 	return -1;
@@ -760,15 +754,13 @@ static const wchar_t *helps[] = {
 	L"       export pilfered passwords, cookies, and identifying data",
 	L"'c': crypto configuration",
 	L"       configure algorithm stepdown, WEP/WPA cracking, SSL MitM", */
+	L"'C': configuration",
 	L"'k'/'↑': previous interface   'j'/'↓': next interface",
 	L"'m': change device MAC        'u': change device MTU",
 	L"'r': reset interface's stats  'R': reset all interfaces' stats",
+	L"'d': bring down device        'p': toggle promiscuity",
 	L"'s': toggle sniffing, bringing up interface if down",
-	L"'d': bring down device",
-	L"'p': toggle promiscuity",
-	L"'v': view detailed interface info/statistics",
-	L"'h': toggle this help display",
-	L"'C': configuration",
+	L"'v': view interface details   'h': toggle this help display",
 	L"'q': quit                     ctrl+'L': redraw the screen",
 	NULL
 };
@@ -1499,16 +1491,13 @@ interface_cb_locked(interface *i,iface_state *ret){
 	}
 	resize_iface(i,ret);
 	if(interface_up_p(i)){
-		print_iface_state(i,ret);
 		if(ret->devaction < 0){
 			wstatus_locked(pad,"");
 			ret->devaction = 0;
-			full_screen_update();
 		}
 	}else if(ret->devaction > 0){
 		wstatus_locked(pad,"");
 		ret->devaction = 0;
-		full_screen_update();
 	}
 	return ret;
 }
@@ -1597,11 +1586,8 @@ neighbor_callback_locked(const interface *i,struct l2host *l2){
 			return NULL;
 		}
 		add_l2_to_iface(is,ret);
-		assert(resize_iface(i,is) != ERR);
-	}else{
-		assert(redraw_iface(i,is) != ERR);
-		assert(full_screen_update() != ERR);
 	}
+	assert(resize_iface(i,is) != ERR);
 	return ret;
 }
 
