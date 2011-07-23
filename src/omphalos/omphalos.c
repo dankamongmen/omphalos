@@ -9,6 +9,7 @@
 #include <sys/socket.h>
 #include <omphalos/usb.h>
 #include <omphalos/pci.h>
+#include <omphalos/iana.h>
 #include <omphalos/pcap.h>
 #include <sys/capability.h>
 #include <omphalos/privs.h>
@@ -19,15 +20,18 @@
 #include <omphalos/interface.h>
 
 #define DEFAULT_USERNAME "nobody"
+#define DEFAULT_IANA_FILENAME "ieee-oui.txt" // from arp-scan's 'get-oui'
 
 static void
 usage(const char *arg0,int ret){
-	fprintf(stderr,"usage: %s [ -u username ] [ -f filename ]\n",
+	fprintf(stderr,"usage: %s [ -u username ] [ -f filename ] [ -i filename ]\n",
 			basename(arg0));
 	fprintf(stderr,"options:\n");
 	fprintf(stderr,"-u username: user name to take after creating packet socket.\n");
 	fprintf(stderr,"\t'%s' by default. provide empty string to disable.\n",DEFAULT_USERNAME);
 	fprintf(stderr,"-f filename: libpcap-format save file for input.\n");
+	fprintf(stderr,"-i filename: IANA's OUI mapping in get-oui(1) format.\n");
+	fprintf(stderr,"\t'%s' by default. provide empty string to disable.\n",DEFAULT_IANA_FILENAME);
 	exit(ret);
 }
 
@@ -71,9 +75,16 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 	
 	memset(pctx,0,sizeof(*pctx));
 	opterr = 0; // suppress getopt() diagnostic to stderr while((opt = getopt(argc,argv,":c:f:")) >= 0){ switch(opt){ case 'c':{
-	while((opt = getopt(argc,argv,":f:u:")) >= 0){
+	while((opt = getopt(argc,argv,":f:i:u:")) >= 0){
 		switch(opt){
-		case 'f':{
+		case 'i':{
+			if(pctx->ianafn){
+				fprintf(stderr,"Provided %c twice\n",opt);
+				usage(argv[0],-1);
+			}
+			pctx->ianafn = optarg;
+			break;
+		}case 'f':{
 			if(pctx->pcapfn){
 				fprintf(stderr,"Provided %c twice\n",opt);
 				usage(argv[0],-1);
@@ -104,6 +115,9 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 	if(user == NULL){
 		user = DEFAULT_USERNAME;
 	}
+	if(pctx->ianafn == NULL){
+		pctx->ianafn = DEFAULT_IANA_FILENAME;
+	}
 	// Drop privileges (possibly requiring a setuid()), and mask
 	// cancellation signals, before creating other threads.
 	if(pctx->pcapfn){
@@ -130,6 +144,11 @@ int omphalos_init(const omphalos_ctx *pctx){
 	if(pctx->iface.diagnostic == NULL){
 		fprintf(stderr,"No diagnostic callback function defined, exiting\n");
 		return -1;
+	}
+	if(pctx->ianafn && strcmp(pctx->ianafn,"")){
+		if(init_iana_naming(&pctx->iface,pctx->ianafn)){
+			return -1;
+		}
 	}
 	if(pctx->pcapfn){
 		if(handle_pcap_file(pctx)){
