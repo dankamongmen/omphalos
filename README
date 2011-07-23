@@ -26,6 +26,8 @@ sockets. Packet transmission requires at least a 2.6.29 kernel.
 The ncurses UI requires libncursesw (ncurses with wide character support),
 and libpanel (distributed with SVR4 curses and ncurses).
 
+arp-scan's 'get-oui' program is currently used to build the IANA OUI file.
+
 ===================================================================
 II. Building and installation
 ===================================================================
