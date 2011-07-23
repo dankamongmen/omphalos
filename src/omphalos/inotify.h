@@ -7,8 +7,10 @@ extern "C" {
 
 struct omphalos_iface;
 
+typedef void(*watchcbfxn)(const struct omphalos_iface *);
+
 int watch_init(const struct omphalos_iface *);
-int watch_file(const struct omphalos_iface *,const char *);
+int watch_file(const struct omphalos_iface *,const char *,watchcbfxn);
 int handle_watch_event(const struct omphalos_iface *,int);
 int watch_stop(const struct omphalos_iface *);
 

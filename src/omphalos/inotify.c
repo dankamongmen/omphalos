@@ -1,4 +1,5 @@
 #include <errno.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
 #include <pthread.h>
@@ -7,6 +8,11 @@
 #include <omphalos/omphalos.h>
 
 static int inotify_fd = -1;
+
+// Callback table, indexed by watch descriptors returned by inotify_add_watch()
+static int watchcbmax;
+static watchcbfxn *fxns;
+
 static pthread_mutex_t ilock = PTHREAD_MUTEX_INITIALIZER;
 
 static int
@@ -30,7 +36,7 @@ int watch_init(const omphalos_iface *octx){
 	return ret;
 }
 
-int watch_file(const omphalos_iface *octx,const char *fn){
+int watch_file(const omphalos_iface *octx,const char *fn,watchcbfxn fxn){
 	int ret = -1;
 
 	// FIXME shouldn't be calling diagnostics etc within critical section!
@@ -41,7 +47,22 @@ int watch_file(const omphalos_iface *octx,const char *fn){
 		if((wd = inotify_add_watch(inotify_fd,fn,IN_DELETE_SELF|IN_MODIFY)) < 0){
 			octx->diagnostic("Couldn't register %s (%s?)",fn,strerror(errno));
 		}else{
-			ret = 0;
+			if(wd >= watchcbmax){
+				void *tmp;
+
+				if((tmp = realloc(fxns,(wd + 1) * sizeof(*fxns))) == NULL){
+					octx->diagnostic("Couldn't register %d (%s?)",wd,strerror(errno));
+					inotify_rm_watch(inotify_fd,wd);
+				}else{
+					fxns = tmp;
+					watchcbmax = wd + 1;
+					ret = 0;
+					fxns[wd] = fxn;
+				}
+			}else{
+				ret = 0;
+				fxns[wd] = fxn;
+			}
 		}
 	}
 	pthread_mutex_unlock(&ilock);
@@ -53,7 +74,7 @@ int handle_watch_event(const omphalos_iface *octx,int fd){
 	ssize_t r;
 
 	while((r = read(fd,&event,sizeof(event))) == sizeof(event)){
-		octx->diagnostic("Event %x on %d",event.mask,event.wd);
+		octx->diagnostic("Event 0x%08x on %d",event.mask,event.wd);
 		// FIXME handle event
 	}
 	if(r < 0){
