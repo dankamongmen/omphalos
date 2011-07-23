@@ -138,18 +138,21 @@ int handle_rtm_newroute(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	}
 	if(oif > -1){
 		if((iface = iface_by_idx(oif)) == NULL){
+			octx->diagnostic("Unknown output interface %d on %s",oif,iface->name);
 			goto err;
 		}
 	}else{
 		// blackhole routes typically have no output interface
-		goto err;
+		return 0;
 	}
 	if(r.family == AF_INET){
 		if(add_route4(iface,ad,pag,pas,r.maskbits,iif)){
+			octx->diagnostic("Couldn't add route to %s",iface->name);
 			return -1;
 		}
 	}else if(r.family == AF_INET6){
 		if(add_route6(iface,ad,pag,pas,r.maskbits,iif)){
+			octx->diagnostic("Couldn't add route to %s",iface->name);
 			return -1;
 		}
 	}
