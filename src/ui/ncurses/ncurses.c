@@ -1225,6 +1225,7 @@ print_iface_hosts(const interface *i,const iface_state *is){
 	// If the interface is down, we don't lead with the summary line
 	line = !!interface_up_p(i);
 	for(l = is->l2objs ; l ; ++idx, l = l->next){
+		const char *iana;
 		char legend;
 		char *hw;
 		
@@ -1257,9 +1258,20 @@ print_iface_hosts(const interface *i,const iface_state *is){
 		if((hw = l2addrstr(l->l2,i->addrlen)) == NULL){
 			return ERR;
 		}
-		assert(mvwprintw(is->subwin,++line,START_COL," %c %s %*s",
-					legend,hw,INET6_ADDRSTRLEN,
-					get_name(l->l2)) != ERR);
+		// FIXME do this once, at l2node creation time, augh
+		iana = iana_lookup(l->l2);
+		// ipv6 can be up to INET6_ADDRSTRLEN == 46 columns, quite
+		// large...this isn't really safe at all FIXME
+		if(iana){
+			assert(mvwprintw(is->subwin,++line,START_COL," %c %s %s %*s",
+						legend,hw,iana,
+						INET6_ADDRSTRLEN - (int)strlen(iana),
+						get_name(l->l2)) != ERR);
+		}else{
+			assert(mvwprintw(is->subwin,++line,START_COL," %c %s  %*s",
+						legend,hw,INET6_ADDRSTRLEN,
+						get_name(l->l2)) != ERR);
+		}
 		free(hw);
 	}
 	return OK;
