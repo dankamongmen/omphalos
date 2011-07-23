@@ -60,16 +60,10 @@ name_ethmcastaddr(const void *mac){
 }
 
 // Categorize an Ethernet address independent of context (this function never
-// returns RTN_LOCAL, for instance).
+// returns RTN_LOCAL or RTN_BROADCAST, for instance).
 static inline int
 categorize_ethaddr(const void *mac){
-	static const unsigned char brd[] = "\xff\xff\xff\xff\xff\xff";
-
 	if(((const unsigned char *)mac)[0] & 0x1){
-		// Can't use sizeof(brd), since it has a terminating NUL :/
-		if(memcmp(mac,brd,ETH_ALEN) == 0){
-			return RTN_BROADCAST;
-		}
 		return RTN_MULTICAST;
 	}
 	return RTN_UNICAST;

@@ -114,6 +114,7 @@ void free_iface(const omphalos_iface *octx,interface *i){
 	free(i->truncbuf);
 	free(i->name);
 	free(i->addr);
+	free(i->bcast);
 	cleanup_l2hosts(&i->l2hosts);
 	memset(i,0,sizeof(*i));
 	i->rfd = i->fd = -1;

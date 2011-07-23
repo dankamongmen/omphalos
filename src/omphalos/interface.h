@@ -79,7 +79,8 @@ typedef struct interface {
 	int mtu;		// to match netdevice(7)'s ifr_mtu...
 	char *name;
 	void *addr;		// multiple hwaddrs are multiple ifaces...
-	size_t addrlen;
+	void *bcast;		// l2 broadcast address
+	size_t addrlen;		// length of l2 addresses (addr, bcast, ...)
 	int rfd;		// RX packet socket
 	void *rxm;		// RX packet ring buffer
 	size_t rs;		// RX packet ring size in bytes

@@ -154,6 +154,8 @@ int l2categorize(const interface *i,const l2host *l2){
 	ret = categorize_ethaddr(&l2->hwaddr);
 	if(ret == RTN_UNICAST){
 		return memcmp(i->addr,&l2->hwaddr,i->addrlen) ? RTN_UNICAST : RTN_LOCAL;
+	}else if(ret == RTN_MULTICAST){
+		return memcmp(i->bcast,&l2->hwaddr,i->addrlen) ? RTN_MULTICAST : RTN_BROADCAST;
 	}
 	return ret;
 }
