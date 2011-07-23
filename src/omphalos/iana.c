@@ -48,8 +48,8 @@ free_ouitries(ouitrie **tries){
 
 static void
 parse_file(const omphalos_iface *octx){
-	ouitrie *head[OUITRIE_SIZE];
-	unsigned z,allocerr;
+	//ouitrie *head[OUITRIE_SIZE];
+	unsigned /*z,*/allocerr;
 	char buf[256]; // FIXME
 	FILE *fp;
 
@@ -57,9 +57,11 @@ parse_file(const omphalos_iface *octx){
 		octx->diagnostic("Coudln't open %s (%s?)",ianafn,strerror(errno));
 		return;
 	}
+	/*
 	for(z = 0 ; z < OUITRIE_SIZE ; ++z){
 		head[z] = NULL;
 	}
+	*/
 	clearerr(fp);
 	allocerr = 0;
 	while(fgets(buf,sizeof(buf),fp)){
@@ -89,8 +91,8 @@ parse_file(const omphalos_iface *octx){
 		}
 		b = (hex & (0xffu << 16u)) >> 16u;
 		allocerr = 1;
-		if((cur = head[b]) == NULL){
-			if((cur = head[b] = malloc(sizeof(ouitrie))) == NULL){
+		if((cur = trie[b]) == NULL){
+			if((cur = trie[b] = malloc(sizeof(ouitrie))) == NULL){
 				break; // FIXME
 			}
 		}
@@ -101,9 +103,7 @@ parse_file(const omphalos_iface *octx){
 			}
 		}
 		b = hex & 0xff;
-		if(c->next[b]){
-			octx->diagnostic("Duplicate entries for %.6s in %s",buf,ianafn);
-		}else{
+		if(c->next[b] == NULL){
 			if((c->next[b] = strdup(end)) == NULL){
 				break; // FIXME
 			}
@@ -112,14 +112,14 @@ parse_file(const omphalos_iface *octx){
 	}
 	if(allocerr){
 		octx->diagnostic("Couldn't allocate for %s",ianafn);
-		free_ouitries(head);
+		//free_ouitries(head);
 	}else if(ferror(fp)){
 		octx->diagnostic("Error reading %s",ianafn);
-		free_ouitries(head);
-	}else{
+		//free_ouitries(head);
+	}/*else{
 		free_ouitries(trie);
 		memcpy(trie,head,sizeof(head));
-	}
+	}*/
 	fclose(fp);
 }
 
