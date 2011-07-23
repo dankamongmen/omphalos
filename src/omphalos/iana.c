@@ -96,12 +96,14 @@ parse_file(const omphalos_iface *octx){
 			if((cur = trie[b] = malloc(sizeof(ouitrie))) == NULL){
 				break; // FIXME
 			}
+			memset(cur,0,sizeof(*cur));
 		}
 		b = (hex & (0xffu << 8u)) >> 8u;
 		if((c = cur->next[b]) == NULL){
 			if((c = cur->next[b] = malloc(sizeof(ouitrie))) == NULL){
 				break; // FIXME
 			}
+			memset(c,0,sizeof(*c));
 		}
 		b = hex & 0xff;
 		if(c->next[b] == NULL){
