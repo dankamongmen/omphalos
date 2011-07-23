@@ -16,7 +16,7 @@ int watch_init(const omphalos_iface *octx){
 }
 
 int watch_file(const omphalos_iface *octx,const char *fn){
-	if(inotify_add_watch(inotify_fd,fn,0)){
+	if(inotify_add_watch(inotify_fd,fn,IN_DELETE_SELF|IN_MODIFY)){
 		octx->diagnostic("Couldn't register %s",fn);
 		return -1;
 	}
@@ -28,13 +28,19 @@ int handle_watch_event(const omphalos_iface *octx,int fd){
 	ssize_t r;
 
 	while((r = read(fd,&event,sizeof(event))) == sizeof(event)){
+		octx->diagnostic("Event %x on %d",event.mask,event.wd);
 		// FIXME handle event
 	}
-	if(errno == EAGAIN){
-		return 0;
+	if(r < 0){
+		if(errno == EAGAIN){
+			return 0;
+		}
+		octx->diagnostic("Error reading inotify socket %d (%s?)",fd,strerror(errno));
+		// FIXME do what?
+	}else{
+		octx->diagnostic("Short read on inotify socket %d (%zd)",fd,r);
+		// FIXME do what?
 	}
-	octx->diagnostic("Error reading inotify socket %d (%s?)",fd,strerror(errno));
-	// FIXME do what?
 	return -1;
 }
 
