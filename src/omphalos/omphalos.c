@@ -137,6 +137,11 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 		return -1;
 	}
 	pctx->iface.diagnostic = default_diagnostic;
+	if(pctx->ianafn && strcmp(pctx->ianafn,"")){
+		if(init_iana_naming(&pctx->iface,pctx->ianafn)){
+			return -1;
+		}
+	}
 	return 0;
 }
 
@@ -144,11 +149,6 @@ int omphalos_init(const omphalos_ctx *pctx){
 	if(pctx->iface.diagnostic == NULL){
 		fprintf(stderr,"No diagnostic callback function defined, exiting\n");
 		return -1;
-	}
-	if(pctx->ianafn && strcmp(pctx->ianafn,"")){
-		if(init_iana_naming(&pctx->iface,pctx->ianafn)){
-			return -1;
-		}
 	}
 	if(pctx->pcapfn){
 		if(handle_pcap_file(pctx)){
@@ -171,6 +171,7 @@ int omphalos_init(const omphalos_ctx *pctx){
 void omphalos_cleanup(const omphalos_ctx *pctx){
 	cleanup_interfaces(&pctx->iface);
 	cleanup_pcap(&pctx->iface);
+	cleanup_iana_naming();
 	stop_pci_support();
 	stop_usb_support();
 }

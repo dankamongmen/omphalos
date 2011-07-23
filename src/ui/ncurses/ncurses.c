@@ -1,4 +1,5 @@
 #include <errno.h>
+#include <omphalos/iana.h>
 #include <ctype.h>
 #include <assert.h>
 #include <unistd.h>
@@ -371,10 +372,11 @@ err:
 
 static int
 wvstatus_locked(WINDOW *w,const char *fmt,va_list va){
+	assert(statuschars > 0);
 	if(fmt == NULL){
 		statusmsg[0] = '\0';
 	}else{
-		vsnprintf(statusmsg,statuschars,fmt,va);
+		assert(vsnprintf(statusmsg,statuschars,fmt,va) < statuschars);
 	}
 	return draw_main_window(w,PROGNAME,VERSION);
 }

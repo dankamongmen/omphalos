@@ -15,6 +15,8 @@ int init_iana_naming(const struct omphalos_iface *,const char *);
 // Look up the 24-bit OUI against IANA specifications.
 const char *iana_lookup(const void *);
 
+void cleanup_iana_naming(void);
+
 #ifdef __cplusplus
 }
 #endif

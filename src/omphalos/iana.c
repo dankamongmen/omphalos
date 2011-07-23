@@ -144,3 +144,7 @@ const char *iana_lookup(const void *unsafe_oui){
 	}
 	return NULL;
 }
+
+void cleanup_iana_naming(void){
+	free_ouitries(trie);
+}
