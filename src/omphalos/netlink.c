@@ -746,6 +746,10 @@ netlink_thread(const omphalos_iface *octx){
 			.events = POLLIN | POLLRDNORM | POLLERR,
 		}
 	};
+	int(* const callbacks[2])(const omphalos_iface *,int) = {
+		handle_netlink_event,
+		handle_watch_event,
+	};
 	int events;
 
 	if((pfd[1].fd = watch_init(octx)) < 0){
@@ -787,7 +791,7 @@ netlink_thread(const omphalos_iface *octx){
 			if(pfd[z].revents & POLLERR){
 				octx->diagnostic("Error polling socket %d\n",pfd[z].fd);
 			}else if(pfd[z].revents){
-				handle_netlink_event(octx,pfd[z].fd);
+				callbacks[z](octx,pfd[z].fd);
 			}
 			pfd[z].revents = 0;
 		}

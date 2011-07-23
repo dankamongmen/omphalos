@@ -9,6 +9,7 @@ struct omphalos_iface;
 
 int watch_init(const struct omphalos_iface *);
 int watch_file(const struct omphalos_iface *,const char *);
+int handle_watch_event(const struct omphalos_iface *,int);
 int watch_stop(const struct omphalos_iface *);
 
 #ifdef __cplusplus
