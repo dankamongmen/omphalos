@@ -615,30 +615,32 @@ handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	}
 	// Offload info seems available for everything, even loopback.
 	iface_offload_info(octx,iface->name,&iface->offload,&iface->offloadmask);
-	if(iface->fd < 0 && (iface->flags & IFF_UP)){
-		prepare_packet_sockets(octx,iface,ii->ifi_index);
-	}else if(iface->pmarsh && !(iface->flags & IFF_UP)){
-		// See note in free_iface() about operation ordering here.
-		reap_thread(octx,iface);
-		close(iface->rfd);
-		close(iface->fd);
-		memset(&iface->ttpr,0,sizeof(iface->ttpr));
-		memset(&iface->rtpr,0,sizeof(iface->rtpr));
-		iface->rfd = iface->fd = -1;
-		iface->rs = iface->ts = 0;
-	}
-	if(octx->iface_event){
-		struct timeval tv; // account for any recent zero-sampling
 
-		gettimeofday(&tv,NULL);
-		timestat_inc(&iface->fps,&tv,0);
-		timestat_inc(&iface->bps,&tv,0);
+	// Bring down or set up the packet sockets and thread, as appropriate
+	if(iface->fd < 0 && (iface->flags & IFF_UP)){
+		iface->opaque = octx->iface_event(iface,iface->opaque);
+		prepare_packet_sockets(octx,iface,ii->ifi_index);
+	}else{
+		if(iface->pmarsh && !(iface->flags & IFF_UP)){
+			// See note in free_iface() about operation ordering here.
+			reap_thread(octx,iface);
+			close(iface->rfd);
+			close(iface->fd);
+			memset(&iface->ttpr,0,sizeof(iface->ttpr));
+			memset(&iface->rtpr,0,sizeof(iface->rtpr));
+			iface->rfd = iface->fd = -1;
+			iface->rs = iface->ts = 0;
+		}
 		iface->opaque = octx->iface_event(iface,iface->opaque);
 	}
+
+	// Ensure there's L2 host entries for the device's address and any
+	// appropriate link broadcast adddress.
 	lookup_l2host(octx,iface,iface->addr,0,NULL);
 	if(iface->bcast && (iface->flags & IFF_BROADCAST)){
 		lookup_l2host(octx,iface,iface->bcast,0,NULL);
 	}
+
 	return 0;
 }
 
