@@ -37,6 +37,7 @@ handle_pcap_ethernet(u_char *gi,const struct pcap_pkthdr *h,const u_char *bytes)
 		return;
 	}
 	packet.i = iface;
+	// FIXME how to handle .addr itself? broadcast?
 	handle_ethernet_packet(pm->octx,&packet,bytes,h->len);
 	if(pm->octx->packet_read){
 		pm->octx->packet_read(&packet);
@@ -54,20 +55,23 @@ handle_pcap_cooked(u_char *gi,const struct pcap_pkthdr *h,const u_char *bytes){
 		char hwaddr[8];
 		uint16_t proto;
 	} *sll;
+	char addr[8];
 	omphalos_packet packet;
 
 	++iface->frames;
-	if(h->caplen != h->len){
+	if(h->caplen != h->len || h->caplen < sizeof(*sll)){
 		pm->octx->diagnostic("Partial capture (%u/%ub)",h->caplen,h->len);
 		++iface->truncated;
 		return;
 	}
 	sll = (const struct pcapsll *)bytes;
-	iface->addrlen = ntohs(sll->hwlen);
 	if(h->len < sizeof(*sll) || ntohs(sll->hwlen) > sizeof(sll->hwaddr)){
 		++iface->malformed;
 		return;
 	}
+	packet.i->addrlen = ntohs(sll->hwlen);
+	memcpy(addr,sll->hwaddr,ntohs(sll->hwlen));
+	packet.i->addr = addr;
 	packet.l2s = lookup_l2host(pm->octx,iface,sll->hwaddr,AF_UNSPEC,NULL);
 	packet.l2d = packet.l2s;
 	packet.i = iface;
@@ -95,10 +99,10 @@ int handle_pcap_file(const omphalos_ctx *pctx){
 	char ebuf[PCAP_ERRBUF_SIZE];
 	pcap_marshal pmarsh = {
 		.octx = &pctx->iface,
+		.i = &pcap_file_interface,
 	};
 	pcap_t *pcap;
 
-	pmarsh.i = &pcap_file_interface;
 	free(pmarsh.i->name);
 	memset(pmarsh.i,0,sizeof(*pmarsh.i));
 	pmarsh.i->fd = pmarsh.i->rfd = -1;
@@ -114,7 +118,8 @@ int handle_pcap_file(const omphalos_ctx *pctx){
 	switch(pcap_datalink(pcap)){
 		case DLT_EN10MB:{
 			fxn = handle_pcap_ethernet;
-			pmarsh.i->addrlen = ETH_ALEN;
+			// FIXME how to handle ->addr itself? ->bcast?
+			pmarsh.i->addrlen = 0;
 			break;
 		}case DLT_LINUX_SLL:{
 			fxn = handle_pcap_cooked;
