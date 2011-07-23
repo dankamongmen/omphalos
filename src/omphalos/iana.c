@@ -151,7 +151,7 @@ name_ethmcastaddr(const void *mac){
 			.name = "Spanning Tree Protocol",
 			.mac = "\x01\x80\xc2\x00\x00\x00",
 			.mlen = 6,
-		},
+		},{ .name = NULL, .mac = NULL, .mlen = 0, }
 	},*mc;
 
 	for(mc = mcasts ; mc->name ; ++mc){
