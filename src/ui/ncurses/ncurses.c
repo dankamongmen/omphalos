@@ -1564,6 +1564,7 @@ static inline void
 interface_removed_locked(iface_state *is){
 	if(is){
 		l2obj *l = is->l2objs;
+		int rows,cols;
 
 		while(l){
 			l2obj *tmp = l->next;
@@ -1572,10 +1573,10 @@ interface_removed_locked(iface_state *is){
 		}
 		werase(is->subwin);
 		del_panel(is->panel);
+		getmaxyx(is->subwin,rows,cols);
 		delwin(is->subwin);
 		if(is->next != is){
 			int scrrows,scrcols;
-			int rows,cols;
 			iface_state *ci;
 
 			// First, splice it out of the list
@@ -1590,7 +1591,6 @@ interface_removed_locked(iface_state *is){
 			}
 			getmaxyx(pad,scrrows,scrcols);
 			assert(scrcols);
-			getmaxyx(is->subwin,rows,cols);
 			assert(cols);
 			for(ci = is->next ; ci->scrline > is->scrline ; ci = ci->next){
 				interface *ii = ci->iface;
