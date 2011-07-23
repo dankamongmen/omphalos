@@ -11,9 +11,11 @@ static pthread_mutex_t ilock = PTHREAD_MUTEX_INITIALIZER;
 
 static int
 watch_init_locked(const omphalos_iface *octx){
-	if((inotify_fd = inotify_init1(IN_NONBLOCK|IN_CLOEXEC)) < 0){
-		octx->diagnostic("Couldn't open inotify fd (%s?)",strerror(errno));
-		return -1;
+	if(inotify_fd < 0){
+		if((inotify_fd = inotify_init1(IN_NONBLOCK|IN_CLOEXEC)) < 0){
+			octx->diagnostic("Couldn't open inotify fd (%s?)",strerror(errno));
+			return -1;
+		}
 	}
 	return inotify_fd;
 }
