@@ -1,6 +1,6 @@
 .DELTE_ON_ERROR:
 .DEFAULT_GOAL:=test
-.PHONY: all bin lib doc livetest test clean install uninstall
+.PHONY: all bin lib doc livetest test clean clobber install uninstall
 .PHONY:	bless sudobless
 
 VERSION=0.0.1
@@ -62,12 +62,17 @@ COREOBJS:=$(filter $(OUT)/$(SRC)/$(PROJ)/%.o,$(COBJS))
 NCURSESOBJS:=$(filter $(OUT)/$(SRC)/ui/ncurses/%.o,$(COBJS))
 TTYOBJS:=$(filter $(OUT)/$(SRC)/ui/tty/%.o,$(COBJS))
 
+IANAOUI:=ieee-oui.txt
+
 # Requires CAP_NET_ADMIN privileges bestowed upon the binary
 livetest: sudobless
 	$(OMPHALOS)-ncurses -u ''
 
-test: all $(TESTPCAPS)
+test: all $(TESTPCAPS) $(IANAOUI)
 	for i in $(TESTPCAPS) ; do $(OMPHALOS)-tty -f $$i -u "" || exit 1 ; done
+
+$(IANAOUI):
+	get-oui -v -f $@
 
 $(OMPHALOS)-ncurses: $(COREOBJS) $(NCURSESOBJS)
 	@mkdir -p $(@D)
@@ -93,6 +98,9 @@ $(TAGS): $(CINCS) $(CSRCS) $(wildcard $(SRC)/ui/*/*.c)
 
 clean:
 	rm -rf $(OUT) core
+
+clobber: clean
+	rm -rf $(IANAOUI)
 
 bless: all
 	$(ADDCAPS) $(BIN)
