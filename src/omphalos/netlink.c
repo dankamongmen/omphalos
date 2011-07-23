@@ -69,8 +69,9 @@ int netlink_socket(const omphalos_iface *octx){
 	if((r = send(fd,&req,req.nh.nlmsg_len,0)) < 0){ \
 		octx->diagnostic("Failure writing " #msg " to %d (%s?)",\
 				fd,strerror(errno)); \
+		return -1; \
 	} \
-	return r; \
+	return 0; \
 }while(0)
 
 static int
@@ -759,17 +760,17 @@ netlink_thread(const omphalos_iface *octx){
 		watch_stop(octx);
 		return -1;
 	}
-	if(discover_links(octx,pfd[0].fd) < 0){
+	if(discover_links(octx,pfd[0].fd)){
 		close(pfd[0].fd);
 		watch_stop(octx);
 		return -1;
 	}
-	if(discover_neighbors(octx,pfd[0].fd) < 0){
+	if(discover_neighbors(octx,pfd[0].fd)){
 		close(pfd[0].fd);
 		watch_stop(octx);
 		return -1;
 	}
-	if(discover_routes(octx,pfd[0].fd) < 0){
+	if(discover_routes(octx,pfd[0].fd)){
 		close(pfd[0].fd);
 		watch_stop(octx);
 		return -1;
