@@ -46,7 +46,6 @@ free_ouitries(ouitrie **tries){
 	}
 }
 
-#include <assert.h>
 static void
 parse_file(const omphalos_iface *octx){
 	ouitrie *head[OUITRIE_SIZE];
@@ -67,7 +66,7 @@ parse_file(const omphalos_iface *octx){
 		unsigned long hex;
 		unsigned char b;
 		ouitrie *cur,*c;
-		char *end;
+		char *end,*nl;
 
 		if((hex = strtoul(buf,&end,16)) == 0 || hex > ((1u << 24u) - 1)){
 			continue;
@@ -77,6 +76,16 @@ parse_file(const omphalos_iface *octx){
 		}
 		while(isspace(*end)){
 			++end;
+		}
+		nl = end;
+		while(*nl && *nl != '\n'){
+			++nl;
+		}
+		if(*nl == '\n'){
+			*nl = '\0';
+		}
+		if(nl == end){
+			continue;
 		}
 		b = (hex & (0xffu << 16u)) >> 16u;
 		allocerr = 1;
@@ -93,7 +102,7 @@ parse_file(const omphalos_iface *octx){
 		}
 		b = hex & 0xff;
 		if(c->next[b]){
-			//octx->diagnostic("Duplicate entries for %.6s in %s",buf,ianafn);
+			octx->diagnostic("Duplicate entries for %.6s in %s",buf,ianafn);
 		}else{
 			if((c->next[b] = strdup(end)) == NULL){
 				break; // FIXME
