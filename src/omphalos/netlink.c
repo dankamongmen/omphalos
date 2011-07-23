@@ -489,6 +489,10 @@ handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 			case IFLA_ADDRESS:{
 				char *addr;
 
+				if(iface->addrlen && iface->addrlen != RTA_PAYLOAD(ra)){
+					octx->diagnostic("Address illegal: %lu",RTA_PAYLOAD(ra));
+					return -1;
+				}
 				if((addr = malloc(RTA_PAYLOAD(ra))) == NULL){
 					octx->diagnostic("Address too long: %lu",RTA_PAYLOAD(ra));
 					return -1;
@@ -498,12 +502,25 @@ handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 				iface->addr = addr;
 				iface->addrlen = RTA_PAYLOAD(ra);
 			break;}case IFLA_BROADCAST:{
+				char *addr;
+
+				if(iface->addrlen && iface->addrlen != RTA_PAYLOAD(ra)){
+					octx->diagnostic("Broadcast illegal: %lu",RTA_PAYLOAD(ra));
+					return -1;
+				}
+				if((addr = malloc(RTA_PAYLOAD(ra))) == NULL){
+					octx->diagnostic("Broadcast too long: %lu",RTA_PAYLOAD(ra));
+					return -1;
+				}
+				memcpy(addr,RTA_DATA(ra),RTA_PAYLOAD(ra));
+				free(iface->bcast);
+				iface->bcast = addr;
+				iface->addrlen = RTA_PAYLOAD(ra);
 			break;}case IFLA_IFNAME:{
 				char *name;
 
 				if((name = strdup(RTA_DATA(ra))) == NULL){
-					// FIXME probably unsafe..
-					octx->diagnostic("Name too long: %s",(char *)RTA_DATA(ra));
+					octx->diagnostic("Name too long: %lu",RTA_PAYLOAD(ra));
 					return -1;
 				}
 				free(iface->name);
@@ -560,7 +577,11 @@ handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	}
 	// FIXME memory leaks on failure paths, ahoy!
 	if(iface->name == NULL){
-		octx->diagnostic("No name in new link message");
+		octx->diagnostic("No name in link message");
+		return -1;
+	}
+	if(iface->addr == NULL){
+		octx->diagnostic("No address in link message for %s",iface->name);
 		return -1;
 	}
 	if(lookup_arptype(ii->ifi_type,&iface->analyzer) == NULL){
@@ -612,7 +633,9 @@ handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 		timestat_inc(&iface->bps,&tv,0);
 		iface->opaque = octx->iface_event(iface,iface->opaque);
 	}
-	if(octx->neigh_event){
+	lookup_l2host(octx,iface,iface->addr,iface->addrlen,0,NULL);
+	if(iface->bcast){
+		lookup_l2host(octx,iface,iface->bcast,iface->addrlen,0,NULL);
 	}
 	return 0;
 }
