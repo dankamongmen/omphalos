@@ -8,7 +8,6 @@
 #include <omphalos/pcap.h>
 #include <linux/wireless.h>
 #include <omphalos/hwaddrs.h>
-#include <omphalos/netaddrs.h>
 #include <omphalos/wireless.h>
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
@@ -91,9 +90,6 @@ dump_output(FILE *fp){
 		return -1;
 	}
 	if(print_stats(fp)){
-		return -1;
-	}
-	if(print_l3hosts(fp)){
 		return -1;
 	}
 	if(fprintf(fp,"</omphalos>\n") < 0 || fflush(fp)){

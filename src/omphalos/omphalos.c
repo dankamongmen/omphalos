@@ -15,7 +15,6 @@
 #include <omphalos/hwaddrs.h>
 #include <omphalos/netlink.h>
 #include <omphalos/omphalos.h>
-#include <omphalos/netaddrs.h>
 #include <omphalos/ethernet.h>
 #include <omphalos/interface.h>
 
@@ -153,7 +152,6 @@ int omphalos_init(const omphalos_ctx *pctx){
 void omphalos_cleanup(const omphalos_ctx *pctx){
 	cleanup_interfaces(&pctx->iface);
 	cleanup_pcap(&pctx->iface);
-	cleanup_l3hosts();
 	stop_pci_support();
 	stop_usb_support();
 }

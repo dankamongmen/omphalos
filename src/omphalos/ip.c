@@ -8,7 +8,6 @@
 #include <omphalos/util.h>
 #include <omphalos/hwaddrs.h>
 #include <omphalos/ethernet.h>
-#include <omphalos/netaddrs.h>
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
 
