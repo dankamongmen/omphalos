@@ -70,10 +70,10 @@ parse_file(const omphalos_iface *octx){
 		ouitrie *cur,*c;
 		char *end,*nl;
 
-		if((hex = strtoul(buf,&end,16)) == 0 || hex > ((1u << 24u) - 1)){
+		if((hex = strtoul(buf,&end,16)) > ((1u << 24u) - 1)){
 			continue;
 		}
-		if(!isspace(*end)){
+		if(!isspace(*end) || end == buf){
 			continue;
 		}
 		while(isspace(*end)){
