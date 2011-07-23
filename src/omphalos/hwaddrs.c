@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <arpa/inet.h>
+#include <linux/if_arp.h>
 #include <omphalos/iana.h>
 #include <linux/rtnetlink.h>
 #include <omphalos/hwaddrs.h>
@@ -32,7 +33,6 @@ create_l2host(const void *hwaddr,size_t addrlen){
 		l2->hwaddr = 0;
 		memcpy(&l2->hwaddr,hwaddr,addrlen);
 		l2->name = NULL;
-		l2->devname = iana_lookup(hwaddr);
 		l2->opaque = NULL;
 	}
 	return l2;
@@ -58,6 +58,11 @@ l2host *lookup_l2host(const omphalos_iface *octx,interface *i,
 		}
 	}
 	if( (l2 = create_l2host(hwaddr,addrlen)) ){
+		if(i->arptype == ARPHRD_ETHER){
+			l2->devname = iana_lookup(hwaddr);
+		}else{
+			l2->devname = NULL;
+		}
 		l2->next = i->l2hosts;
 		i->l2hosts = l2;
 		if(name){
