@@ -896,11 +896,11 @@ netlink_thread(const omphalos_iface *octx){
 		close(pfd[0].fd);
 		return -1;
 	}
-	if(discover_routes(octx,pfd[0].fd) < 0){
+	if(discover_neighbors(octx,pfd[0].fd) < 0){
 		close(pfd[0].fd);
 		return -1;
 	}
-	if(discover_neighbors(octx,pfd[0].fd) < 0){
+	if(discover_routes(octx,pfd[0].fd) < 0){
 		close(pfd[0].fd);
 		return -1;
 	}

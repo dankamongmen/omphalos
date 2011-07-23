@@ -1263,7 +1263,8 @@ print_iface_hosts(const interface *i,const iface_state *is){
 	return OK;
 }
 
-// This is the number of lines we'd have in an optimal world; we might get less.
+// This is the number of lines we'd have in an optimal world; we might have
+// fewer available to us on this screen at this time. ->ysize is real size.
 static inline int
 lines_for_interface(const interface *i,const iface_state *is){
 	return PAD_LINES + is->l2ents - !interface_up_p(i);
@@ -1533,7 +1534,6 @@ wireless_callback(interface *i,unsigned wcmd __attribute__ ((unused)),void *unsa
 
 	pthread_mutex_lock(&bfl);
 	r = interface_cb_locked(i,unsafe);
-	wstatus_locked(pad,"wireless event on %s",i->name); // FIXME
 	pthread_mutex_unlock(&bfl);
 	return r;
 }
@@ -1595,6 +1595,10 @@ neighbor_callback_locked(const interface *i,struct l2host *l2){
 
 	// Guaranteed by callback properties -- we don't get neighbor callbacks
 	// until there's been a successful device callback.
+	// FIXME experimental work on reordering callbacks
+	if(i->opaque == NULL){
+		return NULL;
+	}
 	assert( (is = i->opaque) );
 	if((ret = l2host_get_opaque(l2)) == NULL){
 		if((ret = get_l2obj(i,l2)) == NULL){
