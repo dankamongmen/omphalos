@@ -39,6 +39,7 @@ int watch_init(const omphalos_iface *octx){
 int watch_file(const omphalos_iface *octx,const char *fn,watchcbfxn fxn){
 	int ret = -1;
 
+	fxn(octx);
 	// FIXME shouldn't be calling diagnostics etc within critical section!
 	pthread_mutex_lock(&ilock);
 	if(watch_init_locked(octx) >= 0){

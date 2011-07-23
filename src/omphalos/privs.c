@@ -113,7 +113,7 @@ int handle_priv_drop(const char *name,const cap_value_t *caparray,unsigned n){
 	// we could just rely on setuid() failing, but setpcap() fails
 	// that due to absence of CAP_SETPCAP, which confuses the user
 	if(cap_get_flag(cap,CAP_SETUID,CAP_EFFECTIVE,&val) || val != CAP_SET){
-		fprintf(stderr,"Don't have CAP_SETUID; won't change UID (try -u '')!\n");
+		fprintf(stderr,"Don't have CAP_SETUID; won't change UID to %s (try -u '')!\n",name);
 		cap_free(cap);
 		return -1;
 	}
