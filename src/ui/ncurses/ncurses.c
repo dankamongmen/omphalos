@@ -1,5 +1,4 @@
 #include <errno.h>
-#include <omphalos/iana.h>
 #include <ctype.h>
 #include <assert.h>
 #include <unistd.h>
@@ -1225,7 +1224,7 @@ print_iface_hosts(const interface *i,const iface_state *is){
 	// If the interface is down, we don't lead with the summary line
 	line = !!interface_up_p(i);
 	for(l = is->l2objs ; l ; ++idx, l = l->next){
-		const char *iana;
+		const char *devname;
 		char legend;
 		char *hw;
 		
@@ -1258,14 +1257,15 @@ print_iface_hosts(const interface *i,const iface_state *is){
 		if((hw = l2addrstr(l->l2,i->addrlen)) == NULL){
 			return ERR;
 		}
-		// FIXME do this once, at l2node creation time, augh
-		iana = iana_lookup(l->l2);
-		// ipv6 can be up to INET6_ADDRSTRLEN == 46 columns, quite
-		// large...this isn't really safe at all FIXME
-		if(iana){
-			assert(mvwprintw(is->subwin,++line,START_COL," %c %s %s %*s",
-						legend,hw,iana,
-						INET6_ADDRSTRLEN - (int)strlen(iana),
+		if( (devname = get_devname(l->l2)) ){
+			int len = strlen(devname);
+
+			if(len > INET6_ADDRSTRLEN){
+				len = INET6_ADDRSTRLEN;
+			}
+			assert(mvwprintw(is->subwin,++line,START_COL," %c %s %*s %*s",
+						legend,hw,len,devname,
+						INET6_ADDRSTRLEN - len,
 						get_name(l->l2)) != ERR);
 		}else{
 			assert(mvwprintw(is->subwin,++line,START_COL," %c %s  %*s",

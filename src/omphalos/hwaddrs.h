@@ -35,6 +35,7 @@ void name_l2host_local(const struct omphalos_iface *,const struct interface *,
 				__attribute__ ((nonnull (1,2,3,5)));
 
 const char *get_name(const struct l2host *);
+const char *get_devname(const struct l2host *);
 
 #ifdef __cplusplus
 }

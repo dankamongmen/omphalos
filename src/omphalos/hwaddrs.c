@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <arpa/inet.h>
+#include <omphalos/iana.h>
 #include <linux/rtnetlink.h>
 #include <omphalos/hwaddrs.h>
 #include <omphalos/ethernet.h>
@@ -13,7 +14,8 @@
 // same length of hardware address.
 typedef struct l2host {
 	uint64_t hwaddr;	// does anything have more than 64 bits at L2?
-	char *name;		// some textual description
+	char *name;		// some textual description FIXME eliminate
+	const char *devname;	// description based off lladdress
 	struct l2host *next;
 	void *opaque;		// FIXME not sure about how this is being done
 } l2host;
@@ -30,6 +32,7 @@ create_l2host(const void *hwaddr,size_t addrlen){
 		l2->hwaddr = 0;
 		memcpy(&l2->hwaddr,hwaddr,addrlen);
 		l2->name = NULL;
+		l2->devname = iana_lookup(hwaddr);
 		l2->opaque = NULL;
 	}
 	return l2;
@@ -217,4 +220,8 @@ void name_l2host(const omphalos_iface *octx,interface *i,l2host *l2,
 
 const char *get_name(const l2host *l2){
 	return l2->name;
+}
+
+const char *get_devname(const l2host *l2){
+	return l2->devname;
 }
