@@ -65,7 +65,7 @@ TTYOBJS:=$(filter $(OUT)/$(SRC)/ui/tty/%.o,$(COBJS))
 IANAOUI:=ieee-oui.txt
 
 # Requires CAP_NET_ADMIN privileges bestowed upon the binary
-livetest: sudobless
+livetest: sudobless $(IANAOUI)
 	$(OMPHALOS)-ncurses -u ''
 
 test: all $(TESTPCAPS) $(IANAOUI)
