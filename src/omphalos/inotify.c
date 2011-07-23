@@ -74,8 +74,11 @@ int handle_watch_event(const omphalos_iface *octx,int fd){
 	ssize_t r;
 
 	while((r = read(fd,&event,sizeof(event))) == sizeof(event)){
-		octx->diagnostic("Event 0x%08x on %d",event.mask,event.wd);
-		// FIXME handle event
+		if(fxns[event.wd]){
+			fxns[event.wd](octx);
+		}else{
+			octx->diagnostic("No handler for %08x on %d",event.mask,event.wd);
+		}
 	}
 	if(r < 0){
 		if(errno == EAGAIN){
