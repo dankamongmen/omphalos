@@ -163,7 +163,7 @@ wireless_event(interface *i,unsigned cmd,void *unsafe __attribute__ ((unused))){
 
 static void
 packet_cb(omphalos_packet *op){
-	printf("%s -> %s\n",
+	printf("[%s] %s -> %s\n",op->i->name,
 			op->l2s ? get_name(op->l2s) : NULL,
 			op->l2d ? get_name(op->l2d) : NULL);
 }
