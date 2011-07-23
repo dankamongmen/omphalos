@@ -180,7 +180,7 @@ handle_rtm_newneigh(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	}
 	if(llen){
 		if(!(nd->ndm_state & (NUD_NOARP|NUD_FAILED|NUD_INCOMPLETE))){
-			lookup_l2host(octx,iface,ll,sizeof(ll),nd->ndm_family,ad);
+			lookup_l2host(octx,iface,ll,nd->ndm_family,ad);
 		}
 	}
 	return 0;
@@ -635,9 +635,9 @@ handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 		timestat_inc(&iface->bps,&tv,0);
 		iface->opaque = octx->iface_event(iface,iface->opaque);
 	}
-	lookup_l2host(octx,iface,iface->addr,iface->addrlen,0,NULL);
-	if(iface->bcast){
-		lookup_l2host(octx,iface,iface->bcast,iface->addrlen,0,NULL);
+	lookup_l2host(octx,iface,iface->addr,0,NULL);
+	if(iface->bcast && (iface->flags & IFF_BROADCAST)){
+		lookup_l2host(octx,iface,iface->bcast,0,NULL);
 	}
 	return 0;
 }

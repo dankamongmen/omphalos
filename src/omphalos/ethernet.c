@@ -190,8 +190,8 @@ void handle_ethernet_packet(const omphalos_iface *octx,omphalos_packet *op,
 		return;
 	}
 	// Source and dest immediately follow the preamble in all frame types
-	op->l2s = lookup_l2host(octx,op->i,hdr->h_source,ETH_ALEN,AF_UNSPEC,NULL);
-	op->l2d = lookup_l2host(octx,op->i,hdr->h_dest,ETH_ALEN,AF_UNSPEC,NULL);
+	op->l2s = lookup_l2host(octx,op->i,hdr->h_source,AF_UNSPEC,NULL);
+	op->l2d = lookup_l2host(octx,op->i,hdr->h_dest,AF_UNSPEC,NULL);
 	dgram = (const char *)frame + sizeof(*hdr);
 	dlen = len - sizeof(*hdr);
        	proto = ntohs(hdr->h_proto);

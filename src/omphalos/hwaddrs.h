@@ -13,29 +13,32 @@ struct interface;
 struct omphalos_iface;
 
 struct l2host *lookup_l2host(const struct omphalos_iface *,struct interface *,
-				const void *,size_t,int,const void *)
+				const void *,int,const void *)
 				__attribute__ ((nonnull (1,2,3)));
 
 void cleanup_l2hosts(struct l2host **);
-int print_l2hosts(FILE *,const struct l2host *);
-char *l2addrstr(const struct l2host *,size_t);
+char *l2addrstr(const struct l2host *,size_t) __attribute__ ((nonnull (1)));
 
-void *l2host_get_opaque(struct l2host *);
+void *l2host_get_opaque(struct l2host *) __attribute__ ((nonnull (1)));
 
 // Predicates and comparators
-int l2hostcmp(const struct l2host *,const struct l2host *);
-int l2categorize(const struct interface *,const struct l2host *);
+int l2hostcmp(const struct l2host *,const struct l2host *)
+				__attribute__ ((nonnull (1,2)));
+
+int l2categorize(const struct interface *,const struct l2host *)
+				__attribute__ ((nonnull (1,2)));
 
 // Naming
 void name_l2host(const struct omphalos_iface *,struct interface *,
 				struct l2host *,int,const void *)
 				__attribute__ ((nonnull (1,2,3,5)));
+
 void name_l2host_local(const struct omphalos_iface *,const struct interface *,
 				struct l2host *,int,const void *)
 				__attribute__ ((nonnull (1,2,3,5)));
 
-const char *get_name(const struct l2host *);
-const char *get_devname(const struct l2host *);
+const char *get_name(const struct l2host *) __attribute__ ((nonnull (1)));
+const char *get_devname(const struct l2host *) __attribute__ ((nonnull (1)));
 
 #ifdef __cplusplus
 }

@@ -63,12 +63,12 @@ handle_pcap_cooked(u_char *gi,const struct pcap_pkthdr *h,const u_char *bytes){
 		return;
 	}
 	sll = (const struct pcapsll *)bytes;
-	iface->addrlen = sll->hwlen;
+	iface->addrlen = ntohs(sll->hwlen);
 	if(h->len < sizeof(*sll) || ntohs(sll->hwlen) > sizeof(sll->hwaddr)){
 		++iface->malformed;
 		return;
 	}
-	packet.l2s = lookup_l2host(pm->octx,iface,sll->hwaddr,ntohs(sll->hwlen),AF_UNSPEC,NULL);
+	packet.l2s = lookup_l2host(pm->octx,iface,sll->hwaddr,AF_UNSPEC,NULL);
 	packet.l2d = packet.l2s;
 	packet.i = iface;
 	// proto is in network byte-order. rather than possibly switch it

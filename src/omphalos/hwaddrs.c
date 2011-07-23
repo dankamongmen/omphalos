@@ -41,13 +41,12 @@ create_l2host(const void *hwaddr,size_t addrlen){
 // FIXME strictly proof-of-concept. we'll want a trie- or hash-based
 // lookup, backed by an arena-allocated LRU, etc...
 l2host *lookup_l2host(const omphalos_iface *octx,interface *i,
-			const void *hwaddr,size_t addrlen,
-			int family,const void *name){
+			const void *hwaddr,int family,const void *name){
 	l2host *l2,**prev;
 	uint64_t hwcmp;
 
 	hwcmp = 0;
-	memcpy(&hwcmp,hwaddr,addrlen);
+	memcpy(&hwcmp,hwaddr,i->addrlen);
 	for(prev = &i->l2hosts ; (l2 = *prev) ; prev = &l2->next){
 		if(l2->hwaddr == hwcmp){
 			// Move it to the front of the list, splicing it out
@@ -57,8 +56,11 @@ l2host *lookup_l2host(const omphalos_iface *octx,interface *i,
 			return l2;
 		}
 	}
-	if( (l2 = create_l2host(hwaddr,addrlen)) ){
-		if(i->arptype == ARPHRD_ETHER){
+	if( (l2 = create_l2host(hwaddr,i->addrlen)) ){
+		if((i->flags & IFF_BROADCAST) && i->bcast &&
+				memcmp(hwaddr,i->bcast,i->addrlen) == 0){
+			l2->devname = "Link broadcast";
+		}else if(i->arptype == ARPHRD_ETHER){
 			l2->devname = iana_lookup(hwaddr);
 		}else{
 			l2->devname = NULL;
@@ -99,53 +101,6 @@ char *l2addrstr(const l2host *l2,size_t len){
 		}
 	}
 	return r;
-}
-
-int print_l2hosts(FILE *fp,const l2host *list){
-	const l2host *l2;
-
-	if( (l2 = list) ){
-		if(fprintf(fp,"<neighbors>") < 0){
-			return -1;
-		}
-		do{
-			int ethtype = categorize_ethaddr(&l2->hwaddr);
-			char *hwaddr = NULL;
-
-			switch(ethtype){
-			case RTN_BROADCAST:{
-				if(fprintf(fp,"<ieee802 broadcast/>") < 0){
-					return -1;
-				}
-				break;
-			}case RTN_MULTICAST:{
-				hwaddr = l2addrstr(l2,IFHWADDRLEN);
-
-				if(fprintf(fp,"<ieee802 mcast=\"%s\"/>",hwaddr) < 0){
-					free(hwaddr);
-					return -1;
-				}
-				break;
-			}case RTN_UNICAST:{
-				hwaddr = l2addrstr(l2,IFHWADDRLEN);
-
-				if(fprintf(fp,"<ieee802 addr=\"%s\"/>",hwaddr) < 0){
-					free(hwaddr);
-					return -1;
-				}
-				break;
-			}default:{
-				fprintf(stderr,"Unknown ethtype: %d\n",ethtype);
-				return -1;
-			}
-			}
-			free(hwaddr);
-		}while( (l2 = l2->next) );
-		if(fprintf(fp,"</neighbors>") < 0){
-			return -1;
-		}
-	}
-	return 0;
 }
 
 void *l2host_get_opaque(l2host *l2){

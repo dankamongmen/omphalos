@@ -29,7 +29,7 @@ handle_ieee80211_packet(const omphalos_iface *octx,omphalos_packet *op,
 				__func__,len,op->i->name);
 		return;
 	}
-	l2s = lookup_l2host(octx,op->i,ihdr->hwaddr,sizeof(ihdr->hwaddr),0,NULL);
+	l2s = lookup_l2host(octx,op->i,ihdr->hwaddr,0,NULL);
 	op->l2s = l2s;
 }
 
