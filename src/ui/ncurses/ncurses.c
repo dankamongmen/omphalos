@@ -1218,13 +1218,17 @@ print_iface_state(const interface *i,const iface_state *is){
 
 static int
 print_iface_hosts(const interface *i,const iface_state *is){
-	int line,idx = 0;
+	int rows,cols,line,idx = 0;
 	const l2obj *l;
 
+	getmaxyx(is->subwin,rows,cols);
+	cols -= START_COL * 2 + 3 + i->addrlen * 3;
+	assert(cols >= 0);
+	assert(rows);
 	// If the interface is down, we don't lead with the summary line
 	line = !!interface_up_p(i);
 	for(l = is->l2objs ; l ; ++idx, l = l->next){
-		const char *devname;
+		const char *devname,*nname;
 		char legend;
 		char *hw;
 		
@@ -1257,20 +1261,24 @@ print_iface_hosts(const interface *i,const iface_state *is){
 		if((hw = l2addrstr(l->l2,i->addrlen)) == NULL){
 			return ERR;
 		}
+		if((nname = get_name(l->l2)) == NULL){
+			nname = "";
+		}
 		if( (devname = get_devname(l->l2)) ){
-			int len = strlen(devname);
+			int len = strlen(devname),hlen = strlen(nname);
 
-			if(len > INET6_ADDRSTRLEN){
-				len = INET6_ADDRSTRLEN;
+			if((len + 1) > cols - hlen){
+				len = cols - hlen - 1;
+			}else if(len + 1 < cols - hlen){
+				hlen = cols - len - 1;
 			}
-			assert(mvwprintw(is->subwin,++line,START_COL," %c %s %*s %*s",
+			assert(mvwprintw(is->subwin,++line,START_COL," %c %s %*s %*.*s",
 						legend,hw,len,devname,
-						INET6_ADDRSTRLEN - len,
-						get_name(l->l2)) != ERR);
+						hlen,hlen,nname) != ERR);
 		}else{
 			assert(mvwprintw(is->subwin,++line,START_COL," %c %s  %*s",
-						legend,hw,INET6_ADDRSTRLEN,
-						get_name(l->l2)) != ERR);
+						legend,hw,cols - 1,
+						nname) != ERR);
 		}
 		free(hw);
 	}
