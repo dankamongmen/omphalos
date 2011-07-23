@@ -19,6 +19,7 @@
 #include <omphalos/route.h>
 #include <omphalos/sysfs.h>
 #include <linux/rtnetlink.h>
+#include <omphalos/inotify.h>
 #include <omphalos/ethtool.h>
 #include <omphalos/hwaddrs.h>
 #include <omphalos/psocket.h>
@@ -737,29 +738,39 @@ handle_netlink_event(const omphalos_iface *octx,int fd){
 
 static int
 netlink_thread(const omphalos_iface *octx){
-	struct pollfd pfd[1] = {
+	struct pollfd pfd[2] = {
+		{
+			.events = POLLIN | POLLRDNORM | POLLERR,
+		},
 		{
 			.events = POLLIN | POLLRDNORM | POLLERR,
 		}
 	};
 	int events;
 
+	if((pfd[1].fd = watch_init(octx)) < 0){
+		return -1;
+	}
 	if((pfd[0].fd = netlink_socket(octx)) < 0){
+		watch_stop(octx);
 		return -1;
 	}
 	if(discover_links(octx,pfd[0].fd) < 0){
 		close(pfd[0].fd);
+		watch_stop(octx);
 		return -1;
 	}
 	if(discover_neighbors(octx,pfd[0].fd) < 0){
 		close(pfd[0].fd);
+		watch_stop(octx);
 		return -1;
 	}
 	if(discover_routes(octx,pfd[0].fd) < 0){
 		close(pfd[0].fd);
+		watch_stop(octx);
 		return -1;
 	}
-	for(;;){
+	while(!cancelled){
 		unsigned z;
 
 		errno = 0;
@@ -768,22 +779,20 @@ netlink_thread(const omphalos_iface *octx){
 		}
 		if(events < 0){
 			if(!cancelled){
-				octx->diagnostic("Error polling netlink socket %d (%s?)",
-						pfd[0].fd,strerror(errno));
-				continue;
-			}else{
-				break;
+				octx->diagnostic("Error polling core sockets (%s?)",strerror(errno));
 			}
+			continue;
 		}
 		for(z = 0 ; z < sizeof(pfd) / sizeof(*pfd) ; ++z){
 			if(pfd[z].revents & POLLERR){
-				octx->diagnostic("Error polling netlink socket %d\n",pfd[z].fd);
+				octx->diagnostic("Error polling socket %d\n",pfd[z].fd);
 			}else if(pfd[z].revents){
 				handle_netlink_event(octx,pfd[z].fd);
 			}
 			pfd[z].revents = 0;
 		}
 	}
+	watch_stop(octx);
 	close(pfd[0].fd);
 	return 0;
 }
