@@ -5,9 +5,7 @@
 extern "C" {
 #endif
 
-#include <string.h>
-#include <stddef.h>
-#include <linux/if.h>
+#include <sys/socket.h>
 #include <linux/if_ether.h>
 #include <linux/rtnetlink.h>
 
@@ -35,28 +33,6 @@ check_ethernet_padup(size_t rx,size_t expected){
 		}
 	}
 	return 1;
-}
-
-// FIXME use a trie or bsearch
-// FIXME generate data from a text file, preferably one taken from IANA or
-// whoever administers the multicast address space
-static inline const char *
-name_ethmcastaddr(const void *mac){
-	static const struct mcast {
-		const unsigned char mac[ETH_ALEN];
-		const char *name;
-	} mcasts[] = {
-		{	.mac = "\x01\x80\xc2\x00\x00\x00",
-			.name = "Spanning Tree Protocol",
-		},
-	},*mc;
-
-	for(mc = mcasts ; mc->name ; ++mc){
-		if(memcmp(mac,mc->mac,ETH_ALEN) == 0){
-			return mc->name;
-		}
-	}
-	return NULL;
 }
 
 // Categorize an Ethernet address independent of context (this function never

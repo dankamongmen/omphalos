@@ -5,6 +5,7 @@
 #include <string.h>
 #include <omphalos/iana.h>
 #include <omphalos/inotify.h>
+#include <omphalos/ethernet.h>
 #include <omphalos/omphalos.h>
 
 #define OUITRIE_SIZE 256
@@ -132,6 +133,35 @@ int init_iana_naming(const omphalos_iface *octx,const char *fn){
 	return 0;
 }
 
+// FIXME use a trie or bsearch
+// FIXME generate data from a text file, preferably one taken from IANA or
+// whoever administers the multicast address space
+static inline const char *
+name_ethmcastaddr(const void *mac){
+	static const struct mcast {
+		const char *name;
+		const char *mac;
+		size_t mlen;
+	} mcasts[] = {
+		{ // FIXME need handle MPLS Multicast on 01:00:53:1+
+			.name = "Internet Multicast",
+			.mac = "\x01\x00\x5e",
+			.mlen = 3,
+		},{
+			.name = "Spanning Tree Protocol",
+			.mac = "\x01\x80\xc2\x00\x00\x00",
+			.mlen = 6,
+		},
+	},*mc;
+
+	for(mc = mcasts ; mc->name ; ++mc){
+		if(memcmp(mac,mc->mac,mc->mlen) == 0){
+			return mc->name;
+		}
+	}
+	return NULL;
+}
+
 // Look up the 24-bit OUI against IANA specifications.
 const char *iana_lookup(const void *unsafe_oui){
 	const unsigned char *oui = unsafe_oui;
@@ -141,6 +171,9 @@ const char *iana_lookup(const void *unsafe_oui){
 		if( (t = t->next[oui[1]]) ){
 			return t->next[oui[2]];
 		}
+	}
+	if(categorize_ethaddr(oui) == RTN_MULTICAST){
+		return name_ethmcastaddr(oui);
 	}
 	return NULL;
 }

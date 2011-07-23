@@ -1,4 +1,6 @@
 #include <sys/socket.h>
+#include <linux/if.h>
+#include <linux/llc.h>
 #include <omphalos/ip.h>
 #include <omphalos/arp.h>
 #include <omphalos/util.h>
@@ -9,7 +11,6 @@
 #include <omphalos/ethernet.h>
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
-#include <linux/llc.h>
 
 #define ETH_P_ECTP	0x9000	// Ethernet Configuration Test Protocol
 

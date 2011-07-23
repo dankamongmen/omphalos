@@ -118,7 +118,10 @@ int l2categorize(const interface *i,const l2host *l2){
 	if(ret == RTN_UNICAST){
 		return memcmp(i->addr,&l2->hwaddr,i->addrlen) ? RTN_UNICAST : RTN_LOCAL;
 	}else if(ret == RTN_MULTICAST){
-		return memcmp(i->bcast,&l2->hwaddr,i->addrlen) ? RTN_MULTICAST : RTN_BROADCAST;
+		if((i->flags & IFF_BROADCAST) && i->bcast){
+			return memcmp(i->bcast,&l2->hwaddr,i->addrlen) ? RTN_MULTICAST : RTN_BROADCAST;
+		}
+		return RTN_MULTICAST;
 	}
 	return ret;
 }
@@ -168,11 +171,7 @@ void name_l2host(const omphalos_iface *octx,interface *i,l2host *l2,
 				return;
 			}
 		}else if(cat == RTN_MULTICAST){
-			const char *mname;
-
-			if( (mname = name_ethmcastaddr(&l2->hwaddr)) ){
-				name_l2host_absolute(octx,i,l2,mname);
-			}
+			// Look up family-appropriate multicast names
 		}
 		name_l2host_local(octx,i,l2,family,name);
 	}
