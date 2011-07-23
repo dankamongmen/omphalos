@@ -799,6 +799,7 @@ netlink_thread(const omphalos_iface *octx){
 			pfd[z].revents = 0;
 		}
 	}
+	octx->diagnostic("Shutting down...");
 	watch_stop(octx);
 	close(pfd[0].fd);
 	return 0;

@@ -1272,8 +1272,8 @@ print_iface_hosts(const interface *i,const iface_state *is){
 			}else if(len + 1 < cols - hlen){
 				hlen = cols - len - 1;
 			}
-			assert(mvwprintw(is->subwin,++line,START_COL," %c %s %*s %*.*s",
-						legend,hw,len,devname,
+			assert(mvwprintw(is->subwin,++line,START_COL," %c %s %*.*s %*.*s",
+						legend,hw,len,len,devname,
 						hlen,hlen,nname) != ERR);
 		}else{
 			assert(mvwprintw(is->subwin,++line,START_COL," %c %s  %*s",

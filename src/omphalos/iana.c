@@ -143,8 +143,12 @@ name_ethmcastaddr(const void *mac){
 		const char *mac;
 		size_t mlen;
 	} mcasts[] = {
-		{ // FIXME need handle MPLS Multicast on 01:00:53:1+
-			.name = "Internet Multicast",
+		{
+			.name = "IPv6 multicast",	// RFC 2464
+			.mac = "\x33\x33",
+			.mlen = 2,
+		},{ // FIXME need handle MPLS Multicast on 01:00:53:1+
+			.name = "IPv4 multicast",	// RFC 1112
 			.mac = "\x01\x00\x5e",
 			.mlen = 3,
 		},{
