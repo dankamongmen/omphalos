@@ -163,9 +163,10 @@ wireless_event(interface *i,unsigned cmd,void *unsafe __attribute__ ((unused))){
 
 static void
 packet_cb(omphalos_packet *op){
-	printf("[%s] %s -> %s\n",op->i->name,
-			op->l2s ? get_name(op->l2s) : NULL,
-			op->l2d ? get_name(op->l2d) : NULL);
+	printf("[%s] %s -> %s %hu\n",op->i->name,
+			op->l2s ? get_name(op->l2s) : "NO L2 SRC",
+			op->l2d ? get_name(op->l2d) : "NO L2 DST",
+			op->l3proto);
 }
 
 int main(int argc,char * const *argv){
