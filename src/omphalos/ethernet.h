@@ -12,6 +12,8 @@ extern "C" {
 struct omphalos_iface;
 struct omphalos_packet;
 
+#define ETH_P_STP	0x0802
+
 void handle_ethernet_packet(const struct omphalos_iface *,
 				struct omphalos_packet *,const void *,size_t);
 

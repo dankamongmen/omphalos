@@ -144,19 +144,33 @@ name_ethmcastaddr(const void *mac){
 		const char *name;
 		const char *mac;
 		size_t mlen;
+		uint16_t eproto;	// host byte order
 	} mcasts[] = {
 		{
 			.name = "IPv6 multicast",	// RFC 2464
 			.mac = "\x33\x33",
 			.mlen = 2,
+			.eproto = ETH_P_IPV6,
 		},{ // FIXME need handle MPLS Multicast on 01:00:53:1+
 			.name = "IPv4 multicast",	// RFC 1112
 			.mac = "\x01\x00\x5e",
 			.mlen = 3,
+			.eproto = ETH_P_IP,
 		},{
-			.name = "Spanning Tree Protocol",
+			.name = "802.1ad Provider bridge STP",
+			.mac = "\x01\x80\xc2\x00\x00\x08",
+			.mlen = 6,
+			.eproto = ETH_P_STP,
+		},{
+			.name = "802.1d Spanning Tree Protocol",
 			.mac = "\x01\x80\xc2\x00\x00\x00",
 			.mlen = 6,
+			.eproto = ETH_P_STP,
+		},{
+			.name = "802.3ah Ethernet OAM",
+			.mac = "\x01\x80\xc2\x00\x00\x02",
+			.mlen = 6,
+			.eproto = ETH_P_SLOW,
 		},{ .name = NULL, .mac = NULL, .mlen = 0, }
 	},*mc;
 
