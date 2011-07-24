@@ -92,6 +92,7 @@ handle_pcap_cooked(u_char *gi,const struct pcap_pkthdr *h,const u_char *bytes){
 	if(pm->octx->packet_read){
 		pm->octx->packet_read(&packet);
 	}
+	packet.i->addr = NULL;
 }
 
 int handle_pcap_file(const omphalos_ctx *pctx){
