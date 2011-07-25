@@ -179,6 +179,7 @@ handle_8022(const omphalos_iface *octx,omphalos_packet *op,const void *frame,siz
 			}case LLC_SAP_OSI:{	// Routed OSI PDU
 				op->l3proto = ETH_P_OSI;
 				handle_osi_packet(octx,op,dgram,dlen);
+				break;
 			}default:{ // IPv6 always uses SNAP per RFC2019
 				++op->i->noprotocol;
 				octx->diagnostic("%s %s noproto for 0x%x",__func__,
