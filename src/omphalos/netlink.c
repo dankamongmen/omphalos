@@ -455,6 +455,10 @@ name_virtual_device(const struct ifinfomsg *ii,struct ethtool_drvinfo *ed){
 		return strdup("Linux IPIP tunnel");
 	}else if(ii->ifi_type == ARPHRD_TUNNEL6){
 		return strdup("Linux IP6IP6 tunnel");
+	}else if(ii->ifi_type == ARPHRD_SIT){
+		return strdup("Linux IP6IP4 tunnel");
+	}else if(ii->ifi_type == ARPHRD_IPGRE){
+		return strdup("Linux GREIP tunnel");
 	}else if(ii->ifi_type == ARPHRD_VOID){
 		// These can be a number of things...
 		//  teqlX - trivial traffic equalizer
@@ -642,7 +646,9 @@ handle_newlink_locked(const omphalos_iface *octx,interface *iface,
 
 	// Ensure there's L2 host entries for the device's address and any
 	// appropriate link broadcast adddress.
-	lookup_l2host(octx,iface,iface->addr,0,NULL);
+	if(iface->addr){
+		lookup_l2host(octx,iface,iface->addr,0,NULL);
+	}
 	if(iface->bcast && (iface->flags & IFF_BROADCAST)){
 		lookup_l2host(octx,iface,iface->bcast,0,NULL);
 	}
