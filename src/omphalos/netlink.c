@@ -455,6 +455,10 @@ name_virtual_device(const struct ifinfomsg *ii,struct ethtool_drvinfo *ed){
 		return strdup("Linux IPIP tunnel");
 	}else if(ii->ifi_type == ARPHRD_TUNNEL6){
 		return strdup("Linux IP6IP6 tunnel");
+	}else if(ii->ifi_type == ARPHRD_VOID){
+		// These can be a number of things...
+		//  teqlX - trivial traffic equalizer
+		return strdup("Linux metadevice");
 	}else if(ed){
 		if(strcmp(ed->driver,"tun") == 0){
 			if(strcmp(ed->bus_info,"tap") == 0){
@@ -586,10 +590,6 @@ handle_newlink_locked(const omphalos_iface *octx,interface *iface,
 	// FIXME memory leaks on failure paths, ahoy!
 	if(iface->name == NULL){
 		octx->diagnostic("No name in link message");
-		return -1;
-	}
-	if(iface->addr == NULL){
-		octx->diagnostic("No address in link message for %s",iface->name);
 		return -1;
 	}
 	if(lookup_arptype(ii->ifi_type,&iface->analyzer) == NULL){

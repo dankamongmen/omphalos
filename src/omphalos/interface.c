@@ -20,6 +20,17 @@
 
 static interface interfaces[MAXINTERFACES];
 
+// FIXME what the hell to do here...?
+static void
+handle_void_packet(const omphalos_iface *octx,omphalos_packet *op,
+			const void *frame __attribute__ ((unused)),
+			size_t len __attribute__ ((unused))){
+	assert(op->i);
+	if(octx->packet_read){
+		octx->packet_read(op);
+	}
+}
+
 int init_interfaces(void){
 	unsigned i;
 
@@ -327,6 +338,10 @@ static arptype arptypes[] = {
 		.ifi_type = ARPHRD_NONE,
 		.name = "VArpless",
 		.analyze = handle_ethernet_packet, // FIXME no l2 header at all
+	},{
+		.ifi_type = ARPHRD_VOID,
+		.name = "Voiddev",
+		.analyze = handle_void_packet,		// FIXME likely metadata
 	},
 };
 
