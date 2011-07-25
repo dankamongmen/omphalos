@@ -160,6 +160,8 @@ name_ethmcastaddr(const void *mac){
 			.name = "802.1ad Provider bridge STP",
 			.mac = "\x01\x80\xc2\x00\x00\x08",
 			.mlen = 6,
+			// STP actually almost always goes over 802.2 with a
+			// SAP value of 0x42, rather than Ethernet II.
 			.eproto = ETH_P_STP,
 		},{
 			.name = "802.1d Spanning Tree Protocol",
