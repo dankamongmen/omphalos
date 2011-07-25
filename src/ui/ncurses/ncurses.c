@@ -712,16 +712,16 @@ iface_details(WINDOW *hw,const interface *i,int rows){
 					i->topinfo.devname : "Unknown device") != ERR);
 		--z;
 	}case 0:{
-		if(i->flags & IFF_NOARP){
-			assert(mvwprintw(hw,row + z,col,"%-16s %*s",i->name,(IFHWADDRLEN + 2) * 3 - 1,"") != ERR);
-		}else{
+		if(i->addr){
 			char *mac;
 
 			if((mac = hwaddrstr(i)) == NULL){
 				return ERR;
 			}
-			assert(mvwprintw(hw,row + z,col,"%-16s %*s",i->name,(IFHWADDRLEN + 2) * 3 - 1,mac) != ERR);
+			assert(mvwprintw(hw,row + z,col,"%-16s %-*s",i->name,scrcols - (START_COL * 4 + IFNAMSIZ + 1),mac) != ERR);
 			free(mac);
+		}else{
+			assert(mvwprintw(hw,row + z,col,"%-16s %-*s",i->name,scrcols - (START_COL * 4 + IFNAMSIZ + 1),"") != ERR);
 		}
 		--z;
 		break;
