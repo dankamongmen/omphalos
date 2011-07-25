@@ -310,9 +310,20 @@ ring_packet_loop(psocket_marsh *pm){
 	while(!pm->cancelled){
 		int r;
 
+		if( (r = pthread_mutex_lock(&pm->i->lock)) ){
+			pm->octx->diagnostic("Couldn't lock on %s (%s?)",
+					pm->i->name,strerror(r));
+			return -1;
+		}
 		if((r = handle_ring_packet(pm->octx,pm->i,pm->i->rfd,rxm)) == 0){
 			rxm += inclen(&idx,&pm->i->rtpr);
 		}else if(r < 0){
+			pthread_mutex_unlock(&pm->i->lock);
+			return -1;
+		}
+		if( (r = pthread_mutex_unlock(&pm->i->lock)) ){
+			pm->octx->diagnostic("Couldn't lock on %s (%s?)",
+					pm->i->name,strerror(r));
 			return -1;
 		}
 	}
