@@ -369,7 +369,7 @@ void reap_thread(const omphalos_iface *octx,interface *i){
 	//  - the thread wakes, dies, and is joined
 	//  - we safely close the fd and free the pmarsh
 	pthread_mutex_lock(&i->pmarsh->lock);
-		if( (errno = pthread_kill(i->pmarsh->tid,SIGINT)) ){
+		if( (errno = pthread_kill(i->pmarsh->tid,SIGCHLD)) ){
 			octx->diagnostic("Couldn't signal thread (%s?)",strerror(errno));
 		} // FIXME check return codes here
 		i->pmarsh->cancelled = 1;
@@ -799,7 +799,7 @@ netlink_thread(const omphalos_iface *octx){
 			pfd[z].revents = 0;
 		}
 	}
-	octx->diagnostic("Shutting down...");
+	octx->diagnostic("Shutting down (cancelled = %u)...",cancelled);
 	watch_stop(octx);
 	close(pfd[0].fd);
 	return 0;

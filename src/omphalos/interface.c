@@ -26,6 +26,12 @@ int init_interfaces(void){
 	for(i = 0 ; i < sizeof(interfaces) / sizeof(*interfaces) ; ++i){
 		interface *iface = &interfaces[i];
 
+		if(pthread_mutex_init(&iface->lock,NULL)){
+			while(i--){
+				pthread_mutex_destroy(&interfaces[i].lock);
+			}
+			return -1;
+		}
 		iface->rfd = iface->fd = -1;
 	}
 	return 0;
@@ -77,6 +83,7 @@ char *hwaddrstr(const interface *i){
 	return l2addrstr(i->addr,i->addrlen);
 }
 
+// We don't destroy the mutex lock here; it exists for the life of the program.
 void free_iface(const omphalos_iface *octx,interface *i){
 	// Must reap thread prior to closing the fd's, lest some other thread
 	// be allocated that fd, and have the packet socket thread use it.
@@ -124,7 +131,12 @@ void cleanup_interfaces(const omphalos_iface *pctx){
 	unsigned i;
 
 	for(i = 0 ; i < sizeof(interfaces) / sizeof(*interfaces) ; ++i){
+		int r;
+
 		free_iface(pctx,&interfaces[i]);
+		if( (r = pthread_mutex_destroy(&interfaces[i].lock)) ){
+			pctx->diagnostic("Couldn't destroy lock on %d (%s?)",r,strerror(r));
+		}
 	}
 }
 

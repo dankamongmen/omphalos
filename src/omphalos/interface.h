@@ -8,6 +8,7 @@ extern "C" {
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
+#include <pthread.h>
 #include <netinet/in.h>
 #include <linux/ethtool.h>
 #include <linux/if_packet.h>
@@ -52,6 +53,9 @@ typedef void (*analyzefxn)(const struct omphalos_iface *,
 typedef struct interface {
 	// Packet analysis entry point
 	analyzefxn analyzer;
+
+	// Lock (packet thread vs netlink layer vs UI)
+	pthread_mutex_t lock;
 
 	// Lifetime stats
 	uintmax_t frames;		// Frames received on the interface
