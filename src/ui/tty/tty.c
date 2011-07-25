@@ -163,10 +163,12 @@ wireless_event(interface *i,unsigned cmd,void *unsafe __attribute__ ((unused))){
 
 static void
 packet_cb(omphalos_packet *op){
-	printf("[%s] %s -> %s %hu\n",op->i->name,
-			op->l2s ? get_name(op->l2s) : "NO L2 SRC",
-			op->l2d ? get_name(op->l2d) : "NO L2 DST",
-			op->l3proto);
+	// We won't have l2s/l2d on critically malformed frames, or UI-driving
+	// frames (clock ticks, interface events, etc).
+	if(op->l2s && op->l2d){
+		printf("[%s] %s -> %s %04hx\n",op->i->name,get_name(op->l2s),
+				get_name(op->l2d),op->l3proto);
+	}
 }
 
 int main(int argc,char * const *argv){
