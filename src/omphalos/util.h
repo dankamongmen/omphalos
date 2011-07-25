@@ -5,6 +5,7 @@
 extern "C" {
 #endif
 
+#include <wchar.h>
 #include <stdlib.h>
 #include <string.h>
 #include <endian.h>
@@ -17,6 +18,20 @@ memdup(const void *s,size_t l){
 		memcpy(r,s,l);
 	}
 	return r;
+}
+
+static inline wchar_t *
+btowdup(const char *s){
+	wchar_t *w;
+	size_t l;
+
+	l = strlen(s) + 1;
+	if( (w = malloc(sizeof(*w) * l)) ){
+		while(l--){
+			w[l] = btowc(s[l]);
+		}
+	}
+	return w;
 }
 
 #ifdef __cplusplus
