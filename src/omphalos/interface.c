@@ -331,6 +331,14 @@ static arptype arptypes[] = {
 		.name = "Tunnelv4",
 		.analyze = handle_ethernet_packet,
 	},{
+		.ifi_type = ARPHRD_SIT,
+		.name = "TunnelSIT",
+		.analyze = handle_ethernet_packet,
+	},{
+		.ifi_type = ARPHRD_IPGRE,
+		.name = "TunnelGRE",
+		.analyze = handle_ethernet_packet,
+	},{
 		.ifi_type = ARPHRD_TUNNEL6,
 		.name = "TunnelV6",
 		.analyze = handle_ethernet_packet,

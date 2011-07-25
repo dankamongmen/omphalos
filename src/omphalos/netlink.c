@@ -452,13 +452,13 @@ name_virtual_device(const struct ifinfomsg *ii,struct ethtool_drvinfo *ed){
 	if(ii->ifi_type == ARPHRD_LOOPBACK){
 		return strdup("Linux IPv4/IPv6 loopback device");
 	}else if(ii->ifi_type == ARPHRD_TUNNEL){
-		return strdup("Linux IPIP tunnel");
+		return strdup("Linux \"IPIP\" unicast IP4-in-IP4 tunnel");
 	}else if(ii->ifi_type == ARPHRD_TUNNEL6){
 		return strdup("Linux IP6IP6 tunnel");
 	}else if(ii->ifi_type == ARPHRD_SIT){
-		return strdup("Linux IP6IP4 tunnel");
+		return strdup("Linux Simple Internet Transition IP6-in-IP4 tunnel");
 	}else if(ii->ifi_type == ARPHRD_IPGRE){
-		return strdup("Linux GREIP tunnel");
+		return strdup("Linux \"IPGRE\" IPv4/IPv6-in-GRE tunnel");
 	}else if(ii->ifi_type == ARPHRD_VOID){
 		// These can be a number of things...
 		//  teqlX - trivial traffic equalizer
