@@ -48,7 +48,7 @@ extern int mvwprintw(WINDOW *,int,int,const char *,...) __attribute__ ((format (
 
 #define PAD_LINES 3
 #define PAD_COLS(cols) ((cols) - START_COL * 2)
-#define START_LINE 2
+#define START_LINE 1
 #define START_COL 1
 #define U64STRLEN 20	// Does not include a '\0' (18,446,744,073,709,551,616)
 #define U64FMT "%-20ju"
