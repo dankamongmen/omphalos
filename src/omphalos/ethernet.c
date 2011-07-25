@@ -33,6 +33,14 @@ handle_stp_packet(const omphalos_iface *octx __attribute__ ((unused)),
 }
 
 static void
+handle_osi_packet(const omphalos_iface *octx __attribute__ ((unused)),
+			omphalos_packet *op __attribute__ ((unused)),
+			const void *frame __attribute__ ((unused)),
+			size_t len __attribute__ ((unused))){
+	// FIXME
+}
+
+static void
 handle_8022(const omphalos_iface *,omphalos_packet *,const void *,size_t);
 
 // 802.1q VLAN-tagged Ethernet II consists of:
@@ -165,9 +173,12 @@ handle_8022(const omphalos_iface *octx,omphalos_packet *op,const void *frame,siz
 				handle_ipv4_packet(octx,op,dgram,dlen);
 				break;
 			}case LLC_SAP_BSPAN:{ // STP
-				op->l3proto = LLC_SAP_BSPAN;
+				op->l3proto = ETH_P_STP;
 				handle_stp_packet(octx,op,dgram,dlen);
 				break;
+			}case LLC_SAP_OSI:{	// Routed OSI PDU
+				op->l3proto = ETH_P_OSI;
+				handle_osi_packet(octx,op,dgram,dlen);
 			}default:{ // IPv6 always uses SNAP per RFC2019
 				++op->i->noprotocol;
 				octx->diagnostic("%s %s noproto for 0x%x",__func__,
