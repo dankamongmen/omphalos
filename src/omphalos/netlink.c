@@ -461,16 +461,11 @@ name_virtual_device(const struct ifinfomsg *ii,struct ethtool_drvinfo *ed){
 }
 
 static int
-handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
-	const struct ifinfomsg *ii = NLMSG_DATA(nl);
+handle_newlink_locked(const omphalos_iface *octx,interface *iface,
+			const struct ifinfomsg *ii,const struct nlmsghdr *nl){
 	const struct rtattr *ra;
-	interface *iface;
 	int rlen;
 
-	if((iface = iface_by_idx(ii->ifi_index)) == NULL){
-		octx->diagnostic("Invalid interface index: %d",ii->ifi_index);
-		return -1;
-	}
 	// FIXME this is all crap
 	if(iface->name == NULL){
 		if(timestat_prep(&iface->fps,IFACE_TIMESTAT_USECS,IFACE_TIMESTAT_SLOTS)){
@@ -642,6 +637,25 @@ handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	}
 
 	return 0;
+}
+
+static int
+handle_rtm_newlink(const omphalos_iface *octx,const struct nlmsghdr *nl){
+	const struct ifinfomsg *ii = NLMSG_DATA(nl);
+	interface *iface;
+	int r;
+
+	if((iface = iface_by_idx(ii->ifi_index)) == NULL){
+		octx->diagnostic("Invalid interface index: %d",ii->ifi_index);
+		return -1;
+	}
+	if( (r = pthread_mutex_lock(&iface->lock)) ){
+		octx->diagnostic("Couldn't get lock for %d (%s?)",ii->ifi_index,strerror(r));
+		return -1;
+	}
+	r = handle_newlink_locked(octx,iface,ii,nl);
+	pthread_mutex_unlock(&iface->lock);
+	return r;
 }
 
 static int
