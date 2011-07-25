@@ -26,9 +26,6 @@ static inline l2host *
 create_l2host(const void *hwaddr,size_t addrlen){
 	l2host *l2;
 
-	if(addrlen > sizeof(l2->hwaddr)){
-		return NULL;
-	}
 	if( (l2 = malloc(sizeof(*l2))) ){
 		l2->hwaddr = 0;
 		memcpy(&l2->hwaddr,hwaddr,addrlen);
