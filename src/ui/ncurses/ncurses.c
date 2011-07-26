@@ -331,6 +331,7 @@ draw_main_window(WINDOW *w,const char *name,const char *ver){
 	if(bevel(w,0,0) != OK){
 		ERREXIT;
 	}
+	// FIXME move this over! it is ugly on the left, clashing with ifaces
 	if(mvwprintw(w,0,2,"[") < 0){
 		ERREXIT;
 	}
@@ -1264,7 +1265,12 @@ print_iface_hosts(const interface *i,const iface_state *is){
 		if((nname = get_name(l->l2)) == NULL){
 			nname = "";
 		}
-		if( (devname = get_devname(l->l2)) ){
+		if((devname = get_devname(l->l2)) == NULL){
+			if(l->cat == RTN_LOCAL){
+				devname = i->topinfo.devname;
+			}
+		}
+		if(devname){
 			int len = strlen(devname),hlen = strlen(nname);
 
 			if((len + 1) > cols - hlen){
