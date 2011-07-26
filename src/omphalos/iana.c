@@ -169,6 +169,11 @@ name_ethmcastaddr(const void *mac){
 			.mlen = 6,
 			.eproto = ETH_P_STP,
 		},{
+			.name = "802.1s Shared Spanning Tree Protocol",
+			.mac = "\x01\x00\x0c\xcc\xcc\xcd",
+			.mlen = 6,
+			.eproto = ETH_P_STP,
+		},{
 			.name = "802.3ah Ethernet OAM",
 			.mac = "\x01\x80\xc2\x00\x00\x02",
 			.mlen = 6,
