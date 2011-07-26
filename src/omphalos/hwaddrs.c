@@ -59,10 +59,6 @@ l2host *lookup_l2host(const omphalos_iface *octx,interface *i,
 			l2->devname = "Link broadcast";
 		}else if(i->arptype == ARPHRD_ETHER){
 			l2->devname = iana_lookup(hwaddr);
-		}else if(memcmp(hwaddr,i->addr,i->addrlen) == 0){
-			if((l2->devname = i->topinfo.devname) == NULL){
-				l2->devname = i->name;
-			}
 		}else{
 			l2->devname = NULL;
 		}
