@@ -122,7 +122,7 @@ static char *statusmsg;
 static int statuschars;	// True size, not necessarily what's available
 
 static int
-bevel(WINDOW *w,chtype verch,chtype horch){
+bevel(WINDOW *w){
 	static const cchar_t bchr[] = {
 		{ .attr = 0, .chars = L"╭", },
 		{ .attr = 0, .chars = L"╮", },
@@ -131,18 +131,17 @@ bevel(WINDOW *w,chtype verch,chtype horch){
 	};
 	int rows,cols;
 
-	assert(!verch) ; assert(!horch) ; // FIXME
 	getmaxyx(w,rows,cols);
-	assert(mvwadd_wch(w,0,0,&bchr[0]) != ERR);
-	assert(whline(w,horch,cols - 2) != ERR);
-	assert(mvwadd_wch(w,0,cols - 1,&bchr[1]) != ERR);
-	assert(mvwvline(w,1,0,verch,rows - 2) != ERR);
-	assert(mvwvline(w,1,cols - 1,verch,rows - 2) != ERR);
-	assert(mvwadd_wch(w,rows - 1,0,&bchr[2]) != ERR);
-	assert(mvwhline(w,rows - 1,1,horch,PAD_COLS(cols)) != ERR);
 	// called as one expects: 'mvwadd_wch(w,rows - 1,cols - 1,&bchr[3]);'
 	// we get ERR returned and abort out. fuck ncurses. FIXME?
 	mvwadd_wch(w,rows - 1,cols - 1,&bchr[3]);
+	assert(mvwadd_wch(w,0,0,&bchr[0]) != ERR);
+	assert(whline(w,0,cols - 2) != ERR);
+	assert(mvwadd_wch(w,0,cols - 1,&bchr[1]) != ERR);
+	assert(mvwvline(w,1,0,0,rows - 2) != ERR);
+	assert(mvwvline(w,1,cols - 1,0,rows - 2) != ERR);
+	assert(mvwadd_wch(w,rows - 1,0,&bchr[2]) != ERR);
+	assert(mvwhline(w,rows - 1,1,0,PAD_COLS(cols)) != ERR);
 	return OK;
 }
 
@@ -328,7 +327,7 @@ draw_main_window(WINDOW *w,const char *name,const char *ver){
 	if(wcolor_set(w,BORDER_COLOR,NULL) != OK){
 		ERREXIT;
 	}
-	if(bevel(w,0,0) != OK){
+	if(bevel(w) != OK){
 		ERREXIT;
 	}
 	// FIXME move this over! it is ugly on the left, clashing with ifaces
@@ -357,6 +356,7 @@ draw_main_window(WINDOW *w,const char *name,const char *ver){
 	// addstr() doesn't interpret format strings, so this is safe. It will
 	// fail, however, if the string can't fit on the window, which will for
 	// instance happen if there's an embedded newline.
+	assert(rows);
 	assert(mvwaddstr(w,rows - 1,START_COL * 2,statusmsg) != ERR);
 	if(wattroff(w,A_BOLD | COLOR_PAIR(BORDER_COLOR)) != OK){
 		ERREXIT;
@@ -437,7 +437,7 @@ iface_box(WINDOW *w,const interface *i,const iface_state *is){
 	hcolor = interface_up_p(i) ? UHEADING_COLOR : DHEADING_COLOR;
 	attrs = ((is == current_iface) ? A_REVERSE : A_BOLD);
 	assert(wattrset(w,attrs | COLOR_PAIR(bcolor)) == OK);
-	assert(bevel(w,0,0) == OK);
+	assert(bevel(w) == OK);
 	assert(wattroff(w,A_REVERSE) == OK);
 	if(is == current_iface){
 		assert(wattron(w,A_BOLD) == OK);
@@ -623,7 +623,7 @@ new_display_panel(WINDOW *w,struct panel_state *ps,int rows,int cols,const wchar
 	// memory leaks follow if we're compiled with NDEBUG! FIXME
 	assert(wattron(psw,A_BOLD) != ERR);
 	assert(wcolor_set(psw,PBORDER_COLOR,NULL) == OK);
-	assert(bevel(psw,0,0) == OK);
+	assert(bevel(psw) == OK);
 	assert(wattroff(psw,A_BOLD) != ERR);
 	assert(wcolor_set(psw,PHEADING_COLOR,NULL) == OK);
 	assert(mvwaddwstr(psw,0,START_COL * 2,hstr) != ERR);
