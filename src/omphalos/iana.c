@@ -132,29 +132,11 @@ static ouitrie *
 make_oui(const char *broadcast){
 	ouitrie *o;
 
-	if( (o = malloc(sizeof(*o))) == NULL){
+	if( (o = malloc(sizeof(*o))) ){
 		unsigned z;
 
 		for(z = 0 ; z < OUITRIE_SIZE ; ++z){
-			if(broadcast){
-				unsigned y;
-
-				if((o->next[z] = make_oui(NULL)) == NULL){
-					while(z--){
-						for(y = 0 ; y < OUITRIE_SIZE ; ++y){
-							free(((ouitrie *)o->next[z])->next[y]);
-						}
-						free(o->next[z]);
-					}
-					free(o);
-					return NULL;
-				}
-				for(y = 0 ; y < OUITRIE_SIZE ; ++y){
-					((ouitrie *)o->next[z])->next[y] = strdup(broadcast);
-				}
-			}else{
-				o->next[z] = NULL;
-			}
+			o->next[z] = broadcast ? strdup(broadcast) : NULL;
 		}
 	}
 	return o;
@@ -172,14 +154,14 @@ int init_iana_naming(const omphalos_iface *octx,const char *fn){
 		ianafn = NULL;
 		return -1;
 	}
-	if((path = make_oui("RFC 2464 IPv6 Multicast")) == NULL){
+	if((path = make_oui("RFC 2464 IPv6 multicast")) == NULL){
 		free(p);
 		free(ianafn);
 		ianafn = NULL;
 		return -1;
 	}
-	trie[(unsigned char)'\xcc'] = p;
-	p->next[(unsigned char)'\xcc'] = path;
+	trie[51u] = p;
+	p->next[51u] = path;
 	if(watch_file(octx,fn,parse_file)){
 		return -1;
 	}
