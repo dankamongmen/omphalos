@@ -15,9 +15,8 @@ typedef struct ouitrie {
 	void *next[OUITRIE_SIZE];
 } ouitrie;
 
+static char *ianafn;
 static ouitrie *trie[OUITRIE_SIZE];
-
-static const char *ianafn; // FIXME dangerous
 
 static void
 free_ouitries(ouitrie **tries){
@@ -126,18 +125,70 @@ parse_file(const omphalos_iface *octx){
 	fclose(fp);
 }
 
+// A value can be passed which will be "broadcast" out to all children of this
+// node, really useful only for OUI's of size other than the typical 24 bits
+// (of which one is the multicast bit) such as IPv6 multicast space.
+static ouitrie *
+make_oui(const char *broadcast){
+	ouitrie *o;
+
+	if( (o = malloc(sizeof(*o))) == NULL){
+		unsigned z;
+
+		for(z = 0 ; z < OUITRIE_SIZE ; ++z){
+			if(broadcast){
+				unsigned y;
+
+				if((o->next[z] = make_oui(NULL)) == NULL){
+					while(z--){
+						for(y = 0 ; y < OUITRIE_SIZE ; ++y){
+							free(((ouitrie *)o->next[z])->next[y]);
+						}
+						free(o->next[z]);
+					}
+					free(o);
+					return NULL;
+				}
+				for(y = 0 ; y < OUITRIE_SIZE ; ++y){
+					((ouitrie *)o->next[z])->next[y] = strdup(broadcast);
+				}
+			}else{
+				o->next[z] = NULL;
+			}
+		}
+	}
+	return o;
+}
+
 // Load IANA OUI descriptions from the specified file, and watch it for updates
 int init_iana_naming(const omphalos_iface *octx,const char *fn){
-	ianafn = fn;
+	ouitrie *path,*p;
+
+	if((ianafn = strdup(fn)) == NULL){
+		return -1;
+	}
+	if(((p = make_oui(NULL)) == NULL)){
+		free(ianafn);
+		ianafn = NULL;
+		return -1;
+	}
+	if((path = make_oui("RFC 2464 IPv6 Multicast")) == NULL){
+		free(p);
+		free(ianafn);
+		ianafn = NULL;
+		return -1;
+	}
+	trie[(unsigned char)'\xcc'] = p;
+	p->next[(unsigned char)'\xcc'] = path;
 	if(watch_file(octx,fn,parse_file)){
 		return -1;
 	}
 	return 0;
 }
 
-// FIXME use a trie or bsearch
-// FIXME generate data from a text file, preferably one taken from IANA or
-// whoever administers the multicast address space
+// FIXME use the main IANA trie, making it varying-length so we can do longest-
+// match. FIXME generate data from a text file, preferably one taken from IANA
+// or whoever administers the multicast address space
 static inline const char *
 name_ethmcastaddr(const void *mac){
 	static const struct mcast {
@@ -146,14 +197,9 @@ name_ethmcastaddr(const void *mac){
 		size_t mlen;
 		uint16_t eproto;	// host byte order
 	} mcasts[] = {
-		{
-			.name = "IPv6 multicast",	// RFC 2464
-			.mac = "\x33\x33",
-			.mlen = 2,
-			.eproto = ETH_P_IPV6,
-		},{ // FIXME need handle MPLS Multicast on 01:00:53:1+
-			.name = "IPv4 multicast",	// RFC 1112
-			.mac = "\x01\x00\x5e",
+		{ // FIXME need handle MPLS Multicast on 01:00:53:1+
+			.name = "RFC 1112 IPv4 multicast",
+			.mac = "\x01\x00\x5e",		// low order 23 bits of ip addresses from 224.0.0.0/4
 			.mlen = 3,
 			.eproto = ETH_P_IP,
 		},{
@@ -172,7 +218,7 @@ name_ethmcastaddr(const void *mac){
 			.name = "802.1s Shared Spanning Tree Protocol",
 			.mac = "\x01\x00\x0c\xcc\xcc\xcd",
 			.mlen = 6,
-			.eproto = ETH_P_STP,
+			.eproto = ETH_P_STP, // FIXME verify
 		},{
 			.name = "802.3ah Ethernet OAM",
 			.mac = "\x01\x80\xc2\x00\x00\x02",
@@ -207,4 +253,6 @@ const char *iana_lookup(const void *unsafe_oui){
 
 void cleanup_iana_naming(void){
 	free_ouitries(trie);
+	free(ianafn);
+	ianafn = NULL;
 }
