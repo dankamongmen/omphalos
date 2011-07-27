@@ -195,27 +195,37 @@ name_ethmcastaddr(const void *mac){
 			.mlen = 3,
 			.eproto = ETH_P_IP,
 		},{
-			.name = "802.1ad Provider bridge STP",
-			.mac = "\x01\x80\xc2\x00\x00\x08",
-			.mlen = 6,
-			// STP actually almost always goes over 802.2 with a
-			// SAP value of 0x42, rather than Ethernet II.
-			.eproto = ETH_P_STP,
-		},{
-			.name = "802.1d Spanning Tree Protocol",
-			.mac = "\x01\x80\xc2\x00\x00\x00",
-			.mlen = 6,
-			.eproto = ETH_P_STP,
-		},{
 			.name = "802.1s Shared Spanning Tree Protocol",
 			.mac = "\x01\x00\x0c\xcc\xcc\xcd",
 			.mlen = 6,
 			.eproto = ETH_P_STP, // FIXME verify
 		},{
+			.name = "802.1d Spanning Tree Protocol",
+			.mac = "\x01\x80\xc2\x00\x00\x00",
+			.mlen = 6,
+			// STP actually almost always goes over 802.2 with a
+			// SAP value of 0x42, rather than Ethernet II.
+			.eproto = ETH_P_STP,
+		},{
 			.name = "802.3ah Ethernet OAM",
 			.mac = "\x01\x80\xc2\x00\x00\x02",
 			.mlen = 6,
 			.eproto = ETH_P_SLOW,
+		},{
+			.name = "802.1ad Provider bridge STP",
+			.mac = "\x01\x80\xc2\x00\x00\x08",
+			.mlen = 6,
+			.eproto = ETH_P_STP,
+		},{
+			.name = "FDDI RMT directed beacon",
+			.mac = "\x01\x80\xc2\x00\x10\x00",
+			.mlen = 6,
+			.eproto = ETH_P_STP,
+		},{
+			.name = "FDDI status report frame",
+			.mac = "\x01\x80\xc2\x00\x10\x10",
+			.mlen = 6,
+			.eproto = ETH_P_STP,
 		},{ .name = NULL, .mac = NULL, .mlen = 0, }
 	},*mc;
 
