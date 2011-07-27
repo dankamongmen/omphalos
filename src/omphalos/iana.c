@@ -136,7 +136,17 @@ make_oui(const char *broadcast){
 		unsigned z;
 
 		for(z = 0 ; z < OUITRIE_SIZE ; ++z){
-			o->next[z] = broadcast ? strdup(broadcast) : NULL;
+			if(broadcast){
+				if((o->next[z] = strdup(broadcast)) == NULL){
+					while(z--){
+						free(o->next[z]);
+					}
+					free(o);
+					return NULL;
+				}
+			}else{
+				o->next[z] = NULL;
+			}
 		}
 	}
 	return o;
