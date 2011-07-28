@@ -465,12 +465,11 @@ int get_route6(const interface *i,const uint32_t *ip,uint32_t *r){
 
 	for(i6r = i->ip6r ; i6r ; i6r = i6r->next){
 		if(ip6_in_route(i6r,ip)){
-			/*if(i6r->hasvia){
+			if(i6r->hasvia){
 				memcpy(r,i6r->via.s6_addr,sizeof(uint32_t) * 4);
 			}else{
 				memcpy(r,ip,sizeof(uint32_t) * 4);
-			}*/
-			memcpy(r,ip,sizeof(uint32_t) * 4);
+			}
 			return 1;
 		}
 	}
