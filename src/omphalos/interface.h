@@ -10,6 +10,7 @@ extern "C" {
 #include <stdint.h>
 #include <pthread.h>
 #include <netinet/in.h>
+#include <omphalos/arp.h>
 #include <linux/ethtool.h>
 #include <linux/if_packet.h>
 #include <omphalos/timing.h>
@@ -137,10 +138,6 @@ int del_route6(interface *,const struct in6_addr *,unsigned);
 // These return 1 on a successful route lookup, 0 otherwise.
 const ip4route *get_route4(const interface *,const uint32_t *);
 int get_route6(const interface *,const uint32_t *,uint32_t *);
-
-// FIXME this doesn't belong here. move it.
-void send_arp_probe(const struct omphalos_iface *,interface *,
-			const void *,const void *,size_t,const void *);
 
 #include <assert.h>
 static inline const void *

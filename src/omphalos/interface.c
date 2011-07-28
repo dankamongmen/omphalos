@@ -476,18 +476,3 @@ int get_route6(const interface *i,const uint32_t *ip,uint32_t *r){
 	}
 	return 0;
 }
-
-#include <omphalos/tx.h>
-// FIXME this doesn't belong here at all
-void send_arp_probe(const omphalos_iface *octx,interface *i,const void *hwaddr,
-		const void *addr,size_t addrlen,const void *saddr){
-	void *frame;
-	size_t flen;
-
-	if( (frame = get_tx_frame(octx,i,&flen)) ){
-		prepare_arp_probe(octx,i,frame,&flen,hwaddr,i->addrlen,
-					addr,addrlen,saddr);
-		send_tx_frame(octx,i,frame);
-	}
-}
-

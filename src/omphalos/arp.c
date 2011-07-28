@@ -1,4 +1,5 @@
 #include <sys/socket.h>
+#include <omphalos/tx.h>
 #include <linux/if_arp.h>
 #include <omphalos/arp.h>
 #include <asm/byteorder.h>
@@ -61,4 +62,16 @@ void handle_arp_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 		octx->diagnostic("%s %s unknown ARP op %u",__func__,
 					op->i->name,ap->ar_op);
 	break;}}
+}
+
+void send_arp_probe(const omphalos_iface *octx,interface *i,const void *hwaddr,
+		const void *addr,size_t addrlen,const void *saddr){
+	void *frame;
+	size_t flen;
+
+	if( (frame = get_tx_frame(octx,i,&flen)) ){
+		prepare_arp_probe(octx,i,frame,&flen,hwaddr,i->addrlen,
+					addr,addrlen,saddr);
+		send_tx_frame(octx,i,frame);
+	}
 }
