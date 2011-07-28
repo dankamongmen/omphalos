@@ -175,16 +175,15 @@ int add_route4(interface *i,const struct in_addr *s,const struct in_addr *via,
 	if((r = malloc(sizeof(*r))) == NULL){
 		return -1;
 	}
+	r->addrs = 0;
 	memcpy(&r->dst,s,sizeof(*s));
 	if(src){
 		memcpy(&r->src,src,sizeof(*src));
-	}else{
-		r->src.s_addr = 0; // FIXME doubtful that this is safe
+		r->addrs |= ROUTE_HAS_SRC;
 	}
 	if(via){
 		memcpy(&r->via,via,sizeof(*via));
-	}else{
-		r->via.s_addr = 0;
+		r->addrs |= ROUTE_HAS_VIA;
 	}
 	r->iif = iif;
 	r->maskbits = blen;
@@ -207,15 +206,15 @@ int add_route6(interface *i,const struct in6_addr *s,const struct in6_addr *via,
 	if((r = malloc(sizeof(*r))) == NULL){
 		return -1;
 	}
+	r->addrs = 0;
 	memcpy(&r->dst,s,sizeof(*s));
 	if(src){
-		memcpy(&r->src,src,sizeof(*src)); // FIXME
+		memcpy(&r->src,src,sizeof(*src));
+		r->addrs |= ROUTE_HAS_SRC;
 	}
 	if(via){
-		r->hasvia = 1;
 		memcpy(&r->via,via,sizeof(*via));
-	}else{
-		r->hasvia = 0;
+		r->addrs |= ROUTE_HAS_VIA;
 	}
 	r->iif = iif;
 	r->maskbits = blen;
@@ -471,18 +470,16 @@ get_route4(const interface *i,const uint32_t *ip){
 	return i4r;
 }
 
-int get_route6(const interface *i,const uint128_t *ip,uint128_t *r){
+const ip6route *
+get_route6(const interface *i,const void *ip){
 	const ip6route *i6r;
 
 	for(i6r = i->ip6r ; i6r ; i6r = i6r->next){
-		if(ip6_in_route(i6r,*ip)){
-			if(i6r->hasvia){
-				*r = *(const uint128_t *)i6r->via.s6_addr32;
-			}else{
-				*r = *ip;
-			}
-			return 1;
+		uint128_t i = *(const uint128_t *)ip;
+
+		if(ip6_in_route(i6r,i)){
+			return i6r;
 		}
 	}
-	return 0;
+	return NULL;
 }

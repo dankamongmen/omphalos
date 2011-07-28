@@ -20,8 +20,13 @@ struct psocket_marsh;
 struct omphalos_iface;
 struct omphalos_packet;
 
+// bitmasks for the routes' 'addrs' field
+#define ROUTE_HAS_SRC	0x1
+#define ROUTE_HAS_VIA	0x2
+
 typedef struct ip4route {
 	struct in_addr dst,via,src;
+	unsigned addrs;
 	unsigned maskbits;		// 0..31
 	int iif;			// input iface, -1 if unspecified
 	struct ip4route *next;
@@ -29,7 +34,7 @@ typedef struct ip4route {
 
 typedef struct ip6route {
 	struct in6_addr dst,via,src;
-	int hasvia;
+	unsigned addrs;
 	unsigned maskbits;		// 0..127
 	int iif;			// input iface, -1 if unspecified
 	struct ip6route *next;
@@ -136,9 +141,8 @@ int add_route6(interface *,const struct in6_addr *,const struct in6_addr *,
 int del_route4(interface *,const struct in_addr *,unsigned);
 int del_route6(interface *,const struct in6_addr *,unsigned);
 
-// These return 1 on a successful route lookup, 0 otherwise.
 const ip4route *get_route4(const interface *,const uint32_t *);
-int get_route6(const interface *,const uint128_t *,uint128_t *);
+const ip6route *get_route6(const interface *,const void *);
 
 #include <assert.h>
 static inline const void *
@@ -153,9 +157,9 @@ get_route(const struct omphalos_iface *octx,interface *i,const void *hwaddr,
 			if(i4r){
 				// A routed result requires a directed ARP
 				// probe to verify the local network address.
-				if(i4r->via.s_addr){
+				if(i4r->addrs & ROUTE_HAS_VIA){
 					if( (i4r = get_route4(i,&i4r->via.s_addr)) ){
-						if(i4r->src.s_addr){
+						if(i4r->addrs & ROUTE_HAS_SRC){
 							send_arp_probe(octx,i,hwaddr,
 									&i4r->via.s_addr,
 									sizeof(uint32_t),
@@ -168,10 +172,17 @@ get_route(const struct omphalos_iface *octx,interface *i,const void *hwaddr,
 				}
 			}
 			break;
-		}case AF_INET6:
-			ret = get_route6(i,(const uint128_t *)addr,r);
+		}case AF_INET6:{
+			const ip6route *i6r = get_route6(i,addr);
+
+			if(i6r){ // FIXME handle routed addresses!
+				if(!(i6r->addrs & ROUTE_HAS_VIA)){
+					ret = 1;
+					memcpy(r,addr,sizeof(uint32_t));
+				}
+			}
 			break;
-		default:
+		}default:
 			return NULL;
 	}
 	return (ret != 1) ? NULL : r;
