@@ -6,6 +6,7 @@
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <linux/if_arp.h>
+#include <omphalos/128.h>
 #include <omphalos/util.h>
 #include <omphalos/hwaddrs.h>
 #include <omphalos/netlink.h>
@@ -272,27 +273,37 @@ int is_local4(const interface *i,uint32_t ip){
 }
 
 static inline int
-ip6_in_route(const ip6route *r,const uint32_t *i){
-	const uint32_t *dst = r->dst.s6_addr32;
-	unsigned mbits = r->maskbits;
-	unsigned word = 0;
+ip6_in_route(const ip6route *r,const uint128_t i){
+	uint128_t dst = *(const uint128_t *)r->dst.s6_addr32;
+	uint128_t mask = { ~0u, ~0u, ~0u, ~0u };
 
-	while(mbits){
-		// FIXME broken for subnet masks that aren't multiples of 32
-		if(i[word] != dst[word]){
-			return 0;
-		}
-		mbits -= 32;
-		++word;
+	switch(r->maskbits / 32){
+		case 0:
+			mask[0] = ~0u << (32 - r->maskbits);
+			mask[1] = 0u; mask[2] = 0u; mask[3] = 0u;
+			break;
+		case 1:
+			mask[1] = ~0u << (64 - r->maskbits);
+			mask[2] = 0u; mask[3] = 0u;
+			break;
+		case 2:
+			mask[2] = ~0u << (64 - r->maskbits);
+			mask[3] = 0u;
+			break;
+		case 3:
+			mask[3] = ~0u << (64 - r->maskbits);
+			break;
+		case 4:
+			break;
 	}
-	return 1;
+	return equal128(dst & mask,i & mask);
 }
 
 int is_local6(const interface *i,const struct in6_addr *a){
 	const ip6route *r;
 
 	for(r = i->ip6r ; r ; r = r->next){
-		if(ip6_in_route(r,a->s6_addr32)){
+		if(ip6_in_route(r,*(const uint128_t *)a->s6_addr32)){
 			return 1;
 		}
 	}
@@ -460,15 +471,15 @@ get_route4(const interface *i,const uint32_t *ip){
 	return i4r;
 }
 
-int get_route6(const interface *i,const uint32_t *ip,uint32_t *r){
+int get_route6(const interface *i,const uint128_t *ip,uint128_t *r){
 	const ip6route *i6r;
 
 	for(i6r = i->ip6r ; i6r ; i6r = i6r->next){
-		if(ip6_in_route(i6r,ip)){
+		if(ip6_in_route(i6r,*ip)){
 			if(i6r->hasvia){
-				memcpy(r,i6r->via.s6_addr,sizeof(uint32_t) * 4);
+				*r = *(const uint128_t *)i6r->via.s6_addr32;
 			}else{
-				memcpy(r,ip,sizeof(uint32_t) * 4);
+				*r = *ip;
 			}
 			return 1;
 		}

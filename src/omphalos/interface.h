@@ -10,6 +10,7 @@ extern "C" {
 #include <stdint.h>
 #include <pthread.h>
 #include <netinet/in.h>
+#include <omphalos/128.h>
 #include <omphalos/arp.h>
 #include <linux/ethtool.h>
 #include <linux/if_packet.h>
@@ -137,7 +138,7 @@ int del_route6(interface *,const struct in6_addr *,unsigned);
 
 // These return 1 on a successful route lookup, 0 otherwise.
 const ip4route *get_route4(const interface *,const uint32_t *);
-int get_route6(const interface *,const uint32_t *,uint32_t *);
+int get_route6(const interface *,const uint128_t *,uint128_t *);
 
 #include <assert.h>
 static inline const void *
@@ -168,7 +169,7 @@ get_route(const struct omphalos_iface *octx,interface *i,const void *hwaddr,
 			}
 			break;
 		}case AF_INET6:
-			ret = get_route6(i,addr,r);
+			ret = get_route6(i,(const uint128_t *)addr,r);
 			break;
 		default:
 			return NULL;
