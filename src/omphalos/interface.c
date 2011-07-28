@@ -475,8 +475,9 @@ get_route6(const interface *i,const void *ip){
 	const ip6route *i6r;
 
 	for(i6r = i->ip6r ; i6r ; i6r = i6r->next){
-		uint128_t i = *(const uint128_t *)ip;
+		uint128_t i;
 
+		memcpy(&i,ip,sizeof(i));
 		if(ip6_in_route(i6r,i)){
 			return i6r;
 		}
