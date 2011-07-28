@@ -178,12 +178,12 @@ get_route(const struct omphalos_iface *octx,interface *i,const void *hwaddr,
 			if(i6r){ // FIXME handle routed addresses!
 				if(!(i6r->addrs & ROUTE_HAS_VIA)){
 					ret = 1;
-					memcpy(r,addr,sizeof(uint32_t));
+					memcpy(r,addr,sizeof(uint128_t));
 				}
 			}
 			break;
 		}default:
-			return NULL;
+			break;
 	}
 	return (ret != 1) ? NULL : r;
 }
