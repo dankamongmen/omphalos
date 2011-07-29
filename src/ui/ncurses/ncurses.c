@@ -507,6 +507,9 @@ iface_box(WINDOW *w,const interface *i,const iface_state *is){
 		}
 	}else{
 		assert(iface_optstr(w,"down",hcolor,bcolor) != ERR);
+		if(i->settings_valid == SETTINGS_VALID_WEXT){
+			assert(wprintw(w," (%s)",modestr(i->settings.wext.mode)) != ERR);
+		}
 	}
 	if(interface_promisc_p(i)){
 		assert(iface_optstr(w,"promisc",hcolor,bcolor) != ERR);
