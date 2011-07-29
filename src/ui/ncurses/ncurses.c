@@ -904,8 +904,7 @@ use_next_iface_locked(void){
 		if(details.p){
 			iface_details(panel_window(details.p),i,details.ysize);
 		}
-		start_screen_update();
-		finish_screen_update();
+		screen_update();
 	}
 }
 
@@ -923,9 +922,26 @@ use_prev_iface_locked(void){
 		if(details.p){
 			iface_details(panel_window(details.p),i,details.ysize);
 		}
-		start_screen_update();
-		finish_screen_update();
+		screen_update();
 	}
+}
+
+// Completely redraw the screen, for instance after a corruption or resize.
+static void
+redraw_screen_locked(WINDOW *w){
+	int rows,cols;
+
+	getmaxyx(w,rows,cols);
+	assert(wresize(w,rows,cols) != ERR);
+	redrawwin(w);
+	draw_main_window(w,PROGNAME,VERSION);
+	// FIXME need iterate over interface windows, hiding or making them
+	// visible as appropriate, and possibly scrolling to keep the current
+	// interface on-screen...
+	if(active){
+		redrawwin(panel_window(active->p));
+	}
+	screen_update();
 }
 
 struct ncurses_input_marshal {
@@ -957,17 +973,7 @@ ncurses_input_thread(void *unsafe_marsh){
 			break;
 		case KEY_RESIZE: case 12: // Ctrl-L FIXME
 			pthread_mutex_lock(&bfl);{
-				int rows,cols;
-
-				getmaxyx(w,rows,cols);
-				// FIXME need actually resize the window!
-				assert(wresize(w,rows,cols) != ERR);
-				draw_main_window(w,PROGNAME,VERSION);
-				redrawwin(w);
-				if(active){
-					redrawwin(panel_window(active->p));
-				}
-				screen_update();
+				redraw_screen_locked(w);
 			}pthread_mutex_unlock(&bfl);
 			break;
 		case 'C':
