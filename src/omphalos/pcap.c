@@ -9,6 +9,7 @@
 #include <linux/if_ether.h>
 #include <omphalos/hwaddrs.h>
 #include <omphalos/ethernet.h>
+#include <omphalos/radiotap.h>
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
 
@@ -20,12 +21,13 @@ static interface pcap_file_interface = {
 typedef struct pcap_marshal {
 	interface *i;
 	const omphalos_iface *octx;
+	void (*handler)(const omphalos_iface *,omphalos_packet *,const void *,size_t);
 } pcap_marshal;
 
 // FIXME need to call back even on truncations etc. move function pointer
 // to pcap_marshal and unify call to redirect + packet_read().
 static void
-handle_pcap_ethernet(u_char *gi,const struct pcap_pkthdr *h,const u_char *bytes){
+handle_pcap_direct(u_char *gi,const struct pcap_pkthdr *h,const u_char *bytes){
 	pcap_marshal *pm = (pcap_marshal *)gi;
 	interface *iface = pm->i; // interface for the pcap file
 	omphalos_packet packet;
@@ -38,7 +40,7 @@ handle_pcap_ethernet(u_char *gi,const struct pcap_pkthdr *h,const u_char *bytes)
 	}
 	packet.i = iface;
 	// FIXME how to handle .addr itself? broadcast?
-	handle_ethernet_packet(pm->octx,&packet,bytes,h->len);
+	pm->handler(pm->octx,&packet,bytes,h->len);
 	if(pm->octx->packet_read){
 		pm->octx->packet_read(&packet);
 	}
@@ -118,12 +120,17 @@ int handle_pcap_file(const omphalos_ctx *pctx){
 	fxn = NULL;
 	switch(pcap_datalink(pcap)){
 		case DLT_EN10MB:{
-			fxn = handle_pcap_ethernet;
+			fxn = handle_pcap_direct;
 			// FIXME how to handle ->addr itself? ->bcast?
+			pmarsh.handler = handle_ethernet_packet;
 			pmarsh.i->addrlen = 0;
 			break;
 		}case DLT_LINUX_SLL:{
 			fxn = handle_pcap_cooked;
+			break;
+		}case DLT_IEEE802_11_RADIO:{
+			pmarsh.handler = handle_radiotap_packet;
+			fxn = handle_pcap_direct;
 			break;
 		}default:{
 			fprintf(stderr,"Unhandled datalink type: %d\n",pcap_datalink(pcap));
