@@ -816,7 +816,7 @@ netlink_thread(const omphalos_iface *octx){
 			octx->diagnostic("Spontaneous wakeup on netlink socket %d",pfd[0].fd);
 		}
 		if(events < 0){
-			if(!cancelled){
+			if(errno != EINTR){
 				octx->diagnostic("Error polling core sockets (%s?)",strerror(errno));
 			}
 			continue;
