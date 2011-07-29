@@ -162,7 +162,7 @@ finish_screen_update(void){
 }
 
 static inline int
-full_screen_update(void){
+screen_update(void){
 	int ret;
 
 	assert((ret = start_screen_update()) == 0);
@@ -364,7 +364,7 @@ draw_main_window(WINDOW *w,const char *name,const char *ver){
 	if(wcolor_set(w,0,NULL) != OK){
 		ERREXIT;
 	}
-	return full_screen_update();
+	return screen_update();
 
 err:
 	return -1;
@@ -955,15 +955,20 @@ ncurses_input_thread(void *unsafe_marsh){
 				use_next_iface_locked();
 			pthread_mutex_unlock(&bfl);
 			break;
-		case 12: // Ctrl-L FIXME
-			pthread_mutex_lock(&bfl);
+		case KEY_RESIZE: case 12: // Ctrl-L FIXME
+			pthread_mutex_lock(&bfl);{
+				int rows,cols;
+
+				getmaxyx(w,rows,cols);
+				// FIXME need actually resize the window!
+				assert(wresize(w,rows,cols) != ERR);
+				draw_main_window(w,PROGNAME,VERSION);
 				redrawwin(w);
 				if(active){
 					redrawwin(panel_window(active->p));
 				}
-				start_screen_update();
-				finish_screen_update();
-			pthread_mutex_unlock(&bfl);
+				screen_update();
+			}pthread_mutex_unlock(&bfl);
 			break;
 		case 'C':
 			pthread_mutex_lock(&bfl);
@@ -1382,7 +1387,7 @@ resize_iface(const interface *i,iface_state *ret){
 	if(redraw_iface(i,ret) == ERR){
 		return ERR;
 	}
-	return full_screen_update();
+	return screen_update();
 }
 
 static l2obj *
@@ -1457,7 +1462,7 @@ packet_cb_locked(const interface *i,omphalos_packet *op){
 			iface_details(panel_window(details.p),i,details.ysize);
 		}
 		print_iface_state(i,is);
-		full_screen_update();
+		screen_update();
 	}
 }
 
@@ -1612,7 +1617,7 @@ interface_removed_locked(iface_state *is){
 			current_iface = NULL;
 		}
 		free(is);
-		full_screen_update();
+		screen_update();
 	}
 }
 
