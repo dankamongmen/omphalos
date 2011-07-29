@@ -517,7 +517,11 @@ iface_box(WINDOW *w,const interface *i,const iface_state *is){
 	}
 	assert(wprintw(w,"]") != ERR);
 	if( (buslen = strlen(i->drv.bus_info)) ){
-		assert(wattrset(w,COLOR_PAIR(bcolor) | A_BOLD) != ERR);
+		if(is == current_iface){
+			assert(wattrset(w,A_REVERSE | COLOR_PAIR(bcolor)) != ERR);
+		}else{
+			assert(wattrset(w,COLOR_PAIR(bcolor) | A_BOLD) != ERR);
+		}
 		if(i->busname){
 			buslen += strlen(i->busname) + 1;
 			assert(mvwprintw(w,is->ysize - 1,scrcols - (buslen + START_COL * 2),
