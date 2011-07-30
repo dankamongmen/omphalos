@@ -1,5 +1,4 @@
 #include <errno.h>
-#include <iwlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <sys/ioctl.h>

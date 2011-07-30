@@ -9,13 +9,17 @@ extern "C" {
 #include <string.h>
 #include <stdint.h>
 #include <pthread.h>
-#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <linux/if.h>
 #include <omphalos/128.h>
 #include <omphalos/arp.h>
 #include <linux/ethtool.h>
 #include <linux/if_packet.h>
 #include <omphalos/timing.h>
 
+struct in_addr;
+struct in6_addr;
 struct psocket_marsh;
 struct omphalos_iface;
 struct omphalos_packet;
@@ -25,7 +29,7 @@ struct omphalos_packet;
 #define ROUTE_HAS_VIA	0x2
 
 typedef struct ip4route {
-	struct in_addr dst,via,src;
+	uint32_t dst,via,src;
 	unsigned addrs;
 	unsigned maskbits;		// 0..31
 	int iif;			// input iface, -1 if unspecified
@@ -33,7 +37,7 @@ typedef struct ip4route {
 } ip4route;
 
 typedef struct ip6route {
-	struct in6_addr dst,via,src;
+	uint128_t dst,via,src;
 	unsigned addrs;
 	unsigned maskbits;		// 0..127
 	int iif;			// input iface, -1 if unspecified
@@ -158,12 +162,12 @@ get_route(const struct omphalos_iface *octx,interface *i,const void *hwaddr,
 				// A routed result requires a directed ARP
 				// probe to verify the local network address.
 				if(i4r->addrs & ROUTE_HAS_VIA){
-					if( (i4r = get_route4(i,&i4r->via.s_addr)) ){
+					if( (i4r = get_route4(i,&i4r->via)) ){
 						if(i4r->addrs & ROUTE_HAS_SRC){
 							send_arp_probe(octx,i,hwaddr,
-									&i4r->via.s_addr,
+									&i4r->via,
 									sizeof(uint32_t),
-									&i4r->src.s_addr);
+									&i4r->src);
 						}
 					}
 				}else{
@@ -198,6 +202,26 @@ int enable_promiscuity(const struct omphalos_iface *,const interface *);
 int disable_promiscuity(const struct omphalos_iface *,const interface *);
 int up_interface(const struct omphalos_iface *,const interface *);
 int down_interface(const struct omphalos_iface *,const interface *);
+
+static inline int
+interface_sniffing_p(const interface *i){
+	return (i->rfd >= 0);
+}
+
+static inline int
+interface_up_p(const interface *i){
+	return (i->flags & IFF_UP);
+}
+
+static inline int
+interface_carrier_p(const interface *i){
+	return (i->flags & IFF_LOWER_UP);
+}
+
+static inline int
+interface_promisc_p(const interface *i){
+	return (i->flags & IFF_PROMISC);
+}
 
 #ifdef __cplusplus
 }

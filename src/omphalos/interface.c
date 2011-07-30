@@ -229,7 +229,7 @@ int del_route4(interface *i,const struct in_addr *a,unsigned blen){
 	ip4route *r,**prev;
 
 	for(prev = &i->ip4r ; (r = *prev) ; prev = &r->next){
-		if(r->dst.s_addr == a->s_addr && r->maskbits == blen){
+		if(r->dst == a->s_addr && r->maskbits == blen){
 			*prev = r->next;
 			free(r);
 			return 0;
@@ -243,7 +243,7 @@ int del_route6(interface *i,const struct in6_addr *a,unsigned blen){
 	ip6route *r,**prev;
 
 	for(prev = &i->ip6r ; (r = *prev) ; prev = &r->next){
-		if(!memcmp(&r->dst.s6_addr,&a->s6_addr,sizeof(a->s6_addr)) && r->maskbits == blen){
+		if(!memcmp(&r->dst,&a->s6_addr,sizeof(a->s6_addr)) && r->maskbits == blen){
 			*prev = r->next;
 			free(r);
 			return 0;
@@ -257,7 +257,7 @@ ip4_in_route(const ip4route *r,uint32_t i){
 	uint64_t mask = ~0U;
 
 	mask <<= 32 - r->maskbits;
-	return (ntohl(r->dst.s_addr) & mask) == (ntohl(i) & mask);
+	return (ntohl(r->dst) & mask) == (ntohl(i) & mask);
 }
 
 int is_local4(const interface *i,uint32_t ip){
@@ -265,7 +265,7 @@ int is_local4(const interface *i,uint32_t ip){
 
 	for(r = i->ip4r ; r ; r = r->next){
 		if(ip4_in_route(r,ip)){
-			return (r->via.s_addr == 0);
+			return (r->via == 0);
 		}
 	}
 	return 0;
@@ -273,8 +273,8 @@ int is_local4(const interface *i,uint32_t ip){
 
 static inline int
 ip6_in_route(const ip6route *r,const uint128_t i){
-	uint128_t dst = *(const uint128_t *)r->dst.s6_addr32;
 	uint128_t mask = { ~0u, ~0u, ~0u, ~0u };
+	uint128_t dst = r->dst;
 
 	switch(r->maskbits / 32){
 		case 0:

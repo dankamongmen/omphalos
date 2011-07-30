@@ -25,16 +25,17 @@
 
 #include <sys/utsname.h>
 #include <linux/version.h>
-#include <linux/nl80211.h>
 #include <ncursesw/panel.h>
 #include <linux/rtnetlink.h>
+#include <ui/ncurses/util.h>
 #include <omphalos/timing.h>
 #include <ncursesw/ncurses.h>
 #include <omphalos/hwaddrs.h>
+#include <ui/ncurses/iface.h>
+#include <gnu/libc-version.h>
 #include <omphalos/ethtool.h>
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
-#include <gnu/libc-version.h>
 
 #define ERREXIT endwin() ; fprintf(stderr,"ncurses failure|%s|%d\n",__func__,__LINE__); abort() ; goto err
 
@@ -50,8 +51,6 @@ extern int mvwprintw(WINDOW *,int,int,const char *,...) __attribute__ ((format (
 #define PAD_COLS(cols) ((cols) - START_COL * 2)
 #define START_LINE 1
 #define START_COL 1
-#define U64STRLEN 20	// Does not include a '\0' (18,446,744,073,709,551,616)
-#define U64FMT "%-20ju"
 #define PREFIXSTRLEN U64STRLEN
 
 // FIXME we ought precreate the subwindows, and show/hide them rather than
@@ -61,49 +60,11 @@ struct panel_state {
 	int ysize;			// number of lines of *text* (not win)
 };
 
-typedef struct l2obj {
-	struct l2obj *next;
-	struct l2host *l2;
-	int cat;			// cached result of l2categorize()
-} l2obj;
-
 #define PANEL_STATE_INITIALIZER { .p = NULL, .ysize = -1, }
 
 static struct panel_state *active;
 static struct panel_state help = PANEL_STATE_INITIALIZER;
 static struct panel_state details = PANEL_STATE_INITIALIZER;
-
-// Bind one of these state structures to each interface in the callback,
-// and also associate an iface with them via *iface (for UI actions).
-typedef struct iface_state {
-	interface *iface;		// corresponding omphalos iface struct
-	int scrline;			// line within the containing pad
-	int ysize;			// number of lines
-	int l2ents;			// number of l2 entities
-	int first_visible;		// index of first visible l2 entity
-	WINDOW *subwin;			// subwin
-	PANEL *panel;			// panel
-	const char *typestr;		// looked up using iface->arptype
-	struct timeval lastprinted;	// last time we printed the iface
-	int devaction;			// 1 == down, -1 == up, 0 == nothing
-	l2obj *l2objs;			// l2 entity list
-	struct iface_state *next,*prev;
-} iface_state;
-
-enum {
-	BORDER_COLOR = 1,		// main window
-	HEADING_COLOR,
-	DBORDER_COLOR,			// down interfaces
-	DHEADING_COLOR,
-	UBORDER_COLOR,			// up interfaces
-	UHEADING_COLOR,
-	PBORDER_COLOR,			// popups
-	PHEADING_COLOR,
-	BULKTEXT_COLOR,			// bulk text (help, details)
-	IFACE_COLOR,			// interface summary text
-	MCAST_COLOR,			// multicast addresses
-	BCAST_COLOR,			// broadcast addresses
-};
 
 // FIXME granularize things, make packet handler iret-like
 static pthread_mutex_t bfl = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
@@ -121,28 +82,9 @@ static const char *glibc_version,*glibc_release;
 static char *statusmsg;
 static int statuschars;	// True size, not necessarily what's available
 
-static int
-bevel(WINDOW *w){
-	static const cchar_t bchr[] = {
-		{ .attr = 0, .chars = L"╭", },
-		{ .attr = 0, .chars = L"╮", },
-		{ .attr = 0, .chars = L"╰", },
-		{ .attr = 0, .chars = L"╯", },
-	};
-	int rows,cols;
-
-	getmaxyx(w,rows,cols);
-	// called as one expects: 'mvwadd_wch(w,rows - 1,cols - 1,&bchr[3]);'
-	// we get ERR returned and abort out. fuck ncurses. FIXME?
-	mvwadd_wch(w,rows - 1,cols - 1,&bchr[3]);
-	assert(mvwadd_wch(w,0,0,&bchr[0]) != ERR);
-	assert(whline(w,0,cols - 2) != ERR);
-	assert(mvwadd_wch(w,0,cols - 1,&bchr[1]) != ERR);
-	assert(mvwvline(w,1,0,0,rows - 2) != ERR);
-	assert(mvwvline(w,1,cols - 1,0,rows - 2) != ERR);
-	assert(mvwadd_wch(w,rows - 1,0,&bchr[2]) != ERR);
-	assert(mvwhline(w,rows - 1,1,0,PAD_COLS(cols)) != ERR);
-	return OK;
+static inline int
+iface_box_generic(WINDOW *w,const interface *i,const iface_state *is){
+	return iface_box(w,i,is,is == current_iface);
 }
 
 static inline int
@@ -197,122 +139,6 @@ setup_statusbar(int cols){
 		statusmsg = sm;
 	}
 	return 0;
-}
-
-static inline int
-interface_sniffing_p(const interface *i){
-	return (i->rfd >= 0);
-}
-
-static inline int
-interface_up_p(const interface *i){
-	return (i->flags & IFF_UP);
-}
-
-static inline int
-interface_carrier_p(const interface *i){
-	return (i->flags & IFF_LOWER_UP);
-}
-
-static inline int
-interface_promisc_p(const interface *i){
-	return (i->flags & IFF_PROMISC);
-}
-
-static int
-iface_optstr(WINDOW *w,const char *str,int hcolor,int bcolor){
-	if(wcolor_set(w,bcolor,NULL) != OK){
-		return ERR;
-	}
-	if(waddch(w,'|') == ERR){
-		return ERR;
-	}
-	if(wcolor_set(w,hcolor,NULL) != OK){
-		return ERR;
-	}
-	if(waddstr(w,str) == ERR){
-		return ERR;
-	}
-	return OK;
-}
-
-static const char *
-duplexstr(unsigned dplx){
-	switch(dplx){
-		case DUPLEX_FULL: return "full"; break;
-		case DUPLEX_HALF: return "half"; break;
-		default: break;
-	}
-	return "";
-}
-
-static const char *
-modestr(unsigned dplx){
-	switch(dplx){
-		case NL80211_IFTYPE_UNSPECIFIED: return "auto"; break;
-		case NL80211_IFTYPE_ADHOC: return "adhoc"; break;
-		case NL80211_IFTYPE_STATION: return "managed"; break;
-		case NL80211_IFTYPE_AP: return "ap"; break;
-		case NL80211_IFTYPE_AP_VLAN: return "apvlan"; break;
-		case NL80211_IFTYPE_WDS: return "wds"; break;
-		case NL80211_IFTYPE_MONITOR: return "monitor"; break;
-		case NL80211_IFTYPE_MESH_POINT: return "mesh"; break;
-#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,38)
-		case NL80211_IFTYPE_P2P_CLIENT: return "p2pclient"; break;
-		case NL80211_IFTYPE_P2P_GO: return "p2pgo"; break;
-#endif
-		default: break;
-	}
-	return "";
-}
-
-// For full safety, pass in a buffer that can hold the decimal representation
-// of the largest uintmax_t plus three (one for the unit, one for the decimal
-// separator, and one for the NUL byte). If omitdec is non-zero, and the
-// decimal portion is all 0's, the decimal portion will not be printed. decimal
-// indicates scaling, and should be '1' if no scaling has taken place.
-static char *
-genprefix(uintmax_t val,unsigned decimal,char *buf,size_t bsize,int omitdec,
-			unsigned mult,int uprefix){
-	const char prefixes[] = "KMGTPEY";
-	unsigned consumed = 0;
-	uintmax_t div;
-
-	div = mult;
-	while((val / decimal) >= div && consumed < strlen(prefixes)){
-		div *= mult;
-		if(UINTMAX_MAX / div < mult){ // watch for overflow
-			break;
-		}
-		++consumed;
-	}
-	if(div != mult){
-		div /= mult;
-		val /= decimal;
-		if(val % div || omitdec == 0){
-			snprintf(buf,bsize,"%ju.%02ju%c%c",val / div,(val % div) / ((div + 99) / 100),
-					prefixes[consumed - 1],uprefix);
-		}else{
-			snprintf(buf,bsize,"%ju%c%c",val / div,prefixes[consumed - 1],uprefix);
-		}
-	}else{
-		if(val % decimal || omitdec == 0){
-			snprintf(buf,bsize,"%ju.%02ju",val / decimal,val % decimal);
-		}else{
-			snprintf(buf,bsize,"%ju",val / decimal);
-		}
-	}
-	return buf;
-}
-
-static inline char *
-prefix(uintmax_t val,unsigned decimal,char *buf,size_t bsize,int omitdec){
-	return genprefix(val,decimal,buf,bsize,omitdec,1000,'\0');
-}
-
-static inline char *
-bprefix(uintmax_t val,unsigned decimal,char *buf,size_t bsize,int omitdec){
-	return genprefix(val,decimal,buf,bsize,omitdec,1024,'i');
 }
 
 // to be called only while ncurses lock is held
@@ -422,119 +248,6 @@ get_current_iface(void){
 		return current_iface->iface;
 	}
 	return NULL;
-}
-
-// to be called only while ncurses lock is held
-static int
-iface_box(WINDOW *w,const interface *i,const iface_state *is){
-	int bcolor,hcolor,scrrows,scrcols;
-	size_t buslen;
-	int attrs;
-
-	getmaxyx(w,scrrows,scrcols);
-	assert(scrrows); // FIXME
-	bcolor = interface_up_p(i) ? UBORDER_COLOR : DBORDER_COLOR;
-	hcolor = interface_up_p(i) ? UHEADING_COLOR : DHEADING_COLOR;
-	attrs = ((is == current_iface) ? A_REVERSE : A_BOLD);
-	assert(wattrset(w,attrs | COLOR_PAIR(bcolor)) == OK);
-	assert(bevel(w) == OK);
-	assert(wattroff(w,A_REVERSE) == OK);
-	if(is == current_iface){
-		assert(wattron(w,A_BOLD) == OK);
-	}
-	assert(mvwprintw(w,0,START_COL,"[") != ERR);
-	assert(wcolor_set(w,hcolor,NULL) == OK);
-	if(is == current_iface){
-		assert(wattron(w,A_BOLD) == OK);
-	}else{
-		assert(wattroff(w,A_BOLD) == OK);
-	}
-	assert(waddstr(w,i->name) != ERR);
-	assert(wprintw(w," (%s",is->typestr) != ERR);
-	if(strlen(i->drv.driver)){
-		assert(waddch(w,' ') != ERR);
-		assert(waddstr(w,i->drv.driver) != ERR);
-		if(strlen(i->drv.version)){
-			assert(wprintw(w," %s",i->drv.version) != ERR);
-		}
-		if(strlen(i->drv.fw_version)){
-			assert(wprintw(w," fw %s",i->drv.fw_version) != ERR);
-		}
-	}
-	assert(waddch(w,')') != ERR);
-	assert(wcolor_set(w,bcolor,NULL) != ERR);
-	if(is != current_iface){
-		assert(wattron(w,A_BOLD) == OK);
-	}
-	assert(wprintw(w,"]") != ERR);
-	assert(wattron(w,attrs) != ERR);
-	assert(wattroff(w,A_REVERSE) != ERR);
-	assert(mvwprintw(w,is->ysize - 1,START_COL * 2,"[") != ERR);
-	assert(wcolor_set(w,hcolor,NULL) != ERR);
-	if(is == current_iface){
-		assert(wattron(w,A_BOLD) == OK);
-	}else{
-		assert(wattroff(w,A_BOLD) == OK);
-	}
-	assert(wprintw(w,"mtu %d",i->mtu) != ERR);
-	if(interface_up_p(i)){
-		char buf[U64STRLEN + 1];
-
-		assert(iface_optstr(w,"up",hcolor,bcolor) != ERR);
-		if(i->settings_valid == SETTINGS_VALID_ETHTOOL){
-			if(!interface_carrier_p(i)){
-				assert(waddstr(w," (no carrier)") != ERR);
-			}else{
-				assert(wprintw(w," (%sb %s)",prefix(i->settings.ethtool.speed * 1000000u,1,buf,sizeof(buf),1),
-							duplexstr(i->settings.ethtool.duplex)) != ERR);
-			}
-		}else if(i->settings_valid == SETTINGS_VALID_WEXT){
-			if(!interface_carrier_p(i)){
-				if(i->settings.wext.mode != NL80211_IFTYPE_MONITOR){
-					assert(wprintw(w," (%s, no carrier)",modestr(i->settings.wext.mode)) != ERR);
-				}else{
-					assert(wprintw(w," (%s)",modestr(i->settings.wext.mode)) != ERR);
-				}
-			}else{
-				assert(wprintw(w," (%sb %s ",prefix(i->settings.wext.bitrate,1,buf,sizeof(buf),1),
-							modestr(i->settings.wext.mode)) != ERR);
-				if(i->settings.wext.freq <= MAX_WIRELESS_CHANNEL){
-					assert(wprintw(w,"ch %ju)",i->settings.wext.freq) != ERR);
-				}else{
-					assert(wprintw(w,"%sHz)",prefix(i->settings.wext.freq,1,buf,sizeof(buf),1)) != ERR);
-				}
-			}
-		}
-	}else{
-		assert(iface_optstr(w,"down",hcolor,bcolor) != ERR);
-		if(i->settings_valid == SETTINGS_VALID_WEXT){
-			assert(wprintw(w," (%s)",modestr(i->settings.wext.mode)) != ERR);
-		}
-	}
-	if(interface_promisc_p(i)){
-		assert(iface_optstr(w,"promisc",hcolor,bcolor) != ERR);
-	}
-	assert(wcolor_set(w,bcolor,NULL) != ERR);
-	if(is != current_iface){
-		assert(wattron(w,A_BOLD) == OK);
-	}
-	assert(wprintw(w,"]") != ERR);
-	if( (buslen = strlen(i->drv.bus_info)) ){
-		if(is == current_iface){
-			assert(wattrset(w,A_REVERSE | COLOR_PAIR(bcolor)) != ERR);
-		}else{
-			assert(wattrset(w,COLOR_PAIR(bcolor) | A_BOLD) != ERR);
-		}
-		if(i->busname){
-			buslen += strlen(i->busname) + 1;
-			assert(mvwprintw(w,is->ysize - 1,scrcols - (buslen + START_COL * 2),
-					"%s:%s",i->busname,i->drv.bus_info) != ERR);
-		}else{
-			assert(mvwprintw(w,is->ysize - 1,scrcols - (buslen + START_COL * 2),
-					"%s",i->drv.bus_info) != ERR);
-		}
-	}
-	return 0;
 }
 
 static void
@@ -904,10 +617,10 @@ use_next_iface_locked(void){
 		interface *i = is->iface;
 
 		current_iface = current_iface->next;
-		iface_box(is->subwin,i,is);
+		iface_box_generic(is->subwin,i,is);
 		is = current_iface;
 		i = is->iface;
-		iface_box(is->subwin,i,is);
+		iface_box_generic(is->subwin,i,is);
 		if(details.p){
 			iface_details(panel_window(details.p),i,details.ysize);
 		}
@@ -922,10 +635,10 @@ use_prev_iface_locked(void){
 		interface *i = is->iface;
 
 		current_iface = current_iface->prev;
-		iface_box(is->subwin,i,is);
+		iface_box_generic(is->subwin,i,is);
 		is = current_iface;
 		i = is->iface;
-		iface_box(is->subwin,i,is);
+		iface_box_generic(is->subwin,i,is);
 		if(details.p){
 			iface_details(panel_window(details.p),i,details.ysize);
 		}
@@ -1319,7 +1032,7 @@ lines_for_interface(const interface *i,const iface_state *is){
 static int
 redraw_iface(const interface *i,iface_state *is){
 	assert(werase(is->subwin) != ERR);
-	if(iface_box(is->subwin,i,is) == ERR){
+	if(iface_box_generic(is->subwin,i,is) == ERR){
 		return ERR;
 	}
 	if(interface_up_p(i)){
