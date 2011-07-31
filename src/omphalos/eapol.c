@@ -16,8 +16,10 @@ struct eapolhdr {
 #define EAPOL_KEY	3
 #define EAPOL_ALERT	4
 
-void handle_eapol_packet(const omphalos_iface *octx,interface *i,const void *frame,size_t len){
+void handle_eapol_packet(const omphalos_iface *octx,omphalos_packet *op,
+					const void *frame,size_t len){
 	const struct eapolhdr *eaphdr = frame;
+	interface *i = op->i;
 
 	if(len < sizeof(*eaphdr)){
 		octx->diagnostic("%s truncated (%zu < %zu)",__func__,len,sizeof(*eaphdr));

@@ -3,6 +3,7 @@
 #include <linux/llc.h>
 #include <omphalos/ip.h>
 #include <omphalos/arp.h>
+#include <omphalos/ipx.h>
 #include <omphalos/util.h>
 #include <linux/if_fddi.h>
 #include <omphalos/eapol.h>
@@ -81,7 +82,9 @@ handle_8021q(const omphalos_iface *octx,omphalos_packet *op,const void *frame,
 	break;}case ETH_P_IPV6:{
 		handle_ipv6_packet(octx,op,dgram,dlen);
 	break;}case ETH_P_PAE:{
-		handle_eapol_packet(octx,op->i,dgram,dlen);
+		handle_eapol_packet(octx,op,dgram,dlen);
+	break;}case ETH_P_IPX:{
+		handle_ipx_packet(octx,op,dgram,dlen);
 	break;}case ETH_P_ECTP:{
 		handle_ectp_packet(octx,op->i,dgram,dlen);
 	break;}default:{
@@ -136,7 +139,7 @@ handle_snap(const omphalos_iface *octx,omphalos_packet *op,const void *frame,siz
 						dlen + IEEE8021QHDRLEN,0);
 			break; // will modify op->l3proto
 		}case ETH_P_PAE:{
-			handle_eapol_packet(octx,op->i,dgram,dlen);
+			handle_eapol_packet(octx,op,dgram,dlen);
 			break;
 		}case ETH_P_ECTP:{
 			handle_ectp_packet(octx,op->i,dgram,dlen);
@@ -176,9 +179,13 @@ handle_8022(const omphalos_iface *octx,omphalos_packet *op,const void *frame,siz
 				op->l3proto = ETH_P_STP;
 				handle_stp_packet(octx,op,dgram,dlen);
 				break;
-			}case LLC_SAP_OSI:{	// Routed OSI PDU
+			}case LLC_SAP_IPX:{	// Routed OSI PDU
 				op->l3proto = ETH_P_OSI;
 				handle_osi_packet(octx,op,dgram,dlen);
+				break;
+			}case LLC_SAP_OSI:{
+				op->l3proto = ETH_P_IPX;
+				handle_ipx_packet(octx,op,dgram,dlen);
 				break;
 			}default:{ // IPv6 always uses SNAP per RFC2019
 				++op->i->noprotocol;
@@ -225,10 +232,13 @@ void handle_ethernet_packet(const omphalos_iface *octx,omphalos_packet *op,
 						dlen + IEEE8021QHDRLEN,1);
 			break; // will modify op->l3proto
 		}case ETH_P_PAE:{
-			handle_eapol_packet(octx,op->i,dgram,dlen);
+			handle_eapol_packet(octx,op,dgram,dlen);
 			break;
 		}case ETH_P_ECTP:{
 			handle_ectp_packet(octx,op->i,dgram,dlen);
+			break;
+		}case ETH_P_IPX:{
+			handle_ipx_packet(octx,op,dgram,dlen);
 			break;
 		}default:{
 			if(proto < LLC_MAX_LEN){ // 802.2 DSAP (and maybe SNAP/802.1q)
