@@ -208,7 +208,7 @@ static int
 push_interfaces_above(iface_state *pusher,int rows,int delta){
 	iface_state *is;
 
-	for(is = pusher->prev ; is->scrline < pusher->scrline ; is = is->next){
+	for(is = pusher->prev ; is->scrline < pusher->scrline ; is = is->prev){
 		if(move_interface(is,rows,delta)){
 			return ERR;
 		}
