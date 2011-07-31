@@ -791,8 +791,9 @@ use_prev_iface_locked(WINDOW *w){
 		if(!iface_visible_p(rows,is)){
 			is->scrline = 1;
 			push_interfaces_below(is,rows,is->ysize + 1);
-			assert(show_panel(is->panel) != ERR);
+			assert(move_panel(is->panel,is->scrline,START_COL) != ERR);
 			assert(redraw_iface(i,is) == OK);
+			assert(show_panel(is->panel) != ERR);
 		}else if(is->scrline > oldis->scrline){
 			is->scrline = 1;
 			push_interfaces_below(is,rows,is->ysize + 1);
@@ -980,7 +981,7 @@ ncurses_setup(const omphalos_iface *octx){
 	const char *errstr = NULL;
 	WINDOW *w = NULL;
 
-	trace(TRACE_CALLS);
+	//trace(TRACE_CALLS);
 	if(initscr() == NULL){
 		fprintf(stderr,"Couldn't initialize ncurses\n");
 		return NULL;
