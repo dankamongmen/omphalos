@@ -1,9 +1,147 @@
+#include <stdlib.h>
+#include <limits.h>
+#include <sys/socket.h>
 #include <linux/version.h>
 #include <linux/nl80211.h>
+#include <linux/rtnetlink.h>
 #include <ui/ncurses/util.h>
+#include <omphalos/hwaddrs.h>
 #include <ncursesw/ncurses.h>
 #include <ui/ncurses/iface.h>
 #include <omphalos/interface.h>
+
+typedef struct l2obj {
+	struct l2obj *next;
+	struct l2host *l2;
+	int cat;			// cached result of l2categorize()
+} l2obj;
+
+static l2obj *
+get_l2obj(const interface *i,struct l2host *l2){
+	l2obj *l;
+
+	if( (l = malloc(sizeof(*l))) ){
+		l->cat = l2categorize(i,l2);
+		l->l2 = l2;
+	}
+	return l;
+}
+
+static inline void
+free_l2obj(l2obj *l){
+	free(l);
+}
+
+// returns < 0 if c0 < c1, 0 if c0 == c1, > 0 if c0 > c1
+static inline int
+l2catcmp(int c0,int c1){
+	// not a surjection! some values are shared.
+	static const int vals[__RTN_MAX] = {
+		0,			// RTN_UNSPEC
+		__RTN_MAX - 1,		// RTN_UNICAST
+		__RTN_MAX,		// RTN_LOCAL
+		__RTN_MAX - 5,		// RTN_BROADCAST
+		__RTN_MAX - 4,		// RTN_ANYCAST
+		__RTN_MAX - 3,		// RTN_MULTICAST
+		__RTN_MAX - 2,		// RTN_BLACKHOLE
+		__RTN_MAX - 2,		// RTN_UNREACHABLE
+		__RTN_MAX - 2,		// RTN_PROHIBIT
+					// 0 the rest of the way...
+	};
+	return vals[c0] - vals[c1];
+}
+
+l2obj *add_l2_to_iface(const interface *i,iface_state *is,struct l2host *l2h){
+	l2obj *l2;
+
+	if( (l2 = get_l2obj(i,l2h)) ){
+		l2obj **prev;
+
+		++is->l2ents;
+		for(prev = &is->l2objs ; *prev ; prev = &(*prev)->next){
+			// we want the inverse of l2catcmp()'s priorities
+			if(l2catcmp(l2->cat,(*prev)->cat) > 0){
+				break;
+			}else if(l2catcmp(l2->cat,(*prev)->cat) == 0){
+				if(l2hostcmp(l2->l2,(*prev)->l2) <= 0){
+					break;
+				}
+			}
+		}
+		l2->next = *prev;
+		*prev = l2;
+	}
+	return l2;
+}
+
+int print_iface_hosts(const interface *i,const iface_state *is){
+	int rows,cols,line,idx = 0;
+	const l2obj *l;
+
+	getmaxyx(is->subwin,rows,cols);
+	cols -= 2 + 3 + i->addrlen * 3;
+	assert(cols >= 0);
+	assert(rows);
+	// If the interface is down, we don't lead with the summary line
+	line = !!interface_up_p(i);
+	for(l = is->l2objs ; l ; ++idx, l = l->next){
+		char hw[HWADDRSTRLEN(i->addrlen)];
+		const char *devname,*nname;
+		char legend;
+		
+		// Don't run off the end of the interface FIXME
+		if(idx >= is->ysize - (3 - !interface_up_p(i))){
+			break;
+		}
+		switch(l->cat){
+			case RTN_UNICAST:
+				assert(wattrset(is->subwin,COLOR_PAIR(MCAST_COLOR)) != ERR);
+				legend = 'U';
+				break;
+			case RTN_LOCAL:
+				assert(wattrset(is->subwin,A_BOLD | COLOR_PAIR(MCAST_COLOR)) != ERR);
+				legend = 'L';
+				break;
+			case RTN_MULTICAST:
+				assert(wattrset(is->subwin,A_BOLD | COLOR_PAIR(BCAST_COLOR)) != ERR);
+				legend = 'M';
+				break;
+			case RTN_BROADCAST:
+				assert(wattrset(is->subwin,COLOR_PAIR(BCAST_COLOR)) != ERR);
+				legend = 'B';
+				break;
+		}
+		if(!interface_up_p(i)){
+			assert(wcolor_set(is->subwin,DBORDER_COLOR,NULL) != ERR);
+		}
+		l2ntop(l->l2,i->addrlen,hw);
+		if((nname = get_name(l->l2)) == NULL){
+			nname = "";
+		}
+		if((devname = get_devname(l->l2)) == NULL){
+			if(l->cat == RTN_LOCAL){
+				devname = i->topinfo.devname;
+			}
+		}
+		if(devname){
+			int len = strlen(devname),hlen = strlen(nname);
+
+			if((len + 1) > cols - hlen){
+				len = cols - hlen - 1;
+			}else if(len + 1 < cols - hlen){
+				hlen = cols - len - 1;
+			}
+			assert(mvwprintw(is->subwin,++line,1," %c %s %*.*s %*.*s",
+						legend,hw,len,len,devname,
+						hlen,hlen,nname) != ERR);
+		}else{
+			assert(mvwprintw(is->subwin,++line,1," %c %s  %*s",
+						legend,hw,cols - 1,
+						nname) != ERR);
+		}
+	}
+	return OK;
+}
 
 static int
 iface_optstr(WINDOW *w,const char *str,int hcolor,int bcolor){
@@ -164,3 +302,29 @@ int iface_box(WINDOW *w,const interface *i,const iface_state *is,int active){
 	return 0;
 }
 
+int print_iface_state(const interface *i,const iface_state *is){
+	char buf[U64STRLEN + 1],buf2[U64STRLEN + 1];
+	unsigned long usecdomain;
+
+	assert(wattrset(is->subwin,A_BOLD | COLOR_PAIR(IFACE_COLOR)) == OK);
+	// FIXME broken if bps domain ever != fps domain. need unite those
+	// into one FTD stat by letting it take an object...
+	// FIXME this leads to a "ramp-up" period where we approach steady state
+	usecdomain = i->bps.usec * i->bps.total;
+	assert(mvwprintw(is->subwin,1,1,"Last %lus: %7sb/s (%sp) Nodes: %-5u",
+				usecdomain / 1000000,
+				prefix(timestat_val(&i->bps) * CHAR_BIT * 1000000 * 100 / usecdomain,100,buf,sizeof(buf),0),
+				prefix(timestat_val(&i->fps),1,buf2,sizeof(buf2),1),
+				is->l2ents) != ERR);
+	return 0;
+}
+
+void free_iface_state(iface_state *is){
+	l2obj *l = is->l2objs;
+
+	while(l){
+		l2obj *tmp = l->next;
+		free(l);
+		l = tmp;
+	}
+}

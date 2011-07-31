@@ -931,106 +931,7 @@ err:
 }
 
 static int
-print_iface_state(const interface *i,const iface_state *is){
-	char buf[U64STRLEN + 1],buf2[U64STRLEN + 1];
-	unsigned long usecdomain;
-
-	assert(wattrset(is->subwin,A_BOLD | COLOR_PAIR(IFACE_COLOR)) == OK);
-	// FIXME broken if bps domain ever != fps domain. need unite those
-	// into one FTD stat by letting it take an object...
-	// FIXME this leads to a "ramp-up" period where we approach steady state
-	usecdomain = i->bps.usec * i->bps.total;
-	assert(mvwprintw(is->subwin,1,START_COL,"Last %lus: %7sb/s (%sp) Nodes: %-5u",
-				usecdomain / 1000000,
-				prefix(timestat_val(&i->bps) * CHAR_BIT * 1000000 * 100 / usecdomain,100,buf,sizeof(buf),0),
-				prefix(timestat_val(&i->fps),1,buf2,sizeof(buf2),1),
-				is->l2ents) != ERR);
-	return 0;
-}
-
-static int
-print_iface_hosts(const interface *i,const iface_state *is){
-	int rows,cols,line,idx = 0;
-	const l2obj *l;
-
-	getmaxyx(is->subwin,rows,cols);
-	cols -= START_COL * 2 + 3 + i->addrlen * 3;
-	assert(cols >= 0);
-	assert(rows);
-	// If the interface is down, we don't lead with the summary line
-	line = !!interface_up_p(i);
-	for(l = is->l2objs ; l ; ++idx, l = l->next){
-		const char *devname,*nname;
-		char legend;
-		char *hw;
-		
-		if(idx < is->first_visible){
-			continue;
-		}else if(idx - is->first_visible >= is->ysize - (PAD_LINES - !interface_up_p(i))){
-			break;
-		}
-		switch(l->cat){
-			case RTN_UNICAST:
-				assert(wattrset(is->subwin,COLOR_PAIR(MCAST_COLOR)) != ERR);
-				legend = 'U';
-				break;
-			case RTN_LOCAL:
-				assert(wattrset(is->subwin,A_BOLD | COLOR_PAIR(MCAST_COLOR)) != ERR);
-				legend = 'L';
-				break;
-			case RTN_MULTICAST:
-				assert(wattrset(is->subwin,A_BOLD | COLOR_PAIR(BCAST_COLOR)) != ERR);
-				legend = 'M';
-				break;
-			case RTN_BROADCAST:
-				assert(wattrset(is->subwin,COLOR_PAIR(BCAST_COLOR)) != ERR);
-				legend = 'B';
-				break;
-		}
-		if(!interface_up_p(i)){
-			assert(wcolor_set(is->subwin,DBORDER_COLOR,NULL) != ERR);
-		}
-		if((hw = l2addrstr(l->l2,i->addrlen)) == NULL){
-			return ERR;
-		}
-		if((nname = get_name(l->l2)) == NULL){
-			nname = "";
-		}
-		if((devname = get_devname(l->l2)) == NULL){
-			if(l->cat == RTN_LOCAL){
-				devname = i->topinfo.devname;
-			}
-		}
-		if(devname){
-			int len = strlen(devname),hlen = strlen(nname);
-
-			if((len + 1) > cols - hlen){
-				len = cols - hlen - 1;
-			}else if(len + 1 < cols - hlen){
-				hlen = cols - len - 1;
-			}
-			assert(mvwprintw(is->subwin,++line,START_COL," %c %s %*.*s %*.*s",
-						legend,hw,len,len,devname,
-						hlen,hlen,nname) != ERR);
-		}else{
-			assert(mvwprintw(is->subwin,++line,START_COL," %c %s  %*s",
-						legend,hw,cols - 1,
-						nname) != ERR);
-		}
-		free(hw);
-	}
-	return OK;
-}
-
-// This is the number of lines we'd have in an optimal world; we might have
-// fewer available to us on this screen at this time. ->ysize is real size.
-static inline int
-lines_for_interface(const interface *i,const iface_state *is){
-	return PAD_LINES + is->l2ents - !interface_up_p(i);
-}
-
-static int
-redraw_iface(const interface *i,iface_state *is){
+redraw_iface(const interface *i,struct iface_state *is){
 	assert(werase(is->subwin) != ERR);
 	if(iface_box_generic(is->subwin,i,is) == ERR){
 		return ERR;
@@ -1044,6 +945,12 @@ redraw_iface(const interface *i,iface_state *is){
 		return ERR;
 	}
 	return OK;
+}
+// This is the number of lines we'd have in an optimal world; we might have
+// fewer available to us on this screen at this time. ->ysize is real size.
+static inline int
+lines_for_interface(const interface *i,const iface_state *is){
+	return PAD_LINES + is->l2ents - !interface_up_p(i);
 }
 
 // Is the interface window entirely visible? We can't draw it otherwise, as it
@@ -1116,60 +1023,6 @@ resize_iface(const interface *i,iface_state *ret){
 	return screen_update();
 }
 
-static l2obj *
-get_l2obj(const interface *i,struct l2host *l2){
-	l2obj *l;
-
-	if( (l = malloc(sizeof(*l))) ){
-		l->cat = l2categorize(i,l2);
-		l->l2 = l2;
-	}
-	return l;
-}
-
-static inline void
-free_l2obj(l2obj *l){
-	free(l);
-}
-
-// returns < 0 if c0 < c1, 0 if c0 == c1, > 0 if c0 > c1
-static inline int
-l2catcmp(int c0,int c1){
-	// not a surjection! some values are shared.
-	static const int vals[__RTN_MAX] = {
-		0,			// RTN_UNSPEC
-		__RTN_MAX - 1,		// RTN_UNICAST
-		__RTN_MAX,		// RTN_LOCAL
-		__RTN_MAX - 5,		// RTN_BROADCAST
-		__RTN_MAX - 4,		// RTN_ANYCAST
-		__RTN_MAX - 3,		// RTN_MULTICAST
-		__RTN_MAX - 2,		// RTN_BLACKHOLE
-		__RTN_MAX - 2,		// RTN_UNREACHABLE
-		__RTN_MAX - 2,		// RTN_PROHIBIT
-					// 0 the rest of the way...
-	};
-	return vals[c0] - vals[c1];
-}
-
-static void
-add_l2_to_iface(iface_state *is,l2obj *l2){
-	l2obj **prev;
-
-	++is->l2ents;
-	for(prev = &is->l2objs ; *prev ; prev = &(*prev)->next){
-		// we want the inverse of l2catcmp()'s priorities
-		if(l2catcmp(l2->cat,(*prev)->cat) > 0){
-			break;
-		}else if(l2catcmp(l2->cat,(*prev)->cat) == 0){
-			if(l2hostcmp(l2->l2,(*prev)->l2) <= 0){
-				break;
-			}
-		}
-	}
-	l2->next = *prev;
-	*prev = l2;
-}
-
 static inline void
 packet_cb_locked(const interface *i,omphalos_packet *op){
 	iface_state *is = op->i->opaque;
@@ -1206,7 +1059,6 @@ create_interface_state(interface *i){
 
 	if( (tstr = lookup_arptype(i->arptype,NULL)) ){
 		if( (ret = malloc(sizeof(*ret))) ){
-			ret->first_visible = 0;
 			ret->l2ents = 0;
 			ret->l2objs = NULL;
 			ret->ysize = lines_for_interface(i,ret);
@@ -1300,14 +1152,9 @@ wireless_callback(interface *i,unsigned wcmd __attribute__ ((unused)),void *unsa
 static inline void
 interface_removed_locked(iface_state *is){
 	if(is){
-		l2obj *l = is->l2objs;
 		int rows,cols;
 
-		while(l){
-			l2obj *tmp = l->next;
-			free(l);
-			l = tmp;
-		}
+		free_iface_state(is);
 		werase(is->subwin);
 		del_panel(is->panel);
 		getmaxyx(is->subwin,rows,cols);
@@ -1347,10 +1194,10 @@ interface_removed_locked(iface_state *is){
 	}
 }
 
-static l2obj *
+static struct l2obj *
 neighbor_callback_locked(const interface *i,struct l2host *l2){
+	struct l2obj *ret;
 	iface_state *is;
-	l2obj *ret;
 
 	// Guaranteed by callback properties -- we don't get neighbor callbacks
 	// until there's been a successful device callback.
@@ -1360,10 +1207,9 @@ neighbor_callback_locked(const interface *i,struct l2host *l2){
 	}
 	assert( (is = i->opaque) );
 	if((ret = l2host_get_opaque(l2)) == NULL){
-		if((ret = get_l2obj(i,l2)) == NULL){
+		if((ret = add_l2_to_iface(i,is,l2)) == NULL){
 			return NULL;
 		}
-		add_l2_to_iface(is,ret);
 	}
 	assert(resize_iface(i,is) != ERR);
 	return ret;

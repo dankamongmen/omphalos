@@ -85,17 +85,22 @@ void cleanup_l2hosts(l2host **list){
 	*list = NULL;
 }
 
-char *l2addrstr(const l2host *l2,size_t len){
+void l2ntop(const l2host *l2,size_t len,void *buf){
 	unsigned idx;
 	size_t s;
+
+	s = HWADDRSTRLEN(len);
+	for(idx = 0 ; idx < len ; ++idx){
+		snprintf((char *)buf + idx * 3,s - idx * 3,"%02x:",
+				((unsigned char *)&l2->hwaddr)[idx]);
+	}
+}
+
+char *l2addrstr(const l2host *l2,size_t len){
 	char *r;
 
-	// Each byte becomes two ASCII characters and either a separator or a nul
-	s = len * 3;
-	if( (r = malloc(s)) ){
-		for(idx = 0 ; idx < len ; ++idx){
-			snprintf(r + idx * 3,s - idx * 3,"%02x:",((unsigned char *)&l2->hwaddr)[idx]);
-		}
+	if( (r = malloc(HWADDRSTRLEN(len))) ){
+		l2ntop(l2,len,r);
 	}
 	return r;
 }

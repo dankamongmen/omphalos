@@ -16,7 +16,11 @@ struct l2host *lookup_l2host(const struct omphalos_iface *,struct interface *,
 				const void *,int,const void *)
 				__attribute__ ((nonnull (1,2,3)));
 
-void cleanup_l2hosts(struct l2host **);
+void cleanup_l2hosts(struct l2host **) __attribute__ ((nonnull (1)));
+
+// Each byte becomes two ASCII characters + separator or nul
+#define HWADDRSTRLEN(len) ((len) * 3)
+void l2ntop(const struct l2host *,size_t,void *) __attribute__ ((nonnull (1,3)));
 char *l2addrstr(const struct l2host *,size_t) __attribute__ ((nonnull (1)));
 
 void *l2host_get_opaque(struct l2host *) __attribute__ ((nonnull (1)));
