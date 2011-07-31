@@ -975,6 +975,37 @@ iface_will_be_visible_p(int rows,const iface_state *ret,int nlines){
 	return 1;
 }
 
+// An interface (pusher) has had its bottom border moved up or down (positive or
+// negative delta, respectively). Update the interfaces below it on the screen
+// (all those up until those actually displayed above it on the screen).
+static int
+push_interfaces_down(iface_state *pusher,int rows,int delta){
+	iface_state *is;
+
+	for(is = pusher->next ; is->scrline > pusher->scrline ; is = is->next){
+		interface *ii = is->iface;
+
+		is->scrline += delta;
+		if(iface_visible_p(rows,is)){
+			assert(move_panel(is->panel,is->scrline,START_COL) != ERR);
+			if(redraw_iface(ii,is)){
+				return ERR;
+			}
+		// use "will_be_visible" as "would_be_visible" here, heh
+		}else if(iface_will_be_visible_p(rows,is,is->ysize - delta)){
+			// FIXME see if we can shrink it first!
+			assert(werase(is->subwin) != ERR);
+			assert(hide_panel(is->panel) != ERR);
+		}
+	}
+	// Now, if our delta was negative, see if we pulled any down below us
+	// FIXME
+	/* while(is->scrline < 0){
+		is = is->next;
+	}*/
+	return OK;
+}
+
 // Upon entry, ret->ysize (and the actual display) might not have been updated
 // to reflect a change in the interface's data. If so, the interface panel is
 // resized (subject to the containing window's constraints) and other panels
@@ -994,25 +1025,9 @@ resize_iface(const interface *i,iface_state *ret){
 	if(nlines != ret->ysize){
 		if(nlines + ret->scrline < rows){
 			int delta = nlines - ret->ysize;
-			iface_state *is;
 
+			push_interfaces_down(ret,rows,delta);
 			ret->ysize = nlines;
-			for(is = ret->next ; is->scrline > ret->scrline ; is = is->next){
-				interface *ii = is->iface;
-
-				is->scrline += delta;
-				if(iface_visible_p(rows,is)){
-					assert(move_panel(is->panel,is->scrline,START_COL) != ERR);
-					if(redraw_iface(ii,is)){
-						return ERR;
-					}
-				// use "will_be_visible" as "would_be_visible" here, heh
-				}else if(iface_will_be_visible_p(rows,is,is->ysize - delta)){
-					// FIXME see if we can shrink it first!
-					assert(werase(is->subwin) != ERR);
-					assert(hide_panel(is->panel) != ERR);
-				}
-			}
 			assert(wresize(ret->subwin,ret->ysize,PAD_COLS(cols)) != ERR);
 			assert(replace_panel(ret->panel,ret->subwin) != ERR);
 		}
