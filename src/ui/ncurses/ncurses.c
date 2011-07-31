@@ -132,10 +132,10 @@ iface_visible_p(int rows,const iface_state *is){
 }
 
 static int
-iface_will_be_visible_p(int rows,const iface_state *ret,int nlines){
-	if(ret->scrline + nlines >= rows){
+iface_will_be_visible_p(int rows,const iface_state *ret,int delta){
+	if(ret->scrline + delta + lines_for_interface(ret->iface,ret) >= rows){
 		return 0;
-	}else if(ret->scrline < START_LINE){
+	}else if(ret->scrline + delta < START_LINE){
 		return 0;
 	}
 	return 1;
@@ -171,7 +171,7 @@ move_interface(iface_state *is,int rows,int delta){
 			return ERR;
 		}
 	// use "will_be_visible" as "would_be_visible" here, heh
-	}else if(iface_will_be_visible_p(rows,is,lines_for_interface(is->iface,is) - delta)){
+	}else if(iface_will_be_visible_p(rows,is,-delta)){
 		// FIXME see if we can shrink it first!
 		assert(werase(is->subwin) != ERR);
 		assert(hide_panel(is->panel) != ERR);
@@ -240,13 +240,18 @@ resize_iface(const interface *i,iface_state *ret){
 	getmaxyx(stdscr,rows,cols);
 	getmaxyx(ret->subwin,subrows,subcols);
 	assert(subcols); // FIXME
-	if(!iface_will_be_visible_p(rows,ret,nlines)){
+	if(!iface_will_be_visible_p(rows,ret,nlines - subrows)){
 		if(!iface_visible_p(rows,ret)){ // we weren't visible to begin with
 			assert(wresize(ret->subwin,lines_for_interface(i,ret),PAD_COLS(cols)) != ERR);
 			assert(replace_panel(ret->panel,ret->subwin) != ERR);
+			assert(screen_update() == OK);
 			return OK;
 		}
+		assert(werase(ret->subwin) != ERR);
+		assert(wresize(ret->subwin,lines_for_interface(i,ret),PAD_COLS(cols)) != ERR);
+		assert(replace_panel(ret->panel,ret->subwin) != ERR);
 		assert(hide_panel(ret->panel) != ERR);
+		assert(screen_update() == OK);
 		return OK;
 	}
 	if(nlines != subrows){
@@ -766,8 +771,13 @@ use_next_iface_locked(WINDOW *w){
 		is = current_iface = current_iface->next;
 		i = is->iface;
 		if(!iface_visible_p(rows,is)){
+			int up;
+
 			is->scrline = rows - lines_for_interface(i,is) - 1;
-			push_interfaces_above(is,rows,-(lines_for_interface(i,is) + 1));
+			up = oldis->scrline + lines_for_interface(oldis->iface,oldis) + 1 - is->scrline;
+			if(up > 0){
+				push_interfaces_above(is,rows,-up);
+			}
 			assert(move_panel(is->panel,is->scrline,START_COL) != ERR);
 			assert(redraw_iface(i,is) == OK);
 			assert(show_panel(is->panel) != ERR);
@@ -1197,7 +1207,7 @@ interface_cb_locked(interface *i,iface_state *ret){
 	if(ret == current_iface && details.p){
 		iface_details(panel_window(details.p),i,details.ysize);
 	}
-	resize_iface(i,ret);
+	redraw_iface(i,ret);
 	if(interface_up_p(i)){
 		if(ret->devaction < 0){
 			wstatus_locked(pad,"");
