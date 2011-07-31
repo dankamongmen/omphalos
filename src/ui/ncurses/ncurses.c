@@ -758,7 +758,9 @@ use_next_iface_locked(WINDOW *w){
 		i = is->iface;
 		if(!iface_visible_p(rows,is)){
 			push_interfaces_above(is,rows,-is->ysize);
-			// FIXME bring on-screen
+			is->scrline = rows - is->ysize;
+			assert(show_panel(is->panel) != ERR);
+			redraw_iface(i,is);
 		}
 		iface_box_generic(is->subwin,i,is);
 		if(details.p){
