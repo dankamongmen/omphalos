@@ -147,26 +147,18 @@ draw_main_window(WINDOW *w,const char *name,const char *ver){
 	int rows,cols;
 
 	getmaxyx(w,rows,cols);
-	if(setup_statusbar(cols)){
-		ERREXIT;
-	}
-	if(wcolor_set(w,BORDER_COLOR,NULL) != OK){
-		ERREXIT;
-	}
+	assert(wcolor_set(w,BORDER_COLOR,NULL) != ERR);
 	if(bevel(w) != OK){
 		ERREXIT;
 	}
+	if(setup_statusbar(cols)){
+		ERREXIT;
+	}
 	// FIXME move this over! it is ugly on the left, clashing with ifaces
-	if(mvwprintw(w,0,2,"[") < 0){
-		ERREXIT;
-	}
-	if(wattron(w,A_BOLD | COLOR_PAIR(HEADING_COLOR)) != OK){
-		ERREXIT;
-	}
-	if(wprintw(w,"%s %s on %s %s (libc %s-%s)",name,ver,sysuts.sysname,
-				sysuts.release,glibc_version,glibc_release) < 0){
-		ERREXIT;
-	}
+	assert(mvwprintw(w,0,2,"[") != ERR);
+	assert(wattron(w,A_BOLD | COLOR_PAIR(HEADING_COLOR)) != ERR);
+	assert(wprintw(w,"%s %s on %s %s (libc %s-%s)",name,ver,sysuts.sysname,
+				sysuts.release,glibc_version,glibc_release) != ERR);
 	if(wattroff(w,A_BOLD | COLOR_PAIR(HEADING_COLOR)) != OK){
 		ERREXIT;
 	}
