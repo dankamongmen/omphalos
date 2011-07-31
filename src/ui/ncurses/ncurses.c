@@ -187,7 +187,10 @@ static int
 push_interfaces_below(iface_state *pusher,int rows,int delta){
 	iface_state *is;
 
-	for(is = pusher->next ; is->scrline > pusher->scrline ; is = is->next){
+	for(is = pusher->next ; is->scrline >= pusher->scrline ; is = is->next){
+		if(is == pusher){
+			break;
+		}
 		if(move_interface(is,rows,delta)){
 			return ERR;
 		}
@@ -208,7 +211,10 @@ static int
 push_interfaces_above(iface_state *pusher,int rows,int delta){
 	iface_state *is;
 
-	for(is = pusher->prev ; is->scrline < pusher->scrline ; is = is->prev){
+	for(is = pusher->prev ; is->scrline <= pusher->scrline ; is = is->prev){
+		if(is == pusher){
+			break;
+		}
 		if(move_interface(is,rows,delta)){
 			return ERR;
 		}
@@ -774,22 +780,26 @@ use_next_iface_locked(WINDOW *w){
 static void
 use_prev_iface_locked(WINDOW *w){
 	if(current_iface && current_iface->prev != current_iface){
-		iface_state *is = current_iface;
-		interface *i = is->iface;
+		iface_state *is,*oldis = current_iface;
 		int rows,cols;
+		interface *i;
 
 		getmaxyx(w,rows,cols);
 		assert(cols);
-		current_iface = current_iface->prev;
-		iface_box_generic(is->subwin,i,is);
-		is = current_iface;
+		is = current_iface = current_iface->prev;
 		i = is->iface;
 		if(!iface_visible_p(rows,is)){
-			push_interfaces_below(is,rows,is->ysize + 1);
 			is->scrline = 1;
+			push_interfaces_below(is,rows,is->ysize + 1);
 			assert(show_panel(is->panel) != ERR);
-			redraw_iface(i,is);
+			assert(redraw_iface(i,is) == OK);
+		}else if(is->scrline > oldis->scrline){
+			is->scrline = 1;
+			push_interfaces_below(is,rows,is->ysize + 1);
+			assert(move_panel(is->panel,is->scrline,START_COL) != ERR);
+			assert(redraw_iface(i,is) == OK);
 		}else{
+			iface_box_generic(oldis->subwin,oldis->iface,oldis);
 			iface_box_generic(is->subwin,i,is);
 		}
 		if(details.p){
@@ -970,6 +980,7 @@ ncurses_setup(const omphalos_iface *octx){
 	const char *errstr = NULL;
 	WINDOW *w = NULL;
 
+	trace(TRACE_CALLS);
 	if(initscr() == NULL){
 		fprintf(stderr,"Couldn't initialize ncurses\n");
 		return NULL;
