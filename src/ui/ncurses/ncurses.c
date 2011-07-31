@@ -207,7 +207,7 @@ static int
 push_interfaces_above(iface_state *pusher,int rows,int delta){
 	iface_state *is;
 
-	for(is = pusher->prev ; is->scrline <= pusher->scrline ; is = is->prev){
+	for(is = pusher->prev ; is->scrline + lines_for_interface(is->iface,is) <= pusher->scrline + lines_for_interface(pusher->iface,pusher) ; is = is->prev){
 		if(is == pusher){
 			break;
 		}
@@ -754,24 +754,28 @@ reset_current_interface_stats(WINDOW *w){
 static void
 use_next_iface_locked(WINDOW *w){
 	if(current_iface && current_iface->next != current_iface){
-		iface_state *is = current_iface;
-		interface *i = is->iface;
+		iface_state *is,*oldis = current_iface;
 		int rows,cols;
+		interface *i;
 
 		getmaxyx(w,rows,cols);
 		assert(cols);
-		current_iface = current_iface->next;
-		iface_box_generic(is->subwin,i,is);
-		is = current_iface;
+		is = current_iface = current_iface->next;
 		i = is->iface;
 		if(!iface_visible_p(rows,is)){
-			assert(push_interfaces_above(is,rows,-(is->ysize + 1)) == 0);
-			is->scrline = rows - is->ysize - 1;
-			assert(iface_visible_p(rows,is));
+			is->scrline = rows - lines_for_interface(i,is) - 1;
+			push_interfaces_above(is,rows,-(lines_for_interface(i,is) + 1));
+			assert(move_panel(is->panel,is->scrline,START_COL) != ERR);
+			assert(redraw_iface(i,is) == OK);
 			assert(show_panel(is->panel) != ERR);
-			redraw_iface(i,is);
+		}else if(is->scrline < oldis->scrline){
+			is->scrline = oldis->scrline + (lines_for_interface(oldis->iface,oldis) - lines_for_interface(i,is));
+			push_interfaces_above(is,rows,-(lines_for_interface(i,is) + 1));
+			assert(move_panel(is->panel,is->scrline,START_COL) != ERR);
+			assert(redraw_iface(i,is) == OK);
 		}else{
-			assert(iface_box_generic(is->subwin,i,is) == 0);
+			iface_box_generic(oldis->subwin,oldis->iface,oldis);
+			iface_box_generic(is->subwin,i,is);
 		}
 		if(details.p){
 			assert(iface_details(panel_window(details.p),i,details.ysize) == 0);
@@ -783,27 +787,27 @@ use_next_iface_locked(WINDOW *w){
 static void
 use_prev_iface_locked(WINDOW *w){
 	if(current_iface && current_iface->prev != current_iface){
-		iface_state *is = current_iface;
-		interface *i = is->iface;
+		iface_state *is,*oldis = current_iface;
 		int rows,cols;
+		interface *i;
 
 		getmaxyx(w,rows,cols);
-		assert(cols); // FIXME
-		current_iface = current_iface->prev;
-		if(!iface_visible_p(rows,current_iface)){
-			is = current_iface;
+		assert(cols);
+		is = current_iface = current_iface->prev;
+		i = is->iface;
+		if(!iface_visible_p(rows,is)){
 			is->scrline = 1;
-			i = is->iface;
 			push_interfaces_below(is,rows,is->ysize + 1);
-			assert(iface_visible_p(rows,is));
-			assert(move_panel(is->panel,is->scrline,1) != ERR);
+			assert(move_panel(is->panel,is->scrline,START_COL) != ERR);
+			assert(redraw_iface(i,is) == OK);
 			assert(show_panel(is->panel) != ERR);
-			redraw_iface(i,is);
+		}else if(is->scrline > oldis->scrline){
+			is->scrline = 1;
+			push_interfaces_below(is,rows,is->ysize + 1);
+			assert(move_panel(is->panel,is->scrline,START_COL) != ERR);
+			assert(redraw_iface(i,is) == OK);
 		}else{
-			// Current interface is always onscreen, and safe to redraw
-			iface_box_generic(is->subwin,i,is);
-			is = current_iface;
-			i = is->iface;
+			iface_box_generic(oldis->subwin,oldis->iface,oldis);
 			iface_box_generic(is->subwin,i,is);
 		}
 		if(details.p){
@@ -984,7 +988,7 @@ ncurses_setup(const omphalos_iface *octx){
 	const char *errstr = NULL;
 	WINDOW *w = NULL;
 
-	trace(TRACE_CALLS);
+	//trace(TRACE_CALLS);
 	if(initscr() == NULL){
 		fprintf(stderr,"Couldn't initialize ncurses\n");
 		return NULL;
