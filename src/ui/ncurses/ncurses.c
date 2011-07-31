@@ -187,7 +187,10 @@ static int
 push_interfaces_below(iface_state *pusher,int rows,int delta){
 	iface_state *is;
 
-	for(is = pusher->next ; is->scrline > pusher->scrline ; is = is->next){
+	for(is = pusher->next ; is->scrline >= pusher->scrline ; is = is->next){
+		if(is == pusher){
+			break;
+		}
 		if(move_interface(is,rows,delta)){
 			return ERR;
 		}
@@ -208,14 +211,10 @@ static int
 push_interfaces_above(iface_state *pusher,int rows,int delta){
 	iface_state *is;
 
-<<<<<<< HEAD
 	for(is = pusher->prev ; is->scrline + lines_for_interface(is->iface,is) <= pusher->scrline + lines_for_interface(pusher->iface,pusher) ; is = is->prev){
 		if(is == pusher){
 			break;
 		}
-=======
-	for(is = pusher->prev ; is->scrline < pusher->scrline ; is = is->prev){
->>>>>>> parent of 9a37c1b... Revert "Revert "link to debug versions of ncursesw""
 		if(move_interface(is,rows,delta)){
 			return ERR;
 		}
@@ -762,15 +761,10 @@ use_next_iface_locked(WINDOW *w){
 		is = current_iface = current_iface->next;
 		i = is->iface;
 		if(!iface_visible_p(rows,is)){
-<<<<<<< HEAD
 			is->scrline = rows - lines_for_interface(i,is) - 1;
 			push_interfaces_above(is,rows,-(lines_for_interface(i,is) + 1));
 			assert(move_panel(is->panel,is->scrline,START_COL) != ERR);
 			assert(redraw_iface(i,is) == OK);
-=======
-			push_interfaces_above(is,rows,-(is->ysize + 1));
-			is->scrline = rows - is->ysize;
->>>>>>> parent of 9a37c1b... Revert "Revert "link to debug versions of ncursesw""
 			assert(show_panel(is->panel) != ERR);
 		}else if(is->scrline < oldis->scrline){
 			is->scrline = oldis->scrline + (lines_for_interface(oldis->iface,oldis) - lines_for_interface(i,is));
@@ -778,10 +772,7 @@ use_next_iface_locked(WINDOW *w){
 			assert(move_panel(is->panel,is->scrline,START_COL) != ERR);
 			assert(redraw_iface(i,is) == OK);
 		}else{
-<<<<<<< HEAD
 			iface_box_generic(oldis->subwin,oldis->iface,oldis);
-=======
->>>>>>> parent of 9a37c1b... Revert "Revert "link to debug versions of ncursesw""
 			iface_box_generic(is->subwin,i,is);
 		}
 		if(details.p){
@@ -800,7 +791,6 @@ use_prev_iface_locked(WINDOW *w){
 
 		getmaxyx(w,rows,cols);
 		assert(cols);
-<<<<<<< HEAD
 		is = current_iface = current_iface->prev;
 		i = is->iface;
 		if(!iface_visible_p(rows,is)){
@@ -808,15 +798,6 @@ use_prev_iface_locked(WINDOW *w){
 			push_interfaces_below(is,rows,is->ysize + 1);
 			assert(move_panel(is->panel,is->scrline,START_COL) != ERR);
 			assert(redraw_iface(i,is) == OK);
-=======
-		current_iface = current_iface->prev;
-		iface_box_generic(is->subwin,i,is);
-		is = current_iface;
-		i = is->iface;
-		if(!iface_visible_p(rows,is)){
-			push_interfaces_below(is,rows,is->ysize + 1);
-			is->scrline = 1;
->>>>>>> parent of 9a37c1b... Revert "Revert "link to debug versions of ncursesw""
 			assert(show_panel(is->panel) != ERR);
 		}else if(is->scrline > oldis->scrline){
 			is->scrline = 1;
@@ -824,10 +805,7 @@ use_prev_iface_locked(WINDOW *w){
 			assert(move_panel(is->panel,is->scrline,START_COL) != ERR);
 			assert(redraw_iface(i,is) == OK);
 		}else{
-<<<<<<< HEAD
 			iface_box_generic(oldis->subwin,oldis->iface,oldis);
-=======
->>>>>>> parent of 9a37c1b... Revert "Revert "link to debug versions of ncursesw""
 			iface_box_generic(is->subwin,i,is);
 		}
 		if(details.p){
@@ -1008,10 +986,7 @@ ncurses_setup(const omphalos_iface *octx){
 	const char *errstr = NULL;
 	WINDOW *w = NULL;
 
-<<<<<<< HEAD
 	//trace(TRACE_CALLS);
-=======
->>>>>>> parent of 9a37c1b... Revert "Revert "link to debug versions of ncursesw""
 	if(initscr() == NULL){
 		fprintf(stderr,"Couldn't initialize ncurses\n");
 		return NULL;
