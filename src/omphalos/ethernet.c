@@ -179,11 +179,11 @@ handle_8022(const omphalos_iface *octx,omphalos_packet *op,const void *frame,siz
 				op->l3proto = ETH_P_STP;
 				handle_stp_packet(octx,op,dgram,dlen);
 				break;
-			}case LLC_SAP_IPX:{	// Routed OSI PDU
+			}case LLC_SAP_OSI:{	// Routed OSI PDU
 				op->l3proto = ETH_P_OSI;
 				handle_osi_packet(octx,op,dgram,dlen);
 				break;
-			}case LLC_SAP_OSI:{
+			}case LLC_SAP_IPX:{
 				op->l3proto = ETH_P_IPX;
 				handle_ipx_packet(octx,op,dgram,dlen);
 				break;
