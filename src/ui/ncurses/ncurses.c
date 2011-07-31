@@ -112,6 +112,147 @@ screen_update(void){
 	return ret;
 }
 
+// Is the interface window entirely visible? We can't draw it otherwise, as it
+// will obliterate the global bounding box.
+static int
+iface_visible_p(int rows,const iface_state *is){
+	if(is->scrline + is->ysize >= rows){
+		return 0;
+	}else if(is->scrline < START_LINE){
+		return 0;
+	}
+	return 1;
+}
+
+static int
+iface_will_be_visible_p(int rows,const iface_state *ret,int nlines){
+	if(ret->scrline + nlines >= rows){
+		return 0;
+	}else if(ret->scrline < START_LINE){
+		return 0;
+	}
+	return 1;
+}
+
+// This is the number of lines we'd have in an optimal world; we might have
+// fewer available to us on this screen at this time. ->ysize is real size.
+static inline int
+lines_for_interface(const interface *i,const iface_state *is){
+	return PAD_LINES + is->l2ents - !interface_up_p(i);
+}
+
+static int
+redraw_iface(const interface *i,struct iface_state *is){
+	assert(werase(is->subwin) != ERR);
+	if(iface_box_generic(is->subwin,i,is) == ERR){
+		return ERR;
+	}
+	if(interface_up_p(i)){
+		if(print_iface_state(i,is)){
+			return ERR;
+		}
+	}
+	if(print_iface_hosts(i,is)){
+		return ERR;
+	}
+	return OK;
+}
+
+// Move this interface, possibly hiding it or bringing it onscreen. Negative
+// delta indicates movement up, positive delta moves down.
+static int
+move_interface(iface_state *is,int rows,int delta){
+	is->scrline += delta;
+	if(iface_visible_p(rows,is)){
+		interface *ii = is->iface;
+
+		assert(move_panel(is->panel,is->scrline,START_COL) != ERR);
+		if(redraw_iface(ii,is)){
+			return ERR;
+		}
+	// use "will_be_visible" as "would_be_visible" here, heh
+	}else if(iface_will_be_visible_p(rows,is,is->ysize - delta)){
+		// FIXME see if we can shrink it first!
+		assert(werase(is->subwin) != ERR);
+		assert(hide_panel(is->panel) != ERR);
+	}
+	return OK;
+}
+
+// An interface (pusher) has had its bottom border moved up or down (positive or
+// negative delta, respectively). Update the interfaces below it on the screen
+// (all those up until those actually displayed above it on the screen). Should
+// be called before pusher->scrline has been updated.
+static int
+push_interfaces_below(iface_state *pusher,int rows,int delta){
+	iface_state *is;
+
+	for(is = pusher->next ; is->scrline > pusher->scrline ; is = is->next){
+		if(move_interface(is,rows,delta)){
+			return ERR;
+		}
+	}
+	// Now, if our delta was negative, see if we pulled any down below us
+	// FIXME
+	/* while(is->scrline < 0){
+		is = is->next;
+	}*/
+	return OK;
+}
+
+// An interface (pusher) has had its top border moved up or down (positive or
+// negative delta, respectively). Update the interfaces above it on the screen
+// (all those up until those actually displayed below it on the screen). Should
+// be called before pusher->scrline has been updated.
+static int
+push_interfaces_above(iface_state *pusher,int rows,int delta){
+	iface_state *is;
+
+	for(is = pusher->prev ; is->scrline < pusher->scrline ; is = is->next){
+		if(move_interface(is,rows,delta)){
+			return ERR;
+		}
+	}
+	// Now, if our delta was negative, see if we pulled any down below us
+	// FIXME
+	/* while(is->scrline < 0){
+		is = is->next;
+	}*/
+	return OK;
+}
+
+// Upon entry, ret->ysize (and the actual display) might not have been updated
+// to reflect a change in the interface's data. If so, the interface panel is
+// resized (subject to the containing window's constraints) and other panels
+// are moved as necessary. The interface's display is synchronized via
+// redraw_iface() whether a resize is performed or not (unless it's invisible).
+static int
+resize_iface(const interface *i,iface_state *ret){
+	const int nlines = lines_for_interface(i,ret);
+	int rows,cols;
+
+	getmaxyx(stdscr,rows,cols);
+	if(!iface_will_be_visible_p(rows,ret,nlines)){
+		if(!iface_visible_p(rows,ret)){ // we weren't visible to begin with
+			return OK;
+		} // else need to erase it
+	}
+	if(nlines != ret->ysize){
+		if(nlines + ret->scrline < rows){
+			int delta = nlines - ret->ysize;
+
+			push_interfaces_below(ret,rows,delta);
+			ret->ysize = nlines;
+			assert(wresize(ret->subwin,ret->ysize,PAD_COLS(cols)) != ERR);
+			assert(replace_panel(ret->panel,ret->subwin) != ERR);
+		}
+	}
+	if(redraw_iface(i,ret) == ERR){
+		return ERR;
+	}
+	return screen_update();
+}
+
 // Pass current number of columns
 static int
 setup_statusbar(int cols){
@@ -603,15 +744,22 @@ reset_current_interface_stats(WINDOW *w){
 }
 
 static void
-use_next_iface_locked(void){
+use_next_iface_locked(WINDOW *w){
 	if(current_iface && current_iface->next != current_iface){
-		const iface_state *is = current_iface;
+		iface_state *is = current_iface;
 		interface *i = is->iface;
+		int rows,cols;
 
+		getmaxyx(w,rows,cols);
+		assert(cols);
 		current_iface = current_iface->next;
 		iface_box_generic(is->subwin,i,is);
 		is = current_iface;
 		i = is->iface;
+		if(!iface_visible_p(rows,is)){
+			push_interfaces_above(is,rows,-is->ysize);
+			// FIXME bring on-screen
+		}
 		iface_box_generic(is->subwin,i,is);
 		if(details.p){
 			iface_details(panel_window(details.p),i,details.ysize);
@@ -680,7 +828,7 @@ ncurses_input_thread(void *unsafe_marsh){
 			break;
 		case KEY_DOWN: case 'j':
 			pthread_mutex_lock(&bfl);
-				use_next_iface_locked();
+				use_next_iface_locked(w);
 			pthread_mutex_unlock(&bfl);
 			break;
 		case KEY_RESIZE: case 12: // Ctrl-L FIXME
@@ -922,114 +1070,6 @@ err:
 	return NULL;
 }
 
-static int
-redraw_iface(const interface *i,struct iface_state *is){
-	assert(werase(is->subwin) != ERR);
-	if(iface_box_generic(is->subwin,i,is) == ERR){
-		return ERR;
-	}
-	if(interface_up_p(i)){
-		if(print_iface_state(i,is)){
-			return ERR;
-		}
-	}
-	if(print_iface_hosts(i,is)){
-		return ERR;
-	}
-	return OK;
-}
-// This is the number of lines we'd have in an optimal world; we might have
-// fewer available to us on this screen at this time. ->ysize is real size.
-static inline int
-lines_for_interface(const interface *i,const iface_state *is){
-	return PAD_LINES + is->l2ents - !interface_up_p(i);
-}
-
-// Is the interface window entirely visible? We can't draw it otherwise, as it
-// will obliterate the global bounding box.
-static int
-iface_visible_p(int rows,const iface_state *ret){
-	if(ret->scrline + ret->ysize >= rows){
-		return 0;
-	}else if(ret->scrline < START_LINE){
-		return 0;
-	}
-	return 1;
-}
-
-static int
-iface_will_be_visible_p(int rows,const iface_state *ret,int nlines){
-	if(ret->scrline + nlines >= rows){
-		return 0;
-	}else if(ret->scrline < START_LINE){
-		return 0;
-	}
-	return 1;
-}
-
-// An interface (pusher) has had its bottom border moved up or down (positive or
-// negative delta, respectively). Update the interfaces below it on the screen
-// (all those up until those actually displayed above it on the screen).
-static int
-push_interfaces_down(iface_state *pusher,int rows,int delta){
-	iface_state *is;
-
-	for(is = pusher->next ; is->scrline > pusher->scrline ; is = is->next){
-		interface *ii = is->iface;
-
-		is->scrline += delta;
-		if(iface_visible_p(rows,is)){
-			assert(move_panel(is->panel,is->scrline,START_COL) != ERR);
-			if(redraw_iface(ii,is)){
-				return ERR;
-			}
-		// use "will_be_visible" as "would_be_visible" here, heh
-		}else if(iface_will_be_visible_p(rows,is,is->ysize - delta)){
-			// FIXME see if we can shrink it first!
-			assert(werase(is->subwin) != ERR);
-			assert(hide_panel(is->panel) != ERR);
-		}
-	}
-	// Now, if our delta was negative, see if we pulled any down below us
-	// FIXME
-	/* while(is->scrline < 0){
-		is = is->next;
-	}*/
-	return OK;
-}
-
-// Upon entry, ret->ysize (and the actual display) might not have been updated
-// to reflect a change in the interface's data. If so, the interface panel is
-// resized (subject to the containing window's constraints) and other panels
-// are moved as necessary. The interface's display is synchronized via
-// redraw_iface() whether a resize is performed or not (unless it's invisible).
-static int
-resize_iface(const interface *i,iface_state *ret){
-	const int nlines = lines_for_interface(i,ret);
-	int rows,cols;
-
-	getmaxyx(stdscr,rows,cols);
-	if(!iface_will_be_visible_p(rows,ret,nlines)){
-		if(!iface_visible_p(rows,ret)){ // we weren't visible to begin with
-			return OK;
-		} // else need to erase it
-	}
-	if(nlines != ret->ysize){
-		if(nlines + ret->scrline < rows){
-			int delta = nlines - ret->ysize;
-
-			push_interfaces_down(ret,rows,delta);
-			ret->ysize = nlines;
-			assert(wresize(ret->subwin,ret->ysize,PAD_COLS(cols)) != ERR);
-			assert(replace_panel(ret->panel,ret->subwin) != ERR);
-		}
-	}
-	if(redraw_iface(i,ret) == ERR){
-		return ERR;
-	}
-	return screen_update();
-}
-
 static inline void
 packet_cb_locked(const interface *i,omphalos_packet *op){
 	iface_state *is = op->i->opaque;
@@ -1184,13 +1224,7 @@ interface_removed_locked(iface_state *is){
 			assert(scrcols);
 			assert(cols);
 			for(ci = is->next ; ci->scrline > is->scrline ; ci = ci->next){
-				interface *ii = ci->iface;
-
-				ci->scrline -= rows + 1; // blank line followed
-				if(iface_visible_p(scrrows,ci)){
-					assert(move_panel(ci->panel,ci->scrline,START_COL) != ERR);
-					assert(redraw_iface(ii,ci) != ERR);
-				}
+				move_interface(ci,scrrows,-(rows + 1));
 			}
 		}else{
 			// If details window exists, destroy it FIXME
