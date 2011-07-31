@@ -2,6 +2,7 @@
 #include <linux/ipx.h>
 #include <omphalos/ipx.h>
 #include <omphalos/util.h>
+#include <omphalos/ethernet.h>
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
 
@@ -38,9 +39,9 @@ void handle_ipx_packet(const omphalos_iface *octx,omphalos_packet *op,
 		++i->malformed;
 		return;
 	}
-	if(ntohs(ipxhdr->ipx_pktsize) != len - sizeof(*ipxhdr)){
+	if(check_ethernet_padup(len,ntohs(ipxhdr->ipx_pktsize))){
 		octx->diagnostic("%s malformed (%u != %zu)",__func__,
-			ntohs(ipxhdr->ipx_pktsize),len - sizeof(*ipxhdr));
+			ntohs(ipxhdr->ipx_pktsize),len);
 		++i->malformed;
 		return;
 	}
