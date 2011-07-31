@@ -757,7 +757,7 @@ use_next_iface_locked(WINDOW *w){
 		is = current_iface;
 		i = is->iface;
 		if(!iface_visible_p(rows,is)){
-			push_interfaces_above(is,rows,-(is->ysize - 1));
+			push_interfaces_above(is,rows,-(is->ysize + 1));
 			is->scrline = rows - is->ysize;
 			assert(show_panel(is->panel) != ERR);
 			redraw_iface(i,is);
@@ -785,7 +785,7 @@ use_prev_iface_locked(WINDOW *w){
 		is = current_iface;
 		i = is->iface;
 		if(!iface_visible_p(rows,is)){
-			push_interfaces_below(is,rows,(is->ysize - 1));
+			push_interfaces_below(is,rows,is->ysize + 1);
 			is->scrline = 1;
 			assert(show_panel(is->panel) != ERR);
 			redraw_iface(i,is);
