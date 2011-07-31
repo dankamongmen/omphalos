@@ -76,7 +76,7 @@ $(IANAOUI):
 
 $(OMPHALOS)-ncurses: $(COREOBJS) $(NCURSESOBJS)
 	@mkdir -p $(@D)
-	$(CC) $(CFLAGS) -o $@ $^ $(LFLAGS) -lpanel -lncursesw
+	$(CC) $(CFLAGS) -o $@ $^ $(LFLAGS) -lpanel_g -lncursesw_g
 
 $(OMPHALOS)-tty: $(COREOBJS) $(TTYOBJS)
 	@mkdir -p $(@D)
