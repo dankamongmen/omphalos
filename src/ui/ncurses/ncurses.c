@@ -112,11 +112,18 @@ screen_update(void){
 	return ret;
 }
 
+// This is the number of lines we'd have in an optimal world; we might have
+// fewer available to us on this screen at this time.
+static inline int
+lines_for_interface(const interface *i,const iface_state *is){
+	return PAD_LINES + is->l2ents - !interface_up_p(i);
+}
+
 // Is the interface window entirely visible? We can't draw it otherwise, as it
 // will obliterate the global bounding box.
 static int
 iface_visible_p(int rows,const iface_state *is){
-	if(is->scrline + is->ysize >= rows){
+	if(is->scrline + lines_for_interface(is->iface,is) >= rows){
 		return 0;
 	}else if(is->scrline < START_LINE){
 		return 0;
@@ -132,13 +139,6 @@ iface_will_be_visible_p(int rows,const iface_state *ret,int nlines){
 		return 0;
 	}
 	return 1;
-}
-
-// This is the number of lines we'd have in an optimal world; we might have
-// fewer available to us on this screen at this time. ->ysize is real size.
-static inline int
-lines_for_interface(const interface *i,const iface_state *is){
-	return PAD_LINES + is->l2ents - !interface_up_p(i);
 }
 
 static int
@@ -171,7 +171,7 @@ move_interface(iface_state *is,int rows,int delta){
 			return ERR;
 		}
 	// use "will_be_visible" as "would_be_visible" here, heh
-	}else if(iface_will_be_visible_p(rows,is,is->ysize - delta)){
+	}else if(iface_will_be_visible_p(rows,is,lines_for_interface(is->iface,is) - delta)){
 		// FIXME see if we can shrink it first!
 		assert(werase(is->subwin) != ERR);
 		assert(hide_panel(is->panel) != ERR);
@@ -227,29 +227,34 @@ push_interfaces_above(iface_state *pusher,int rows,int delta){
 	return OK;
 }
 
-// Upon entry, ret->ysize (and the actual display) might not have been updated
-// to reflect a change in the interface's data. If so, the interface panel is
-// resized (subject to the containing window's constraints) and other panels
-// are moved as necessary. The interface's display is synchronized via
-// redraw_iface() whether a resize is performed or not (unless it's invisible).
+// Upon entry, the display might not have been updated to reflect a change in
+// the interface's data. If so, the interface panel is resized (subject to the
+// containing window's constraints) and other panels are moved as necessary.
+// The interface's display is synchronized via redraw_iface() whether a resize
+// is performed or not (unless it's invisible).
 static int
 resize_iface(const interface *i,iface_state *ret){
 	const int nlines = lines_for_interface(i,ret);
-	int rows,cols;
+	int rows,cols,subrows,subcols;
 
 	getmaxyx(stdscr,rows,cols);
+	getmaxyx(ret->subwin,subrows,subcols);
+	assert(subcols); // FIXME
 	if(!iface_will_be_visible_p(rows,ret,nlines)){
 		if(!iface_visible_p(rows,ret)){ // we weren't visible to begin with
+			assert(wresize(ret->subwin,lines_for_interface(i,ret),PAD_COLS(cols)) != ERR);
+			assert(replace_panel(ret->panel,ret->subwin) != ERR);
 			return OK;
-		} // else need to erase it
+		}
+		assert(hide_panel(ret->panel) != ERR);
+		return OK;
 	}
-	if(nlines != ret->ysize){
+	if(nlines != subrows){
 		if(nlines + ret->scrline < rows){
-			int delta = nlines - ret->ysize;
+			int delta = nlines - subrows;
 
 			push_interfaces_below(ret,rows,delta);
-			ret->ysize = nlines;
-			assert(wresize(ret->subwin,ret->ysize,PAD_COLS(cols)) != ERR);
+			assert(wresize(ret->subwin,lines_for_interface(i,ret),PAD_COLS(cols)) != ERR);
 			assert(replace_panel(ret->panel,ret->subwin) != ERR);
 		}
 	}
@@ -795,13 +800,13 @@ use_prev_iface_locked(WINDOW *w){
 		i = is->iface;
 		if(!iface_visible_p(rows,is)){
 			is->scrline = 1;
-			push_interfaces_below(is,rows,is->ysize + 1);
+			push_interfaces_below(is,rows,lines_for_interface(i,is) + 1);
 			assert(move_panel(is->panel,is->scrline,START_COL) != ERR);
 			assert(redraw_iface(i,is) == OK);
 			assert(show_panel(is->panel) != ERR);
 		}else if(is->scrline > oldis->scrline){
 			is->scrline = 1;
-			push_interfaces_below(is,rows,is->ysize + 1);
+			push_interfaces_below(is,rows,lines_for_interface(i,is) + 1);
 			assert(move_panel(is->panel,is->scrline,START_COL) != ERR);
 			assert(redraw_iface(i,is) == OK);
 		}else{
@@ -1138,7 +1143,6 @@ create_interface_state(interface *i){
 		if( (ret = malloc(sizeof(*ret))) ){
 			ret->l2ents = 0;
 			ret->l2objs = NULL;
-			ret->ysize = lines_for_interface(i,ret);
 			ret->devaction = 0;
 			ret->typestr = tstr;
 			ret->lastprinted.tv_sec = ret->lastprinted.tv_usec = 0;
@@ -1168,7 +1172,7 @@ interface_cb_locked(interface *i,iface_state *ret){
 			}
 			// we're not yet in the list -- nothing points to us --
 			// though ret->prev is valid.
-			if((ret->subwin = newwin(ret->ysize,PAD_COLS(cols),ret->scrline,START_COL)) == NULL ||
+			if((ret->subwin = newwin(lines_for_interface(i,ret),PAD_COLS(cols),ret->scrline,START_COL)) == NULL ||
 					(ret->panel = new_panel(ret->subwin)) == NULL){
 				delwin(ret->subwin);
 				free(ret);

@@ -19,7 +19,6 @@ struct interface;
 typedef struct iface_state {
 	struct interface *iface;	// corresponding omphalos iface struct
 	int scrline;			// line within the containing pad
-	int ysize;			// number of lines
 	int l2ents;			// number of l2 entities
 	WINDOW *subwin;			// subwin
 	PANEL *panel;			// panel

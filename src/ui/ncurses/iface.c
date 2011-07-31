@@ -89,8 +89,7 @@ int print_iface_hosts(const interface *i,const iface_state *is){
 		const char *devname,*nname;
 		char legend;
 		
-		// Don't run off the end of the interface FIXME
-		if(idx >= is->ysize - (3 - !interface_up_p(i))){
+		if(++line >= rows){
 			break;
 		}
 		switch(l->cat){
@@ -131,11 +130,11 @@ int print_iface_hosts(const interface *i,const iface_state *is){
 			}else if(len + 1 < cols - hlen){
 				hlen = cols - len - 1;
 			}
-			assert(mvwprintw(is->subwin,++line,1," %c %s %*.*s %*.*s",
+			assert(mvwprintw(is->subwin,line,1," %c %s %*.*s %*.*s",
 						legend,hw,len,len,devname,
 						hlen,hlen,nname) != ERR);
 		}else{
-			assert(mvwprintw(is->subwin,++line,1," %c %s  %*s",
+			assert(mvwprintw(is->subwin,line,1," %c %s  %*s",
 						legend,hw,cols - 1,
 						nname) != ERR);
 		}
