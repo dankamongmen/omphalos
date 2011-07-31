@@ -197,7 +197,6 @@ int iface_box(WINDOW *w,const interface *i,const iface_state *is,int active){
 	int attrs;
 
 	getmaxyx(w,scrrows,scrcols);
-	assert(scrrows); // FIXME
 	bcolor = interface_up_p(i) ? UBORDER_COLOR : DBORDER_COLOR;
 	hcolor = interface_up_p(i) ? UHEADING_COLOR : DHEADING_COLOR;
 	attrs = active ? A_REVERSE : A_BOLD;
@@ -234,7 +233,7 @@ int iface_box(WINDOW *w,const interface *i,const iface_state *is,int active){
 	assert(wprintw(w,"]") != ERR);
 	assert(wattron(w,attrs) != ERR);
 	assert(wattroff(w,A_REVERSE) != ERR);
-	assert(mvwprintw(w,is->ysize - 1,2,"[") != ERR);
+	assert(mvwprintw(w,scrrows - 1,2,"[") != ERR);
 	assert(wcolor_set(w,hcolor,NULL) != ERR);
 	if(active){
 		assert(wattron(w,A_BOLD) == OK);
@@ -292,10 +291,10 @@ int iface_box(WINDOW *w,const interface *i,const iface_state *is,int active){
 		}
 		if(i->busname){
 			buslen += strlen(i->busname) + 1;
-			assert(mvwprintw(w,is->ysize - 1,scrcols - (buslen + 2),
+			assert(mvwprintw(w,scrrows - 1,scrcols - (buslen + 2),
 					"%s:%s",i->busname,i->drv.bus_info) != ERR);
 		}else{
-			assert(mvwprintw(w,is->ysize - 1,scrcols - (buslen + 2),
+			assert(mvwprintw(w,scrrows - 1,scrcols - (buslen + 2),
 					"%s",i->drv.bus_info) != ERR);
 		}
 	}
