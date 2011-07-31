@@ -757,12 +757,13 @@ use_next_iface_locked(WINDOW *w){
 		is = current_iface;
 		i = is->iface;
 		if(!iface_visible_p(rows,is)){
-			push_interfaces_above(is,rows,-is->ysize);
+			push_interfaces_above(is,rows,-(is->ysize - 1));
 			is->scrline = rows - is->ysize;
 			assert(show_panel(is->panel) != ERR);
 			redraw_iface(i,is);
+		}else{
+			iface_box_generic(is->subwin,i,is);
 		}
-		iface_box_generic(is->subwin,i,is);
 		if(details.p){
 			iface_details(panel_window(details.p),i,details.ysize);
 		}
@@ -771,16 +772,26 @@ use_next_iface_locked(WINDOW *w){
 }
 
 static void
-use_prev_iface_locked(void){
+use_prev_iface_locked(WINDOW *w){
 	if(current_iface && current_iface->prev != current_iface){
-		const iface_state *is = current_iface;
+		iface_state *is = current_iface;
 		interface *i = is->iface;
+		int rows,cols;
 
+		getmaxyx(w,rows,cols);
+		assert(cols);
 		current_iface = current_iface->prev;
 		iface_box_generic(is->subwin,i,is);
 		is = current_iface;
 		i = is->iface;
-		iface_box_generic(is->subwin,i,is);
+		if(!iface_visible_p(rows,is)){
+			push_interfaces_below(is,rows,(is->ysize - 1));
+			is->scrline = 1;
+			assert(show_panel(is->panel) != ERR);
+			redraw_iface(i,is);
+		}else{
+			iface_box_generic(is->subwin,i,is);
+		}
 		if(details.p){
 			iface_details(panel_window(details.p),i,details.ysize);
 		}
@@ -825,7 +836,7 @@ ncurses_input_thread(void *unsafe_marsh){
 	switch(ch){
 		case KEY_UP: case 'k':
 			pthread_mutex_lock(&bfl);
-				use_prev_iface_locked();
+				use_prev_iface_locked(w);
 			pthread_mutex_unlock(&bfl);
 			break;
 		case KEY_DOWN: case 'j':
