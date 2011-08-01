@@ -170,6 +170,18 @@ handle_8022(const omphalos_iface *octx,omphalos_packet *op,const void *frame,siz
 		const void *dgram = (const char *)frame + sizeof(*llc);
 		size_t dlen = len - sizeof(*llc);
 
+		// Unnumbered (most common): 11xxxxxx
+		// Supervisory: 10xxxxxx
+		// Information: 0xxxxxxx
+		if(((llc->ctrl & 0x3u) == 0x3u) || ((llc->ctrl & 0x1u) == 0x0)){
+			if(dlen == 0){
+				++op->i->malformed;
+				octx->diagnostic("%s malformed with %zu",__func__,len);
+				return;
+			}
+			++dgram;
+			--dlen;
+		}
 		switch(sap){
 			case LLC_SAP_IP:{
 				op->l3proto = ETH_P_IP;

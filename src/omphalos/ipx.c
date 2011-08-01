@@ -36,7 +36,7 @@ void handle_ipx_packet(const omphalos_iface *octx,omphalos_packet *op,
 
 	if(len < sizeof(*ipxhdr)){
 		octx->diagnostic("%s truncated (%zu < %zu)",__func__,len,sizeof(*ipxhdr));
-		++i->malformed;
+		++i->truncated;
 		return;
 	}
 	if(check_ethernet_padup(len,ntohs(ipxhdr->ipx_pktsize))){
