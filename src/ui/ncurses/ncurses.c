@@ -240,8 +240,8 @@ resize_iface(const interface *i,iface_state *ret){
 	getmaxyx(stdscr,rows,cols);
 	getmaxyx(ret->subwin,subrows,subcols);
 	assert(subcols); // FIXME
-	if(!iface_will_be_visible_p(rows,ret,nlines - subrows)){
-		if(!iface_visible_p(rows,ret)){ // we weren't visible to begin with
+	if(ret->scrline + nlines >= rows || ret->scrline < 1){
+		if(panel_hidden(ret->panel)){
 			assert(wresize(ret->subwin,lines_for_interface(i,ret),PAD_COLS(cols)) != ERR);
 			assert(replace_panel(ret->panel,ret->subwin) != ERR);
 			assert(screen_update() == OK);
@@ -1207,7 +1207,7 @@ interface_cb_locked(interface *i,iface_state *ret){
 	if(ret == current_iface && details.p){
 		iface_details(panel_window(details.p),i,details.ysize);
 	}
-	redraw_iface(i,ret);
+	resize_iface(i,ret);
 	if(interface_up_p(i)){
 		if(ret->devaction < 0){
 			wstatus_locked(pad,"");
