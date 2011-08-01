@@ -73,7 +73,7 @@ static WINDOW *pad;
 static pthread_t inputtid;
 static struct utsname sysuts;
 static unsigned count_interface;
-static iface_state *current_iface;
+static struct iface_state *current_iface;
 static const char *glibc_version,*glibc_release;
 
 // Status bar at the bottom of the screen. Must be reallocated upon screen
@@ -83,7 +83,7 @@ static char *statusmsg;
 static int statuschars;	// True size, not necessarily what's available
 
 static inline int
-iface_box_generic(WINDOW *w,const interface *i,const iface_state *is){
+iface_box_generic(WINDOW *w,const interface *i,const struct iface_state *is){
 	return iface_box(w,i,is,is == current_iface);
 }
 
@@ -112,71 +112,14 @@ screen_update(void){
 	return ret;
 }
 
-// This is the number of lines we'd have in an optimal world; we might have
-// fewer available to us on this screen at this time.
 static inline int
-lines_for_interface(const interface *i,const iface_state *is){
-	return PAD_LINES + is->l2ents - !interface_up_p(i);
+redraw_iface_generic(const interface *i,struct iface_state *is){
+	return redraw_iface(i,is,is == current_iface);
 }
 
-// Is the interface window entirely visible? We can't draw it otherwise, as it
-// will obliterate the global bounding box.
-static int
-iface_visible_p(int rows,const iface_state *is){
-	if(is->scrline + lines_for_interface(is->iface,is) >= rows){
-		return 0;
-	}else if(is->scrline < START_LINE){
-		return 0;
-	}
-	return 1;
-}
-
-static int
-iface_will_be_visible_p(int rows,const iface_state *ret,int delta){
-	if(ret->scrline + delta + lines_for_interface(ret->iface,ret) >= rows){
-		return 0;
-	}else if(ret->scrline + delta < START_LINE){
-		return 0;
-	}
-	return 1;
-}
-
-static int
-redraw_iface(const interface *i,struct iface_state *is){
-	assert(werase(is->subwin) != ERR);
-	if(iface_box_generic(is->subwin,i,is) == ERR){
-		return ERR;
-	}
-	if(interface_up_p(i)){
-		if(print_iface_state(i,is)){
-			return ERR;
-		}
-	}
-	if(print_iface_hosts(i,is)){
-		return ERR;
-	}
-	return OK;
-}
-
-// Move this interface, possibly hiding it or bringing it onscreen. Negative
-// delta indicates movement up, positive delta moves down.
-static int
-move_interface(iface_state *is,int rows,int delta){
-	is->scrline += delta;
-	if(iface_visible_p(rows,is)){
-		interface *ii = is->iface;
-
-		assert(move_panel(is->panel,is->scrline,START_COL) != ERR);
-		if(redraw_iface(ii,is)){
-			return ERR;
-		}
-	// use "will_be_visible" as "would_be_visible" here, heh
-	}else if(iface_will_be_visible_p(rows,is,-delta)){
-		// FIXME see if we can shrink it first!
-		assert(werase(is->subwin) != ERR);
-		assert(hide_panel(is->panel) != ERR);
-	}
-	return OK;
+static inline int
+move_interface_generic(struct iface_state *is,int rows,int delta){
+	return move_interface(is,rows,delta,is == current_iface);
 }
 
 // An interface (pusher) has had its bottom border moved up or down (positive or
@@ -191,7 +134,7 @@ push_interfaces_below(iface_state *pusher,int rows,int delta){
 		if(is == pusher){
 			break;
 		}
-		if(move_interface(is,rows,delta)){
+		if(move_interface_generic(is,rows,delta)){
 			return ERR;
 		}
 	}
@@ -215,7 +158,7 @@ push_interfaces_above(iface_state *pusher,int rows,int delta){
 		if(is == pusher){
 			break;
 		}
-		if(move_interface(is,rows,delta)){
+		if(move_interface_generic(is,rows,delta)){
 			return ERR;
 		}
 	}
@@ -263,7 +206,7 @@ resize_iface(const interface *i,iface_state *ret){
 			assert(replace_panel(ret->panel,ret->subwin) != ERR);
 		}
 	}
-	if(redraw_iface(i,ret) == ERR){
+	if(redraw_iface_generic(i,ret) == ERR){
 		return ERR;
 	}
 	return screen_update();
@@ -779,13 +722,13 @@ use_next_iface_locked(WINDOW *w){
 				push_interfaces_above(is,rows,-up);
 			}
 			assert(move_panel(is->panel,is->scrline,START_COL) != ERR);
-			assert(redraw_iface(i,is) == OK);
+			assert(redraw_iface_generic(i,is) == OK);
 			assert(show_panel(is->panel) != ERR);
 		}else if(is->scrline < oldis->scrline){
 			is->scrline = oldis->scrline + (lines_for_interface(oldis->iface,oldis) - lines_for_interface(i,is));
 			push_interfaces_above(is,rows,-(lines_for_interface(i,is) + 1));
 			assert(move_panel(is->panel,is->scrline,START_COL) != ERR);
-			assert(redraw_iface(i,is) == OK);
+			assert(redraw_iface_generic(i,is) == OK);
 		}else{
 			iface_box_generic(oldis->subwin,oldis->iface,oldis);
 			iface_box_generic(is->subwin,i,is);
@@ -812,13 +755,13 @@ use_prev_iface_locked(WINDOW *w){
 			is->scrline = 1;
 			push_interfaces_below(is,rows,lines_for_interface(i,is) + 1);
 			assert(move_panel(is->panel,is->scrline,START_COL) != ERR);
-			assert(redraw_iface(i,is) == OK);
+			assert(redraw_iface_generic(i,is) == OK);
 			assert(show_panel(is->panel) != ERR);
 		}else if(is->scrline > oldis->scrline){
 			is->scrline = 1;
 			push_interfaces_below(is,rows,lines_for_interface(i,is) + 1);
 			assert(move_panel(is->panel,is->scrline,START_COL) != ERR);
-			assert(redraw_iface(i,is) == OK);
+			assert(redraw_iface_generic(i,is) == OK);
 		}else{
 			iface_box_generic(oldis->subwin,oldis->iface,oldis);
 			iface_box_generic(is->subwin,i,is);
@@ -1144,24 +1087,6 @@ packet_callback(omphalos_packet *op){
 	pthread_mutex_unlock(&bfl);
 }
 
-static iface_state *
-create_interface_state(interface *i){
-	iface_state *ret;
-	const char *tstr;
-
-	if( (tstr = lookup_arptype(i->arptype,NULL)) ){
-		if( (ret = malloc(sizeof(*ret))) ){
-			ret->l2ents = 0;
-			ret->l2objs = NULL;
-			ret->devaction = 0;
-			ret->typestr = tstr;
-			ret->lastprinted.tv_sec = ret->lastprinted.tv_usec = 0;
-			ret->iface = i;
-		}
-	}
-	return ret;
-}
-
 static inline void *
 interface_cb_locked(interface *i,iface_state *ret){
 	if(ret == NULL){
@@ -1268,7 +1193,7 @@ interface_removed_locked(iface_state *is){
 			assert(scrcols);
 			assert(cols);
 			for(ci = is->next ; ci->scrline > is->scrline ; ci = ci->next){
-				move_interface(ci,scrrows,-(rows + 1));
+				move_interface_generic(ci,scrrows,-(rows + 1));
 			}
 		}else{
 			// If details window exists, destroy it FIXME

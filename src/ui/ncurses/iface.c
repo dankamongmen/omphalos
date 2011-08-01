@@ -16,6 +16,49 @@ typedef struct l2obj {
 	int cat;			// cached result of l2categorize()
 } l2obj;
 
+iface_state *create_interface_state(interface *i){
+	iface_state *ret;
+	const char *tstr;
+
+	if( (tstr = lookup_arptype(i->arptype,NULL)) ){
+		if( (ret = malloc(sizeof(*ret))) ){
+			ret->l2ents = 0;
+			ret->l2objs = NULL;
+			ret->devaction = 0;
+			ret->typestr = tstr;
+			ret->lastprinted.tv_sec = ret->lastprinted.tv_usec = 0;
+			ret->iface = i;
+		}
+	}
+	return ret;
+}
+
+// This is the number of lines we'd have in an optimal world; we might have
+// fewer available to us on this screen at this time.
+int lines_for_interface(const interface *i,const iface_state *is){
+	return 2 + is->l2ents - !interface_up_p(i);
+}
+
+// Is the interface window entirely visible? We can't draw it otherwise, as it
+// will obliterate the global bounding box.
+int iface_visible_p(int rows,const iface_state *is){
+	if(is->scrline + lines_for_interface(is->iface,is) >= rows){
+		return 0;
+	}else if(is->scrline < 1){
+		return 0;
+	}
+	return 1;
+}
+
+int iface_will_be_visible_p(int rows,const iface_state *ret,int delta){
+	if(ret->scrline + delta + lines_for_interface(ret->iface,ret) >= rows){
+		return 0;
+	}else if(ret->scrline + delta < 1){
+		return 0;
+	}
+	return 1;
+}
+
 static l2obj *
 get_l2obj(const interface *i,struct l2host *l2){
 	l2obj *l;
@@ -326,3 +369,40 @@ void free_iface_state(iface_state *is){
 		l = tmp;
 	}
 }
+
+int redraw_iface(const interface *i,const struct iface_state *is,int active){
+	assert(werase(is->subwin) != ERR);
+	if(iface_box(is->subwin,i,is,active) == ERR){
+		return ERR;
+	}
+	if(interface_up_p(i)){
+		if(print_iface_state(i,is)){
+			return ERR;
+		}
+	}
+	if(print_iface_hosts(i,is)){
+		return ERR;
+	}
+	return OK;
+}
+
+// Move this interface, possibly hiding it or bringing it onscreen. Negative
+// delta indicates movement up, positive delta moves down.
+int move_interface(iface_state *is,int rows,int delta,int active){
+	is->scrline += delta;
+	if(iface_visible_p(rows,is)){
+		interface *ii = is->iface;
+
+		assert(move_panel(is->panel,is->scrline,1) != ERR);
+		if(redraw_iface(ii,is,active)){
+			return ERR;
+		}
+	// use "will_be_visible" as "would_be_visible" here, heh
+	}else if(iface_will_be_visible_p(rows,is,-delta)){
+		// FIXME see if we can shrink it first!
+		assert(werase(is->subwin) != ERR);
+		assert(hide_panel(is->panel) != ERR);
+	}
+	return OK;
+}
+
