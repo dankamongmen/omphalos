@@ -4,7 +4,6 @@
 #include <ncursesw/ncurses.h>
 
 int bevel(WINDOW *w){
-	/*
 	static const cchar_t bchr[] = {
 		{ .attr = 0, .chars = L"╭", },
 		{ .attr = 0, .chars = L"╮", },
@@ -14,19 +13,14 @@ int bevel(WINDOW *w){
 	int rows,cols;
 
 	getmaxyx(w,rows,cols);
+	assert(box(w,0,0) == OK);
 	assert(mvwadd_wch(w,0,0,&bchr[0]) != ERR);
-	assert(whline(w,0,cols - 2) != ERR);
 	assert(mvwadd_wch(w,0,cols - 1,&bchr[1]) != ERR);
-	assert(mvwvline(w,1,0,0,rows - 2) != ERR);
-	assert(mvwvline(w,1,cols - 1,0,rows - 2) != ERR);
 	assert(mvwadd_wch(w,rows - 1,0,&bchr[2]) != ERR);
-	assert(mvwhline(w,rows - 1,1,0,cols) != ERR);
 	// called as one expects: 'mvwadd_wch(w,rows - 1,cols - 1,&bchr[3]);'
 	// we get ERR returned and abort out. fuck ncurses. FIXME?
 	mvwadd_wch(w,rows - 1,cols - 1,&bchr[3]);
 	return OK;
-	*/
-	return box(w,0,0);
 }
 
 // For full safety, pass in a buffer that can hold the decimal representation
