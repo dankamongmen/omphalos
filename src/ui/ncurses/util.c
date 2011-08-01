@@ -4,6 +4,7 @@
 #include <ncursesw/ncurses.h>
 
 int bevel(WINDOW *w){
+	/*
 	static const cchar_t bchr[] = {
 		{ .attr = 0, .chars = L"╭", },
 		{ .attr = 0, .chars = L"╮", },
@@ -24,6 +25,8 @@ int bevel(WINDOW *w){
 	// we get ERR returned and abort out. fuck ncurses. FIXME?
 	mvwadd_wch(w,rows - 1,cols - 1,&bchr[3]);
 	return OK;
+	*/
+	return box(w,0,0);
 }
 
 // For full safety, pass in a buffer that can hold the decimal representation

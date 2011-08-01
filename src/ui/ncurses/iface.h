@@ -20,30 +20,30 @@ struct iface_state;
 typedef struct iface_state {
 	struct interface *iface;	// corresponding omphalos iface struct
 	int scrline;			// line within the containing pad
-	int l2ents;			// number of l2 entities
 	WINDOW *subwin;			// subwin
 	PANEL *panel;			// panel
 	const char *typestr;		// looked up using iface->arptype
 	struct timeval lastprinted;	// last time we printed the iface
 	int devaction;			// 1 == down, -1 == up, 0 == nothing
+	unsigned nodes;			// number of nodes
 	struct l2obj *l2objs;		// l2 entity list
 	struct iface_state *next,*prev;
 } iface_state;
 
 // FIXME also try to move this
-int iface_box(WINDOW *,const struct interface *,const struct iface_state *,int);
-int redraw_iface(const struct interface *,const struct iface_state *,int);
+void iface_box(WINDOW *,const struct interface *,const struct iface_state *,int);
+void redraw_iface(const struct interface *,const struct iface_state *,int);
 
 struct iface_state *create_interface_state(struct interface *);
 struct l2obj *add_l2_to_iface(const struct interface *,struct iface_state *,struct l2host *);
-int print_iface_hosts(const struct interface *,const struct iface_state *);
-int print_iface_state(const struct interface *,const struct iface_state *);
+void print_iface_hosts(const struct interface *,const struct iface_state *);
+void print_iface_state(const struct interface *,const struct iface_state *);
 void free_iface_state(struct iface_state *);
 
 int iface_will_be_visible_p(int,const struct iface_state *,int);
 int iface_visible_p(int,const struct iface_state *);
 int lines_for_interface(const struct interface *,const struct iface_state *);
-int move_interface(struct iface_state *,int,int,int);
+void move_interface(struct iface_state *,int,int,int);
 
 #ifdef __cplusplus
 }

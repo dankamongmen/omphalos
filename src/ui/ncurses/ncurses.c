@@ -82,9 +82,9 @@ static const char *glibc_version,*glibc_release;
 static char *statusmsg;
 static int statuschars;	// True size, not necessarily what's available
 
-static inline int
+static inline void
 iface_box_generic(WINDOW *w,const interface *i,const struct iface_state *is){
-	return iface_box(w,i,is,is == current_iface);
+	iface_box(w,i,is,is == current_iface);
 }
 
 static inline int
@@ -97,6 +97,7 @@ start_screen_update(void){
 
 static inline int
 finish_screen_update(void){
+	// FIXME we definitely don't need wrefresh() in its entirety?
 	if(doupdate() == ERR){
 		return ERR;
 	}
@@ -112,14 +113,14 @@ screen_update(void){
 	return ret;
 }
 
-static inline int
+static inline void
 redraw_iface_generic(const interface *i,struct iface_state *is){
-	return redraw_iface(i,is,is == current_iface);
+	redraw_iface(i,is,is == current_iface);
 }
 
-static inline int
+static inline void
 move_interface_generic(struct iface_state *is,int rows,int delta){
-	return move_interface(is,rows,delta,is == current_iface);
+	move_interface(is,rows,delta,is == current_iface);
 }
 
 // An interface (pusher) has had its bottom border moved up or down (positive or
@@ -134,9 +135,7 @@ push_interfaces_below(iface_state *pusher,int rows,int delta){
 		if(is == pusher){
 			break;
 		}
-		if(move_interface_generic(is,rows,delta)){
-			return ERR;
-		}
+		move_interface_generic(is,rows,delta);
 	}
 	// Now, if our delta was negative, see if we pulled any down below us
 	// FIXME
@@ -158,9 +157,7 @@ push_interfaces_above(iface_state *pusher,int rows,int delta){
 		if(is == pusher){
 			break;
 		}
-		if(move_interface_generic(is,rows,delta)){
-			return ERR;
-		}
+		move_interface_generic(is,rows,delta);
 	}
 	// Now, if our delta was negative, see if we pulled any down below us
 	// FIXME
@@ -190,7 +187,7 @@ resize_iface(const interface *i,iface_state *ret){
 			assert(screen_update() == OK);
 			return OK;
 		}
-		assert(werase(ret->subwin) != ERR);
+		assert(wclear(ret->subwin) != ERR);
 		assert(wresize(ret->subwin,lines_for_interface(i,ret),PAD_COLS(cols)) != ERR);
 		assert(replace_panel(ret->panel,ret->subwin) != ERR);
 		assert(hide_panel(ret->panel) != ERR);
@@ -206,9 +203,7 @@ resize_iface(const interface *i,iface_state *ret){
 			assert(replace_panel(ret->panel,ret->subwin) != ERR);
 		}
 	}
-	if(redraw_iface_generic(i,ret) == ERR){
-		return ERR;
-	}
+	redraw_iface_generic(i,ret);
 	return screen_update();
 }
 
@@ -722,13 +717,13 @@ use_next_iface_locked(WINDOW *w){
 				push_interfaces_above(is,rows,-up);
 			}
 			assert(move_panel(is->panel,is->scrline,START_COL) != ERR);
-			assert(redraw_iface_generic(i,is) == OK);
+			redraw_iface_generic(i,is);
 			assert(show_panel(is->panel) != ERR);
 		}else if(is->scrline < oldis->scrline){
 			is->scrline = oldis->scrline + (lines_for_interface(oldis->iface,oldis) - lines_for_interface(i,is));
 			push_interfaces_above(is,rows,-(lines_for_interface(i,is) + 1));
 			assert(move_panel(is->panel,is->scrline,START_COL) != ERR);
-			assert(redraw_iface_generic(i,is) == OK);
+			redraw_iface_generic(i,is);
 		}else{
 			iface_box_generic(oldis->subwin,oldis->iface,oldis);
 			iface_box_generic(is->subwin,i,is);
@@ -755,13 +750,13 @@ use_prev_iface_locked(WINDOW *w){
 			is->scrline = 1;
 			push_interfaces_below(is,rows,lines_for_interface(i,is) + 1);
 			assert(move_panel(is->panel,is->scrline,START_COL) != ERR);
-			assert(redraw_iface_generic(i,is) == OK);
+			redraw_iface_generic(i,is);
 			assert(show_panel(is->panel) != ERR);
 		}else if(is->scrline > oldis->scrline){
 			is->scrline = 1;
 			push_interfaces_below(is,rows,lines_for_interface(i,is) + 1);
 			assert(move_panel(is->panel,is->scrline,START_COL) != ERR);
-			assert(redraw_iface_generic(i,is) == OK);
+			redraw_iface_generic(i,is);
 		}else{
 			iface_box_generic(oldis->subwin,oldis->iface,oldis);
 			iface_box_generic(is->subwin,i,is);
@@ -944,7 +939,7 @@ ncurses_setup(const omphalos_iface *octx){
 	const char *errstr = NULL;
 	WINDOW *w = NULL;
 
-	//trace(TRACE_CALLS);
+	trace(TRACE_CALLS);
 	if(initscr() == NULL){
 		fprintf(stderr,"Couldn't initialize ncurses\n");
 		return NULL;
@@ -1044,6 +1039,9 @@ ncurses_setup(const omphalos_iface *octx){
 	}
 	nim->octx = octx;
 	nim->w = w;
+	// Panels aren't yet being used, so we need call refresh() to paint the
+	// main window.
+	refresh();
 	if(pthread_create(&inputtid,NULL,ncurses_input_thread,nim)){
 		errstr = "Couldn't create UI thread\n";
 		free(nim);
@@ -1171,7 +1169,7 @@ interface_removed_locked(iface_state *is){
 		int rows,cols;
 
 		free_iface_state(is);
-		werase(is->subwin);
+		wclear(is->subwin);
 		del_panel(is->panel);
 		getmaxyx(is->subwin,rows,cols);
 		delwin(is->subwin);

@@ -22,7 +22,7 @@ iface_state *create_interface_state(interface *i){
 
 	if( (tstr = lookup_arptype(i->arptype,NULL)) ){
 		if( (ret = malloc(sizeof(*ret))) ){
-			ret->l2ents = 0;
+			ret->nodes = 0;
 			ret->l2objs = NULL;
 			ret->devaction = 0;
 			ret->typestr = tstr;
@@ -31,32 +31,6 @@ iface_state *create_interface_state(interface *i){
 		}
 	}
 	return ret;
-}
-
-// This is the number of lines we'd have in an optimal world; we might have
-// fewer available to us on this screen at this time.
-int lines_for_interface(const interface *i,const iface_state *is){
-	return 2 + is->l2ents - !interface_up_p(i);
-}
-
-// Is the interface window entirely visible? We can't draw it otherwise, as it
-// will obliterate the global bounding box.
-int iface_visible_p(int rows,const iface_state *is){
-	if(is->scrline + lines_for_interface(is->iface,is) >= rows){
-		return 0;
-	}else if(is->scrline < 1){
-		return 0;
-	}
-	return 1;
-}
-
-int iface_will_be_visible_p(int rows,const iface_state *ret,int delta){
-	if(ret->scrline + delta + lines_for_interface(ret->iface,ret) >= rows){
-		return 0;
-	}else if(ret->scrline + delta < 1){
-		return 0;
-	}
-	return 1;
 }
 
 static l2obj *
@@ -100,7 +74,7 @@ l2obj *add_l2_to_iface(const interface *i,iface_state *is,struct l2host *l2h){
 	if( (l2 = get_l2obj(i,l2h)) ){
 		l2obj **prev;
 
-		++is->l2ents;
+		++is->nodes;
 		for(prev = &is->l2objs ; *prev ; prev = &(*prev)->next){
 			// we want the inverse of l2catcmp()'s priorities
 			if(l2catcmp(l2->cat,(*prev)->cat) > 0){
@@ -117,7 +91,7 @@ l2obj *add_l2_to_iface(const interface *i,iface_state *is,struct l2host *l2h){
 	return l2;
 }
 
-int print_iface_hosts(const interface *i,const iface_state *is){
+void print_iface_hosts(const interface *i,const iface_state *is){
 	int rows,cols,line,idx = 0;
 	const l2obj *l;
 
@@ -182,7 +156,6 @@ int print_iface_hosts(const interface *i,const iface_state *is){
 						nname) != ERR);
 		}
 	}
-	return OK;
 }
 
 static int
@@ -233,7 +206,7 @@ modestr(unsigned dplx){
 }
 
 // to be called only while ncurses lock is held
-int iface_box(WINDOW *w,const interface *i,const iface_state *is,int active){
+void iface_box(WINDOW *w,const interface *i,const iface_state *is,int active){
 	int bcolor,hcolor,scrrows,scrcols;
 	size_t buslen;
 	int attrs;
@@ -340,14 +313,13 @@ int iface_box(WINDOW *w,const interface *i,const iface_state *is,int active){
 					"%s",i->drv.bus_info) != ERR);
 		}
 	}
-	return 0;
 }
 
-int print_iface_state(const interface *i,const iface_state *is){
+void print_iface_state(const interface *i,const iface_state *is){
 	char buf[U64STRLEN + 1],buf2[U64STRLEN + 1];
 	unsigned long usecdomain;
 
-	assert(wattrset(is->subwin,A_BOLD | COLOR_PAIR(IFACE_COLOR)) == OK);
+	assert(wattrset(is->subwin,A_BOLD | COLOR_PAIR(IFACE_COLOR)) != ERR);
 	// FIXME broken if bps domain ever != fps domain. need unite those
 	// into one FTD stat by letting it take an object...
 	// FIXME this leads to a "ramp-up" period where we approach steady state
@@ -356,8 +328,7 @@ int print_iface_state(const interface *i,const iface_state *is){
 				usecdomain / 1000000,
 				prefix(timestat_val(&i->bps) * CHAR_BIT * 1000000 * 100 / usecdomain,100,buf,sizeof(buf),0),
 				prefix(timestat_val(&i->fps),1,buf2,sizeof(buf2),1),
-				is->l2ents) != ERR);
-	return 0;
+				is->nodes) != ERR);
 }
 
 void free_iface_state(iface_state *is){
@@ -370,39 +341,54 @@ void free_iface_state(iface_state *is){
 	}
 }
 
-int redraw_iface(const interface *i,const struct iface_state *is,int active){
+void redraw_iface(const interface *i,const struct iface_state *is,int active){
 	assert(werase(is->subwin) != ERR);
-	if(iface_box(is->subwin,i,is,active) == ERR){
-		return ERR;
-	}
+	iface_box(is->subwin,i,is,active);
 	if(interface_up_p(i)){
-		if(print_iface_state(i,is)){
-			return ERR;
-		}
+		print_iface_state(i,is);
 	}
-	if(print_iface_hosts(i,is)){
-		return ERR;
-	}
-	return OK;
+	print_iface_hosts(i,is);
 }
 
 // Move this interface, possibly hiding it or bringing it onscreen. Negative
 // delta indicates movement up, positive delta moves down.
-int move_interface(iface_state *is,int rows,int delta,int active){
+void move_interface(iface_state *is,int rows,int delta,int active){
 	is->scrline += delta;
 	if(iface_visible_p(rows,is)){
 		interface *ii = is->iface;
 
 		assert(move_panel(is->panel,is->scrline,1) != ERR);
-		if(redraw_iface(ii,is,active)){
-			return ERR;
-		}
+		redraw_iface(ii,is,active);
 	// use "will_be_visible" as "would_be_visible" here, heh
 	}else if(iface_will_be_visible_p(rows,is,-delta)){
 		// FIXME see if we can shrink it first!
 		assert(werase(is->subwin) != ERR);
 		assert(hide_panel(is->panel) != ERR);
 	}
-	return OK;
 }
 
+// This is the number of lines we'd have in an optimal world; we might have
+// fewer available to us on this screen at this time.
+int lines_for_interface(const interface *i,const iface_state *is){
+	return 2 + is->nodes + interface_up_p(i);
+}
+
+// Is the interface window entirely visible? We can't draw it otherwise, as it
+// will obliterate the global bounding box.
+int iface_visible_p(int rows,const iface_state *is){
+	if(is->scrline + lines_for_interface(is->iface,is) >= rows){
+		return 0;
+	}else if(is->scrline < 1){
+		return 0;
+	}
+	return 1;
+}
+
+int iface_will_be_visible_p(int rows,const iface_state *ret,int delta){
+	if(ret->scrline + delta + lines_for_interface(ret->iface,ret) >= rows){
+		return 0;
+	}else if(ret->scrline + delta < 1){
+		return 0;
+	}
+	return 1;
+}
