@@ -761,7 +761,7 @@ use_prev_iface_locked(WINDOW *w){
 		i = is->iface;
 		if(!iface_visible_p(rows,is)){
 			is->scrline = 1;
-			push_interfaces_below(is,rows,iface_lines_bounded(i,is,rows) + 1);
+			push_interfaces_below(is,rows,iface_lines_bounded(i,is,rows) + 1 - (oldis->scrline - 1));
 			assert(move_panel(is->panel,is->scrline,START_COL) != ERR);
 			redraw_iface_generic(i,is);
 			assert(show_panel(is->panel) != ERR);
