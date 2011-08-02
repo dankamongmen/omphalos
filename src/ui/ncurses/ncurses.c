@@ -25,16 +25,17 @@
 
 #include <sys/utsname.h>
 #include <linux/version.h>
-#include <linux/nl80211.h>
 #include <ncursesw/panel.h>
 #include <linux/rtnetlink.h>
+#include <ui/ncurses/util.h>
 #include <omphalos/timing.h>
 #include <ncursesw/ncurses.h>
 #include <omphalos/hwaddrs.h>
+#include <ui/ncurses/iface.h>
+#include <gnu/libc-version.h>
 #include <omphalos/ethtool.h>
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
-#include <gnu/libc-version.h>
 
 #define ERREXIT endwin() ; fprintf(stderr,"ncurses failure|%s|%d\n",__func__,__LINE__); abort() ; goto err
 
@@ -47,11 +48,9 @@ extern int mvwprintw(WINDOW *,int,int,const char *,...) __attribute__ ((format (
 #define VERSION  "0.98-pre"	// FIXME
 
 #define PAD_LINES 3
+#define START_COL 1
 #define PAD_COLS(cols) ((cols) - START_COL * 2)
 #define START_LINE 1
-#define START_COL 1
-#define U64STRLEN 20	// Does not include a '\0' (18,446,744,073,709,551,616)
-#define U64FMT "%-20ju"
 #define PREFIXSTRLEN U64STRLEN
 
 // FIXME we ought precreate the subwindows, and show/hide them rather than
@@ -61,49 +60,11 @@ struct panel_state {
 	int ysize;			// number of lines of *text* (not win)
 };
 
-typedef struct l2obj {
-	struct l2obj *next;
-	struct l2host *l2;
-	int cat;			// cached result of l2categorize()
-} l2obj;
-
 #define PANEL_STATE_INITIALIZER { .p = NULL, .ysize = -1, }
 
 static struct panel_state *active;
 static struct panel_state help = PANEL_STATE_INITIALIZER;
 static struct panel_state details = PANEL_STATE_INITIALIZER;
-
-// Bind one of these state structures to each interface in the callback,
-// and also associate an iface with them via *iface (for UI actions).
-typedef struct iface_state {
-	interface *iface;		// corresponding omphalos iface struct
-	int scrline;			// line within the containing pad
-	int ysize;			// number of lines
-	int l2ents;			// number of l2 entities
-	int first_visible;		// index of first visible l2 entity
-	WINDOW *subwin;			// subwin
-	PANEL *panel;			// panel
-	const char *typestr;		// looked up using iface->arptype
-	struct timeval lastprinted;	// last time we printed the iface
-	int devaction;			// 1 == down, -1 == up, 0 == nothing
-	l2obj *l2objs;			// l2 entity list
-	struct iface_state *next,*prev;
-} iface_state;
-
-enum {
-	BORDER_COLOR = 1,		// main window
-	HEADING_COLOR,
-	DBORDER_COLOR,			// down interfaces
-	DHEADING_COLOR,
-	UBORDER_COLOR,			// up interfaces
-	UHEADING_COLOR,
-	PBORDER_COLOR,			// popups
-	PHEADING_COLOR,
-	BULKTEXT_COLOR,			// bulk text (help, details)
-	IFACE_COLOR,			// interface summary text
-	MCAST_COLOR,			// multicast addresses
-	BCAST_COLOR,			// broadcast addresses
-};
 
 // FIXME granularize things, make packet handler iret-like
 static pthread_mutex_t bfl = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
@@ -112,7 +73,7 @@ static WINDOW *pad;
 static pthread_t inputtid;
 static struct utsname sysuts;
 static unsigned count_interface;
-static iface_state *current_iface;
+static struct iface_state *current_iface;
 static const char *glibc_version,*glibc_release;
 
 // Status bar at the bottom of the screen. Must be reallocated upon screen
@@ -121,28 +82,22 @@ static const char *glibc_version,*glibc_release;
 static char *statusmsg;
 static int statuschars;	// True size, not necessarily what's available
 
-static int
-bevel(WINDOW *w){
-	static const cchar_t bchr[] = {
-		{ .attr = 0, .chars = L"╭", },
-		{ .attr = 0, .chars = L"╮", },
-		{ .attr = 0, .chars = L"╰", },
-		{ .attr = 0, .chars = L"╯", },
-	};
-	int rows,cols;
+static inline int
+iface_lines_bounded(const interface *i,const struct iface_state *is,int rows){
+	int lines = lines_for_interface(i,is);
 
-	getmaxyx(w,rows,cols);
-	// called as one expects: 'mvwadd_wch(w,rows - 1,cols - 1,&bchr[3]);'
-	// we get ERR returned and abort out. fuck ncurses. FIXME?
-	mvwadd_wch(w,rows - 1,cols - 1,&bchr[3]);
-	assert(mvwadd_wch(w,0,0,&bchr[0]) != ERR);
-	assert(whline(w,0,cols - 2) != ERR);
-	assert(mvwadd_wch(w,0,cols - 1,&bchr[1]) != ERR);
-	assert(mvwvline(w,1,0,0,rows - 2) != ERR);
-	assert(mvwvline(w,1,cols - 1,0,rows - 2) != ERR);
-	assert(mvwadd_wch(w,rows - 1,0,&bchr[2]) != ERR);
-	assert(mvwhline(w,rows - 1,1,0,PAD_COLS(cols)) != ERR);
-	return OK;
+	if(lines > rows){
+		lines = rows;
+		if(lines < 2 + interface_up_p(i)){
+			lines = 2 + interface_up_p(i);
+		}
+	}
+	return lines;
+}
+
+static inline void
+iface_box_generic(WINDOW *w,const interface *i,const struct iface_state *is){
+	iface_box(w,i,is,is == current_iface);
 }
 
 static inline int
@@ -155,6 +110,7 @@ start_screen_update(void){
 
 static inline int
 finish_screen_update(void){
+	// FIXME we definitely don't need wrefresh() in its entirety?
 	if(doupdate() == ERR){
 		return ERR;
 	}
@@ -162,12 +118,106 @@ finish_screen_update(void){
 }
 
 static inline int
-full_screen_update(void){
+screen_update(void){
 	int ret;
 
 	assert((ret = start_screen_update()) == 0);
 	assert((ret |= finish_screen_update()) == 0);
 	return ret;
+}
+
+static inline void
+redraw_iface_generic(const interface *i,const struct iface_state *is){
+	redraw_iface(i,is,is == current_iface);
+}
+
+static inline void
+move_interface_generic(struct iface_state *is,int rows,int delta){
+	move_interface(is,rows,delta,is == current_iface);
+}
+
+// An interface (pusher) has had its bottom border moved up or down (positive or
+// negative delta, respectively). Update the interfaces below it on the screen
+// (all those up until those actually displayed above it on the screen). Should
+// be called before pusher->scrline has been updated.
+static int
+push_interfaces_below(iface_state *pusher,int rows,int delta){
+	iface_state *is;
+
+	for(is = pusher->next ; is->scrline >= pusher->scrline ; is = is->next){
+		if(is == pusher){
+			break;
+		}
+		move_interface_generic(is,rows,delta);
+	}
+	// Now, if our delta was negative, see if we pulled any down below us
+	// FIXME
+	/* while(is->scrline < 0){
+		is = is->next;
+	}*/
+	return OK;
+}
+
+// An interface (pusher) has had its top border moved up or down (positive or
+// negative delta, respectively). Update the interfaces above it on the screen
+// (all those up until those actually displayed below it on the screen). Should
+// be called before pusher->scrline has been updated.
+static int
+push_interfaces_above(iface_state *pusher,int rows,int delta){
+	iface_state *is;
+
+	for(is = pusher->prev ; is->scrline + iface_lines_bounded(is->iface,is,rows) <= pusher->scrline + iface_lines_bounded(pusher->iface,pusher,rows) ; is = is->prev){
+		if(is == pusher){
+			break;
+		}
+		move_interface_generic(is,rows,delta);
+	}
+	// Now, if our delta was negative, see if we pulled any down below us
+	// FIXME
+	/* while(is->scrline < 0){
+		is = is->next;
+	}*/
+	return OK;
+}
+
+// Upon entry, the display might not have been updated to reflect a change in
+// the interface's data. If so, the interface panel is resized (subject to the
+// containing window's constraints) and other panels are moved as necessary.
+// The interface's display is synchronized via redraw_iface() whether a resize
+// is performed or not (unless it's invisible).
+static int
+resize_iface(const interface *i,iface_state *ret){
+	const int nlines = lines_for_interface(i,ret);
+	int rows,cols,subrows,subcols;
+
+	getmaxyx(stdscr,rows,cols);
+	getmaxyx(ret->subwin,subrows,subcols);
+	assert(subcols); // FIXME
+	if(ret->scrline + nlines >= rows || ret->scrline < 1){
+		if(panel_hidden(ret->panel)){
+			assert(wresize(ret->subwin,lines_for_interface(i,ret),PAD_COLS(cols)) != ERR);
+			assert(replace_panel(ret->panel,ret->subwin) != ERR);
+			assert(screen_update() == OK);
+			return OK;
+		}
+		/*assert(wclear(ret->subwin) != ERR);
+		assert(wresize(ret->subwin,lines_for_interface(i,ret),PAD_COLS(cols)) != ERR);
+		assert(replace_panel(ret->panel,ret->subwin) != ERR);
+		assert(hide_panel(ret->panel) != ERR);
+		assert(screen_update() == OK);*/
+		return OK;
+	}
+	if(nlines != subrows){
+		if(nlines + ret->scrline < rows){
+			int delta = nlines - subrows;
+
+			push_interfaces_below(ret,rows,delta);
+			assert(wresize(ret->subwin,lines_for_interface(i,ret),PAD_COLS(cols)) != ERR);
+			assert(replace_panel(ret->panel,ret->subwin) != ERR);
+		}
+	}
+	redraw_iface_generic(i,ret);
+	return screen_update();
 }
 
 // Pass current number of columns
@@ -199,148 +249,24 @@ setup_statusbar(int cols){
 	return 0;
 }
 
-static inline int
-interface_sniffing_p(const interface *i){
-	return (i->rfd >= 0);
-}
-
-static inline int
-interface_up_p(const interface *i){
-	return (i->flags & IFF_UP);
-}
-
-static inline int
-interface_carrier_p(const interface *i){
-	return (i->flags & IFF_LOWER_UP);
-}
-
-static inline int
-interface_promisc_p(const interface *i){
-	return (i->flags & IFF_PROMISC);
-}
-
-static int
-iface_optstr(WINDOW *w,const char *str,int hcolor,int bcolor){
-	if(wcolor_set(w,bcolor,NULL) != OK){
-		return ERR;
-	}
-	if(waddch(w,'|') == ERR){
-		return ERR;
-	}
-	if(wcolor_set(w,hcolor,NULL) != OK){
-		return ERR;
-	}
-	if(waddstr(w,str) == ERR){
-		return ERR;
-	}
-	return OK;
-}
-
-static const char *
-duplexstr(unsigned dplx){
-	switch(dplx){
-		case DUPLEX_FULL: return "full"; break;
-		case DUPLEX_HALF: return "half"; break;
-		default: break;
-	}
-	return "";
-}
-
-static const char *
-modestr(unsigned dplx){
-	switch(dplx){
-		case NL80211_IFTYPE_UNSPECIFIED: return "auto"; break;
-		case NL80211_IFTYPE_ADHOC: return "adhoc"; break;
-		case NL80211_IFTYPE_STATION: return "managed"; break;
-		case NL80211_IFTYPE_AP: return "ap"; break;
-		case NL80211_IFTYPE_AP_VLAN: return "apvlan"; break;
-		case NL80211_IFTYPE_WDS: return "wds"; break;
-		case NL80211_IFTYPE_MONITOR: return "monitor"; break;
-		case NL80211_IFTYPE_MESH_POINT: return "mesh"; break;
-#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,38)
-		case NL80211_IFTYPE_P2P_CLIENT: return "p2pclient"; break;
-		case NL80211_IFTYPE_P2P_GO: return "p2pgo"; break;
-#endif
-		default: break;
-	}
-	return "";
-}
-
-// For full safety, pass in a buffer that can hold the decimal representation
-// of the largest uintmax_t plus three (one for the unit, one for the decimal
-// separator, and one for the NUL byte). If omitdec is non-zero, and the
-// decimal portion is all 0's, the decimal portion will not be printed. decimal
-// indicates scaling, and should be '1' if no scaling has taken place.
-static char *
-genprefix(uintmax_t val,unsigned decimal,char *buf,size_t bsize,int omitdec,
-			unsigned mult,int uprefix){
-	const char prefixes[] = "KMGTPEY";
-	unsigned consumed = 0;
-	uintmax_t div;
-
-	div = mult;
-	while((val / decimal) >= div && consumed < strlen(prefixes)){
-		div *= mult;
-		if(UINTMAX_MAX / div < mult){ // watch for overflow
-			break;
-		}
-		++consumed;
-	}
-	if(div != mult){
-		div /= mult;
-		val /= decimal;
-		if(val % div || omitdec == 0){
-			snprintf(buf,bsize,"%ju.%02ju%c%c",val / div,(val % div) / ((div + 99) / 100),
-					prefixes[consumed - 1],uprefix);
-		}else{
-			snprintf(buf,bsize,"%ju%c%c",val / div,prefixes[consumed - 1],uprefix);
-		}
-	}else{
-		if(val % decimal || omitdec == 0){
-			snprintf(buf,bsize,"%ju.%02ju",val / decimal,val % decimal);
-		}else{
-			snprintf(buf,bsize,"%ju",val / decimal);
-		}
-	}
-	return buf;
-}
-
-static inline char *
-prefix(uintmax_t val,unsigned decimal,char *buf,size_t bsize,int omitdec){
-	return genprefix(val,decimal,buf,bsize,omitdec,1000,'\0');
-}
-
-static inline char *
-bprefix(uintmax_t val,unsigned decimal,char *buf,size_t bsize,int omitdec){
-	return genprefix(val,decimal,buf,bsize,omitdec,1024,'i');
-}
-
 // to be called only while ncurses lock is held
 static int
 draw_main_window(WINDOW *w,const char *name,const char *ver){
 	int rows,cols;
 
 	getmaxyx(w,rows,cols);
-	if(setup_statusbar(cols)){
-		ERREXIT;
-	}
-	if(wcolor_set(w,BORDER_COLOR,NULL) != OK){
-		ERREXIT;
-	}
+	assert(wcolor_set(w,BORDER_COLOR,NULL) != ERR);
 	if(bevel(w) != OK){
 		ERREXIT;
 	}
+	if(setup_statusbar(cols)){
+		ERREXIT;
+	}
 	// FIXME move this over! it is ugly on the left, clashing with ifaces
-	if(mvwprintw(w,0,2,"[") < 0){
-		ERREXIT;
-	}
-	if(wattron(w,A_BOLD | COLOR_PAIR(HEADING_COLOR)) != OK){
-		ERREXIT;
-	}
-	if(wprintw(w,"%s %s on %s %s (libc %s-%s)",name,ver,sysuts.sysname,
-				sysuts.release,glibc_version,glibc_release) < 0){
-		ERREXIT;
-	}
+	assert(mvwprintw(w,0,2,"[") != ERR);
+	assert(wattron(w,A_BOLD | COLOR_PAIR(HEADING_COLOR)) != ERR);
+	assert(wprintw(w,"%s %s on %s %s (libc %s-%s)",name,ver,sysuts.sysname,
+				sysuts.release,glibc_version,glibc_release) != ERR);
 	if(wattroff(w,A_BOLD | COLOR_PAIR(HEADING_COLOR)) != OK){
 		ERREXIT;
 	}
@@ -364,7 +290,7 @@ draw_main_window(WINDOW *w,const char *name,const char *ver){
 	if(wcolor_set(w,0,NULL) != OK){
 		ERREXIT;
 	}
-	return full_screen_update();
+	return screen_update();
 
 err:
 	return -1;
@@ -422,112 +348,6 @@ get_current_iface(void){
 		return current_iface->iface;
 	}
 	return NULL;
-}
-
-// to be called only while ncurses lock is held
-static int
-iface_box(WINDOW *w,const interface *i,const iface_state *is){
-	int bcolor,hcolor,scrrows,scrcols;
-	size_t buslen;
-	int attrs;
-
-	getmaxyx(w,scrrows,scrcols);
-	assert(scrrows); // FIXME
-	bcolor = interface_up_p(i) ? UBORDER_COLOR : DBORDER_COLOR;
-	hcolor = interface_up_p(i) ? UHEADING_COLOR : DHEADING_COLOR;
-	attrs = ((is == current_iface) ? A_REVERSE : A_BOLD);
-	assert(wattrset(w,attrs | COLOR_PAIR(bcolor)) == OK);
-	assert(bevel(w) == OK);
-	assert(wattroff(w,A_REVERSE) == OK);
-	if(is == current_iface){
-		assert(wattron(w,A_BOLD) == OK);
-	}
-	assert(mvwprintw(w,0,START_COL,"[") != ERR);
-	assert(wcolor_set(w,hcolor,NULL) == OK);
-	if(is == current_iface){
-		assert(wattron(w,A_BOLD) == OK);
-	}else{
-		assert(wattroff(w,A_BOLD) == OK);
-	}
-	assert(waddstr(w,i->name) != ERR);
-	assert(wprintw(w," (%s",is->typestr) != ERR);
-	if(strlen(i->drv.driver)){
-		assert(waddch(w,' ') != ERR);
-		assert(waddstr(w,i->drv.driver) != ERR);
-		if(strlen(i->drv.version)){
-			assert(wprintw(w," %s",i->drv.version) != ERR);
-		}
-		if(strlen(i->drv.fw_version)){
-			assert(wprintw(w," fw %s",i->drv.fw_version) != ERR);
-		}
-	}
-	assert(waddch(w,')') != ERR);
-	assert(wcolor_set(w,bcolor,NULL) != ERR);
-	if(is != current_iface){
-		assert(wattron(w,A_BOLD) == OK);
-	}
-	assert(wprintw(w,"]") != ERR);
-	assert(wattron(w,attrs) != ERR);
-	assert(wattroff(w,A_REVERSE) != ERR);
-	assert(mvwprintw(w,is->ysize - 1,START_COL * 2,"[") != ERR);
-	assert(wcolor_set(w,hcolor,NULL) != ERR);
-	if(is == current_iface){
-		assert(wattron(w,A_BOLD) == OK);
-	}else{
-		assert(wattroff(w,A_BOLD) == OK);
-	}
-	assert(wprintw(w,"mtu %d",i->mtu) != ERR);
-	if(interface_up_p(i)){
-		char buf[U64STRLEN + 1];
-
-		assert(iface_optstr(w,"up",hcolor,bcolor) != ERR);
-		if(i->settings_valid == SETTINGS_VALID_ETHTOOL){
-			if(!interface_carrier_p(i)){
-				assert(waddstr(w," (no carrier)") != ERR);
-			}else{
-				assert(wprintw(w," (%sb %s)",prefix(i->settings.ethtool.speed * 1000000u,1,buf,sizeof(buf),1),
-							duplexstr(i->settings.ethtool.duplex)) != ERR);
-			}
-		}else if(i->settings_valid == SETTINGS_VALID_WEXT){
-			if(!interface_carrier_p(i)){
-				if(i->settings.wext.mode != NL80211_IFTYPE_MONITOR){
-					assert(wprintw(w," (%s, no carrier)",modestr(i->settings.wext.mode)) != ERR);
-				}else{
-					assert(wprintw(w," (%s)",modestr(i->settings.wext.mode)) != ERR);
-				}
-			}else{
-				assert(wprintw(w," (%sb %s ",prefix(i->settings.wext.bitrate,1,buf,sizeof(buf),1),
-							modestr(i->settings.wext.mode)) != ERR);
-				if(i->settings.wext.freq <= MAX_WIRELESS_CHANNEL){
-					assert(wprintw(w,"ch %ju)",i->settings.wext.freq) != ERR);
-				}else{
-					assert(wprintw(w,"%sHz)",prefix(i->settings.wext.freq,1,buf,sizeof(buf),1)) != ERR);
-				}
-			}
-		}
-	}else{
-		assert(iface_optstr(w,"down",hcolor,bcolor) != ERR);
-	}
-	if(interface_promisc_p(i)){
-		assert(iface_optstr(w,"promisc",hcolor,bcolor) != ERR);
-	}
-	assert(wcolor_set(w,bcolor,NULL) != ERR);
-	if(is != current_iface){
-		assert(wattron(w,A_BOLD) == OK);
-	}
-	assert(wprintw(w,"]") != ERR);
-	if( (buslen = strlen(i->drv.bus_info)) ){
-		assert(wattrset(w,COLOR_PAIR(bcolor) | A_BOLD) != ERR);
-		if(i->busname){
-			buslen += strlen(i->busname) + 1;
-			assert(mvwprintw(w,is->ysize - 1,scrcols - (buslen + START_COL * 2),
-					"%s:%s",i->busname,i->drv.bus_info) != ERR);
-		}else{
-			assert(mvwprintw(w,is->ysize - 1,scrcols - (buslen + START_COL * 2),
-					"%s",i->drv.bus_info) != ERR);
-		}
-	}
-	return 0;
 }
 
 static void
@@ -891,41 +711,92 @@ reset_current_interface_stats(WINDOW *w){
 }
 
 static void
-use_next_iface_locked(void){
+use_next_iface_locked(WINDOW *w){
 	if(current_iface && current_iface->next != current_iface){
-		const iface_state *is = current_iface;
-		interface *i = is->iface;
+		iface_state *is,*oldis = current_iface;
+		int rows,cols;
+		interface *i;
 
-		current_iface = current_iface->next;
-		iface_box(is->subwin,i,is);
-		is = current_iface;
+		getmaxyx(w,rows,cols);
+		assert(cols);
+		is = current_iface = current_iface->next;
 		i = is->iface;
-		iface_box(is->subwin,i,is);
+		if(!iface_visible_p(rows,is)){
+			int up;
+
+			is->scrline = rows - iface_lines_bounded(i,is,rows) - 1;
+			up = oldis->scrline + iface_lines_bounded(oldis->iface,oldis,rows) + 1 - is->scrline;
+			if(up > 0){
+				push_interfaces_above(is,rows,-up);
+			}
+			assert(move_panel(is->panel,is->scrline,START_COL) != ERR);
+			redraw_iface_generic(i,is);
+			assert(show_panel(is->panel) != ERR);
+		}else if(is->scrline < oldis->scrline){
+			is->scrline = oldis->scrline + (iface_lines_bounded(oldis->iface,oldis,rows) - iface_lines_bounded(i,is,rows));
+			push_interfaces_above(is,rows,-(iface_lines_bounded(i,is,rows) + 1));
+			assert(move_panel(is->panel,is->scrline,START_COL) != ERR);
+			redraw_iface_generic(i,is);
+		}else{
+			iface_box_generic(oldis->subwin,oldis->iface,oldis);
+			iface_box_generic(is->subwin,i,is);
+		}
 		if(details.p){
 			iface_details(panel_window(details.p),i,details.ysize);
 		}
-		start_screen_update();
-		finish_screen_update();
+		screen_update();
 	}
 }
 
 static void
-use_prev_iface_locked(void){
+use_prev_iface_locked(WINDOW *w){
 	if(current_iface && current_iface->prev != current_iface){
-		const iface_state *is = current_iface;
-		interface *i = is->iface;
+		iface_state *is,*oldis = current_iface;
+		int rows,cols;
+		interface *i;
 
-		current_iface = current_iface->prev;
-		iface_box(is->subwin,i,is);
-		is = current_iface;
+		getmaxyx(w,rows,cols);
+		assert(cols);
+		is = current_iface = current_iface->prev;
 		i = is->iface;
-		iface_box(is->subwin,i,is);
+		if(!iface_visible_p(rows,is)){
+			is->scrline = 1;
+			push_interfaces_below(is,rows,iface_lines_bounded(i,is,rows) + 1);
+			assert(move_panel(is->panel,is->scrline,START_COL) != ERR);
+			redraw_iface_generic(i,is);
+			assert(show_panel(is->panel) != ERR);
+		}else if(is->scrline > oldis->scrline){
+			is->scrline = 1;
+			push_interfaces_below(is,rows,iface_lines_bounded(i,is,rows) + 1);
+			assert(move_panel(is->panel,is->scrline,START_COL) != ERR);
+			redraw_iface_generic(i,is);
+		}else{
+			iface_box_generic(oldis->subwin,oldis->iface,oldis);
+			iface_box_generic(is->subwin,i,is);
+		}
 		if(details.p){
 			iface_details(panel_window(details.p),i,details.ysize);
 		}
-		start_screen_update();
-		finish_screen_update();
+		screen_update();
 	}
+}
+
+// Completely redraw the screen, for instance after a corruption or resize.
+static void
+redraw_screen_locked(WINDOW *w){
+	int rows,cols;
+
+	getmaxyx(w,rows,cols);
+	assert(wresize(w,rows,cols) != ERR);
+	redrawwin(w);
+	draw_main_window(w,PROGNAME,VERSION);
+	// FIXME need iterate over interface windows, hiding or making them
+	// visible as appropriate, and possibly scrolling to keep the current
+	// interface on-screen...
+	if(active){
+		redrawwin(panel_window(active->p));
+	}
+	screen_update();
 }
 
 struct ncurses_input_marshal {
@@ -947,23 +818,18 @@ ncurses_input_thread(void *unsafe_marsh){
 	switch(ch){
 		case KEY_UP: case 'k':
 			pthread_mutex_lock(&bfl);
-				use_prev_iface_locked();
+				use_prev_iface_locked(w);
 			pthread_mutex_unlock(&bfl);
 			break;
 		case KEY_DOWN: case 'j':
 			pthread_mutex_lock(&bfl);
-				use_next_iface_locked();
+				use_next_iface_locked(w);
 			pthread_mutex_unlock(&bfl);
 			break;
-		case 12: // Ctrl-L FIXME
-			pthread_mutex_lock(&bfl);
-				redrawwin(w);
-				if(active){
-					redrawwin(panel_window(active->p));
-				}
-				start_screen_update();
-				finish_screen_update();
-			pthread_mutex_unlock(&bfl);
+		case KEY_RESIZE: case 12: // Ctrl-L FIXME
+			pthread_mutex_lock(&bfl);{
+				redraw_screen_locked(w);
+			}pthread_mutex_unlock(&bfl);
 			break;
 		case 'C':
 			pthread_mutex_lock(&bfl);
@@ -1185,6 +1051,9 @@ ncurses_setup(const omphalos_iface *octx){
 	}
 	nim->octx = octx;
 	nim->w = w;
+	// Panels aren't yet being used, so we need call refresh() to paint the
+	// main window.
+	refresh();
 	if(pthread_create(&inputtid,NULL,ncurses_input_thread,nim)){
 		errstr = "Couldn't create UI thread\n";
 		free(nim);
@@ -1197,246 +1066,6 @@ err:
 	mandatory_cleanup(&w);
 	fprintf(stderr,"%s",errstr);
 	return NULL;
-}
-
-static int
-print_iface_state(const interface *i,const iface_state *is){
-	char buf[U64STRLEN + 1],buf2[U64STRLEN + 1];
-	unsigned long usecdomain;
-
-	assert(wattrset(is->subwin,A_BOLD | COLOR_PAIR(IFACE_COLOR)) == OK);
-	// FIXME broken if bps domain ever != fps domain. need unite those
-	// into one FTD stat by letting it take an object...
-	// FIXME this leads to a "ramp-up" period where we approach steady state
-	usecdomain = i->bps.usec * i->bps.total;
-	assert(mvwprintw(is->subwin,1,START_COL,"Last %lus: %7sb/s (%sp) Nodes: %-5u",
-				usecdomain / 1000000,
-				prefix(timestat_val(&i->bps) * CHAR_BIT * 1000000 * 100 / usecdomain,100,buf,sizeof(buf),0),
-				prefix(timestat_val(&i->fps),1,buf2,sizeof(buf2),1),
-				is->l2ents) != ERR);
-	return 0;
-}
-
-static int
-print_iface_hosts(const interface *i,const iface_state *is){
-	int rows,cols,line,idx = 0;
-	const l2obj *l;
-
-	getmaxyx(is->subwin,rows,cols);
-	cols -= START_COL * 2 + 3 + i->addrlen * 3;
-	assert(cols >= 0);
-	assert(rows);
-	// If the interface is down, we don't lead with the summary line
-	line = !!interface_up_p(i);
-	for(l = is->l2objs ; l ; ++idx, l = l->next){
-		const char *devname,*nname;
-		char legend;
-		char *hw;
-		
-		if(idx < is->first_visible){
-			continue;
-		}else if(idx - is->first_visible >= is->ysize - (PAD_LINES - !interface_up_p(i))){
-			break;
-		}
-		switch(l->cat){
-			case RTN_UNICAST:
-				assert(wattrset(is->subwin,COLOR_PAIR(MCAST_COLOR)) != ERR);
-				legend = 'U';
-				break;
-			case RTN_LOCAL:
-				assert(wattrset(is->subwin,A_BOLD | COLOR_PAIR(MCAST_COLOR)) != ERR);
-				legend = 'L';
-				break;
-			case RTN_MULTICAST:
-				assert(wattrset(is->subwin,A_BOLD | COLOR_PAIR(BCAST_COLOR)) != ERR);
-				legend = 'M';
-				break;
-			case RTN_BROADCAST:
-				assert(wattrset(is->subwin,COLOR_PAIR(BCAST_COLOR)) != ERR);
-				legend = 'B';
-				break;
-		}
-		if(!interface_up_p(i)){
-			assert(wcolor_set(is->subwin,DBORDER_COLOR,NULL) != ERR);
-		}
-		if((hw = l2addrstr(l->l2,i->addrlen)) == NULL){
-			return ERR;
-		}
-		if((nname = get_name(l->l2)) == NULL){
-			nname = "";
-		}
-		if((devname = get_devname(l->l2)) == NULL){
-			if(l->cat == RTN_LOCAL){
-				devname = i->topinfo.devname;
-			}
-		}
-		if(devname){
-			int len = strlen(devname),hlen = strlen(nname);
-
-			if((len + 1) > cols - hlen){
-				len = cols - hlen - 1;
-			}else if(len + 1 < cols - hlen){
-				hlen = cols - len - 1;
-			}
-			assert(mvwprintw(is->subwin,++line,START_COL," %c %s %*.*s %*.*s",
-						legend,hw,len,len,devname,
-						hlen,hlen,nname) != ERR);
-		}else{
-			assert(mvwprintw(is->subwin,++line,START_COL," %c %s  %*s",
-						legend,hw,cols - 1,
-						nname) != ERR);
-		}
-		free(hw);
-	}
-	return OK;
-}
-
-// This is the number of lines we'd have in an optimal world; we might have
-// fewer available to us on this screen at this time. ->ysize is real size.
-static inline int
-lines_for_interface(const interface *i,const iface_state *is){
-	return PAD_LINES + is->l2ents - !interface_up_p(i);
-}
-
-static int
-redraw_iface(const interface *i,iface_state *is){
-	assert(werase(is->subwin) != ERR);
-	if(iface_box(is->subwin,i,is) == ERR){
-		return ERR;
-	}
-	if(interface_up_p(i)){
-		if(print_iface_state(i,is)){
-			return ERR;
-		}
-	}
-	if(print_iface_hosts(i,is)){
-		return ERR;
-	}
-	return OK;
-}
-
-// Is the interface window entirely visible? We can't draw it otherwise, as it
-// will obliterate the global bounding box.
-static int
-iface_visible_p(int rows,const iface_state *ret){
-	if(ret->scrline + ret->ysize >= rows){
-		return 0;
-	}else if(ret->scrline < START_LINE){
-		return 0;
-	}
-	return 1;
-}
-
-static int
-iface_will_be_visible_p(int rows,const iface_state *ret,int nlines){
-	if(ret->scrline + nlines >= rows){
-		return 0;
-	}else if(ret->scrline < START_LINE){
-		return 0;
-	}
-	return 1;
-}
-
-// Upon entry, ret->ysize (and the actual display) might not have been updated
-// to reflect a change in the interface's data. If so, the interface panel is
-// resized (subject to the containing window's constraints) and other panels
-// are moved as necessary. The interface's display is synchronized via
-// redraw_iface() whether a resize is performed or not (unless it's invisible).
-static int
-resize_iface(const interface *i,iface_state *ret){
-	const int nlines = lines_for_interface(i,ret);
-	int rows,cols;
-
-	getmaxyx(stdscr,rows,cols);
-	if(!iface_will_be_visible_p(rows,ret,nlines)){
-		if(!iface_visible_p(rows,ret)){ // we weren't visible to begin with
-			return OK;
-		} // else need to erase it
-	}
-	if(nlines != ret->ysize){
-		if(nlines + ret->scrline < rows){
-			int delta = nlines - ret->ysize;
-			iface_state *is;
-
-			ret->ysize = nlines;
-			for(is = ret->next ; is->scrline > ret->scrline ; is = is->next){
-				interface *ii = is->iface;
-
-				is->scrline += delta;
-				if(iface_visible_p(rows,is)){
-					assert(move_panel(is->panel,is->scrline,START_COL) != ERR);
-					if(redraw_iface(ii,is)){
-						return ERR;
-					}
-				// use "will_be_visible" as "would_be_visible" here, heh
-				}else if(iface_will_be_visible_p(rows,is,is->ysize - delta)){
-					// FIXME see if we can shrink it first!
-					assert(werase(is->subwin) != ERR);
-					assert(hide_panel(is->panel) != ERR);
-				}
-			}
-			assert(wresize(ret->subwin,ret->ysize,PAD_COLS(cols)) != ERR);
-			assert(replace_panel(ret->panel,ret->subwin) != ERR);
-		}
-	}
-	if(redraw_iface(i,ret) == ERR){
-		return ERR;
-	}
-	return full_screen_update();
-}
-
-static l2obj *
-get_l2obj(const interface *i,struct l2host *l2){
-	l2obj *l;
-
-	if( (l = malloc(sizeof(*l))) ){
-		l->cat = l2categorize(i,l2);
-		l->l2 = l2;
-	}
-	return l;
-}
-
-static inline void
-free_l2obj(l2obj *l){
-	free(l);
-}
-
-// returns < 0 if c0 < c1, 0 if c0 == c1, > 0 if c0 > c1
-static inline int
-l2catcmp(int c0,int c1){
-	// not a surjection! some values are shared.
-	static const int vals[__RTN_MAX] = {
-		0,			// RTN_UNSPEC
-		__RTN_MAX - 1,		// RTN_UNICAST
-		__RTN_MAX,		// RTN_LOCAL
-		__RTN_MAX - 5,		// RTN_BROADCAST
-		__RTN_MAX - 4,		// RTN_ANYCAST
-		__RTN_MAX - 3,		// RTN_MULTICAST
-		__RTN_MAX - 2,		// RTN_BLACKHOLE
-		__RTN_MAX - 2,		// RTN_UNREACHABLE
-		__RTN_MAX - 2,		// RTN_PROHIBIT
-					// 0 the rest of the way...
-	};
-	return vals[c0] - vals[c1];
-}
-
-static void
-add_l2_to_iface(iface_state *is,l2obj *l2){
-	l2obj **prev;
-
-	++is->l2ents;
-	for(prev = &is->l2objs ; *prev ; prev = &(*prev)->next){
-		// we want the inverse of l2catcmp()'s priorities
-		if(l2catcmp(l2->cat,(*prev)->cat) > 0){
-			break;
-		}else if(l2catcmp(l2->cat,(*prev)->cat) == 0){
-			if(l2hostcmp(l2->l2,(*prev)->l2) <= 0){
-				break;
-			}
-		}
-	}
-	l2->next = *prev;
-	*prev = l2;
 }
 
 static inline void
@@ -1457,7 +1086,7 @@ packet_cb_locked(const interface *i,omphalos_packet *op){
 			iface_details(panel_window(details.p),i,details.ysize);
 		}
 		print_iface_state(i,is);
-		full_screen_update();
+		screen_update();
 	}
 }
 
@@ -1466,26 +1095,6 @@ packet_callback(omphalos_packet *op){
 	pthread_mutex_lock(&bfl);
 	packet_cb_locked(op->i,op);
 	pthread_mutex_unlock(&bfl);
-}
-
-static iface_state *
-create_interface_state(interface *i){
-	iface_state *ret;
-	const char *tstr;
-
-	if( (tstr = lookup_arptype(i->arptype,NULL)) ){
-		if( (ret = malloc(sizeof(*ret))) ){
-			ret->first_visible = 0;
-			ret->l2ents = 0;
-			ret->l2objs = NULL;
-			ret->ysize = lines_for_interface(i,ret);
-			ret->devaction = 0;
-			ret->typestr = tstr;
-			ret->lastprinted.tv_sec = ret->lastprinted.tv_usec = 0;
-			ret->iface = i;
-		}
-	}
-	return ret;
 }
 
 static inline void *
@@ -1504,11 +1113,11 @@ interface_cb_locked(interface *i,iface_state *ret){
 				while(ret->prev->next->scrline > ret->prev->scrline){
 					ret->prev = ret->prev->next;
 				}
-				ret->scrline = lines_for_interface(ret->prev->iface,ret->prev) + ret->prev->scrline + 1;
+				ret->scrline = iface_lines_bounded(ret->prev->iface,ret->prev,rows) + ret->prev->scrline + 1;
 			}
 			// we're not yet in the list -- nothing points to us --
 			// though ret->prev is valid.
-			if((ret->subwin = newwin(ret->ysize,PAD_COLS(cols),ret->scrline,START_COL)) == NULL ||
+			if((ret->subwin = newwin(lines_for_interface(i,ret),PAD_COLS(cols),ret->scrline,START_COL)) == NULL ||
 					(ret->panel = new_panel(ret->subwin)) == NULL){
 				delwin(ret->subwin);
 				free(ret);
@@ -1569,15 +1178,10 @@ wireless_callback(interface *i,unsigned wcmd __attribute__ ((unused)),void *unsa
 static inline void
 interface_removed_locked(iface_state *is){
 	if(is){
-		l2obj *l = is->l2objs;
 		int rows,cols;
 
-		while(l){
-			l2obj *tmp = l->next;
-			free(l);
-			l = tmp;
-		}
-		werase(is->subwin);
+		free_iface_state(is);
+		wclear(is->subwin);
 		del_panel(is->panel);
 		getmaxyx(is->subwin,rows,cols);
 		delwin(is->subwin);
@@ -1599,27 +1203,21 @@ interface_removed_locked(iface_state *is){
 			assert(scrcols);
 			assert(cols);
 			for(ci = is->next ; ci->scrline > is->scrline ; ci = ci->next){
-				interface *ii = ci->iface;
-
-				ci->scrline -= rows + 1; // blank line followed
-				if(iface_visible_p(scrrows,ci)){
-					assert(move_panel(ci->panel,ci->scrline,START_COL) != ERR);
-					assert(redraw_iface(ii,ci) != ERR);
-				}
+				move_interface_generic(ci,scrrows,-(rows + 1));
 			}
 		}else{
 			// If details window exists, destroy it FIXME
 			current_iface = NULL;
 		}
 		free(is);
-		full_screen_update();
+		screen_update();
 	}
 }
 
-static l2obj *
+static struct l2obj *
 neighbor_callback_locked(const interface *i,struct l2host *l2){
+	struct l2obj *ret;
 	iface_state *is;
-	l2obj *ret;
 
 	// Guaranteed by callback properties -- we don't get neighbor callbacks
 	// until there's been a successful device callback.
@@ -1629,10 +1227,9 @@ neighbor_callback_locked(const interface *i,struct l2host *l2){
 	}
 	assert( (is = i->opaque) );
 	if((ret = l2host_get_opaque(l2)) == NULL){
-		if((ret = get_l2obj(i,l2)) == NULL){
+		if((ret = add_l2_to_iface(i,is,l2)) == NULL){
 			return NULL;
 		}
-		add_l2_to_iface(is,ret);
 	}
 	assert(resize_iface(i,is) != ERR);
 	return ret;

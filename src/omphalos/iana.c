@@ -48,8 +48,7 @@ free_ouitries(ouitrie **tries){
 
 static void
 parse_file(const omphalos_iface *octx){
-	//ouitrie *head[OUITRIE_SIZE];
-	unsigned /*z,*/allocerr;
+	unsigned allocerr;
 	char buf[256]; // FIXME
 	FILE *fp;
 
@@ -57,11 +56,6 @@ parse_file(const omphalos_iface *octx){
 		octx->diagnostic("Coudln't open %s (%s?)",ianafn,strerror(errno));
 		return;
 	}
-	/*
-	for(z = 0 ; z < OUITRIE_SIZE ; ++z){
-		head[z] = NULL;
-	}
-	*/
 	clearerr(fp);
 	allocerr = 0;
 	while(fgets(buf,sizeof(buf),fp)){
@@ -105,6 +99,8 @@ parse_file(const omphalos_iface *octx){
 			memset(c,0,sizeof(*c));
 		}
 		b = hex & 0xff;
+		// We can't invalidate the previous entry, to which any number
+		// of existing l2hosts might have pointers.
 		if(c->next[b] == NULL){
 			if((c->next[b] = strdup(end)) == NULL){
 				break; // FIXME
@@ -114,14 +110,9 @@ parse_file(const omphalos_iface *octx){
 	}
 	if(allocerr){
 		octx->diagnostic("Couldn't allocate for %s",ianafn);
-		//free_ouitries(head);
 	}else if(ferror(fp)){
 		octx->diagnostic("Error reading %s",ianafn);
-		//free_ouitries(head);
-	}/*else{
-		free_ouitries(trie);
-		memcpy(trie,head,sizeof(head));
-	}*/
+	}
 	fclose(fp);
 }
 

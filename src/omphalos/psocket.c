@@ -205,7 +205,7 @@ int handle_ring_packet(const omphalos_iface *octx,interface *iface,int fd,void *
 		slen = sizeof(tstats);
 		if(getsockopt(fd,SOL_PACKET,PACKET_STATISTICS,&tstats,&slen)){
 			octx->diagnostic("Error reading stats on %s (%s?)",iface->name,strerror(errno));
-		}else{
+		}else if(tstats.tp_drops){
 			iface->drops += tstats.tp_drops;
 			octx->diagnostic("FUCK ME; THE RINGBUFFER'S FULL (%ju/%ju drops)!",
 					tstats.tp_drops,iface->drops);

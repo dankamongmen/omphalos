@@ -6,6 +6,7 @@
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <linux/if_arp.h>
+#include <omphalos/128.h>
 #include <omphalos/util.h>
 #include <omphalos/hwaddrs.h>
 #include <omphalos/netlink.h>
@@ -174,16 +175,15 @@ int add_route4(interface *i,const struct in_addr *s,const struct in_addr *via,
 	if((r = malloc(sizeof(*r))) == NULL){
 		return -1;
 	}
+	r->addrs = 0;
 	memcpy(&r->dst,s,sizeof(*s));
 	if(src){
 		memcpy(&r->src,src,sizeof(*src));
-	}else{
-		r->src.s_addr = 0; // FIXME doubtful that this is safe
+		r->addrs |= ROUTE_HAS_SRC;
 	}
 	if(via){
 		memcpy(&r->via,via,sizeof(*via));
-	}else{
-		r->via.s_addr = 0;
+		r->addrs |= ROUTE_HAS_VIA;
 	}
 	r->iif = iif;
 	r->maskbits = blen;
@@ -206,15 +206,15 @@ int add_route6(interface *i,const struct in6_addr *s,const struct in6_addr *via,
 	if((r = malloc(sizeof(*r))) == NULL){
 		return -1;
 	}
+	r->addrs = 0;
 	memcpy(&r->dst,s,sizeof(*s));
 	if(src){
-		memcpy(&r->src,src,sizeof(*src)); // FIXME
+		memcpy(&r->src,src,sizeof(*src));
+		r->addrs |= ROUTE_HAS_SRC;
 	}
 	if(via){
-		r->hasvia = 1;
 		memcpy(&r->via,via,sizeof(*via));
-	}else{
-		r->hasvia = 0;
+		r->addrs |= ROUTE_HAS_VIA;
 	}
 	r->iif = iif;
 	r->maskbits = blen;
@@ -229,7 +229,7 @@ int del_route4(interface *i,const struct in_addr *a,unsigned blen){
 	ip4route *r,**prev;
 
 	for(prev = &i->ip4r ; (r = *prev) ; prev = &r->next){
-		if(r->dst.s_addr == a->s_addr && r->maskbits == blen){
+		if(r->dst == a->s_addr && r->maskbits == blen){
 			*prev = r->next;
 			free(r);
 			return 0;
@@ -243,7 +243,7 @@ int del_route6(interface *i,const struct in6_addr *a,unsigned blen){
 	ip6route *r,**prev;
 
 	for(prev = &i->ip6r ; (r = *prev) ; prev = &r->next){
-		if(!memcmp(&r->dst.s6_addr,&a->s6_addr,sizeof(a->s6_addr)) && r->maskbits == blen){
+		if(!memcmp(&r->dst,&a->s6_addr,sizeof(a->s6_addr)) && r->maskbits == blen){
 			*prev = r->next;
 			free(r);
 			return 0;
@@ -257,7 +257,7 @@ ip4_in_route(const ip4route *r,uint32_t i){
 	uint64_t mask = ~0U;
 
 	mask <<= 32 - r->maskbits;
-	return (ntohl(r->dst.s_addr) & mask) == (ntohl(i) & mask);
+	return (ntohl(r->dst) & mask) == (ntohl(i) & mask);
 }
 
 int is_local4(const interface *i,uint32_t ip){
@@ -265,34 +265,44 @@ int is_local4(const interface *i,uint32_t ip){
 
 	for(r = i->ip4r ; r ; r = r->next){
 		if(ip4_in_route(r,ip)){
-			return (r->via.s_addr == 0);
+			return (r->via == 0);
 		}
 	}
 	return 0;
 }
 
 static inline int
-ip6_in_route(const ip6route *r,const uint32_t *i){
-	const uint32_t *dst = r->dst.s6_addr32;
-	unsigned mbits = r->maskbits;
-	unsigned word = 0;
+ip6_in_route(const ip6route *r,const uint128_t i){
+	uint128_t mask = { ~0u, ~0u, ~0u, ~0u };
+	uint128_t dst = r->dst;
 
-	while(mbits){
-		// FIXME broken for subnet masks that aren't multiples of 32
-		if(i[word] != dst[word]){
-			return 0;
-		}
-		mbits -= 32;
-		++word;
+	switch(r->maskbits / 32){
+		case 0:
+			mask[0] = ~0u << (32 - r->maskbits);
+			mask[1] = 0u; mask[2] = 0u; mask[3] = 0u;
+			break;
+		case 1:
+			mask[1] = ~0u << (64 - r->maskbits);
+			mask[2] = 0u; mask[3] = 0u;
+			break;
+		case 2:
+			mask[2] = ~0u << (64 - r->maskbits);
+			mask[3] = 0u;
+			break;
+		case 3:
+			mask[3] = ~0u << (64 - r->maskbits);
+			break;
+		case 4:
+			break;
 	}
-	return 1;
+	return equal128(dst & mask,i & mask);
 }
 
 int is_local6(const interface *i,const struct in6_addr *a){
 	const ip6route *r;
 
 	for(r = i->ip6r ; r ; r = r->next){
-		if(ip6_in_route(r,a->s6_addr32)){
+		if(ip6_in_route(r,*(const uint128_t *)a->s6_addr32)){
 			return 1;
 		}
 	}
@@ -460,34 +470,17 @@ get_route4(const interface *i,const uint32_t *ip){
 	return i4r;
 }
 
-int get_route6(const interface *i,const uint32_t *ip,uint32_t *r){
+const ip6route *
+get_route6(const interface *i,const void *ip){
 	const ip6route *i6r;
 
 	for(i6r = i->ip6r ; i6r ; i6r = i6r->next){
-		if(ip6_in_route(i6r,ip)){
-			/*if(i6r->hasvia){
-				memcpy(r,i6r->via.s6_addr,sizeof(uint32_t) * 4);
-			}else{
-				memcpy(r,ip,sizeof(uint32_t) * 4);
-			}*/
-			memcpy(r,ip,sizeof(uint32_t) * 4);
-			return 1;
+		uint128_t i;
+
+		memcpy(&i,ip,sizeof(i));
+		if(ip6_in_route(i6r,i)){
+			return i6r;
 		}
 	}
-	return 0;
+	return NULL;
 }
-
-#include <omphalos/tx.h>
-// FIXME this doesn't belong here at all
-void send_arp_probe(const omphalos_iface *octx,interface *i,const void *hwaddr,
-		const void *addr,size_t addrlen,const void *saddr){
-	void *frame;
-	size_t flen;
-
-	if( (frame = get_tx_frame(octx,i,&flen)) ){
-		prepare_arp_probe(octx,i,frame,&flen,hwaddr,i->addrlen,
-					addr,addrlen,saddr);
-		send_tx_frame(octx,i,frame);
-	}
-}
-
