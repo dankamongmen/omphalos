@@ -48,9 +48,9 @@ extern int mvwprintw(WINDOW *,int,int,const char *,...) __attribute__ ((format (
 #define VERSION  "0.98-pre"	// FIXME
 
 #define PAD_LINES 3
+#define START_COL 1
 #define PAD_COLS(cols) ((cols) - START_COL * 2)
 #define START_LINE 1
-#define START_COL 1
 #define PREFIXSTRLEN U64STRLEN
 
 // FIXME we ought precreate the subwindows, and show/hide them rather than
