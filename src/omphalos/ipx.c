@@ -33,15 +33,21 @@ void handle_ipx_packet(const omphalos_iface *octx,omphalos_packet *op,
 				const void *frame,size_t len){
 	const struct ipxhdr *ipxhdr = frame;
 	interface *i = op->i;
+	uint32_t ipxlen;
 
 	if(len < sizeof(*ipxhdr)){
 		octx->diagnostic("%s truncated (%zu < %zu)",__func__,len,sizeof(*ipxhdr));
 		++i->truncated;
 		return;
 	}
-	if(check_ethernet_padup(len,ntohs(ipxhdr->ipx_pktsize))){
-		octx->diagnostic("%s malformed (%u != %zu)",__func__,
-			ntohs(ipxhdr->ipx_pktsize),len);
+	ipxlen = ntohs(ipxhdr->ipx_pktsize);
+	// Odd IPX packet lengths are padded to a 16-bit boundary, but this is
+	// not reflected in the packet length field.
+	if(ipxlen % 2){
+		++ipxlen;
+	}
+	if(check_ethernet_padup(len,ipxlen)){
+		octx->diagnostic("%s malformed (%u != %zu)",__func__,ipxlen,len);
 		++i->malformed;
 		return;
 	}

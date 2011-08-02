@@ -173,7 +173,7 @@ handle_8022(const omphalos_iface *octx,omphalos_packet *op,const void *frame,siz
 		// Unnumbered (most common): 11xxxxxx
 		// Supervisory: 10xxxxxx
 		// Information: 0xxxxxxx
-		if(((llc->ctrl & 0x3u) == 0x3u) || ((llc->ctrl & 0x1u) == 0x0)){
+		if(((llc->ctrl & 0x3u) == 0x1u) || ((llc->ctrl & 0x3u) == 0x0)){
 			if(dlen == 0){
 				++op->i->malformed;
 				octx->diagnostic("%s malformed with %zu",__func__,len);
