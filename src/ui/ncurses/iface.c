@@ -106,7 +106,7 @@ void print_iface_hosts(const interface *i,const iface_state *is){
 		const char *devname,*nname;
 		char legend;
 		
-		if(++line >= rows){
+		if(++line + 1 >= rows){
 			break;
 		}
 		switch(l->cat){
