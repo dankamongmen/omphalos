@@ -564,6 +564,7 @@ handle_newlink_locked(const omphalos_iface *octx,interface *iface,
 				if(handle_wireless_event(octx,iface,RTA_DATA(ra),RTA_PAYLOAD(ra)) < 0){
 					return -1;
 				}
+				return 0; // FIXME is this safe? see bug 277
 			break;}case IFLA_OPERSTATE:{
 			break;}case IFLA_LINKMODE:{
 			break;}case IFLA_LINKINFO:{
