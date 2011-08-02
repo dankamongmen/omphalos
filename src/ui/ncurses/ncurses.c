@@ -127,7 +127,7 @@ screen_update(void){
 }
 
 static inline void
-redraw_iface_generic(const interface *i,struct iface_state *is){
+redraw_iface_generic(const interface *i,const struct iface_state *is){
 	redraw_iface(i,is,is == current_iface);
 }
 
