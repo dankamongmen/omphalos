@@ -37,7 +37,7 @@ void handle_ipx_packet(const omphalos_iface *octx,omphalos_packet *op,
 
 	if(len < sizeof(*ipxhdr)){
 		octx->diagnostic("%s truncated (%zu < %zu)",__func__,len,sizeof(*ipxhdr));
-		++i->truncated;
+		++i->malformed;
 		return;
 	}
 	ipxlen = ntohs(ipxhdr->ipx_pktsize);
