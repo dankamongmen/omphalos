@@ -24,6 +24,7 @@ static inline void
 wake_input_thread(void){
 	if(input_tid){
 		pthread_kill(*input_tid,SIGWINCH);
+		rl_redisplay(); // FIXME probably need call from readline context
 	}
 }
 
@@ -210,6 +211,10 @@ tty_handler(void *v){
 		if(l == NULL){
 			break;
 		}
+		if(*l){
+			add_history(l);
+		}
+		// FIXME handle command
 		free(l);
 	}
 	printf("Shutting down...\n");
@@ -221,11 +226,17 @@ static int
 init_tty_ui(pthread_t *tid){
 	int err;
 
+	rl_prep_terminal(1); // 1 == read eight-bit input
 	if( (err = pthread_create(tid,NULL,tty_handler,NULL)) ){
 		fprintf(stderr,"Couldn't launch input thread (%s?)\n",strerror(err));
 		return -1;
 	}
 	return 0;
+}
+
+static void
+cleanup_tty_ui(void){
+	rl_deprep_terminal();
 }
 
 int main(int argc,char * const *argv){
@@ -247,8 +258,10 @@ int main(int argc,char * const *argv){
 		}
 	}
 	if(omphalos_init(&pctx)){
+		cleanup_tty_ui();
 		return EXIT_FAILURE;
 	}
+	cleanup_tty_ui();
 	if(dump_output(stdout) < 0){
 		if(errno != ENOMEM){
 			fprintf(stderr,"Couldn't write output (%s?)\n",strerror(errno));
