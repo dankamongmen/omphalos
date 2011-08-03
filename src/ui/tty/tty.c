@@ -1,16 +1,35 @@
 #include <stdio.h>
 #include <errno.h>
+#include <unistd.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
+#include <signal.h>
+#include <pthread.h>
 #include <sys/socket.h>
 #include <linux/if.h>
 #include <omphalos/pcap.h>
 #include <linux/wireless.h>
+#include <readline/readline.h>
+#include <readline/history.h>
 #include <omphalos/hwaddrs.h>
 #include <omphalos/wireless.h>
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
+
+// FIXME proof of concept only, kill me kill me kill me
+static char current[IFNAMSIZ + 3]; // "> " + nul
+
+static pthread_t *input_tid;
+
+// Call whenever we generate output, so that the prompt is updated
+static inline void
+wake_input_thread(void){
+	if(input_tid){
+		pthread_kill(*input_tid,SIGWINCH);
+		rl_redisplay(); // FIXME probably need call from readline context
+	}
+}
 
 // FIXME this ought return a string rather than printing it
 #define IFF_FLAG(flags,f) ((flags) & (IFF_##f) ? #f" " : "")
@@ -98,12 +117,6 @@ dump_output(FILE *fp){
 	return 0;
 }
 
-static void *
-iface_event(interface *i,void *unsafe __attribute__ ((unused))){
-	print_iface(stdout,i);
-	return NULL;
-}
-
 static int
 print_neigh(const interface *iface,const struct l2host *l2){
 	char *hwaddr;
@@ -128,12 +141,6 @@ print_neigh(const interface *iface,const struct l2host *l2){
 	return n;
 }
 
-static void *
-neigh_event(const struct interface *i,struct l2host *l2){
-	print_neigh(i,l2);
-	return NULL;
-}
-
 static int
 print_wireless_event(FILE *fp,const interface *i,unsigned cmd){
 	int n = 0;
@@ -155,12 +162,6 @@ print_wireless_event(FILE *fp,const interface *i,unsigned cmd){
 	return n;
 }
 
-static void *
-wireless_event(interface *i,unsigned cmd,void *unsafe __attribute__ ((unused))){
-	print_wireless_event(stdout,i,cmd);
-	return NULL;
-}
-
 static void
 packet_cb(omphalos_packet *op){
 	// We won't have l2s/l2d on critically malformed frames, or UI-driving
@@ -176,8 +177,76 @@ packet_cb(omphalos_packet *op){
 	}
 }
 
+static inline void
+clear_for_output(FILE *fp){
+	fprintf(fp,"\r");
+}
+
+static void *
+iface_event(interface *i,void *unsafe __attribute__ ((unused))){
+	clear_for_output(stdout);
+	snprintf(current,sizeof(current),"%s> ",i->name); // FIXME heh proof of concept
+	print_iface(stdout,i);
+	rl_set_prompt(current);
+	wake_input_thread();
+	return NULL;
+}
+
+static void *
+neigh_event(const struct interface *i,struct l2host *l2){
+	clear_for_output(stdout);
+	print_neigh(i,l2);
+	wake_input_thread();
+	return NULL;
+}
+
+static void *
+wireless_event(interface *i,unsigned cmd,void *unsafe __attribute__ ((unused))){
+	clear_for_output(stdout);
+	print_wireless_event(stdout,i,cmd);
+	wake_input_thread();
+	return NULL;
+}
+
+static void *
+tty_handler(void *v){
+	while(!v){
+		char *l = readline(">"); // FIXME use current iface for prompt
+
+		if(l == NULL){
+			break;
+		}
+		if(*l){
+			add_history(l);
+		}
+		// FIXME handle command
+		free(l);
+	}
+	printf("Shutting down...\n");
+	kill(getpid(),SIGINT);
+	return NULL;
+}
+
+static int
+init_tty_ui(pthread_t *tid){
+	int err;
+
+	rl_prep_terminal(1); // 1 == read eight-bit input
+	if( (err = pthread_create(tid,NULL,tty_handler,NULL)) ){
+		fprintf(stderr,"Couldn't launch input thread (%s?)\n",strerror(err));
+		return -1;
+	}
+	return 0;
+}
+
+static void
+cleanup_tty_ui(void){
+	rl_deprep_terminal();
+}
+
 int main(int argc,char * const *argv){
 	omphalos_ctx pctx;
+	pthread_t tid;
 
 	if(omphalos_setup(argc,argv,&pctx)){
 		return EXIT_FAILURE;
@@ -186,9 +255,18 @@ int main(int argc,char * const *argv){
 	pctx.iface.neigh_event = neigh_event;
 	pctx.iface.wireless_event = wireless_event;
 	pctx.iface.packet_read = packet_cb;
+	if(!pctx.pcapfn){ // FIXME, ought be able to use UI with pcaps
+		input_tid = &tid;
+		if(init_tty_ui(input_tid)){
+			omphalos_cleanup(&pctx);
+			return EXIT_FAILURE;
+		}
+	}
 	if(omphalos_init(&pctx)){
+		cleanup_tty_ui();
 		return EXIT_FAILURE;
 	}
+	cleanup_tty_ui();
 	if(dump_output(stdout) < 0){
 		if(errno != ENOMEM){
 			fprintf(stderr,"Couldn't write output (%s?)\n",strerror(errno));
