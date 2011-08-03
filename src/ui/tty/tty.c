@@ -17,6 +17,9 @@
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
 
+// FIXME proof of concept only, kill me kill me kill me
+static char current[IFNAMSIZ + 3]; // "> " + nul
+
 static pthread_t *input_tid;
 
 // Call whenever we generate output, so that the prompt is updated
@@ -182,7 +185,9 @@ clear_for_output(FILE *fp){
 static void *
 iface_event(interface *i,void *unsafe __attribute__ ((unused))){
 	clear_for_output(stdout);
+	snprintf(current,sizeof(current),"%s> ",i->name); // FIXME heh proof of concept
 	print_iface(stdout,i);
+	rl_set_prompt(current);
 	wake_input_thread();
 	return NULL;
 }
