@@ -95,6 +95,11 @@ iface_lines_bounded(const interface *i,const struct iface_state *is,int rows){
 	return lines;
 }
 
+static inline int
+iface_lines_unbounded(const interface *i,const struct iface_state *is){
+	return iface_lines_bounded(i,is,INT_MAX);
+}
+
 static inline void
 iface_box_generic(WINDOW *w,const interface *i,const struct iface_state *is){
 	iface_box(w,i,is,is == current_iface);
@@ -759,8 +764,14 @@ use_prev_iface_locked(WINDOW *w){
 		is = current_iface = current_iface->prev;
 		i = is->iface;
 		if(panel_hidden(is->panel)){
+			int shift;
+
 			is->scrline = 1;
-			push_interfaces_below(is,rows,iface_lines_bounded(i,is,rows) + 1 - (oldis->scrline - 1));
+			shift = iface_lines_bounded(i,is,rows) + 1 - (oldis->scrline - 1);
+			if(iface_lines_bounded(i,is,rows) != iface_lines_unbounded(i,is)){
+				--shift; // no blank line will follow
+			}
+			push_interfaces_below(is,rows,shift);
 			assert(move_panel(is->panel,is->scrline,START_COL) != ERR);
 			redraw_iface_generic(i,is);
 			assert(show_panel(is->panel) != ERR);
