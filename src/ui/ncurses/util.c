@@ -18,8 +18,10 @@ int bevel(WINDOW *w){
 	assert(mvwadd_wch(w,0,cols - 1,&bchr[1]) != ERR);
 	assert(mvwadd_wch(w,rows - 1,0,&bchr[2]) != ERR);
 	// called as one expects: 'mvwadd_wch(w,rows - 1,cols - 1,&bchr[3]);'
-	// we get ERR returned and abort out. fuck ncurses. FIXME?
-	mvwadd_wch(w,rows - 1,cols - 1,&bchr[3]);
+	// we get ERR returned. this is known behavior: fuck ncurses. instead,
+	// we use mvwins_wch, which doesn't update the cursor position.
+	// see http://lists.gnu.org/archive/html/bug-ncurses/2007-09/msg00001.html
+	assert(mvwins_wch(w,rows - 1,cols - 1,&bchr[3]) != ERR);
 	return OK;
 }
 

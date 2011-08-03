@@ -36,7 +36,8 @@ void handle_ipx_packet(const omphalos_iface *octx,omphalos_packet *op,
 	uint32_t ipxlen;
 
 	if(len < sizeof(*ipxhdr)){
-		octx->diagnostic("%s truncated (%zu < %zu)",__func__,len,sizeof(*ipxhdr));
+		octx->diagnostic("%s truncated (%zu < %zu) on %s",
+				__func__,len,sizeof(*ipxhdr),op->i->name);
 		++i->malformed;
 		return;
 	}
@@ -47,7 +48,8 @@ void handle_ipx_packet(const omphalos_iface *octx,omphalos_packet *op,
 		++ipxlen;
 	}
 	if(check_ethernet_padup(len,ipxlen)){
-		octx->diagnostic("%s malformed (%u != %zu)",__func__,ipxlen,len);
+		octx->diagnostic("%s malformed (%u != %zu) on %s",
+				__func__,ipxlen,len,op->i->name);
 		++i->malformed;
 		return;
 	}
@@ -59,7 +61,8 @@ void handle_ipx_packet(const omphalos_iface *octx,omphalos_packet *op,
 	break;}case IPX_TYPE_NCP:{
 	break;}case IPX_TYPE_PPROP:{
 	break;}default:{
-		octx->diagnostic("%s noproto %u",__func__,ipxhdr->ipx_type);
+		octx->diagnostic("%s noproto %u on %s",
+				__func__,ipxhdr->ipx_type,op->i->name);
 		++i->noprotocol;
 	break;} }
 }
