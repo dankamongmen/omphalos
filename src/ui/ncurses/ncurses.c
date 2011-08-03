@@ -251,7 +251,7 @@ setup_statusbar(int cols){
 
 // to be called only while ncurses lock is held
 static int
-draw_main_window(WINDOW *w,const char *name,const char *ver){
+draw_main_window(WINDOW *w){
 	int rows,cols;
 
 	getmaxyx(w,rows,cols);
@@ -265,8 +265,9 @@ draw_main_window(WINDOW *w,const char *name,const char *ver){
 	// FIXME move this over! it is ugly on the left, clashing with ifaces
 	assert(mvwprintw(w,0,2,"[") != ERR);
 	assert(wattron(w,A_BOLD | COLOR_PAIR(HEADING_COLOR)) != ERR);
-	assert(wprintw(w,"%s %s on %s %s (libc %s-%s)",name,ver,sysuts.sysname,
-				sysuts.release,glibc_version,glibc_release) != ERR);
+	assert(wprintw(w,"%s %s on %s %s (libc %s-%s) %2d ifaces",PROGNAME,
+				VERSION,sysuts.sysname,sysuts.release,
+				glibc_version,glibc_release,count_interface) != ERR);
 	if(wattroff(w,A_BOLD | COLOR_PAIR(HEADING_COLOR)) != OK){
 		ERREXIT;
 	}
@@ -304,7 +305,7 @@ wvstatus_locked(WINDOW *w,const char *fmt,va_list va){
 	}else{
 		assert(vsnprintf(statusmsg,statuschars,fmt,va) < statuschars);
 	}
-	return draw_main_window(w,PROGNAME,VERSION);
+	return draw_main_window(w);
 }
 
 // NULL fmt clears the status bar
@@ -407,7 +408,7 @@ hide_panel_locked(WINDOW *w,struct panel_state *ps){
 		delwin(psw);
 		ps->ysize = -1;
 		start_screen_update();
-		draw_main_window(w,PROGNAME,VERSION);
+		draw_main_window(w);
 		finish_screen_update();
 	}
 }
@@ -789,7 +790,7 @@ redraw_screen_locked(WINDOW *w){
 	getmaxyx(w,rows,cols);
 	assert(wresize(w,rows,cols) != ERR);
 	redrawwin(w);
-	draw_main_window(w,PROGNAME,VERSION);
+	draw_main_window(w);
 	// FIXME need iterate over interface windows, hiding or making them
 	// visible as appropriate, and possibly scrolling to keep the current
 	// interface on-screen...
@@ -1042,7 +1043,7 @@ ncurses_setup(const omphalos_iface *octx){
 		errstr = "Couldn't setup status bar\n";
 		goto err;
 	}
-	if(draw_main_window(w,PROGNAME,VERSION)){
+	if(draw_main_window(w)){
 		errstr = "Couldn't use ncurses\n";
 		goto err;
 	}
@@ -1137,6 +1138,7 @@ interface_cb_locked(interface *i,iface_state *ret){
 			if(!iface_visible_p(rows,ret)){
 				assert(hide_panel(ret->panel) != ERR);
 			}
+			draw_main_window(stdscr);
 		}
 	}
 	if(ret == current_iface && details.p){
@@ -1181,6 +1183,7 @@ interface_removed_locked(iface_state *is){
 		int rows,cols;
 
 		free_iface_state(is);
+		--count_interface;
 		wclear(is->subwin);
 		del_panel(is->panel);
 		getmaxyx(is->subwin,rows,cols);
@@ -1210,6 +1213,7 @@ interface_removed_locked(iface_state *is){
 			current_iface = NULL;
 		}
 		free(is);
+		draw_main_window(stdscr);
 		screen_update();
 	}
 }
