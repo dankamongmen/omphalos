@@ -397,7 +397,7 @@ down_interface_locked(const omphalos_iface *octx,WINDOW *w){
 }
 
 static void
-hide_panel_locked(WINDOW *w,struct panel_state *ps){
+hide_panel_locked(struct panel_state *ps){
 	if(ps){
 		WINDOW *psw;
 
@@ -407,9 +407,7 @@ hide_panel_locked(WINDOW *w,struct panel_state *ps){
 		ps->p = NULL;
 		delwin(psw);
 		ps->ysize = -1;
-		start_screen_update();
-		draw_main_window(w);
-		finish_screen_update();
+		screen_update();
 	}
 }
 
@@ -782,22 +780,20 @@ use_prev_iface_locked(WINDOW *w){
 	}
 }
 
-// Completely redraw the screen, for instance after a corruption or resize.
 static void
-redraw_screen_locked(WINDOW *w){
-	int rows,cols;
+resize_screen_locked(WINDOW *w){
+	/*int rows,cols;
 
-	getmaxyx(w,rows,cols);
-	assert(wresize(w,rows,cols) != ERR);
-	redrawwin(w);
+	getmaxyx(w,rows,cols);*/
 	draw_main_window(w);
-	// FIXME need iterate over interface windows, hiding or making them
-	// visible as appropriate, and possibly scrolling to keep the current
-	// interface on-screen...
-	if(active){
-		redrawwin(panel_window(active->p));
-	}
-	screen_update();
+}
+
+// Completely redraw the screen, for instance after a corruption (see wrefresh
+// man pageL: "If the argument to wrefresh is curscr, the screen is immediately
+// cleared and repainted from scratch."
+static void
+redraw_screen_locked(void){
+	wrefresh(curscr);
 }
 
 struct ncurses_input_marshal {
@@ -827,9 +823,15 @@ ncurses_input_thread(void *unsafe_marsh){
 				use_next_iface_locked(w);
 			pthread_mutex_unlock(&bfl);
 			break;
-		case KEY_RESIZE: case 12: // Ctrl-L FIXME
+		case KEY_RESIZE:
+			assert(0);
 			pthread_mutex_lock(&bfl);{
-				redraw_screen_locked(w);
+				resize_screen_locked(w);
+			}pthread_mutex_unlock(&bfl);
+			break;
+		case 12: // Ctrl-L FIXME
+			pthread_mutex_lock(&bfl);{
+				redraw_screen_locked();
 			}pthread_mutex_unlock(&bfl);
 			break;
 		case 'C':
@@ -875,10 +877,10 @@ ncurses_input_thread(void *unsafe_marsh){
 		case 'v':{
 			pthread_mutex_lock(&bfl);
 			if(details.p){
-				hide_panel_locked(w,&details);
+				hide_panel_locked(&details);
 				active = NULL;
 			}else{
-				hide_panel_locked(w,active);
+				hide_panel_locked(active);
 				active = (display_details_locked(w,&details,current_iface) == OK)
 					? &details : NULL;
 			}
@@ -887,10 +889,10 @@ ncurses_input_thread(void *unsafe_marsh){
 		}case 'h':{
 			pthread_mutex_lock(&bfl);
 			if(help.p){
-				hide_panel_locked(w,&help);
+				hide_panel_locked(&help);
 				active = NULL;
 			}else{
-				hide_panel_locked(w,active);
+				hide_panel_locked(active);
 				active = (display_help_locked(w,&help) == OK)
 					? &help : NULL;
 			}
@@ -987,6 +989,10 @@ ncurses_setup(const omphalos_iface *octx){
 	}
 	w = stdscr;
 	keypad(stdscr,TRUE);
+	if(nodelay(stdscr,FALSE) != OK){
+		errstr = "Couldn't set blocking input\n";
+		goto err;
+	}
 	if(init_pair(BORDER_COLOR,COLOR_GREEN,-1) != OK){
 		errstr = "Couldn't initialize ncurses colorpair\n";
 		goto err;
@@ -1138,7 +1144,7 @@ interface_cb_locked(interface *i,iface_state *ret){
 			if(!iface_visible_p(rows,ret)){
 				assert(hide_panel(ret->panel) != ERR);
 			}
-			draw_main_window(stdscr);
+			draw_main_window(stdscr); // update iface count
 		}
 	}
 	if(ret == current_iface && details.p){
@@ -1213,8 +1219,7 @@ interface_removed_locked(iface_state *is){
 			current_iface = NULL;
 		}
 		free(is);
-		draw_main_window(stdscr);
-		screen_update();
+		draw_main_window(stdscr); // update iface count (calls screen_update())
 	}
 }
 
