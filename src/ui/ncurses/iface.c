@@ -360,7 +360,7 @@ void move_interface(iface_state *is,int rows,int delta,int active){
 		assert(move_panel(is->panel,is->scrline,1) != ERR);
 		redraw_iface(ii,is,active);
 	// use "will_be_visible" as "would_be_visible" here, heh
-	}else if(iface_will_be_visible_p(rows,is,-delta)){
+	}else if(!panel_hidden(is->panel)){
 		// FIXME see if we can shrink it first!
 		assert(werase(is->subwin) != ERR);
 		assert(hide_panel(is->panel) != ERR);
