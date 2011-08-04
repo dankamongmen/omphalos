@@ -86,13 +86,18 @@ static inline int
 iface_lines_bounded(const interface *i,const struct iface_state *is,int rows){
 	int lines = lines_for_interface(i,is);
 
-	if(lines > rows){
-		lines = rows;
+	if(lines > rows - 2){ // top and bottom border
+		lines = rows - 2;
 		if(lines < 2 + interface_up_p(i)){
 			lines = 2 + interface_up_p(i);
 		}
 	}
 	return lines;
+}
+
+static inline int
+iface_lines_unbounded(const interface *i,const struct iface_state *is){
+	return iface_lines_bounded(i,is,INT_MAX);
 }
 
 static inline void
@@ -186,37 +191,41 @@ push_interfaces_above(iface_state *pusher,int rows,int delta){
 // The interface's display is synchronized via redraw_iface() whether a resize
 // is performed or not (unless it's invisible).
 static int
-resize_iface(const interface *i,iface_state *ret){
-	const int nlines = lines_for_interface(i,ret);
+resize_iface(const interface *i,iface_state *is){
+	const int nlines = iface_lines_unbounded(i,is);
 	int rows,cols,subrows,subcols;
 
-	getmaxyx(stdscr,rows,cols);
-	getmaxyx(ret->subwin,subrows,subcols);
-	assert(subcols); // FIXME
-	if(ret->scrline + nlines >= rows || ret->scrline < 1){
-		if(panel_hidden(ret->panel)){
-			assert(wresize(ret->subwin,lines_for_interface(i,ret),PAD_COLS(cols)) != ERR);
-			assert(replace_panel(ret->panel,ret->subwin) != ERR);
-			assert(screen_update() == OK);
-			return OK;
-		}
-		/*assert(wclear(ret->subwin) != ERR);
-		assert(wresize(ret->subwin,lines_for_interface(i,ret),PAD_COLS(cols)) != ERR);
-		assert(replace_panel(ret->panel,ret->subwin) != ERR);
-		assert(hide_panel(ret->panel) != ERR);
-		assert(screen_update() == OK);*/
+	if(panel_hidden(is->panel)){ // resize upon becoming visible
 		return OK;
 	}
+	getmaxyx(stdscr,rows,cols);
+	getmaxyx(is->subwin,subrows,subcols);
+	assert(subcols); // FIXME
 	if(nlines != subrows){
-		if(nlines + ret->scrline < rows){
+		// FIXME don't allow interfaces other than those selected to
+		// push other interfaces offscreen, or at least the selected ones
+		// on grow down, check if we're selected; if not, check to
+		// ensure none get pushed off down. vice versa.
+		if(nlines + is->scrline < rows){
 			int delta = nlines - subrows;
 
-			push_interfaces_below(ret,rows,delta);
-			assert(wresize(ret->subwin,lines_for_interface(i,ret),PAD_COLS(cols)) != ERR);
-			assert(replace_panel(ret->panel,ret->subwin) != ERR);
+			push_interfaces_below(is,rows,delta);
+			assert(wresize(is->subwin,nlines,PAD_COLS(cols)) != ERR);
+			assert(replace_panel(is->panel,is->subwin) != ERR);
+		}else if(is->scrline != 1){
+			int delta = nlines - subrows;
+
+			if(delta > is->scrline - 1){
+				delta = is->scrline - 1;
+			}
+			is->scrline -= delta;
+			push_interfaces_above(is,rows,-delta);
+			assert(move_panel(is->panel,is->scrline,1) != ERR);
+			assert(wresize(is->subwin,nlines,PAD_COLS(cols)) != ERR);
+			assert(replace_panel(is->panel,is->subwin) != ERR);
 		}
 	}
-	redraw_iface_generic(i,ret);
+	redraw_iface_generic(i,is);
 	return screen_update();
 }
 
@@ -728,6 +737,8 @@ use_next_iface_locked(WINDOW *w){
 			if(up > 0){
 				push_interfaces_above(is,rows,-up);
 			}
+			assert(wresize(is->subwin,iface_lines_bounded(i,is,rows),PAD_COLS(cols)) != ERR);
+			assert(replace_panel(is->panel,is->subwin) != ERR);
 			assert(move_panel(is->panel,is->scrline,START_COL) != ERR);
 			redraw_iface_generic(i,is);
 			assert(show_panel(is->panel) != ERR);
@@ -759,8 +770,16 @@ use_prev_iface_locked(WINDOW *w){
 		is = current_iface = current_iface->prev;
 		i = is->iface;
 		if(panel_hidden(is->panel)){
+			int shift;
+
 			is->scrline = 1;
-			push_interfaces_below(is,rows,iface_lines_bounded(i,is,rows) + 1 - (oldis->scrline - 1));
+			shift = iface_lines_bounded(i,is,rows) + 1 - (oldis->scrline - 1);
+			if(iface_lines_bounded(i,is,rows) != iface_lines_unbounded(i,is)){
+				--shift; // no blank line will follow
+			}
+			push_interfaces_below(is,rows,shift);
+			assert(wresize(is->subwin,iface_lines_bounded(i,is,rows),PAD_COLS(cols)) != ERR);
+			assert(replace_panel(is->panel,is->subwin) != ERR);
 			assert(move_panel(is->panel,is->scrline,START_COL) != ERR);
 			redraw_iface_generic(i,is);
 			assert(show_panel(is->panel) != ERR);
