@@ -383,12 +383,3 @@ int iface_visible_p(int rows,const iface_state *is){
 	}
 	return 1;
 }
-
-int iface_will_be_visible_p(int rows,const iface_state *ret,int delta){
-	if(ret->scrline + delta + lines_for_interface(ret->iface,ret) >= rows){
-		return 0;
-	}else if(ret->scrline + delta < 1){
-		return 0;
-	}
-	return 1;
-}

@@ -97,7 +97,6 @@ iface_lines_bounded(const interface *i,const struct iface_state *is,int rows){
 
 static inline int
 iface_lines_unbounded(const interface *i,const struct iface_state *is){
-	assert(lines_for_interface(i,is) == iface_lines_bounded(i,is,INT_MAX));
 	return iface_lines_bounded(i,is,INT_MAX);
 }
 
@@ -193,7 +192,7 @@ push_interfaces_above(iface_state *pusher,int rows,int delta){
 // is performed or not (unless it's invisible).
 static int
 resize_iface(const interface *i,iface_state *is){
-	const int nlines = lines_for_interface(i,is);
+	const int nlines = iface_lines_unbounded(i,is);
 	int rows,cols,subrows,subcols;
 
 	getmaxyx(stdscr,rows,cols);
@@ -207,7 +206,7 @@ resize_iface(const interface *i,iface_state *is){
 			// too big! don't expand this far
 			return OK;
 		}
-		assert(wresize(is->subwin,lines_for_interface(i,is),PAD_COLS(cols)) != ERR);
+		assert(wresize(is->subwin,nlines,PAD_COLS(cols)) != ERR);
 		assert(replace_panel(is->panel,is->subwin) != ERR);
 		assert(screen_update() == OK);
 		return OK;
@@ -217,7 +216,7 @@ resize_iface(const interface *i,iface_state *is){
 			int delta = nlines - subrows;
 
 			push_interfaces_below(is,rows,delta);
-			assert(wresize(is->subwin,lines_for_interface(i,is),PAD_COLS(cols)) != ERR);
+			assert(wresize(is->subwin,nlines,PAD_COLS(cols)) != ERR);
 			assert(replace_panel(is->panel,is->subwin) != ERR);
 		}
 	}
