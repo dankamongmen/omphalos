@@ -86,8 +86,8 @@ static inline int
 iface_lines_bounded(const interface *i,const struct iface_state *is,int rows){
 	int lines = lines_for_interface(i,is);
 
-	if(lines > rows){
-		lines = rows;
+	if(lines > rows - 2){ // top and bottom border
+		lines = rows - 2;
 		if(lines < 2 + interface_up_p(i)){
 			lines = 2 + interface_up_p(i);
 		}
@@ -97,6 +97,7 @@ iface_lines_bounded(const interface *i,const struct iface_state *is,int rows){
 
 static inline int
 iface_lines_unbounded(const interface *i,const struct iface_state *is){
+	assert(lines_for_interface(i,is) == iface_lines_bounded(i,is,INT_MAX));
 	return iface_lines_bounded(i,is,INT_MAX);
 }
 
@@ -191,37 +192,36 @@ push_interfaces_above(iface_state *pusher,int rows,int delta){
 // The interface's display is synchronized via redraw_iface() whether a resize
 // is performed or not (unless it's invisible).
 static int
-resize_iface(const interface *i,iface_state *ret){
-	const int nlines = lines_for_interface(i,ret);
+resize_iface(const interface *i,iface_state *is){
+	const int nlines = lines_for_interface(i,is);
 	int rows,cols,subrows,subcols;
 
 	getmaxyx(stdscr,rows,cols);
-	getmaxyx(ret->subwin,subrows,subcols);
+	getmaxyx(is->subwin,subrows,subcols);
 	assert(subcols); // FIXME
-	if(ret->scrline + nlines >= rows || ret->scrline < 1){
-		if(panel_hidden(ret->panel)){
-			assert(wresize(ret->subwin,lines_for_interface(i,ret),PAD_COLS(cols)) != ERR);
-			assert(replace_panel(ret->panel,ret->subwin) != ERR);
-			assert(screen_update() == OK);
+	if(panel_hidden(is->panel)){
+		// Coming back onscreen requires becoming the current
+		// interface, and thus being expanded. Compare against the
+		// absolute screen, rather than using meaningless ->scrline.
+		if(iface_lines_bounded(i,is,rows) != nlines){
+			// too big! don't expand this far
 			return OK;
 		}
-		/*assert(wclear(ret->subwin) != ERR);
-		assert(wresize(ret->subwin,lines_for_interface(i,ret),PAD_COLS(cols)) != ERR);
-		assert(replace_panel(ret->panel,ret->subwin) != ERR);
-		assert(hide_panel(ret->panel) != ERR);
-		assert(screen_update() == OK);*/
+		assert(wresize(is->subwin,lines_for_interface(i,is),PAD_COLS(cols)) != ERR);
+		assert(replace_panel(is->panel,is->subwin) != ERR);
+		assert(screen_update() == OK);
 		return OK;
 	}
 	if(nlines != subrows){
-		if(nlines + ret->scrline < rows){
+		if(nlines + is->scrline < rows){
 			int delta = nlines - subrows;
 
-			push_interfaces_below(ret,rows,delta);
-			assert(wresize(ret->subwin,lines_for_interface(i,ret),PAD_COLS(cols)) != ERR);
-			assert(replace_panel(ret->panel,ret->subwin) != ERR);
+			push_interfaces_below(is,rows,delta);
+			assert(wresize(is->subwin,lines_for_interface(i,is),PAD_COLS(cols)) != ERR);
+			assert(replace_panel(is->panel,is->subwin) != ERR);
 		}
 	}
-	redraw_iface_generic(i,ret);
+	redraw_iface_generic(i,is);
 	return screen_update();
 }
 
