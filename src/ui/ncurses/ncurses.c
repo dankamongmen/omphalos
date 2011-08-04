@@ -215,7 +215,12 @@ resize_iface(const interface *i,iface_state *is){
 		}else if(is->scrline != 1){
 			int delta = nlines - subrows;
 
-			push_interfaces_above(is,rows,delta);
+			if(delta > is->scrline - 1){
+				delta = is->scrline - 1;
+			}
+			is->scrline -= delta;
+			push_interfaces_above(is,rows,-delta);
+			assert(move_panel(is->panel,is->scrline,1) != ERR);
 			assert(wresize(is->subwin,nlines,PAD_COLS(cols)) != ERR);
 			assert(replace_panel(is->panel,is->subwin) != ERR);
 		}
