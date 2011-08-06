@@ -324,9 +324,6 @@ draw_main_window(WINDOW *w){
 	if(wattroff(w,A_BOLD | COLOR_PAIR(FOOTER_COLOR)) != OK){
 		ERREXIT;
 	}
-	/*if(wcolor_set(w,0,NULL) != OK){
-		ERREXIT;
-	}*/
 	return screen_update();
 
 err:
