@@ -154,8 +154,10 @@ push_interfaces_below(iface_state *pusher,int rows,int delta){
 		is = is->next;
 	}
 	while((is = is->prev) != pusher){
-		if(move_interface_generic(is,rows,delta)){
-			break;
+		int i;
+
+		if( (i = move_interface_generic(is,rows,delta)) ){
+			return i;
 		}
 	}
 	// Now, if our delta was negative, see if we pulled any down below us
@@ -179,7 +181,9 @@ push_interfaces_above(iface_state *pusher,int rows,int delta){
 		is = is->prev;
 	}
 	while((is = is->next) != pusher){
-		if(move_interface_generic(is,rows,delta)){
+		int i;
+
+		if( (i = move_interface_generic(is,rows,delta)) ){
 			break;
 		}
 	}
@@ -215,7 +219,9 @@ resize_iface(const interface *i,iface_state *is){
 		if(nlines + is->scrline < rows){
 			int delta = nlines - subrows;
 
-			push_interfaces_below(is,rows,delta);
+			if(push_interfaces_below(is,rows,delta)){
+				return OK;
+			}
 			assert(wresize(is->subwin,nlines,PAD_COLS(cols)) != ERR);
 			assert(replace_panel(is->panel,is->subwin) != ERR);
 		}else if(is->scrline != 1){
@@ -225,7 +231,9 @@ resize_iface(const interface *i,iface_state *is){
 				delta = is->scrline - 1;
 			}
 			is->scrline -= delta;
-			push_interfaces_above(is,rows,-delta);
+			if(push_interfaces_above(is,rows,-delta)){
+				return OK;
+			}
 			assert(move_panel(is->panel,is->scrline,1) != ERR);
 			assert(wresize(is->subwin,nlines,PAD_COLS(cols)) != ERR);
 			assert(replace_panel(is->panel,is->subwin) != ERR);
