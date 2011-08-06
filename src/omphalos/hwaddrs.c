@@ -110,8 +110,8 @@ void *l2host_get_opaque(l2host *l2){
 	return l2->opaque;
 }
 
-int l2hostcmp(const l2host *l21,const l2host *l22){
-	return memcmp(&l21->hwaddr,&l22->hwaddr,IFHWADDRLEN); // FIXME len-param
+int l2hostcmp(const l2host *l21,const l2host *l22,size_t addrlen){
+	return memcmp(&l21->hwaddr,&l22->hwaddr,addrlen);
 }
 
 int l2categorize(const interface *i,const l2host *l2){

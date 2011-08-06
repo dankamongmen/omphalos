@@ -26,7 +26,7 @@ char *l2addrstr(const struct l2host *,size_t) __attribute__ ((nonnull (1)));
 void *l2host_get_opaque(struct l2host *) __attribute__ ((nonnull (1)));
 
 // Predicates and comparators
-int l2hostcmp(const struct l2host *,const struct l2host *)
+int l2hostcmp(const struct l2host *,const struct l2host *,size_t)
 				__attribute__ ((nonnull (1,2)));
 
 int l2categorize(const struct interface *,const struct l2host *)
