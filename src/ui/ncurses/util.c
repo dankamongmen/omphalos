@@ -10,19 +10,19 @@ int bevel(WINDOW *w){
 		{ .attr = 0, .chars = L"╰", },
 		{ .attr = 0, .chars = L"╯", },
 	};
-	int rows,cols;
+	int rows,cols,ret = 0;
 
 	getmaxyx(w,rows,cols);
-	assert(box(w,0,0) == OK);
-	assert(mvwadd_wch(w,0,0,&bchr[0]) != ERR);
-	assert(mvwadd_wch(w,0,cols - 1,&bchr[1]) != ERR);
-	assert(mvwadd_wch(w,rows - 1,0,&bchr[2]) != ERR);
+	ret |= box(w,0,0);
 	// called as one expects: 'mvwadd_wch(w,rows - 1,cols - 1,&bchr[3]);'
 	// we get ERR returned. this is known behavior: fuck ncurses. instead,
 	// we use mvwins_wch, which doesn't update the cursor position.
 	// see http://lists.gnu.org/archive/html/bug-ncurses/2007-09/msg00001.html
-	assert(mvwins_wch(w,rows - 1,cols - 1,&bchr[3]) != ERR);
-	return OK;
+	ret |= mvwins_wch(w,0,0,&bchr[0]);
+	ret |= mvwins_wch(w,0,cols - 1,&bchr[1]);
+	ret |= mvwins_wch(w,rows - 1,0,&bchr[2]);
+	ret |= mvwins_wch(w,rows - 1,cols - 1,&bchr[3]);
+	return ret;
 }
 
 // For full safety, pass in a buffer that can hold the decimal representation
