@@ -19,11 +19,11 @@ int discover_bluetooth(const omphalos_iface *octx){
 	int sd;
 
 	if((sd = socket(AF_BLUETOOTH,SOCK_RAW,BTPROTO_HCI)) < 0){
-		if(errno == ENOTSUP){
+		if(errno == EAFNOSUPPORT){
 			octx->diagnostic("No IEEE 802.15 (Bluetooth) support");
 			return 0;
 		}
-		octx->diagnostic("Couldn't get Bluetooth socket (%s?)\n",strerror(errno));
+		octx->diagnostic("Couldn't get Bluetooth socket (%s?)",strerror(errno));
 		return -1;
 	}
 	devreq.list.dev_num = sizeof(devreq.devlist) / sizeof(*devreq.devlist);
