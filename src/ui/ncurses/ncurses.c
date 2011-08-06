@@ -296,14 +296,15 @@ draw_main_window(WINDOW *w){
 	}
 	// FIXME move this over! it is ugly on the left, clashing with ifaces
 	// 5 for 0-offset, '[', ']', and 2 spaces on right side.
+	// 5 for '|', space before and after, and %2d-formatted integer
 	scol = cols - 5 - __builtin_strlen(PROGNAME) - 1 - __builtin_strlen(VERSION)
 		- 1 - __builtin_strlen("on") - 1 - strlen(hostname)
-		- 3 - __builtin_strlen("ifaces");
+		- 5 - __builtin_strlen("ifaces");
 	assert(mvwprintw(w,0,scol,"[") != ERR);
-	assert(wattron(w,A_BOLD | COLOR_PAIR(HEADING_COLOR)) != ERR);
-	assert(wprintw(w,"%s %s on %s %2d ifaces",PROGNAME,VERSION,
-				hostname,count_interface) != ERR);
-	if(wattroff(w,A_BOLD | COLOR_PAIR(HEADING_COLOR)) != OK){
+	assert(wattron(w,A_BOLD | COLOR_PAIR(HEADER_COLOR)) != ERR);
+	assert(wprintw(w,"%s %s on %s | %2d ifaces",PROGNAME,VERSION,
+			hostname,count_interface) != ERR);
+	if(wattroff(w,A_BOLD | COLOR_PAIR(HEADER_COLOR)) != OK){
 		ERREXIT;
 	}
 	if(wcolor_set(w,BORDER_COLOR,NULL) != OK){
@@ -312,7 +313,7 @@ draw_main_window(WINDOW *w){
 	if(wprintw(w,"]") < 0){
 		ERREXIT;
 	}
-	if(wattron(w,A_BOLD | COLOR_PAIR(HEADING_COLOR)) != OK){
+	if(wattron(w,A_BOLD | COLOR_PAIR(FOOTER_COLOR)) != OK){
 		ERREXIT;
 	}
 	// addstr() doesn't interpret format strings, so this is safe. It will
@@ -320,12 +321,12 @@ draw_main_window(WINDOW *w){
 	// instance happen if there's an embedded newline.
 	assert(rows);
 	assert(mvwaddstr(w,rows - 1,START_COL * 2,statusmsg) != ERR);
-	if(wattroff(w,A_BOLD | COLOR_PAIR(BORDER_COLOR)) != OK){
+	if(wattroff(w,A_BOLD | COLOR_PAIR(FOOTER_COLOR)) != OK){
 		ERREXIT;
 	}
-	if(wcolor_set(w,0,NULL) != OK){
+	/*if(wcolor_set(w,0,NULL) != OK){
 		ERREXIT;
-	}
+	}*/
 	return screen_update();
 
 err:
@@ -1051,7 +1052,11 @@ ncurses_setup(const omphalos_iface *octx){
 		errstr = "Couldn't initialize ncurses colorpair\n";
 		goto err;
 	}
-	if(init_pair(HEADING_COLOR,COLOR_YELLOW,-1) != OK){
+	if(init_pair(HEADER_COLOR,COLOR_BLUE,-1) != OK){
+		errstr = "Couldn't initialize ncurses colorpair\n";
+		goto err;
+	}
+	if(init_pair(FOOTER_COLOR,COLOR_YELLOW,-1) != OK){
 		errstr = "Couldn't initialize ncurses colorpair\n";
 		goto err;
 	}
