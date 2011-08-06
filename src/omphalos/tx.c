@@ -49,10 +49,11 @@ void abort_tx_frame(interface *i,void *frame){
 	thdr->tp_status = TP_STATUS_AVAILABLE;
 }
 
-void prepare_arp_req(const omphalos_iface *octx,const interface *i,
+// FIXME
+/*void prepare_arp_req(const omphalos_iface *octx,const interface *i,
 		void *frame,size_t *flen,const void *paddr,size_t pln){
 	assert(octx && i && frame && flen && paddr && pln);
-}
+}*/
 
 void prepare_arp_probe(const omphalos_iface *octx,const interface *i,
 		void *frame,size_t *flen,const void *haddr,size_t hln,
