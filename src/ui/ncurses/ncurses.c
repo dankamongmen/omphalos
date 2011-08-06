@@ -184,7 +184,7 @@ push_interfaces_above(iface_state *pusher,int rows,int delta){
 		int i;
 
 		if( (i = move_interface_generic(is,rows,delta)) ){
-			break;
+			return i;
 		}
 	}
 	// Now, if our delta was negative, see if we pulled any down below us
@@ -232,6 +232,7 @@ resize_iface(const interface *i,iface_state *is){
 			}
 			is->scrline -= delta;
 			if(push_interfaces_above(is,rows,-delta)){
+				is->scrline += delta;
 				return OK;
 			}
 			assert(move_panel(is->panel,is->scrline,1) != ERR);
@@ -765,6 +766,11 @@ use_next_iface_locked(WINDOW *w){
 			iface_box_generic(oldis->subwin,oldis->iface,oldis);
 			iface_box_generic(is->subwin,i,is);
 		}
+		if(panel_hidden(oldis->panel)){
+			// we hid the entire panel, and thus might have space
+			// to move up into. move as many interfaces as we can
+			// onscreen FIXME
+		}
 		if(details.p){
 			iface_details(panel_window(details.p),i,details.ysize);
 		}
@@ -808,6 +814,11 @@ use_prev_iface_locked(WINDOW *w){
 		}
 		if(details.p){
 			iface_details(panel_window(details.p),i,details.ysize);
+		}
+		if(panel_hidden(oldis->panel)){
+			// we hid the entire panel, and thus might have space
+			// to move down into. move as many interfaces as we can
+			// onscreen FIXME
 		}
 		screen_update();
 	}
