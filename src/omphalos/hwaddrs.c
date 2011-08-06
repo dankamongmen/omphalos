@@ -145,8 +145,9 @@ void name_l2host_local(const omphalos_iface *octx,const interface *i,l2host *l2,
 	if(l2->name == NULL){
 		char b[INET6_ADDRSTRLEN];
 
-		assert(inet_ntop(family,name,b,sizeof(b)) == b);
-		name_l2host_absolute(octx,i,l2,b);
+		if(inet_ntop(family,name,b,sizeof(b)) == b){
+			name_l2host_absolute(octx,i,l2,b);
+		}
 	}
 }
 
