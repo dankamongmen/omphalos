@@ -8,7 +8,7 @@
 // FIXME i guess we need a copy of the upstream, since linux doesn't
 // seem to install it? dubious, very dubious...
 typedef struct radiotaphdr {
-	char data[18];
+	char data[26];
 } __attribute__ ((packed)) radiotaphdr;
 
 typedef struct ieee80211hdr {
