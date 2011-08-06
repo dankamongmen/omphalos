@@ -236,7 +236,7 @@ resize_iface(const interface *i,iface_state *is){
 				return OK;
 			}
 			assert(move_panel(is->panel,is->scrline,1) != ERR);
-			assert(wresize(is->subwin,nlines,PAD_COLS(cols)) != ERR);
+			assert(wresize(is->subwin,iface_lines_bounded(i,is,rows),PAD_COLS(cols)) != ERR);
 			assert(replace_panel(is->panel,is->subwin) != ERR);
 		}
 	}
@@ -764,7 +764,7 @@ use_next_iface_locked(WINDOW *w){
 			redraw_iface_generic(i,is);
 		}else{
 			iface_box_generic(oldis->subwin,oldis->iface,oldis);
-			iface_box_generic(is->subwin,i,is);
+			resize_iface(i,is);
 		}
 		if(panel_hidden(oldis->panel)){
 			// we hid the entire panel, and thus might have space
@@ -811,7 +811,7 @@ use_prev_iface_locked(WINDOW *w){
 			redraw_iface_generic(i,is);
 		}else{
 			iface_box_generic(oldis->subwin,oldis->iface,oldis);
-			iface_box_generic(is->subwin,i,is);
+			resize_iface(i,is);
 		}
 		if(panel_hidden(oldis->panel)){
 			// we hid the entire panel, and thus might have space
