@@ -570,6 +570,7 @@ iface_details(WINDOW *hw,const interface *i,int rows){
 		if(i->addr){
 			char *mac;
 
+			// FIXME replace with l2ntop()
 			if((mac = hwaddrstr(i)) == NULL){
 				return ERR;
 			}

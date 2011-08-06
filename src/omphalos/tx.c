@@ -5,6 +5,7 @@
 #include <linux/if_arp.h>
 #include <linux/if_ether.h>
 #include <linux/if_packet.h>
+#include <omphalos/hwaddrs.h>
 #include <omphalos/psocket.h>
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
@@ -60,6 +61,7 @@ void prepare_arp_probe(const omphalos_iface *octx,const interface *i,
 		const void *paddr,size_t pln,const void *saddr){
 	struct tpacket_hdr *thdr;
 	unsigned char *payload;
+	char hwaddr[pln * 3];
 	struct ethhdr *ehdr;
 	struct arphdr *ahdr;
 	size_t tlen;
@@ -70,6 +72,8 @@ void prepare_arp_probe(const omphalos_iface *octx,const interface *i,
 		octx->diagnostic("%s %s frame too small for tx",__func__,i->name);
 		return;
 	}
+	l2ntop(paddr,pln,hwaddr);
+	octx->diagnostic("Probing %s on %s",hwaddr,i->name);
 	assert(hln == i->addrlen); // FIXME handle this case
 	thdr = frame;
 	// FIXME what about non-ethernet
