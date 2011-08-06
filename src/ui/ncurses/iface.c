@@ -351,8 +351,9 @@ void redraw_iface(const interface *i,const struct iface_state *is,int active){
 }
 
 // Move this interface, possibly hiding it or bringing it onscreen. Negative
-// delta indicates movement up, positive delta moves down.
-void move_interface(iface_state *is,int rows,int delta,int active){
+// delta indicates movement up, positive delta moves down. Returns a non-zero
+// if the interface is active and would be pushed offscreen.
+int move_interface(iface_state *is,int rows,int delta,int active){
 	is->scrline += delta;
 	if(iface_visible_p(rows,is)){
 		interface *ii = is->iface;
@@ -361,10 +362,15 @@ void move_interface(iface_state *is,int rows,int delta,int active){
 		redraw_iface(ii,is,active);
 	// use "will_be_visible" as "would_be_visible" here, heh
 	}else if(!panel_hidden(is->panel)){
+		if(active){
+			is->scrline -= delta;
+			return -1;
+		}
 		// FIXME see if we can shrink it first!
 		assert(werase(is->subwin) != ERR);
 		assert(hide_panel(is->panel) != ERR);
 	}
+	return 0;
 }
 
 // This is the number of lines we'd have in an optimal world; we might have

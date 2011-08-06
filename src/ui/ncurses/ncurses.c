@@ -136,9 +136,9 @@ redraw_iface_generic(const interface *i,const struct iface_state *is){
 	redraw_iface(i,is,is == current_iface);
 }
 
-static inline void
+static inline int
 move_interface_generic(struct iface_state *is,int rows,int delta){
-	move_interface(is,rows,delta,is == current_iface);
+	return move_interface(is,rows,delta,is == current_iface);
 }
 
 // An interface (pusher) has had its bottom border moved up or down (positive or
@@ -147,13 +147,16 @@ move_interface_generic(struct iface_state *is,int rows,int delta){
 // be called before pusher->scrline has been updated.
 static int
 push_interfaces_below(iface_state *pusher,int rows,int delta){
-	iface_state *is;
+	iface_state *is = pusher->next;
 
-	for(is = pusher->next ; is->scrline >= pusher->scrline ; is = is->next){
-		if(is == pusher){
+	
+	while(is != pusher && is->scrline >= pusher->scrline){
+		is = is->next;
+	}
+	while((is = is->prev) != pusher){
+		if(move_interface_generic(is,rows,delta)){
 			break;
 		}
-		move_interface_generic(is,rows,delta);
 	}
 	// Now, if our delta was negative, see if we pulled any down below us
 	// FIXME
@@ -169,13 +172,16 @@ push_interfaces_below(iface_state *pusher,int rows,int delta){
 // be called before pusher->scrline has been updated.
 static int
 push_interfaces_above(iface_state *pusher,int rows,int delta){
-	iface_state *is;
+	iface_state *is = pusher->prev;
 
-	for(is = pusher->prev ; is->scrline + iface_lines_bounded(is->iface,is,rows) <= pusher->scrline + iface_lines_bounded(pusher->iface,pusher,rows) ; is = is->prev){
-		if(is == pusher){
+
+	while(is != pusher && is->scrline + iface_lines_bounded(is->iface,is,rows) <= pusher->scrline + iface_lines_bounded(pusher->iface,pusher,rows)){
+		is = is->prev;
+	}
+	while((is = is->next) != pusher){
+		if(move_interface_generic(is,rows,delta)){
 			break;
 		}
-		move_interface_generic(is,rows,delta);
 	}
 	// Now, if our delta was negative, see if we pulled any down below us
 	// FIXME

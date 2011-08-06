@@ -42,7 +42,7 @@ void free_iface_state(struct iface_state *);
 
 int iface_visible_p(int,const struct iface_state *);
 int lines_for_interface(const struct interface *,const struct iface_state *);
-void move_interface(struct iface_state *,int,int,int);
+int move_interface(struct iface_state *,int,int,int);
 
 #ifdef __cplusplus
 }
