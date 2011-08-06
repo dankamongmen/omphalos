@@ -568,14 +568,10 @@ iface_details(WINDOW *hw,const interface *i,int rows){
 		--z;
 	}case 0:{
 		if(i->addr){
-			char *mac;
+			char mac[i->addrlen * 3];
 
-			// FIXME replace with l2ntop()
-			if((mac = hwaddrstr(i)) == NULL){
-				return ERR;
-			}
+			l2ntop(i->addr,i->addrlen,mac);
 			assert(mvwprintw(hw,row + z,col,"%-16s %-*s",i->name,scrcols - (START_COL * 4 + IFNAMSIZ + 1),mac) != ERR);
-			free(mac);
 		}else{
 			assert(mvwprintw(hw,row + z,col,"%-16s %-*s",i->name,scrcols - (START_COL * 4 + IFNAMSIZ + 1),"") != ERR);
 		}
