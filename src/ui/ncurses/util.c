@@ -18,9 +18,9 @@ int bevel(WINDOW *w){
 	// we get ERR returned. this is known behavior: fuck ncurses. instead,
 	// we use mvwins_wch, which doesn't update the cursor position.
 	// see http://lists.gnu.org/archive/html/bug-ncurses/2007-09/msg00001.html
-	ret |= mvwins_wch(w,0,0,&bchr[0]);
+	ret |= mvwadd_wch(w,0,0,&bchr[0]);
 	ret |= mvwins_wch(w,0,cols - 1,&bchr[1]);
-	ret |= mvwins_wch(w,rows - 1,0,&bchr[2]);
+	ret |= mvwadd_wch(w,rows - 1,0,&bchr[2]);
 	ret |= mvwins_wch(w,rows - 1,cols - 1,&bchr[3]);
 	return ret;
 }
