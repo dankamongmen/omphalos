@@ -25,6 +25,7 @@
 #include <omphalos/psocket.h>
 #include <omphalos/wireless.h>
 #include <omphalos/omphalos.h>
+#include <omphalos/bluetooth.h>
 #include <omphalos/interface.h>
 
 // External cancellation, tested in input-handling loops. This only works
@@ -791,6 +792,11 @@ netlink_thread(const omphalos_iface *octx){
 		return -1;
 	}
 	if((pfd[0].fd = netlink_socket(octx)) < 0){
+		watch_stop(octx);
+		return -1;
+	}
+	if(discover_bluetooth(octx)){
+		close(pfd[0].fd);
 		watch_stop(octx);
 		return -1;
 	}
