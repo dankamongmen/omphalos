@@ -772,6 +772,7 @@ use_next_iface_locked(WINDOW *w){
 			// onscreen FIXME
 		}
 		if(details.p){
+			assert(top_panel(details.p) != ERR);
 			iface_details(panel_window(details.p),i,details.ysize);
 		}
 		screen_update();
@@ -812,13 +813,14 @@ use_prev_iface_locked(WINDOW *w){
 			iface_box_generic(oldis->subwin,oldis->iface,oldis);
 			iface_box_generic(is->subwin,i,is);
 		}
-		if(details.p){
-			iface_details(panel_window(details.p),i,details.ysize);
-		}
 		if(panel_hidden(oldis->panel)){
 			// we hid the entire panel, and thus might have space
 			// to move down into. move as many interfaces as we can
 			// onscreen FIXME
+		}
+		if(details.p){
+			assert(top_panel(details.p) != ERR);
+			iface_details(panel_window(details.p),i,details.ysize);
 		}
 		screen_update();
 	}
