@@ -71,10 +71,12 @@ static pthread_mutex_t bfl = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
 
 static WINDOW *pad;
 static pthread_t inputtid;
-static struct utsname sysuts;
 static unsigned count_interface;
 static struct iface_state *current_iface;
-static const char *glibc_version,*glibc_release;
+
+// Old host versioning display info
+static const char *glibc_version,*glibc_release; // Currently unused
+static struct utsname sysuts; // Currently unused
 
 // Status bar at the bottom of the screen. Must be reallocated upon screen
 // resize and allocated based on initial screen at startup. Don't shrink
@@ -276,9 +278,15 @@ setup_statusbar(int cols){
 // to be called only while ncurses lock is held
 static int
 draw_main_window(WINDOW *w){
-	int rows,cols;
+	char hostname[HOST_NAME_MAX + 1];
+	int rows,cols,scol;
 
 	getmaxyx(w,rows,cols);
+	if(gethostname(hostname,sizeof(hostname))){
+		ERREXIT;
+	}
+	// POSIX.1-2001 doesn't guarantee a terminating null on truncation
+	hostname[sizeof(hostname) - 1] = '\0';
 	assert(wcolor_set(w,BORDER_COLOR,NULL) != ERR);
 	if(bevel(w) != OK){
 		ERREXIT;
@@ -287,11 +295,14 @@ draw_main_window(WINDOW *w){
 		ERREXIT;
 	}
 	// FIXME move this over! it is ugly on the left, clashing with ifaces
-	assert(mvwprintw(w,0,2,"[") != ERR);
+	// 5 for 0-offset, '[', ']', and 2 spaces on right side.
+	scol = cols - 5 - __builtin_strlen(PROGNAME) - 1 - __builtin_strlen(VERSION)
+		- 1 - __builtin_strlen("on") - 1 - strlen(hostname)
+		- 3 - __builtin_strlen("ifaces");
+	assert(mvwprintw(w,0,scol,"[") != ERR);
 	assert(wattron(w,A_BOLD | COLOR_PAIR(HEADING_COLOR)) != ERR);
-	assert(wprintw(w,"%s %s on %s %s (libc %s-%s) %2d ifaces",PROGNAME,
-				VERSION,sysuts.sysname,sysuts.release,
-				glibc_version,glibc_release,count_interface) != ERR);
+	assert(wprintw(w,"%s %s on %s %2d ifaces",PROGNAME,VERSION,
+				hostname,count_interface) != ERR);
 	if(wattroff(w,A_BOLD | COLOR_PAIR(HEADING_COLOR)) != OK){
 		ERREXIT;
 	}

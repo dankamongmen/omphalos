@@ -268,12 +268,10 @@ void iface_box(WINDOW *w,const interface *i,const iface_state *is,int active){
 							duplexstr(i->settings.ethtool.duplex)) != ERR);
 			}
 		}else if(i->settings_valid == SETTINGS_VALID_WEXT){
-			if(!interface_carrier_p(i)){
-				if(i->settings.wext.mode != NL80211_IFTYPE_MONITOR){
-					assert(wprintw(w," (%s, no carrier)",modestr(i->settings.wext.mode)) != ERR);
-				}else{
-					assert(wprintw(w," (%s)",modestr(i->settings.wext.mode)) != ERR);
-				}
+			if(i->settings.wext.mode == NL80211_IFTYPE_MONITOR){
+				assert(wprintw(w," (%s)",modestr(i->settings.wext.mode)) != ERR);
+			}else if(!interface_carrier_p(i)){
+				assert(wprintw(w," (%s, no carrier)",modestr(i->settings.wext.mode)) != ERR);
 			}else{
 				assert(wprintw(w," (%sb %s ",prefix(i->settings.wext.bitrate,1,buf,sizeof(buf),1),
 							modestr(i->settings.wext.mode)) != ERR);
