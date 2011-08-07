@@ -41,6 +41,7 @@ handle_pcap_direct(u_char *gi,const struct pcap_pkthdr *h,const u_char *bytes){
 	}
 	packet.i = iface;
 	// FIXME how to handle .addr itself? broadcast?
+	packet.i->addrlen = ETH_ALEN; // FIXME ???
 	pm->handler(pm->octx,&packet,bytes,h->len);
 	if(pm->octx->packet_read){
 		pm->octx->packet_read(&packet);
@@ -72,12 +73,12 @@ handle_pcap_cooked(u_char *gi,const struct pcap_pkthdr *h,const u_char *bytes){
 		++iface->malformed;
 		return;
 	}
-	packet.i->addrlen = ntohs(sll->hwlen);
-	memcpy(addr,sll->hwaddr,ntohs(sll->hwlen));
-	packet.i->addr = addr;
-	packet.l2s = lookup_l2host(pm->octx,iface,sll->hwaddr,AF_UNSPEC,NULL);
-	packet.l2d = packet.l2s;
 	packet.i = iface;
+	packet.i->addrlen = ntohs(sll->hwlen);
+	memcpy(addr,sll->hwaddr,packet.i->addrlen);
+	packet.i->addr = addr;
+	packet.l2s = lookup_l2host(pm->octx,iface,sll->hwaddr);
+	packet.l2d = packet.l2s;
 	// proto is in network byte-order. rather than possibly switch it
 	// every time, we provide the cases in network byte-order
 	switch(sll->proto){
@@ -124,7 +125,7 @@ int handle_pcap_file(const omphalos_ctx *pctx){
 			fxn = handle_pcap_direct;
 			// FIXME how to handle ->addr itself? ->bcast?
 			pmarsh.handler = handle_ethernet_packet;
-			pmarsh.i->addrlen = 0;
+			pmarsh.i->addrlen = ETH_ALEN;
 			break;
 		}case DLT_LINUX_SLL:{
 			fxn = handle_pcap_cooked;

@@ -26,6 +26,9 @@ typedef struct iface_state {
 	struct timeval lastprinted;	// last time we printed the iface
 	int devaction;			// 1 == down, -1 == up, 0 == nothing
 	unsigned nodes;			// number of nodes
+	unsigned hosts;			// number of hosts (a node MAY have one
+					//  or more hosts; a host MUST have one
+					//  or more nodes)
 	struct l2obj *l2objs;		// l2 entity list
 	struct iface_state *next,*prev;
 } iface_state;
@@ -42,7 +45,7 @@ void free_iface_state(struct iface_state *);
 
 int iface_visible_p(int,const struct iface_state *);
 int lines_for_interface(const struct interface *,const struct iface_state *);
-void move_interface(struct iface_state *,int,int,int);
+int move_interface(struct iface_state *,int,int,int);
 
 #ifdef __cplusplus
 }

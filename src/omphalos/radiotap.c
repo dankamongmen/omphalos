@@ -8,7 +8,7 @@
 // FIXME i guess we need a copy of the upstream, since linux doesn't
 // seem to install it? dubious, very dubious...
 typedef struct radiotaphdr {
-	char data[18];
+	char data[26];
 } __attribute__ ((packed)) radiotaphdr;
 
 typedef struct ieee80211hdr {
@@ -29,7 +29,7 @@ handle_ieee80211_packet(const omphalos_iface *octx,omphalos_packet *op,
 				__func__,len,op->i->name);
 		return;
 	}
-	l2s = lookup_l2host(octx,op->i,ihdr->hwaddr,0,NULL);
+	l2s = lookup_l2host(octx,op->i,ihdr->hwaddr);
 	op->l2s = l2s;
 }
 

@@ -71,10 +71,12 @@ static pthread_mutex_t bfl = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
 
 static WINDOW *pad;
 static pthread_t inputtid;
-static struct utsname sysuts;
 static unsigned count_interface;
 static struct iface_state *current_iface;
-static const char *glibc_version,*glibc_release;
+
+// Old host versioning display info
+static const char *glibc_version,*glibc_release; // Currently unused
+static struct utsname sysuts; // Currently unused
 
 // Status bar at the bottom of the screen. Must be reallocated upon screen
 // resize and allocated based on initial screen at startup. Don't shrink
@@ -136,9 +138,9 @@ redraw_iface_generic(const interface *i,const struct iface_state *is){
 	redraw_iface(i,is,is == current_iface);
 }
 
-static inline void
+static inline int
 move_interface_generic(struct iface_state *is,int rows,int delta){
-	move_interface(is,rows,delta,is == current_iface);
+	return move_interface(is,rows,delta,is == current_iface);
 }
 
 // An interface (pusher) has had its bottom border moved up or down (positive or
@@ -147,13 +149,18 @@ move_interface_generic(struct iface_state *is,int rows,int delta){
 // be called before pusher->scrline has been updated.
 static int
 push_interfaces_below(iface_state *pusher,int rows,int delta){
-	iface_state *is;
+	iface_state *is = pusher->next;
 
-	for(is = pusher->next ; is->scrline >= pusher->scrline ; is = is->next){
-		if(is == pusher){
-			break;
+	
+	while(is != pusher && is->scrline >= pusher->scrline){
+		is = is->next;
+	}
+	while((is = is->prev) != pusher){
+		int i;
+
+		if( (i = move_interface_generic(is,rows,delta)) ){
+			return i;
 		}
-		move_interface_generic(is,rows,delta);
 	}
 	// Now, if our delta was negative, see if we pulled any down below us
 	// FIXME
@@ -169,13 +176,18 @@ push_interfaces_below(iface_state *pusher,int rows,int delta){
 // be called before pusher->scrline has been updated.
 static int
 push_interfaces_above(iface_state *pusher,int rows,int delta){
-	iface_state *is;
+	iface_state *is = pusher->prev;
 
-	for(is = pusher->prev ; is->scrline + iface_lines_bounded(is->iface,is,rows) <= pusher->scrline + iface_lines_bounded(pusher->iface,pusher,rows) ; is = is->prev){
-		if(is == pusher){
-			break;
+
+	while(is != pusher && is->scrline + iface_lines_bounded(is->iface,is,rows) <= pusher->scrline + iface_lines_bounded(pusher->iface,pusher,rows)){
+		is = is->prev;
+	}
+	while((is = is->next) != pusher){
+		int i;
+
+		if( (i = move_interface_generic(is,rows,delta)) ){
+			return i;
 		}
-		move_interface_generic(is,rows,delta);
 	}
 	// Now, if our delta was negative, see if we pulled any down below us
 	// FIXME
@@ -209,7 +221,9 @@ resize_iface(const interface *i,iface_state *is){
 		if(nlines + is->scrline < rows){
 			int delta = nlines - subrows;
 
-			push_interfaces_below(is,rows,delta);
+			if(push_interfaces_below(is,rows,delta)){
+				return OK;
+			}
 			assert(wresize(is->subwin,nlines,PAD_COLS(cols)) != ERR);
 			assert(replace_panel(is->panel,is->subwin) != ERR);
 		}else if(is->scrline != 1){
@@ -219,9 +233,12 @@ resize_iface(const interface *i,iface_state *is){
 				delta = is->scrline - 1;
 			}
 			is->scrline -= delta;
-			push_interfaces_above(is,rows,-delta);
+			if(push_interfaces_above(is,rows,-delta)){
+				is->scrline += delta;
+				return OK;
+			}
 			assert(move_panel(is->panel,is->scrline,1) != ERR);
-			assert(wresize(is->subwin,nlines,PAD_COLS(cols)) != ERR);
+			assert(wresize(is->subwin,iface_lines_bounded(i,is,rows),PAD_COLS(cols)) != ERR);
 			assert(replace_panel(is->panel,is->subwin) != ERR);
 		}
 	}
@@ -261,9 +278,15 @@ setup_statusbar(int cols){
 // to be called only while ncurses lock is held
 static int
 draw_main_window(WINDOW *w){
-	int rows,cols;
+	char hostname[HOST_NAME_MAX + 1];
+	int rows,cols,scol;
 
 	getmaxyx(w,rows,cols);
+	if(gethostname(hostname,sizeof(hostname))){
+		ERREXIT;
+	}
+	// POSIX.1-2001 doesn't guarantee a terminating null on truncation
+	hostname[sizeof(hostname) - 1] = '\0';
 	assert(wcolor_set(w,BORDER_COLOR,NULL) != ERR);
 	if(bevel(w) != OK){
 		ERREXIT;
@@ -272,12 +295,16 @@ draw_main_window(WINDOW *w){
 		ERREXIT;
 	}
 	// FIXME move this over! it is ugly on the left, clashing with ifaces
-	assert(mvwprintw(w,0,2,"[") != ERR);
-	assert(wattron(w,A_BOLD | COLOR_PAIR(HEADING_COLOR)) != ERR);
-	assert(wprintw(w,"%s %s on %s %s (libc %s-%s) %2d ifaces",PROGNAME,
-				VERSION,sysuts.sysname,sysuts.release,
-				glibc_version,glibc_release,count_interface) != ERR);
-	if(wattroff(w,A_BOLD | COLOR_PAIR(HEADING_COLOR)) != OK){
+	// 5 for 0-offset, '[', ']', and 2 spaces on right side.
+	// 5 for '|', space before and after, and %2d-formatted integer
+	scol = cols - 5 - __builtin_strlen(PROGNAME) - 1 - __builtin_strlen(VERSION)
+		- 1 - __builtin_strlen("on") - 1 - strlen(hostname)
+		- 5 - __builtin_strlen("ifaces");
+	assert(mvwprintw(w,0,scol,"[") != ERR);
+	assert(wattron(w,A_BOLD | COLOR_PAIR(HEADER_COLOR)) != ERR);
+	assert(wprintw(w,"%s %s on %s | %2d ifaces",PROGNAME,VERSION,
+			hostname,count_interface) != ERR);
+	if(wattroff(w,A_BOLD | COLOR_PAIR(HEADER_COLOR)) != OK){
 		ERREXIT;
 	}
 	if(wcolor_set(w,BORDER_COLOR,NULL) != OK){
@@ -286,7 +313,7 @@ draw_main_window(WINDOW *w){
 	if(wprintw(w,"]") < 0){
 		ERREXIT;
 	}
-	if(wattron(w,A_BOLD | COLOR_PAIR(HEADING_COLOR)) != OK){
+	if(wattron(w,A_BOLD | COLOR_PAIR(FOOTER_COLOR)) != OK){
 		ERREXIT;
 	}
 	// addstr() doesn't interpret format strings, so this is safe. It will
@@ -294,10 +321,7 @@ draw_main_window(WINDOW *w){
 	// instance happen if there's an embedded newline.
 	assert(rows);
 	assert(mvwaddstr(w,rows - 1,START_COL * 2,statusmsg) != ERR);
-	if(wattroff(w,A_BOLD | COLOR_PAIR(BORDER_COLOR)) != OK){
-		ERREXIT;
-	}
-	if(wcolor_set(w,0,NULL) != OK){
+	if(wattroff(w,A_BOLD | COLOR_PAIR(FOOTER_COLOR)) != OK){
 		ERREXIT;
 	}
 	return screen_update();
@@ -542,13 +566,10 @@ iface_details(WINDOW *hw,const interface *i,int rows){
 		--z;
 	}case 0:{
 		if(i->addr){
-			char *mac;
+			char mac[i->addrlen * 3];
 
-			if((mac = hwaddrstr(i)) == NULL){
-				return ERR;
-			}
+			l2ntop(i->addr,i->addrlen,mac);
 			assert(mvwprintw(hw,row + z,col,"%-16s %-*s",i->name,scrcols - (START_COL * 4 + IFNAMSIZ + 1),mac) != ERR);
-			free(mac);
 		}else{
 			assert(mvwprintw(hw,row + z,col,"%-16s %-*s",i->name,scrcols - (START_COL * 4 + IFNAMSIZ + 1),"") != ERR);
 		}
@@ -749,9 +770,15 @@ use_next_iface_locked(WINDOW *w){
 			redraw_iface_generic(i,is);
 		}else{
 			iface_box_generic(oldis->subwin,oldis->iface,oldis);
-			iface_box_generic(is->subwin,i,is);
+			resize_iface(i,is);
+		}
+		if(panel_hidden(oldis->panel)){
+			// we hid the entire panel, and thus might have space
+			// to move up into. move as many interfaces as we can
+			// onscreen FIXME
 		}
 		if(details.p){
+			assert(top_panel(details.p) != ERR);
 			iface_details(panel_window(details.p),i,details.ysize);
 		}
 		screen_update();
@@ -790,9 +817,15 @@ use_prev_iface_locked(WINDOW *w){
 			redraw_iface_generic(i,is);
 		}else{
 			iface_box_generic(oldis->subwin,oldis->iface,oldis);
-			iface_box_generic(is->subwin,i,is);
+			resize_iface(i,is);
+		}
+		if(panel_hidden(oldis->panel)){
+			// we hid the entire panel, and thus might have space
+			// to move down into. move as many interfaces as we can
+			// onscreen FIXME
 		}
 		if(details.p){
+			assert(top_panel(details.p) != ERR);
 			iface_details(panel_window(details.p),i,details.ysize);
 		}
 		screen_update();
@@ -1016,7 +1049,11 @@ ncurses_setup(const omphalos_iface *octx){
 		errstr = "Couldn't initialize ncurses colorpair\n";
 		goto err;
 	}
-	if(init_pair(HEADING_COLOR,COLOR_YELLOW,-1) != OK){
+	if(init_pair(HEADER_COLOR,COLOR_BLUE,-1) != OK){
+		errstr = "Couldn't initialize ncurses colorpair\n";
+		goto err;
+	}
+	if(init_pair(FOOTER_COLOR,COLOR_YELLOW,-1) != OK){
 		errstr = "Couldn't initialize ncurses colorpair\n";
 		goto err;
 	}

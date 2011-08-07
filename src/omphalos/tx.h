@@ -25,8 +25,8 @@ void abort_tx_frame(struct interface *,void *);
 
 // ARP request. Sent to the broadcast link address for the interface,
 // requesting information on the network address from any host.
-void prepare_arp_req(const struct omphalos_iface *,const struct interface *,
-			void *,size_t *,const void *,size_t);
+//void prepare_arp_req(const struct omphalos_iface *,const struct interface *,
+//			void *,size_t *,const void *,size_t);
 
 // ARP probe. Sent to the specified link address.
 void prepare_arp_probe(const struct omphalos_iface *,const struct interface *,

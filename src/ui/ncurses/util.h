@@ -27,7 +27,8 @@ bprefix(uintmax_t val,unsigned decimal,char *buf,size_t bsize,int omitdec){
 
 enum {
 	BORDER_COLOR = 1,		// main window
-	HEADING_COLOR,
+	HEADER_COLOR,
+	FOOTER_COLOR,
 	DBORDER_COLOR,			// down interfaces
 	DHEADING_COLOR,
 	UBORDER_COLOR,			// up interfaces

@@ -59,12 +59,18 @@ get_block_size(const omphalos_iface *octx,unsigned fsize,unsigned *bsize){
 // contents of treq are unspecified.
 static size_t
 size_mmap_psocket(const omphalos_iface *octx,struct tpacket_req *treq,unsigned maxframe){
+	unsigned fperblk;
+
 	// Must be a multiple of TPACKET_ALIGNMENT, and the following must
 	// hold: TPACKET_HDRLEN <= tp_frame_size <= tp_block_size.
 	treq->tp_frame_size = TPACKET_ALIGN(TPACKET_HDRLEN + sizeof(struct tpacket_hdr) + maxframe);
 	if(get_block_size(octx,treq->tp_frame_size,&treq->tp_block_size) < 0){
 		return 0;
 	}
+	fperblk = treq->tp_block_size / treq->tp_frame_size;
+	// Use the entire block, if there would otherwise be wasted space. This
+	// is useful to catch radiotap, small GRO etc without PACKET_COPY_THRESH.
+	treq->tp_frame_size = treq->tp_block_size / fperblk;
 	// Array of pointers to blocks, allocated via slab -- cannot be
 	// larger than largest slabbable allocation. FIXME do better
 	treq->tp_block_nr = 4096 / (treq->tp_block_size / getpagesize());

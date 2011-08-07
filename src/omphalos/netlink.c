@@ -25,6 +25,7 @@
 #include <omphalos/psocket.h>
 #include <omphalos/wireless.h>
 #include <omphalos/omphalos.h>
+#include <omphalos/bluetooth.h>
 #include <omphalos/interface.h>
 
 // External cancellation, tested in input-handling loops. This only works
@@ -180,7 +181,9 @@ handle_rtm_newneigh(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	}
 	if(llen){
 		if(!(nd->ndm_state & (NUD_NOARP|NUD_FAILED|NUD_INCOMPLETE))){
-			lookup_l2host(octx,iface,ll,nd->ndm_family,ad);
+			lookup_l2host(octx,iface,ll);
+			// FIXME need create l3host+name it
+			//	name_l2host_local(octx,i,l2,nd->ndm_family,ad);
 		}
 	}
 	return 0;
@@ -648,10 +651,10 @@ handle_newlink_locked(const omphalos_iface *octx,interface *iface,
 	// Ensure there's L2 host entries for the device's address and any
 	// appropriate link broadcast adddress.
 	if(iface->addr){
-		lookup_l2host(octx,iface,iface->addr,0,NULL);
+		lookup_l2host(octx,iface,iface->addr);
 	}
 	if(iface->bcast && (iface->flags & IFF_BROADCAST)){
-		lookup_l2host(octx,iface,iface->bcast,0,NULL);
+		lookup_l2host(octx,iface,iface->bcast);
 	}
 
 	return 0;
@@ -791,6 +794,11 @@ netlink_thread(const omphalos_iface *octx){
 		return -1;
 	}
 	if((pfd[0].fd = netlink_socket(octx)) < 0){
+		watch_stop(octx);
+		return -1;
+	}
+	if(discover_bluetooth(octx)){
+		close(pfd[0].fd);
 		watch_stop(octx);
 		return -1;
 	}
