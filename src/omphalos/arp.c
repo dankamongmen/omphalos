@@ -4,6 +4,7 @@
 #include <omphalos/arp.h>
 #include <asm/byteorder.h>
 #include <omphalos/hwaddrs.h>
+#include <omphalos/netaddrs.h>
 #include <omphalos/omphalos.h>
 #include <omphalos/ethernet.h>
 #include <omphalos/interface.h>
@@ -47,16 +48,19 @@ void handle_arp_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 			octx->diagnostic("%s %s noproto for %u",__func__,
 					op->i->name,ap->ar_pro);
 			return;
+			break;
 	}
 	saddr = (const char *)ap + sizeof(*ap) + ap->ar_hln;
+	op->l3s = lookup_l3host(op->i,fam,saddr);
 	switch(ap->ar_op){
 	case __constant_ntohs(ARPOP_REQUEST):{
-		name_l2host_local(octx,op->i,op->l2s,fam,saddr);
+		name_l3host_local(octx,op->i,op->l2s,op->l3s,fam,saddr);
 		// FIXME reply with ARP spoof...
 	break;}case __constant_ntohs(ARPOP_REPLY):{
-		name_l2host_local(octx,op->i,op->l2s,fam,saddr);
+		name_l3host_local(octx,op->i,op->l2s,op->l3s,fam,saddr);
 		daddr = (const char *)ap + sizeof(*ap) + ap->ar_hln * 2 + ap->ar_pln;
-		name_l2host(octx,op->i,op->l2d,fam,daddr);
+		op->l3d = lookup_l3host(op->i,fam,daddr);
+		name_l3host(octx,op->i,op->l2d,op->l3d,fam,daddr);
 	break;}default:{
 		++op->i->noprotocol;
 		octx->diagnostic("%s %s unknown ARP op %u",__func__,

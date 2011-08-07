@@ -7,6 +7,7 @@
 #include <omphalos/udp.h>
 #include <omphalos/util.h>
 #include <omphalos/hwaddrs.h>
+#include <omphalos/netaddrs.h>
 #include <omphalos/ethernet.h>
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
@@ -34,8 +35,10 @@ void handle_ipv6_packet(const omphalos_iface *octx,omphalos_packet *op,
 		octx->diagnostic("%s malformed with %zu != %u",__func__,len,plen);
 		return;
 	}
-	name_l2host(octx,op->i,op->l2s,AF_INET6,&ip->ip6_src);
-	name_l2host(octx,op->i,op->l2d,AF_INET6,&ip->ip6_dst);
+	op->l3s = lookup_l3host(op->i,AF_INET6,&ip->ip6_src);
+	op->l3d = lookup_l3host(op->i,AF_INET6,&ip->ip6_dst);
+	name_l3host(octx,op->i,op->l2s,op->l3s,AF_INET6,&ip->ip6_src);
+	name_l3host(octx,op->i,op->l2d,op->l3d,AF_INET6,&ip->ip6_dst);
 	// FIXME check extension headers...
 	// FIXME...
 }
@@ -126,10 +129,10 @@ void handle_ipv4_packet(const omphalos_iface *octx,omphalos_packet *op,
 				op->i->name,len,ntohs(ip->tot_len));
 		return;
 	}
-	/*ips = lookup_iphost(op->i,&ip->saddr);
-	ipd = lookup_iphost(op->i,&ip->daddr);*/
-	name_l2host(octx,op->i,op->l2s,AF_INET,&ip->saddr);
-	name_l2host(octx,op->i,op->l2d,AF_INET,&ip->daddr);
+	op->l3s = lookup_l3host(op->i,AF_INET,&ip->saddr);
+	op->l3d = lookup_l3host(op->i,AF_INET,&ip->daddr);
+	name_l3host(octx,op->i,op->l2s,op->l3s,AF_INET,&ip->saddr);
+	name_l3host(octx,op->i,op->l2d,op->l3d,AF_INET,&ip->daddr);
 
 	const void *nhdr = (const unsigned char *)frame + hlen;
 	const size_t nlen = ntohs(ip->tot_len) - hlen;

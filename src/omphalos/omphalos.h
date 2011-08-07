@@ -18,10 +18,11 @@ typedef struct omphalos_packet {
 	struct interface *i;
 	struct l2host *l2s,*l2d;
 	uint16_t l3proto;
-	union {
+	struct l3host *l3s,*l3d;
+	/*union {
 		struct iphost *ip4;
 		struct ipv6host *ip6;
-	} l3s,l3d;
+	} l3s,l3d;*/
 } omphalos_packet;
 
 // UI callback interface. Any number may be NULL, save diagnostic.

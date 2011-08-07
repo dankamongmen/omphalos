@@ -229,10 +229,13 @@ name_ethmcastaddr(const void *mac){
 }
 
 // Look up the 24-bit OUI against IANA specifications.
-const char *iana_lookup(const void *unsafe_oui){
+const char *iana_lookup(const void *unsafe_oui,size_t addrlen){
 	const unsigned char *oui = unsafe_oui;
 	const ouitrie *t;
 
+	if(addrlen != ETH_ALEN){
+		return NULL;
+	}
 	if( (t = trie[oui[0]]) ){
 		if( (t = t->next[oui[1]]) ){
 			return t->next[oui[2]];
