@@ -68,7 +68,7 @@ void name_l3host(const omphalos_iface *octx,interface *i,struct l2host *l2,
 				return;
 			}
 		}else if(cat == RTN_MULTICAST){
-			// Look up family-appropriate multicast names
+			// FIXME Look up family-appropriate multicast names
 		}
 		name_l3host_local(octx,i,l2,l3,family,name);
 	}
