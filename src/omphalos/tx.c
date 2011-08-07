@@ -72,7 +72,7 @@ void prepare_arp_probe(const omphalos_iface *octx,const interface *i,
 		octx->diagnostic("%s %s frame too small for tx",__func__,i->name);
 		return;
 	}
-	l2ntop(paddr,pln,hwaddr);
+	l2ntop(haddr,hln,hwaddr);
 	octx->diagnostic("Probing %s on %s",hwaddr,i->name);
 	assert(hln == i->addrlen); // FIXME handle this case
 	thdr = frame;
