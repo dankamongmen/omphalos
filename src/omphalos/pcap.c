@@ -77,7 +77,6 @@ handle_pcap_cooked(u_char *gi,const struct pcap_pkthdr *h,const u_char *bytes){
 	packet.i->addrlen = ntohs(sll->hwlen);
 	memcpy(addr,sll->hwaddr,packet.i->addrlen);
 	packet.i->addr = addr;
-	fprintf(stderr,"ADDRLEN: %zu\n",packet.i->addrlen);
 	packet.l2s = lookup_l2host(pm->octx,iface,sll->hwaddr);
 	packet.l2d = packet.l2s;
 	// proto is in network byte-order. rather than possibly switch it
