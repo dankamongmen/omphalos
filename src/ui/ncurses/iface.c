@@ -10,10 +10,16 @@
 #include <ui/ncurses/iface.h>
 #include <omphalos/interface.h>
 
+typedef struct l3obj {
+	struct l3obj *next;
+	struct l3host *l3;
+} l3obj;
+
 typedef struct l2obj {
 	struct l2obj *next;
 	struct l2host *l2;
 	int cat;			// cached result of l2categorize()
+	struct l3obj *l3objs;
 } l2obj;
 
 iface_state *create_interface_state(interface *i){
@@ -22,7 +28,7 @@ iface_state *create_interface_state(interface *i){
 
 	if( (tstr = lookup_arptype(i->arptype,NULL)) ){
 		if( (ret = malloc(sizeof(*ret))) ){
-			ret->nodes = 0;
+			ret->hosts = ret->nodes = 0;
 			ret->l2objs = NULL;
 			ret->devaction = 0;
 			ret->typestr = tstr;
@@ -39,6 +45,7 @@ get_l2obj(const interface *i,struct l2host *l2){
 
 	if( (l = malloc(sizeof(*l))) ){
 		l->cat = l2categorize(i,l2);
+		l->l3objs = NULL;
 		l->l2 = l2;
 	}
 	return l;
@@ -80,7 +87,7 @@ l2obj *add_l2_to_iface(const interface *i,iface_state *is,struct l2host *l2h){
 			if(l2catcmp(l2->cat,(*prev)->cat) > 0){
 				break;
 			}else if(l2catcmp(l2->cat,(*prev)->cat) == 0){
-				if(l2hostcmp(l2->l2,(*prev)->l2) <= 0){
+				if(l2hostcmp(l2->l2,(*prev)->l2,i->addrlen) <= 0){
 					break;
 				}
 			}
@@ -92,19 +99,20 @@ l2obj *add_l2_to_iface(const interface *i,iface_state *is,struct l2host *l2h){
 }
 
 void print_iface_hosts(const interface *i,const iface_state *is){
-	int rows,cols,line,idx = 0;
+	int rows,cols,line;
 	const l2obj *l;
 
 	getmaxyx(is->subwin,rows,cols);
-	cols -= 2 + 3 + i->addrlen * 3;
+	cols -= 2 + 3 + HWADDRSTRLEN(i->addrlen);
 	assert(cols >= 0);
 	assert(rows);
 	// If the interface is down, we don't lead with the summary line
 	line = !!interface_up_p(i);
-	for(l = is->l2objs ; l ; ++idx, l = l->next){
+	for(l = is->l2objs ; l ; l = l->next){
 		char hw[HWADDRSTRLEN(i->addrlen)];
-		const char *devname,*nname;
+		const char *devname;
 		char legend;
+		l3obj *l3;
 		
 		if(++line + 1 >= rows){
 			break;
@@ -131,30 +139,35 @@ void print_iface_hosts(const interface *i,const iface_state *is){
 			assert(wcolor_set(is->subwin,DBORDER_COLOR,NULL) != ERR);
 		}
 		l2ntop(l->l2,i->addrlen,hw);
-		if((nname = get_name(l->l2)) == NULL){
-			nname = "";
-		}
 		if((devname = get_devname(l->l2)) == NULL){
 			if(l->cat == RTN_LOCAL){
 				devname = i->topinfo.devname;
 			}
 		}
 		if(devname){
-			int len = strlen(devname),hlen = strlen(nname);
+			int len = strlen(devname);
 
-			if((len + 1) > cols - hlen){
-				len = cols - hlen - 1;
-			}else if(len + 1 < cols - hlen){
-				hlen = cols - len - 1;
+			if(len > cols){
+				len = cols;
 			}
-			assert(mvwprintw(is->subwin,line,1," %c %s %*.*s %*.*s",
-						legend,hw,len,len,devname,
-						hlen,hlen,nname) != ERR);
+			assert(mvwprintw(is->subwin,line,1," %c %s %.*s",
+				legend,hw,cols - 1,devname) != ERR);
 		}else{
-			assert(mvwprintw(is->subwin,line,1," %c %s  %*s",
-						legend,hw,cols - 1,
-						nname) != ERR);
+			assert(mvwprintw(is->subwin,line,1," %c %s",legend,hw) != ERR);
 		}
+		// FIXME handle the associated l3objs
+		for(l3 = l->l3objs ; l3 ; l3 = l3->next){
+			if(++line + 1 >= rows){
+				break;
+			}
+		}
+		/*
+		const char *nname;
+		int hlen = strlen(nname);
+		if((nname = get_name(l->l2)) == NULL){
+			nname = "";
+		}
+		*/
 	}
 }
 
@@ -374,7 +387,7 @@ int move_interface(iface_state *is,int rows,int delta,int active){
 // This is the number of lines we'd have in an optimal world; we might have
 // fewer available to us on this screen at this time.
 int lines_for_interface(const interface *i,const iface_state *is){
-	return 2 + is->nodes + interface_up_p(i);
+	return 2 + is->nodes + is->hosts + interface_up_p(i);
 }
 
 // Is the interface window entirely visible? We can't draw it otherwise, as it
