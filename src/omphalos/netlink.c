@@ -419,34 +419,46 @@ pmarsh_create(void){
 static int
 prepare_packet_sockets(const omphalos_iface *octx,interface *iface,int idx){
 	if( (iface->pmarsh = pmarsh_create()) ){
-		if((iface->fd = packet_socket(octx,ETH_P_ALL)) >= 0){
-			if((iface->rfd = packet_socket(octx,ETH_P_ALL)) >= 0){
-				if( (iface->rs = mmap_rx_psocket(octx,iface->rfd,idx,
-						iface->mtu,&iface->rxm,&iface->rtpr)) ){
-					if( (iface->ts = mmap_tx_psocket(octx,iface->fd,idx,
-							iface->mtu,&iface->txm,&iface->ttpr)) ){
-						iface->pmarsh->octx = octx;
-						iface->pmarsh->i = iface;
-						iface->curtxm = iface->txm;
-						iface->txidx = 0;
-						if(pthread_create(&iface->pmarsh->tid,NULL,
-								psocket_thread,iface->pmarsh) == 0){
-							return 0;
-						}
-					}
-				}
-				close(iface->rfd); // munmaps
+		if(iface->arptype == ARPHRD_LOOPBACK){
+			iface->ts = 0;
+			iface->fd = -1;
+		}else{
+			if((iface->fd = packet_socket(octx,ETH_P_ALL)) < 0){
+				goto err;
 			}
-			close(iface->fd); // munmaps
+			if((iface->ts = mmap_tx_psocket(octx,iface->fd,idx,
+					iface->mtu,&iface->txm,&iface->ttpr)) <= 0){
+				close(iface->fd);
+				goto err;
+			}
+		}
+		if((iface->rfd = packet_socket(octx,ETH_P_ALL)) >= 0){
+			if( (iface->rs = mmap_rx_psocket(octx,iface->rfd,idx,
+					iface->mtu,&iface->rxm,&iface->rtpr)) ){
+				iface->pmarsh->octx = octx;
+				iface->pmarsh->i = iface;
+				iface->curtxm = iface->txm;
+				iface->txidx = 0;
+				if(pthread_create(&iface->pmarsh->tid,NULL,
+						psocket_thread,iface->pmarsh) == 0){
+					return 0;
+				}
+			}
+			close(iface->rfd); // munmaps
+		}
+		if(iface->fd >= 0){
+			close(iface->fd); // munma[p
 		}
 		pmarsh_destroy(octx,iface->pmarsh);
 		iface->pmarsh = NULL;
 	}
+	// Everything needs already be closed/freed by the time we get here
+err:
 	iface->rfd = iface->fd = -1;
 	memset(&iface->rtpr,0,sizeof(iface->rtpr));
 	memset(&iface->ttpr,0,sizeof(iface->ttpr));
 	iface->rxm = iface->txm = NULL;
-	iface->rs = 0;
+	iface->ts = iface->rs = 0;
 	return -1;
 }
 
