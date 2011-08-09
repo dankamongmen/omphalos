@@ -23,6 +23,7 @@
 #include <omphalos/ethtool.h>
 #include <omphalos/hwaddrs.h>
 #include <omphalos/psocket.h>
+#include <omphalos/netaddrs.h>
 #include <omphalos/wireless.h>
 #include <omphalos/omphalos.h>
 #include <omphalos/bluetooth.h>
@@ -181,9 +182,13 @@ handle_rtm_newneigh(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	}
 	if(llen){
 		if(!(nd->ndm_state & (NUD_NOARP|NUD_FAILED|NUD_INCOMPLETE))){
-			lookup_l2host(octx,iface,ll);
+			struct l3host *l3;
+			struct l2host *l2;
+
+			l2 = lookup_l2host(octx,iface,ll);
 			// FIXME need create l3host+name it
-			//	name_l2host_local(octx,i,l2,nd->ndm_family,ad);
+			l3 = lookup_l3host(octx,iface,l2,nd->ndm_family,ad);
+			name_l3host_local(octx,iface,l2,l3,nd->ndm_family,ad);
 		}
 	}
 	return 0;
