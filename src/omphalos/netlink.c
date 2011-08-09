@@ -919,6 +919,7 @@ int handle_netlink_socket(const omphalos_ctx *pctx){
 		return -1;
 	}
 	ret = netlink_thread(&pctx->iface);
+	ret |= restore_sighandler(&pctx->iface);
 	ret |= restore_sigmask(&pctx->iface);
 	return ret;
 }
