@@ -20,6 +20,8 @@ extern "C" {
 #include <omphalos/timing.h>
 #include <omphalos/hwaddrs.h>
 
+struct l2host;
+struct l3host;
 struct in_addr;
 struct in6_addr;
 struct psocket_marsh;
@@ -129,6 +131,7 @@ typedef struct interface {
 	struct ip6route *ip6r;	// list of IPv6 routes
 
 	struct l2host *l2hosts;
+	struct l3host *l3hosts;
 
 	void *opaque;		// opaque callback state
 } interface;

@@ -10,8 +10,9 @@ struct l3host;
 struct interface;
 struct omphalos_iface;
 
-struct l3host *lookup_l3host(const struct interface *,int,const void *)
-				__attribute__ ((nonnull (1,3)));
+struct l3host *lookup_l3host(const struct omphalos_iface *,struct interface *,
+				struct l2host *,int,const void *)
+				__attribute__ ((nonnull (1,2,3,5)));
 
 void name_l3host(const struct omphalos_iface *,struct interface *,
 			struct l2host *,struct l3host *,int,const void *)

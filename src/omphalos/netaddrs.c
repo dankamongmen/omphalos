@@ -1,5 +1,4 @@
 #include <stdlib.h>
-#include <omphalos/128.h>
 #include <omphalos/util.h>
 #include <omphalos/hwaddrs.h>
 #include <omphalos/netaddrs.h>
@@ -10,13 +9,29 @@
 typedef struct l3host {
 	char *name;
 	int fam;	// FIXME kill determine from addr relative to arenas
-	uint128_t addr;	// FIXME use something appropriate to size
+	uint32_t addr;	// FIXME use something appropriate to size
 	struct l3host *next;
+	void *opaque;
 } l3host;
 
-struct l3host *lookup_l3host(const interface *i,int fam,const void *addr){
-	// FIXME for now, everyone gets one! muh wa hahahah
-	static l3host l3;
+// FIXME like the l2addrs, need do this in constant space via LRU or something
+static l3host *
+create_l3host(int fam,const void *addr,size_t len){
+	l3host *r;
+
+	if( (r = malloc(sizeof(*r))) ){
+		r->opaque = NULL;
+		r->name = NULL;
+		r->fam = fam;
+		memcpy(&r->addr,addr,len);
+	}
+	return r;
+}
+
+struct l3host *lookup_l3host(const omphalos_iface *octx,interface *i,
+				struct l2host *l2,int fam,const void *addr){
+        l3host *l3,**prev;
+	uint32_t cmp;
 	size_t len;
 
 	assert(i); // FIXME
@@ -24,15 +39,32 @@ struct l3host *lookup_l3host(const interface *i,int fam,const void *addr){
 		case AF_INET:
 			len = 4;
 			break;
+			/* FIXME
 		case AF_INET6:
 			len = 32;
 			break;
+			*/
 		default:
 			return NULL; // FIXME
 	}
-	memcpy(&l3.addr,addr,len);
-	l3.fam = fam;
-	return &l3;
+	memcpy(&cmp,addr,sizeof(cmp));
+        for(prev = &i->l3hosts ; (l3 = *prev) ; prev = &l3->next){
+                if(l3->addr == cmp){
+                        // Move it to the front of the list, splicing it out
+                        *prev = l3->next;
+                        l3->next = i->l3hosts;
+                        i->l3hosts = l3;
+                        return l3;
+                }
+        }
+        if( (l3 = create_l3host(fam,addr,len)) ){
+                l3->next = i->l3hosts;
+                i->l3hosts = l3;
+                if(octx->host_event){
+                        l3->opaque = octx->host_event(i,l2,l3);
+                }
+        }
+        return l3;
 }
 
 static inline void
@@ -40,9 +72,9 @@ name_l3host_absolute(const omphalos_iface *octx,const interface *i,
 			struct l2host *l2,l3host *l3,const char *name){
 	if( (l3->name = Malloc(octx,strlen(name) + 1)) ){
 		strcpy(l3->name,name);
-	}
-	if(octx->host_event){
-		octx->host_event(i,l2,l3);
+		if(octx->host_event){
+			octx->host_event(i,l2,l3);
+		}
 	}
 }
 
