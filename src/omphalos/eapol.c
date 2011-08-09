@@ -26,7 +26,7 @@ void handle_eapol_packet(const omphalos_iface *octx,omphalos_packet *op,
 		++i->malformed;
 		return;
 	}
-	if(eaphdr->version != 1){
+	if(eaphdr->version != 1 && eaphdr->version != 2){
 		octx->diagnostic("Unknown EAPOL version %u",eaphdr->version);
 		++i->noprotocol;
 	}

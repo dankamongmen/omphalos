@@ -6,6 +6,7 @@ extern "C" {
 #endif
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
 #include <pthread.h>
@@ -17,6 +18,7 @@ extern "C" {
 #include <linux/ethtool.h>
 #include <linux/if_packet.h>
 #include <omphalos/timing.h>
+#include <omphalos/hwaddrs.h>
 
 struct in_addr;
 struct in6_addr;
@@ -134,7 +136,17 @@ typedef struct interface {
 int init_interfaces(void);
 interface *iface_by_idx(int);
 int print_iface_stats(FILE *,const interface *,interface *,const char *);
-char *hwaddrstr(const interface *);
+
+static inline char *
+hwaddrstr(const interface *i){
+	char *r;
+
+	if( (r = malloc(HWADDRSTRLEN(i->addrlen))) ){
+		l2ntop(i->addr,i->addrlen,r);
+	}
+	return r;
+}
+
 void free_iface(const struct omphalos_iface *,interface *);
 void cleanup_interfaces(const struct omphalos_iface *);
 int print_all_iface_stats(FILE *,interface *);

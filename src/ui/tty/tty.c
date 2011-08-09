@@ -13,6 +13,7 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 #include <omphalos/hwaddrs.h>
+#include <omphalos/netaddrs.h>
 #include <omphalos/wireless.h>
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
@@ -122,9 +123,7 @@ print_neigh(const interface *iface,const struct l2host *l2){
 	char *hwaddr;
 	int n;
 
-	// FIXME need real family! inet_ntop(nd->ndm_family,l2->hwaddr,str,sizeof(str));
-	hwaddr = l2addrstr(l2,IFHWADDRLEN);
-
+	hwaddr = l2addrstr(l2);
 	n = printf("[%8s] neighbor %s\n",iface->name,hwaddr);
 	free(hwaddr);
 	/* FIXME printf("[%8s] neighbor %s %s%s%s%s%s%s%s%s\n",iface->name,str,
@@ -138,6 +137,19 @@ print_neigh(const interface *iface,const struct l2host *l2){
 			nd->ndm_state & NUD_PERMANENT ? "PERMANENT" : ""
 			);
 		*/
+	return n;
+}
+
+static int
+print_host(const interface *iface,const struct l2host *l2,const struct l3host *l3){
+	char *hwaddr,*netaddr;
+	int n;
+
+	hwaddr = l2addrstr(l2);
+	netaddr = l3addrstr(l3);
+	n = printf("[%8s] host %s addr %s\n",iface->name,hwaddr,netaddr);
+	free(netaddr);
+	free(hwaddr);
 	return n;
 }
 
@@ -201,6 +213,14 @@ neigh_event(const struct interface *i,struct l2host *l2){
 }
 
 static void *
+host_event(const struct interface *i,const struct l2host *l2,struct l3host *l3){
+	clear_for_output(stdout);
+	print_host(i,l2,l3);
+	wake_input_thread();
+	return NULL;
+}
+
+static void *
 wireless_event(interface *i,unsigned cmd,void *unsafe __attribute__ ((unused))){
 	clear_for_output(stdout);
 	print_wireless_event(stdout,i,cmd);
@@ -253,6 +273,7 @@ int main(int argc,char * const *argv){
 	}
 	pctx.iface.iface_event = iface_event;
 	pctx.iface.neigh_event = neigh_event;
+	pctx.iface.host_event = host_event;
 	pctx.iface.wireless_event = wireless_event;
 	pctx.iface.packet_read = packet_cb;
 	if(!pctx.pcapfn){ // FIXME, ought be able to use UI with pcaps

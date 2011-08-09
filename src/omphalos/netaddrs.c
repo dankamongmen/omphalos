@@ -25,8 +25,8 @@ name_l3host_absolute(const omphalos_iface *octx,const interface *i,
 	if( (l3->name = Malloc(octx,strlen(name) + 1)) ){
 		strcpy(l3->name,name);
 	}
-	if(octx->neigh_event){
-		octx->neigh_event(i,l2);
+	if(octx->host_event){
+		octx->host_event(i,l2,l3);
 	}
 }
 
@@ -72,4 +72,10 @@ void name_l3host(const omphalos_iface *octx,interface *i,struct l2host *l2,
 		}
 		name_l3host_local(octx,i,l2,l3,family,name);
 	}
+}
+
+char *l3addrstr(const struct l3host *l3){
+	// FIXME
+	assert(l3);
+	return NULL;
 }

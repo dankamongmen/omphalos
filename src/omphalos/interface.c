@@ -91,10 +91,6 @@ interface *iface_by_idx(int idx){
 	return &interfaces[idx];
 }
 
-char *hwaddrstr(const interface *i){
-	return l2addrstr(i->addr,i->addrlen);
-}
-
 // We don't destroy the mutex lock here; it exists for the life of the program.
 void free_iface(const omphalos_iface *octx,interface *i){
 	// Must reap thread prior to closing the fd's, lest some other thread

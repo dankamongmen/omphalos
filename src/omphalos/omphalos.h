@@ -9,6 +9,7 @@ extern "C" {
 #include <sys/time.h>
 
 struct l2host;
+struct l3host;
 struct iphost;
 struct ipv6host;
 struct interface;
@@ -52,10 +53,15 @@ typedef struct omphalos_iface {
 	// It might be invoked without a corresponding device event callback.
 	void (*iface_removed)(const struct interface *,void *);
 
-	// Neighbor event callback, fed by packet analysis and netlink neighbor
-	// cache events. The return value is treated similarly to that of the
-	// device event callback.
+	// L2 neighbor event callback, fed by packet analysis and netlink
+	// neighbor cache events. The return value is treated similarly to that
+	// of the device event callback.
 	void *(*neigh_event)(const struct interface *,struct l2host *);
+	
+	// L3 network event callback, fed by packet analysis and netlink
+	// neighbor cache events. The return value is treated similarly to that
+	// of the device event callback.
+	void *(*host_event)(const struct interface *,const struct l2host *,struct l3host *);
 } omphalos_iface;
 
 // Process-scope settings, generally configured on startup based off
