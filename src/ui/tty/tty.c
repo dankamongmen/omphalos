@@ -140,11 +140,16 @@ print_neigh(const interface *iface,const struct l2host *l2){
 static int
 print_host(const interface *iface,const struct l2host *l2,const struct l3host *l3){
 	char *hwaddr,*netaddr;
+	const char *l3name;
 	int n;
 
 	hwaddr = l2addrstr(l2);
 	netaddr = l3addrstr(l3);
-	n = printf("[%8s] host %s addr %s\n",iface->name,hwaddr,netaddr);
+	if( (l3name = get_l3name(l3)) ){
+		n = printf("[%8s] host %s %s (addr %s)\n",iface->name,hwaddr,l3name,netaddr);
+	}else{
+		n = printf("[%8s] host %s addr %s\n",iface->name,hwaddr,netaddr);
+	}
 	free(netaddr);
 	free(hwaddr);
 	return n;

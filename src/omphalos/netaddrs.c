@@ -131,3 +131,7 @@ char *l3addrstr(const struct l3host *l3){
 	}
 	return buf;
 }
+
+const char *get_l3name(const l3host *l3){
+	return l3->name;
+}

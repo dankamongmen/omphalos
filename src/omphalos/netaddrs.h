@@ -24,6 +24,9 @@ void name_l3host_local(const struct omphalos_iface *,const struct interface *,
 
 char *l3addrstr(const struct l3host *) __attribute__ ((nonnull (1)));
 
+// Accessors
+const char *get_l3name(const struct l3host *) __attribute__ ((nonnull (1)));
+
 #ifdef __cplusplus
 }
 #endif
