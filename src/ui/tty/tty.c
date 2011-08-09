@@ -18,9 +18,6 @@
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
 
-// FIXME proof of concept only, kill me kill me kill me
-static char current[IFNAMSIZ + 3]; // "> " + nul
-
 static pthread_t *input_tid;
 
 // Call whenever we generate output, so that the prompt is updated
@@ -194,15 +191,22 @@ clear_for_output(FILE *fp){
 	fprintf(fp,"\r");
 }
 
+#define PROMPTDELIM "> "
+static pthread_mutex_t promptlock = PTHREAD_MUTEX_INITIALIZER;
+static char promptbuf[IFNAMSIZ + __builtin_strlen(PROMPTDELIM) + 1] = "> ";
+
 static void *
 iface_event(interface *i,void *unsafe __attribute__ ((unused))){
+	pthread_mutex_lock(&promptlock);
+	snprintf(promptbuf,sizeof(promptbuf),"%s"PROMPTDELIM,i->name);
+	pthread_mutex_unlock(&promptlock);
 	clear_for_output(stdout);
-	snprintf(current,sizeof(current),"%s> ",i->name); // FIXME heh proof of concept
 	print_iface(stdout,i);
-	rl_set_prompt(current);
+	rl_set_prompt(promptbuf);
 	wake_input_thread();
 	return NULL;
 }
+#undef PROMPTDELIM
 
 static void *
 neigh_event(const struct interface *i,struct l2host *l2){
@@ -228,23 +232,49 @@ wireless_event(interface *i,unsigned cmd,void *unsafe __attribute__ ((unused))){
 	return NULL;
 }
 
+static int cancelled;
+
+static void
+handle_quit(void){
+	cancelled = 1;
+}
+
 static void *
 tty_handler(void *v){
-	while(!v){
-		char *l = readline(">"); // FIXME use current iface for prompt
+	const struct {
+		const char *cmd;
+		void (*fxn)(void);
+	} cmdtable[] = {
+		{ .cmd = "quit",	handle_quit,	},
+		{ .cmd = NULL,		.fxn = NULL,	}
+	};
+
+	while(!v && !cancelled){
+		char *l = readline(promptbuf); // FIXME need to use promptlock!
 
 		if(l == NULL){
 			break;
 		}
 		if(*l){
+			const typeof(*cmdtable) *c;
+
 			add_history(l);
+			for(c = cmdtable ; c->cmd ; ++c){
+				if(strcmp(c->cmd,l) == 0){
+					c->fxn();
+					break;
+				}
+			}
+			if(c->cmd == NULL){
+				fprintf(stderr,"Unknown command: '%s'\n",l);
+			}
 		}
-		// FIXME handle command
 		free(l);
 	}
 	printf("Shutting down...\n");
-	kill(getpid(),SIGINT);
-	return NULL;
+	/*kill(getpid(),SIGINT);
+	pthread_exit(NULL);*/
+	exit(0); // FIXME
 }
 
 static int
