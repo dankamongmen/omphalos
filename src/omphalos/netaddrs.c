@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <omphalos/128.h>
 #include <omphalos/util.h>
 #include <omphalos/hwaddrs.h>
 #include <omphalos/netaddrs.h>
@@ -8,14 +9,29 @@
 
 typedef struct l3host {
 	char *name;
+	int fam;	// FIXME kill determine from addr relative to arenas
+	uint128_t addr;	// FIXME use something appropriate to size
 	struct l3host *next;
 } l3host;
 
-struct l3host *lookup_l3host(const interface *i,int fam,const void *name){
+struct l3host *lookup_l3host(const interface *i,int fam,const void *addr){
 	// FIXME for now, everyone gets one! muh wa hahahah
 	static l3host l3;
+	size_t len;
 
-	assert(i && fam && name); // FIXME
+	assert(i); // FIXME
+	switch(fam){
+		case AF_INET:
+			len = 4;
+			break;
+		case AF_INET6:
+			len = 32;
+			break;
+		default:
+			return NULL; // FIXME
+	}
+	memcpy(&l3.addr,addr,len);
+	l3.fam = fam;
 	return &l3;
 }
 
@@ -75,7 +91,11 @@ void name_l3host(const omphalos_iface *octx,interface *i,struct l2host *l2,
 }
 
 char *l3addrstr(const struct l3host *l3){
-	// FIXME
-	assert(l3);
-	return NULL;
+	const size_t len = INET6_ADDRSTRLEN + 1;
+	char *buf;
+
+	if( (buf = malloc(len)) ){
+		inet_ntop(l3->fam,&l3->addr,buf,len);
+	}
+	return buf;
 }
