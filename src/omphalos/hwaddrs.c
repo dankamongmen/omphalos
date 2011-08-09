@@ -49,7 +49,6 @@ l2host *lookup_l2host(const omphalos_iface *octx,interface *i,const void *hwaddr
 	l2host *l2,**prev;
 	hwaddrint hwcmp;
 
-	assert(i->addrlen < sizeof(hwaddr));
 	hwcmp = 0;
 	memcpy(&hwcmp,hwaddr,i->addrlen);
 	for(prev = &i->l2hosts ; (l2 = *prev) ; prev = &l2->next){
