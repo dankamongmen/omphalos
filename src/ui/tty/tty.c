@@ -239,14 +239,22 @@ handle_quit(void){
 	cancelled = 1;
 }
 
+static void
+handle_dev(void){
+	// FIXME
+}
+
+// FIXME need be able to pass the handlers arguments!
 static void *
 tty_handler(void *v){
 	const struct {
 		const char *cmd;
 		void (*fxn)(void);
+		const char *help;
 	} cmdtable[] = {
-		{ .cmd = "quit",	handle_quit,	},
-		{ .cmd = NULL,		.fxn = NULL,	}
+		{ .cmd = "dev",		.fxn = handle_dev,	.help = "select an interface",	},
+		{ .cmd = "quit",	.fxn = handle_quit,	.help = "exit the program",	},
+		{ .cmd = NULL,		.fxn = NULL,		.help = NULL, }
 	};
 
 	while(!v && !cancelled){
@@ -265,8 +273,19 @@ tty_handler(void *v){
 					break;
 				}
 			}
+#define HELPSTR "help"
+#define HELP(cmd,help) printf("%s\t%s\n",cmd,help)
 			if(c->cmd == NULL){
-				fprintf(stderr,"Unknown command: '%s'\n",l);
+				if(strcmp(l,HELPSTR) == 0){
+					for(c = cmdtable ; c->cmd ; ++c){
+						HELP(c->cmd,c->help);
+					}
+					HELP(HELPSTR,"this list");
+				}else{
+					fprintf(stderr,"Unknown command: '%s'. Use '"HELPSTR"' for help.\n",l);
+				}
+#undef HELP
+#undef HELPSTR
 			}
 		}
 		free(l);
