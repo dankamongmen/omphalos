@@ -458,7 +458,7 @@ int disable_promiscuity(const omphalos_iface *octx,const interface *i){
 
 // FIXME these need to take into account priority (table number)
 // FIXME how to handle policy routing (rules)?
-const ip4route *
+static const ip4route *
 get_route4(const interface *i,const uint32_t *ip){
 	const ip4route *i4r;
 
@@ -470,7 +470,7 @@ get_route4(const interface *i,const uint32_t *ip){
 	return i4r;
 }
 
-const ip6route *
+static const ip6route *
 get_route6(const interface *i,const void *ip){
 	const ip6route *i6r;
 
@@ -486,8 +486,8 @@ get_route6(const interface *i,const void *ip){
 }
 
 const void *
-get_route(const struct omphalos_iface *octx,interface *i,const void *hwaddr,
-			int fam,const void *addr,void *r){
+get_unicast_address(const struct omphalos_iface *octx,interface *i,
+			const void *hwaddr,int fam,const void *addr,void *r){
 	int ret = 0;
 
 	switch(fam){

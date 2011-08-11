@@ -117,7 +117,7 @@ void name_l3host(const omphalos_iface *octx,interface *i,struct l2host *l2,
 			// are inferior to those post-configuration. we need a
 			// means of *updating* names whenever routes change,
 			// or as close to true route cache behavior as we like
-			if((name = get_route(octx,i,&hwaddr,family,name,&ss)) == NULL){
+			if((name = get_unicast_address(octx,i,&hwaddr,family,name,&ss)) == NULL){
 				return;
 			}
 		}else if(cat == RTN_MULTICAST){

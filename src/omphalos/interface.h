@@ -160,11 +160,8 @@ int add_route6(interface *,const struct in6_addr *,const struct in6_addr *,
 int del_route4(interface *,const struct in_addr *,unsigned);
 int del_route6(interface *,const struct in6_addr *,unsigned);
 
-const ip4route *get_route4(const interface *,const uint32_t *);
-const ip6route *get_route6(const interface *,const void *);
-
-const void *get_route(const struct omphalos_iface *,interface *,const void *,
-			int,const void *,void *);
+const void *get_unicast_address(const struct omphalos_iface *,interface *,
+				const void *,int,const void *,void *);
 
 // predicates. racey against netlink messages.
 int is_local4(const interface *,uint32_t);
