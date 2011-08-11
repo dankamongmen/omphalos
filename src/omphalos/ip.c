@@ -37,8 +37,6 @@ void handle_ipv6_packet(const omphalos_iface *octx,omphalos_packet *op,
 	}
 	op->l3s = lookup_l3host(octx,op->i,op->l2s,AF_INET6,&ip->ip6_src);
 	op->l3d = lookup_l3host(octx,op->i,op->l2d,AF_INET6,&ip->ip6_dst);
-	// FIXME name_l3host(octx,op->i,op->l2s,op->l3s,AF_INET6,&ip->ip6_src);
-	// FIXME name_l3host(octx,op->i,op->l2d,op->l3d,AF_INET6,&ip->ip6_dst);
 	// FIXME check extension headers...
 	// FIXME...
 }
@@ -131,8 +129,6 @@ void handle_ipv4_packet(const omphalos_iface *octx,omphalos_packet *op,
 	}
 	op->l3s = lookup_l3host(octx,op->i,op->l2s,AF_INET,&ip->saddr);
 	op->l3d = lookup_l3host(octx,op->i,op->l2d,AF_INET,&ip->daddr);
-	name_l3host(octx,op->i,op->l2s,op->l3s,AF_INET,&ip->saddr);
-	name_l3host(octx,op->i,op->l2d,op->l3d,AF_INET,&ip->daddr);
 
 	const void *nhdr = (const unsigned char *)frame + hlen;
 	const size_t nlen = ntohs(ip->tot_len) - hlen;

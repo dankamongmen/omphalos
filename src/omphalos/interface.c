@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <assert.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <linux/if_arp.h>
@@ -479,4 +480,47 @@ get_route6(const interface *i,const void *ip){
 		}
 	}
 	return NULL;
+}
+
+const void *
+get_route(const struct omphalos_iface *octx,interface *i,const void *hwaddr,
+			int fam,const void *addr,void *r){
+	int ret = 0;
+
+	switch(fam){
+		case AF_INET:{
+			const ip4route *i4r = get_route4(i,addr);
+
+			if(i4r){
+				// A routed result requires a directed ARP
+				// probe to verify the local network address.
+				if(i4r->addrs & ROUTE_HAS_VIA){
+					if( (i4r = get_route4(i,&i4r->via)) ){
+						if(i4r->addrs & ROUTE_HAS_SRC){
+							send_arp_probe(octx,i,hwaddr,
+									&i4r->via,
+									sizeof(uint32_t),
+									&i4r->src);
+						}
+					}
+				}else{
+					ret = 1;
+					memcpy(r,addr,sizeof(uint32_t));
+				}
+			}
+			break;
+		}case AF_INET6:{
+			const ip6route *i6r = get_route6(i,addr);
+
+			if(i6r){ // FIXME handle routed addresses!
+				if(!(i6r->addrs & ROUTE_HAS_VIA)){
+					ret = 1;
+					memcpy(r,addr,sizeof(uint128_t));
+				}
+			}
+			break;
+		}default:
+			break;
+	}
+	return (ret != 1) ? NULL : r;
 }

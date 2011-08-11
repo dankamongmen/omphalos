@@ -1287,9 +1287,12 @@ host_callback_locked(const interface *i,struct l2host *l2,struct l3host *l3){
 	iface_state *is;
 
 	if(((is = i->opaque) == NULL) || !l2){
+		assert(is);
+		assert(l2);
 		return NULL;
 	}
 	if((l2o = l2host_get_opaque(l2)) == NULL){
+		assert(l2o);
 		return NULL;
 	}
 	if((ret = l3host_get_opaque(l3)) == NULL){

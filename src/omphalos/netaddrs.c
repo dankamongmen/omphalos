@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <assert.h>
 #include <omphalos/util.h>
 #include <omphalos/hwaddrs.h>
 #include <omphalos/netaddrs.h>
@@ -60,9 +61,7 @@ struct l3host *lookup_l3host(const omphalos_iface *octx,interface *i,
         if( (l3 = create_l3host(fam,addr,len)) ){
                 l3->next = i->l3hosts;
                 i->l3hosts = l3;
-                if(octx->host_event){
-                        l3->opaque = octx->host_event(i,l2,l3);
-                }
+		name_l3host(octx,i,l2,l3,fam,addr);
         }
         return l3;
 }
