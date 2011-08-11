@@ -498,6 +498,12 @@ get_unicast_address(const struct omphalos_iface *octx,interface *i,
 				// A routed result requires a directed ARP
 				// probe to verify the local network address.
 				if(i4r->addrs & ROUTE_HAS_VIA){
+					// FIXME even if we have a route to it,
+					// check the hwaddr to see that it matches
+					// the hwaddr of the router. if not, send
+					// an arp probe to the original address.
+					// this will detect colocated hosts
+					// with different network settings.
 					if( (i4r = get_route4(i,&i4r->via)) ){
 						if(i4r->addrs & ROUTE_HAS_SRC){
 							send_arp_probe(octx,i,hwaddr,
