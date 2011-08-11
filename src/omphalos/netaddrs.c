@@ -20,6 +20,7 @@ static l3host *
 create_l3host(int fam,const void *addr,size_t len){
 	l3host *r;
 
+	assert(len <= sizeof(r->addr));
 	if( (r = malloc(sizeof(*r))) ){
 		r->opaque = NULL;
 		r->name = NULL;
@@ -35,20 +36,20 @@ struct l3host *lookup_l3host(const omphalos_iface *octx,interface *i,
 	uint32_t cmp;
 	size_t len;
 
-	assert(i); // FIXME
 	switch(fam){
 		case AF_INET:
 			len = 4;
 			break;
-			/* FIXME
 		case AF_INET6:
 			len = 32;
 			break;
-			*/
 		default:
 			return NULL; // FIXME
 	}
+	assert(len <= sizeof(cmp));
 	memcpy(&cmp,addr,sizeof(cmp));
+	// FIXME probably want to make this per-node
+	// FIXME only track local addresses, not those we route to
         for(prev = &i->l3hosts ; (l3 = *prev) ; prev = &l3->next){
                 if(l3->addr == cmp){
                         // Move it to the front of the list, splicing it out
