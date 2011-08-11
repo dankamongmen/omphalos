@@ -1300,6 +1300,7 @@ host_callback_locked(const interface *i,struct l2host *l2,struct l3host *l3){
 			return NULL;
 		}
 	}
+	resize_iface(i,is);
 	return ret;
 }
 
@@ -1330,7 +1331,7 @@ neighbor_callback_locked(const interface *i,struct l2host *l2){
 			return NULL;
 		}
 	}
-	assert(resize_iface(i,is) != ERR);
+	resize_iface(i,is);
 	return ret;
 }
 
