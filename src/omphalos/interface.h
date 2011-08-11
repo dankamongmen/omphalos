@@ -131,7 +131,7 @@ typedef struct interface {
 	struct ip6route *ip6r;	// list of IPv6 routes
 
 	struct l2host *l2hosts;
-	struct l3host *l3hosts;
+	struct l3host *ip4hosts,*ip6hosts;
 
 	void *opaque;		// opaque callback state
 } interface;

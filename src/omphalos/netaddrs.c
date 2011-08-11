@@ -10,7 +10,10 @@
 typedef struct l3host {
 	char *name;
 	int fam;	// FIXME kill determine from addr relative to arenas
-	uint32_t addr;	// FIXME use something appropriate to size
+	union {
+		uint32_t ip4;
+		uint128_t ip6;
+	} addr;		// FIXME sigh
 	struct l3host *next;
 	void *opaque;
 } l3host;
@@ -32,16 +35,18 @@ create_l3host(int fam,const void *addr,size_t len){
 
 struct l3host *lookup_l3host(const omphalos_iface *octx,interface *i,
 				struct l2host *l2,int fam,const void *addr){
-        l3host *l3,**prev;
-	uint32_t cmp;
+        l3host *l3,**prev,**orig;
+	typeof(l3->addr) cmp;
 	size_t len;
 
 	switch(fam){
 		case AF_INET:
 			len = 4;
+			orig = &i->ip4hosts;
 			break;
 		case AF_INET6:
-			len = 32;
+			len = 16;
+			orig = &i->ip6hosts;
 			break;
 		default:
 			return NULL; // FIXME
@@ -50,18 +55,18 @@ struct l3host *lookup_l3host(const omphalos_iface *octx,interface *i,
 	memcpy(&cmp,addr,sizeof(cmp));
 	// FIXME probably want to make this per-node
 	// FIXME only track local addresses, not those we route to
-        for(prev = &i->l3hosts ; (l3 = *prev) ; prev = &l3->next){
-                if(l3->addr == cmp){
+        for(prev = orig ; (l3 = *prev) ; prev = &l3->next){
+                if(memcmp(&l3->addr,&cmp,len) == 0){
                         // Move it to the front of the list, splicing it out
                         *prev = l3->next;
-                        l3->next = i->l3hosts;
-                        i->l3hosts = l3;
+                        l3->next = *orig;
+                        *orig = l3;
                         return l3;
                 }
         }
         if( (l3 = create_l3host(fam,addr,len)) ){
-                l3->next = i->l3hosts;
-                i->l3hosts = l3;
+                l3->next = *orig;
+                *orig = l3;
 		name_l3host(octx,i,l2,l3,fam,addr);
         }
         return l3;
@@ -142,4 +147,14 @@ void *l3host_get_opaque(l3host *l3){
 
 int l3ntop(const l3host *l3,char *buf,size_t buflen){
 	return inet_ntop(l3->fam,&l3->addr,buf,buflen) != buf;
+}
+
+void cleanup_l3hosts(l3host **list){
+	l3host *l3,*tmp;
+
+	for(l3 = *list ; l3 ; l3 = tmp){
+		tmp = l3->next;
+		free(l3);
+	}
+	*list = NULL;
 }

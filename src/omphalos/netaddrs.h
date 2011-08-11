@@ -26,6 +26,8 @@ char *l3addrstr(const struct l3host *) __attribute__ ((nonnull (1)));
 
 int l3ntop(const struct l3host *,char *,size_t) __attribute__ ((nonnull (1,2)));
 
+void cleanup_l3hosts(struct l3host **list) __attribute__ ((nonnull (1)));
+
 // Accessors
 const char *get_l3name(const struct l3host *) __attribute__ ((nonnull (1)));
 void *l3host_get_opaque(struct l3host *) __attribute__ ((nonnull (1)));

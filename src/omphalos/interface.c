@@ -14,6 +14,7 @@
 #include <omphalos/psocket.h>
 #include <omphalos/firewire.h>
 #include <omphalos/omphalos.h>
+#include <omphalos/netaddrs.h>
 #include <omphalos/ethernet.h>
 #include <omphalos/radiotap.h>
 #include <omphalos/interface.h>
@@ -131,6 +132,8 @@ void free_iface(const omphalos_iface *octx,interface *i){
 	free(i->name);
 	free(i->addr);
 	free(i->bcast);
+	cleanup_l3hosts(&i->ip6hosts);
+	cleanup_l3hosts(&i->ip4hosts);
 	cleanup_l2hosts(&i->l2hosts);
 	memset(i,0,sizeof(*i));
 	i->rfd = i->fd = -1;
