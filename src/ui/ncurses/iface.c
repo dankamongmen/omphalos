@@ -8,6 +8,7 @@
 #include <omphalos/hwaddrs.h>
 #include <ncursesw/ncurses.h>
 #include <ui/ncurses/iface.h>
+#include <omphalos/netaddrs.h>
 #include <omphalos/interface.h>
 
 typedef struct l3obj {
@@ -52,8 +53,30 @@ get_l2obj(const interface *i,struct l2host *l2){
 }
 
 static inline void
-free_l2obj(l2obj *l){
+free_l3obj(l3obj *l){
 	free(l);
+}
+
+static inline void
+free_l2obj(l2obj *l2){
+	l3obj *l3 = l2->l3objs;
+
+	while(l3){
+		l3obj *tmp = l3->next;
+		free_l3obj(l3);
+		l3 = tmp;
+	}
+	free(l2);
+}
+
+static l3obj *
+get_l3obj(struct l3host *l3){
+	l3obj *l;
+
+	if( (l = malloc(sizeof(*l))) ){
+		l->l3 = l3;
+	}
+	return l;
 }
 
 // returns < 0 if c0 < c1, 0 if c0 == c1, > 0 if c0 > c1
@@ -96,6 +119,17 @@ l2obj *add_l2_to_iface(const interface *i,iface_state *is,struct l2host *l2h){
 		*prev = l2;
 	}
 	return l2;
+}
+
+l3obj *add_l3_to_iface(iface_state *is,l2obj *l2,struct l3host *l3h){
+	l3obj *l3;
+
+	if( (l3 = get_l3obj(l3h)) ){
+		l3->next = l2->l3objs;
+		l2->l3objs = l3;
+		++is->hosts;
+	}
+	return l3;
 }
 
 void print_iface_hosts(const interface *i,const iface_state *is){
@@ -155,11 +189,14 @@ void print_iface_hosts(const interface *i,const iface_state *is){
 		}else{
 			assert(mvwprintw(is->subwin,line,1," %c %s",legend,hw) != ERR);
 		}
-		// FIXME handle the associated l3objs
 		for(l3 = l->l3objs ; l3 ; l3 = l3->next){
+			char nw[INET6_ADDRSTRLEN + 1]; // FIXME
+
 			if(++line + 1 >= rows){
 				break;
 			}
+			l3ntop(l3->l3,nw,sizeof(nw));
+			assert(mvwprintw(is->subwin,line,1,"    %s",nw) != ERR);
 		}
 		/*
 		const char *nname;
@@ -343,12 +380,12 @@ void print_iface_state(const interface *i,const iface_state *is){
 }
 
 void free_iface_state(iface_state *is){
-	l2obj *l = is->l2objs;
+	l2obj *l2 = is->l2objs;
 
-	while(l){
-		l2obj *tmp = l->next;
-		free(l);
-		l = tmp;
+	while(l2){
+		l2obj *tmp = l2->next;
+		free_l2obj(l2);
+		l2 = tmp;
 	}
 }
 

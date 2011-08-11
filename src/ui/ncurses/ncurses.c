@@ -34,6 +34,7 @@
 #include <ui/ncurses/iface.h>
 #include <gnu/libc-version.h>
 #include <omphalos/ethtool.h>
+#include <omphalos/netaddrs.h>
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
 
@@ -1279,6 +1280,36 @@ interface_removed_locked(iface_state *is){
 	}
 }
 
+static struct l3obj *
+host_callback_locked(const interface *i,struct l2host *l2,struct l3host *l3){
+	struct l2obj *l2o;
+	struct l3obj *ret;
+	iface_state *is;
+
+	if(((is = i->opaque) == NULL) || !l2){
+		return NULL;
+	}
+	if((l2o = l2host_get_opaque(l2)) == NULL){
+		return NULL;
+	}
+	if((ret = l3host_get_opaque(l3)) == NULL){
+		if((ret = add_l3_to_iface(is,l2o,l3)) == NULL){
+			return NULL;
+		}
+	}
+	return ret;
+}
+
+static void *
+host_callback(const interface *i,struct l2host *l2,struct l3host *l3){
+	void *ret;
+
+	pthread_mutex_lock(&bfl);
+	ret = host_callback_locked(i,l2,l3);
+	pthread_mutex_unlock(&bfl);
+	return ret;
+}
+
 static struct l2obj *
 neighbor_callback_locked(const interface *i,struct l2host *l2){
 	struct l2obj *ret;
@@ -1290,7 +1321,7 @@ neighbor_callback_locked(const interface *i,struct l2host *l2){
 	if(i->opaque == NULL){
 		return NULL;
 	}
-	assert( (is = i->opaque) );
+	is = i->opaque;
 	if((ret = l2host_get_opaque(l2)) == NULL){
 		if((ret = add_l2_to_iface(i,is,l2)) == NULL){
 			return NULL;
@@ -1353,6 +1384,7 @@ int main(int argc,char * const *argv){
 	pctx.iface.diagnostic = diag_callback;
 	pctx.iface.wireless_event = wireless_callback;
 	pctx.iface.neigh_event = neighbor_callback;
+	pctx.iface.host_event = host_callback;
 	if((pad = ncurses_setup(&pctx.iface)) == NULL){
 		return EXIT_FAILURE;
 	}

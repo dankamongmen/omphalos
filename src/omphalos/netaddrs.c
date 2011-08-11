@@ -135,3 +135,11 @@ char *l3addrstr(const struct l3host *l3){
 const char *get_l3name(const l3host *l3){
 	return l3->name;
 }
+
+void *l3host_get_opaque(l3host *l3){
+	return l3->opaque;
+}
+
+int l3ntop(const l3host *l3,char *buf,size_t buflen){
+	return inet_ntop(l3->fam,&l3->addr,buf,buflen) != buf;
+}

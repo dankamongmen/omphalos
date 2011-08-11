@@ -61,7 +61,7 @@ typedef struct omphalos_iface {
 	// L3 network event callback, fed by packet analysis and netlink
 	// neighbor cache events. The return value is treated similarly to that
 	// of the device event callback.
-	void *(*host_event)(const struct interface *,const struct l2host *,struct l3host *);
+	void *(*host_event)(const struct interface *,struct l2host *,struct l3host *);
 } omphalos_iface;
 
 // Process-scope settings, generally configured on startup based off

@@ -223,7 +223,7 @@ neigh_event(const struct interface *i,struct l2host *l2){
 }
 
 static void *
-host_event(const struct interface *i,const struct l2host *l2,struct l3host *l3){
+host_event(const struct interface *i,struct l2host *l2,struct l3host *l3){
 	clear_for_output(stdout);
 	print_host(i,l2,l3);
 	wake_input_thread();
