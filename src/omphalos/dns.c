@@ -24,5 +24,5 @@ void handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 	an = ntohs(dns->ancount);
 	ns = ntohs(dns->nscount);
 	ar = ntohs(dns->arcount);
-	octx->diagnostic("ID: %hu Q/A/N/A: %hu/%hu/%hu/%hu\n",dns->id,qd,an,ns,ar);
+	octx->diagnostic("ID: %hu Q/A/N/A: %hu/%hu/%hu/%hu",dns->id,qd,an,ns,ar);
 }

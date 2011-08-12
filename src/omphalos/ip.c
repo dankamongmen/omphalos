@@ -77,6 +77,7 @@ void handle_ipv6_packet(const omphalos_iface *octx,omphalos_packet *op,
 	op->l3d = lookup_l3host(octx,op->i,op->l2d,AF_INET6,&ip->ip6_dst);
 	const void *nhdr = (const unsigned char *)frame + (len - plen);
 
+	// FIXME don't call down if we're fragmented
 	switch(ip->ip6_ctlun.ip6_un1.ip6_un1_nxt){
 	case IPPROTO_TCP:{
 		handle_tcp_packet(octx,op,nhdr,plen);
@@ -132,6 +133,7 @@ void handle_ipv4_packet(const omphalos_iface *octx,omphalos_packet *op,
 	const void *nhdr = (const unsigned char *)frame + hlen;
 	const size_t nlen = ntohs(ip->tot_len) - hlen;
 
+	// FIXME don't call down if we're fragmented
 	switch(ip->protocol){
 	case IPPROTO_TCP:{
 		handle_tcp_packet(octx,op,nhdr,nlen);
