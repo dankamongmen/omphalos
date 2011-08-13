@@ -60,7 +60,6 @@ void handle_arp_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 		name_l3host_local(octx,op->i,op->l2s,op->l3s,fam,saddr);
 		daddr = (const char *)ap + sizeof(*ap) + ap->ar_hln * 2 + ap->ar_pln;
 		op->l3d = lookup_l3host(octx,op->i,op->l2d,fam,daddr);
-		name_l3host(octx,op->i,op->l2d,op->l3d,fam,daddr);
 	break;}default:{
 		++op->i->noprotocol;
 		octx->diagnostic("%s %s unknown ARP op %u",__func__,

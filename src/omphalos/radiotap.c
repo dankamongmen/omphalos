@@ -126,7 +126,7 @@ handle_ieee80211_mgmt(const omphalos_iface *octx,omphalos_packet *op,
 		}
 		tagtbl[IEEE80211_MGMT_TAG_SSID].ptr = tmp;
 		tmp[tagtbl[IEEE80211_MGMT_TAG_SSID].len] = '\0';
-		lookup_l3host(octx,op->i,op->l2s,AF_MAX,tagtbl[IEEE80211_MGMT_TAG_SSID].ptr);
+		name_l3host_absolute(octx,op->i,op->l2s,op->l3s,tmp);
 	}
 
 freetags:
@@ -148,6 +148,7 @@ handle_ieee80211_beacon(const omphalos_iface *octx,omphalos_packet *op,
 	}
 	op->l2s = lookup_l2host(octx,op->i,ibec->h_src);
        	len -= sizeof(*ibec);
+	op->l3s = lookup_l3host(octx,op->i,op->l2s,AF_BSSID,ibec->bssid);
 	handle_ieee80211_mgmt(octx,op,(const char *)frame + sizeof(*ibec),len);
 }
 

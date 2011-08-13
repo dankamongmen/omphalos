@@ -80,15 +80,19 @@ void cleanup_l2hosts(l2host **list){
 	*list = NULL;
 }
 
-void l2ntop(const l2host *l2,size_t len,void *buf){
+void hwntop(const void *hwaddr,size_t len,void *buf){
 	unsigned idx;
 	size_t s;
 
 	s = HWADDRSTRLEN(len);
 	for(idx = 0 ; idx < len ; ++idx){
 		snprintf((char *)buf + idx * 3,s - idx * 3,"%02x:",
-				((unsigned char *)&l2->hwaddr)[idx]);
+				((const unsigned char *)hwaddr)[idx]);
 	}
+}
+
+void l2ntop(const l2host *l2,size_t len,void *buf){
+	hwntop(&l2->hwaddr,len,buf);
 }
 
 char *l2addrstr(const l2host *l2){

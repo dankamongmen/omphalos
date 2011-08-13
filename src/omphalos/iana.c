@@ -1,6 +1,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 #include <omphalos/iana.h>
@@ -233,9 +234,7 @@ const char *iana_lookup(const void *unsafe_oui,size_t addrlen){
 	const unsigned char *oui = unsafe_oui;
 	const ouitrie *t;
 
-	if(addrlen != ETH_ALEN){
-		return NULL;
-	}
+	assert(addrlen == ETH_ALEN);
 	if( (t = trie[oui[0]]) ){
 		if( (t = t->next[oui[1]]) ){
 			return t->next[oui[2]];

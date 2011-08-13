@@ -14,7 +14,7 @@ typedef struct l3host {
 	union {
 		uint32_t ip4;
 		uint128_t ip6;
-		char *str;
+		char mac[ETH_ALEN];
 	} addr;		// FIXME sigh
 	struct l3host *next;
 	void *opaque;
@@ -30,97 +30,18 @@ create_l3host(int fam,const void *addr,size_t len){
 		r->opaque = NULL;
 		r->name = NULL;
 		r->fam = fam;
-		if(len == 0){
-			if((r->addr.str = strdup(addr)) == NULL){
-				free(r);
-				return NULL;
-			}
-		}else{
-			memcpy(&r->addr,addr,len);
-		}
+		memcpy(&r->addr,addr,len);
 	}
 	return r;
 }
 
-static inline void
-name_l3host_absolute(const omphalos_iface *octx,const interface *i,
+void name_l3host_absolute(const omphalos_iface *octx,const interface *i,
 			struct l2host *l2,l3host *l3,const char *name){
-	if( (l3->name = strdup(name)) ){
-		if(octx->host_event){
-			octx->host_event(i,l2,l3);
-		}
-	}
-}
-
-// fam == AF_MAX is a special case, where addr is assumed to be unsigned char *
-// and matching is done as strings.
-struct l3host *lookup_l3host(const omphalos_iface *octx,interface *i,
-				struct l2host *l2,int fam,const void *addr){
-        l3host *l3,**prev,**orig;
-	size_t len;
-
-	switch(fam){
-		case AF_INET:
-			len = 4;
-			orig = &i->ip4hosts;
-			break;
-		case AF_INET6:
-			len = 16;
-			orig = &i->ip6hosts;
-			break;
-		case AF_MAX:
-			len = 0;
-			orig = &i->cells;
-			break;
-		default:
-			return NULL; // FIXME
-	}
-	// FIXME probably want to make this per-node
-	// FIXME only track local addresses, not those we route to
-	if(len){
-		typeof(l3->addr) cmp;
-
-		assert(len <= sizeof(cmp));
-		memcpy(&cmp,addr,sizeof(cmp));
-		for(prev = orig ; (l3 = *prev) ; prev = &l3->next){
-			if(memcmp(&l3->addr,&cmp,len) == 0){
-				// Move it to the front of the list, splicing it out
-				*prev = l3->next;
-				l3->next = *orig;
-				*orig = l3;
-				return l3;
-			}
-		}
-	}else{
-		for(prev = orig ; (l3 = *prev) ; prev = &l3->next){
-			if(strcmp(l3->addr.str,addr) == 0){
-				// Move it to the front of the list, splicing it out
-				*prev = l3->next;
-				l3->next = *orig;
-				*orig = l3;
-				return l3;
-			}
-		}
-	}
-        if( (l3 = create_l3host(fam,addr,len)) ){
-                l3->next = *orig;
-                *orig = l3;
-		if(len){
-			name_l3host(octx,i,l2,l3,fam,addr);
-		}else{
-			name_l3host_absolute(octx,i,l2,l3,addr);
-		}
-        }
-        return l3;
-}
-
-void name_l3host_local(const omphalos_iface *octx,const interface *i,
-		struct l2host *l2,l3host *l3,int family,const void *name){
 	if(l3->name == NULL){
-		char b[INET6_ADDRSTRLEN];
-
-		if(inet_ntop(family,name,b,sizeof(b)) == b){
-			name_l3host_absolute(octx,i,l2,l3,b);
+		if( (l3->name = strdup(name)) ){
+			if(octx->host_event){
+				octx->host_event(i,l2,l3);
+			}
 		}
 	}
 }
@@ -132,7 +53,8 @@ void name_l3host_local(const omphalos_iface *octx,const interface *i,
 // returned is different from the wire address, an ARP probe is directed to the
 // link-layer address (this is all handled by get_route()). ARP replies are
 // link-layer only, and thus processed directly (name_l2host_local()).
-void name_l3host(const omphalos_iface *octx,interface *i,struct l2host *l2,
+static void
+name_l3host(const omphalos_iface *octx,interface *i,struct l2host *l2,
 				l3host *l3,int family,const void *name){
 	assert(i->addrlen == ETH_ALEN); // FIXME
 	if(l3->name == NULL){
@@ -158,12 +80,67 @@ void name_l3host(const omphalos_iface *octx,interface *i,struct l2host *l2,
 	}
 }
 
+struct l3host *lookup_l3host(const omphalos_iface *octx,interface *i,
+				struct l2host *l2,int fam,const void *addr){
+        l3host *l3,**prev,**orig;
+	typeof(l3->addr) cmp;
+	size_t len;
+
+	switch(fam){
+		case AF_INET:
+			len = 4;
+			orig = &i->ip4hosts;
+			break;
+		case AF_INET6:
+			len = 16;
+			orig = &i->ip6hosts;
+			break;
+		case AF_BSSID:
+			len = ETH_ALEN;
+			orig = &i->cells;
+			break;
+		default:
+			octx->diagnostic("Can't lookup l3 type %d",fam);
+			return NULL; // FIXME
+	}
+	// FIXME probably want to make this per-node
+	// FIXME only track local addresses, not those we route to
+	assert(len <= sizeof(cmp));
+	memcpy(&cmp,addr,sizeof(cmp));
+	for(prev = orig ; (l3 = *prev) ; prev = &l3->next){
+		if(memcmp(&l3->addr,&cmp,len) == 0){
+			// Move it to the front of the list, splicing it out
+			*prev = l3->next;
+			l3->next = *orig;
+			*orig = l3;
+			return l3;
+		}
+	}
+        if( (l3 = create_l3host(fam,addr,len)) ){
+                l3->next = *orig;
+                *orig = l3;
+		name_l3host(octx,i,l2,l3,fam,addr);
+        }
+        return l3;
+}
+
+void name_l3host_local(const omphalos_iface *octx,const interface *i,
+		struct l2host *l2,l3host *l3,int family,const void *name){
+	if(l3->name == NULL){
+		char b[INET6_ADDRSTRLEN];
+
+		if(inet_ntop(family,name,b,sizeof(b)) == b){
+			name_l3host_absolute(octx,i,l2,l3,b);
+		}
+	}
+}
+
 char *l3addrstr(const struct l3host *l3){
 	const size_t len = INET6_ADDRSTRLEN + 1;
 	char *buf;
 
 	if( (buf = malloc(len)) ){
-		inet_ntop(l3->fam,&l3->addr,buf,len);
+		assert(l3ntop(l3,buf,len) == 0);
 	}
 	return buf;
 }
@@ -177,12 +154,12 @@ void *l3host_get_opaque(l3host *l3){
 }
 
 int l3ntop(const l3host *l3,char *buf,size_t buflen){
-	if(l3->fam == AF_MAX){
-		if(strlen(l3->addr.str) >= buflen){
+	if(l3->fam > AF_MAX){
+		if(buflen < HWADDRSTRLEN(ETH_ALEN)){
 			errno = ENOSPC;
 			return -1;
 		}
-		strcpy(buf,l3->addr.str);
+		hwntop(l3->addr.mac,ETH_ALEN,buf);
 		return 0;
 	}
 	return inet_ntop(l3->fam,&l3->addr,buf,buflen) != buf;

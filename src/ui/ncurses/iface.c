@@ -192,12 +192,16 @@ void print_iface_hosts(const interface *i,const iface_state *is){
 		}
 		for(l3 = l->l3objs ; l3 ; l3 = l3->next){
 			char nw[INET6_ADDRSTRLEN + 1]; // FIXME
+			const char *name;
 
 			if(++line + 1 >= rows){
 				break;
 			}
 			l3ntop(l3->l3,nw,sizeof(nw));
-			assert(mvwprintw(is->subwin,line,1,"    %s",nw) != ERR);
+			if((name = get_l3name(l3->l3)) == NULL){
+				name = "";
+			}
+			assert(mvwprintw(is->subwin,line,1,"    %s %s",nw,name) != ERR);
 		}
 		/*
 		const char *nname;
