@@ -877,7 +877,6 @@ ncurses_input_thread(void *unsafe_marsh){
 			pthread_mutex_unlock(&bfl);
 			break;
 		case KEY_RESIZE:
-			assert(0);
 			pthread_mutex_lock(&bfl);{
 				resize_screen_locked(w);
 			}pthread_mutex_unlock(&bfl);
