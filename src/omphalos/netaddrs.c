@@ -45,8 +45,7 @@ create_l3host(int fam,const void *addr,size_t len){
 static inline void
 name_l3host_absolute(const omphalos_iface *octx,const interface *i,
 			struct l2host *l2,l3host *l3,const char *name){
-	if( (l3->name = Malloc(octx,strlen(name) + 1)) ){
-		strcpy(l3->name,name);
+	if( (l3->name = strdup(name)) ){
 		if(octx->host_event){
 			octx->host_event(i,l2,l3);
 		}

@@ -119,13 +119,13 @@ handle_ieee80211_mgmt(const omphalos_iface *octx,omphalos_packet *op,
 		goto freetags;
 	}
 	if(tagtbl[IEEE80211_MGMT_TAG_SSID].ptr){
-		char *argh;
+		char *tmp;
 
-		if((argh = realloc(tagtbl[IEEE80211_MGMT_TAG_SSID].ptr,tagtbl[IEEE80211_MGMT_TAG_SSID].len + 1)) == NULL){
+		if((tmp = realloc(tagtbl[IEEE80211_MGMT_TAG_SSID].ptr,tagtbl[IEEE80211_MGMT_TAG_SSID].len + 1)) == NULL){
 			goto freetags;
 		}
-		tagtbl[IEEE80211_MGMT_TAG_SSID].ptr = argh;
-		argh[tagtbl[IEEE80211_MGMT_TAG_SSID].len] = '\0';
+		tagtbl[IEEE80211_MGMT_TAG_SSID].ptr = tmp;
+		tmp[tagtbl[IEEE80211_MGMT_TAG_SSID].len] = '\0';
 		lookup_l3host(octx,op->i,op->l2s,AF_MAX,tagtbl[IEEE80211_MGMT_TAG_SSID].ptr);
 	}
 
