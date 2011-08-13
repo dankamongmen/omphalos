@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <omphalos/util.h>
+#include <omphalos/ietf.h>
 #include <omphalos/hwaddrs.h>
 #include <omphalos/netaddrs.h>
 #include <omphalos/omphalos.h>
@@ -68,6 +69,7 @@ struct l3host *lookup_l3host(const omphalos_iface *octx,interface *i,
         l3host *l3,**prev,**orig;
 	typeof(l3->addr) cmp;
 	size_t len;
+	int cat;
 
 	switch(fam){
 		case AF_INET:
@@ -100,7 +102,7 @@ struct l3host *lookup_l3host(const omphalos_iface *octx,interface *i,
 		}
 	}
 	if(routed_family_p(fam)){
-		if(categorize_ethaddr(l2) == RTN_UNICAST){
+		if((cat = l2categorize(i,l2)) == RTN_UNICAST){
 			struct sockaddr_storage ss;
 			hwaddrint hwaddr = get_hwaddr(l2);
 			// FIXME throwing out anything to which we have no
@@ -113,10 +115,20 @@ struct l3host *lookup_l3host(const omphalos_iface *octx,interface *i,
 				return &external_l3; // FIXME terrible
 			}
 		}
+	}else{
+		cat = RTN_UNICAST;
 	}
         if( (l3 = create_l3host(fam,addr,len)) ){
                 l3->next = *orig;
                 *orig = l3;
+		if(cat == RTN_MULTICAST){
+			const char *mname = ietf_multicast_lookup(fam,addr);
+			if(mname){
+				l3->name = strdup(mname);
+			}
+		}else{
+			// FIXME do what with broadcast?
+		}
 		if(octx->host_event){
 			l3->opaque = octx->host_event(i,l2,l3);
 		}
