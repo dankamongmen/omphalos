@@ -77,22 +77,19 @@ handle_ieee80211_mgmt(const omphalos_iface *octx,omphalos_packet *op,
 	} tagtbl[1u << CHAR_BIT] = {};
 	const unsigned char *tags;
 
-	octx->diagnostic("have %zu",len);
 	if(len < sizeof(*imgmt)){
 		++op->i->malformed;
 		octx->diagnostic("%s mgmt frame too small (%zu) on %s",
 				__func__,len,op->i->name);
 		return;
 	}
-	tags = (const unsigned char *)(frame + 1);
+	tags = (const unsigned char *)(imgmt + 1);
 	len -= sizeof(*imgmt);
-	
 	// 1-byte tag number, 1-byte tag length, variable-length tag
 	while(len > 1){
 		unsigned taglen = tags[1];
 		unsigned tag = tags[0];
 
-		octx->diagnostic("0x%0x GOT TAG %u (%u): %.*s",ntohl(*(const unsigned *)tags),tag,taglen,taglen,tags + 2);
 		if(len < 2 + taglen){
 			break;
 		}
@@ -111,7 +108,6 @@ handle_ieee80211_mgmt(const omphalos_iface *octx,omphalos_packet *op,
 				__func__,len,op->i->name);
 		return;
 	}
-	octx->diagnostic("good mgmt");
 	// FIXME do stuff
 	// FIXME need free tags!
 }
