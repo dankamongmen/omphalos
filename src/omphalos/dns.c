@@ -5,7 +5,7 @@
 
 struct dnshdr {
 	uint16_t id;
-	uint16_t crap;
+	uint16_t flags;
 	uint16_t qdcount,ancount,nscount,arcount;
 	// question, answer, authority, and additional sections follow
 };
@@ -14,6 +14,7 @@ void handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 	const struct dnshdr *dns = frame;
 	const unsigned char *sec;
 	uint16_t qd,an,ns,ar;
+	unsigned opcode;
 
 	if(len < sizeof(*dns)){
 		octx->diagnostic("%s malformed with %zu on %s",
@@ -21,6 +22,8 @@ void handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 		++op->i->malformed;
 		return;
 	}
+	opcode = (ntohs(dns->flags) & 0x7800) >> 11u;
+	octx->diagnostic("OPCODE: %u (0x%x)",opcode,dns->flags);
 	qd = ntohs(dns->qdcount);
 	an = ntohs(dns->ancount);
 	ns = ntohs(dns->nscount);
@@ -33,7 +36,7 @@ void handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 		unsigned idx = 0;
 		size_t bsize = 0;
 
-		while(len > ++idx && (rlen = *sec)){
+		while(len > ++idx && (rlen = *sec++)){
 			if(rlen >= 192 || rlen + idx > len){
 				free(buf);
 				goto malformed;
@@ -50,17 +53,19 @@ void handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 			if(bsize){
 				buf[bsize - 1] = '.';
 			}
-			strncpy(buf + bsize,(const char *)sec + 1,rlen);
+			strncpy(buf + bsize,(const char *)sec,rlen);
 			bsize += rlen + 1;
 			buf[bsize - 1] = '\0';
-			sec += rlen + 1;
+			sec += rlen;
 			idx += rlen;
 		}
-		if(len <= idx || buf == NULL){
+		if(len <= idx + 4 || buf == NULL){
 			free(buf);
 			goto malformed;
 		}
-		octx->diagnostic("QUESTION: %s",buf);
+		octx->diagnostic("TYPE: %hu CLASS: %hu",
+				ntohs(*(uint16_t *)sec),ntohs(*((uint16_t *)sec + 1)));
+		//octx->diagnostic("QUESTION: %s",buf);
 		// FIXME
 		free(buf);
 	}
