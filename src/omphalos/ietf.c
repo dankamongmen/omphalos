@@ -13,6 +13,7 @@
 
 #define RFC1112_LOCAL_ALL_HOSTS		__constant_htonl(0xe0000001)
 #define RFC1112_LOCAL_ALL_ROUTERS	__constant_htonl(0xe0000002)
+#define RFC1112_LOCAL_MDNS		__constant_htonl(0xe00000fb)
 
 #include <stdio.h>
 static const char *
@@ -21,22 +22,33 @@ ietf_multicast_ipv4(const uint32_t *ip){
 		return NULL;
 	}
 	if((*ip & RFC1112_LOCAL_MASK) != RFC1112_LOCAL_BASE){
-		return "RFC 1112 IPv4 multicast";
+		return "RFC 1112 multicast";
 	}
 	if(*ip == RFC1112_LOCAL_ALL_HOSTS){
-		return "RFC 1112 all segment hosts";
+		return "All segment hosts (RFC 1112)";
 	}else if(*ip == RFC1112_LOCAL_ALL_ROUTERS){
-		return "RFC 1112 all segment routers";
+		return "All segment routers (RFC 1112)";
+	}else if(*ip == RFC1112_LOCAL_MDNS){
+		return "mDNS (IANA)";
 	}
-	return "RFC 1112 IPv4 segment multicast";
+	return "RFC 1112 segment multicast";
 }
 
+static const uint128_t IP6_MDNS = { __constant_htonl(0xff020000),
+       __constant_htonl(0x00000000), __constant_htonl(0x00000000),
+       __constant_htonl(0x000000fb), };
+
+
 static const char *
-ietf_multicast_ipv6(const uint128_t *ip){
-	if(IN6_IS_ADDR_MULTICAST(ip)){
-		return "RFC 4291 IPv6 multicast";
+ietf_multicast_ipv6(const uint32_t *ip){
+	uint128_t alignedip = { ip[0], ip[1], ip[2], ip[3] };
+	if(!IN6_IS_ADDR_MULTICAST(&alignedip)){
+		return NULL;
 	}
-	return NULL;
+	if(equal128(alignedip,IP6_MDNS)){
+		return "mDNS (IANA)";
+	}
+	return "RFC 4291 multicast";
 }
 
 const char *ietf_multicast_lookup(int fam,const void *addr){
