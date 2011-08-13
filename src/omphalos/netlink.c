@@ -182,12 +182,10 @@ handle_rtm_newneigh(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	}
 	if(llen){
 		if(!(nd->ndm_state & (NUD_NOARP|NUD_FAILED|NUD_INCOMPLETE))){
-			struct l3host *l3;
 			struct l2host *l2;
 
 			l2 = lookup_l2host(octx,iface,ll);
-			l3 = lookup_l3host(octx,iface,l2,nd->ndm_family,ad);
-			name_l3host_local(octx,iface,l2,l3,nd->ndm_family,ad);
+			lookup_l3host(octx,iface,l2,nd->ndm_family,ad);
 		}
 	}
 	return 0;

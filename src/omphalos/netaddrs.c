@@ -88,19 +88,6 @@ struct l3host *lookup_l3host(const omphalos_iface *octx,interface *i,
 			octx->diagnostic("Can't lookup l3 type %d",fam);
 			return NULL; // FIXME
 	}
-	// FIXME probably want to make this per-node
-	// FIXME only track local addresses, not those we route to
-	assert(len <= sizeof(cmp));
-	memcpy(&cmp,addr,sizeof(cmp));
-	for(prev = orig ; (l3 = *prev) ; prev = &l3->next){
-		if(memcmp(&l3->addr,&cmp,len) == 0){
-			// Move it to the front of the list, splicing it out
-			*prev = l3->next;
-			l3->next = *orig;
-			*orig = l3;
-			return l3;
-		}
-	}
 	if(routed_family_p(fam)){
 		if((cat = l2categorize(i,l2)) == RTN_UNICAST){
 			struct sockaddr_storage ss;
@@ -117,6 +104,19 @@ struct l3host *lookup_l3host(const omphalos_iface *octx,interface *i,
 		}
 	}else{
 		cat = RTN_UNICAST;
+	}
+	// FIXME probably want to make this per-node
+	// FIXME only track local addresses, not those we route to
+	assert(len <= sizeof(cmp));
+	memcpy(&cmp,addr,sizeof(cmp));
+	for(prev = orig ; (l3 = *prev) ; prev = &l3->next){
+		if(memcmp(&l3->addr,&cmp,len) == 0){
+			// Move it to the front of the list, splicing it out
+			*prev = l3->next;
+			l3->next = *orig;
+			*orig = l3;
+			return l3;
+		}
 	}
         if( (l3 = create_l3host(fam,addr,len)) ){
                 l3->next = *orig;

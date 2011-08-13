@@ -497,7 +497,8 @@ get_unicast_address(const struct omphalos_iface *octx,interface *i,
 
 			if(i4r){
 				// A routed result requires a directed ARP
-				// probe to verify the local network address.
+				// probe to verify the local network address
+				// (our idea of the route might be wrong).
 				if(i4r->addrs & ROUTE_HAS_VIA){
 					// FIXME even if we have a route to it,
 					// check the hwaddr to see that it matches
