@@ -1,4 +1,6 @@
+#include <limits.h>
 #include <sys/socket.h>
+#include <omphalos/util.h>
 #include <omphalos/hwaddrs.h>
 #include <omphalos/ethernet.h>
 #include <omphalos/radiotap.h>
@@ -35,6 +37,7 @@ typedef struct ieee80211hdr {
 	// FIXME unsigned char h_src[ETH_ALEN]; see below
 } __attribute__ ((packed)) ieee80211hdr;
 
+// IEEE 802.11 beacon header. Followed by an IEEE 802.11 management frame.
 typedef struct ieee80211beacon {
 	uint16_t control;
 	uint16_t duration;
@@ -44,6 +47,14 @@ typedef struct ieee80211beacon {
 	uint16_t fraqseq;
 } __attribute__ ((packed)) ieee80211beacon;
 
+// Fixed portion (12 bytes) of an IEEE 802.11 management frame. Followed by a
+// tagged variable-length portion.
+typedef struct ieee80211mgmt {
+	uint64_t timestamp;
+	uint16_t interval;
+	uint16_t capabilities;
+} __attribute__ ((packed)) ieee80211mgmt;
+
 #define MANAGEMENT_FRAME		0
 #define IEEE80211_SUBTYPE_BEACON	8
 #define CONTROL_FRAME			1
@@ -52,6 +63,58 @@ typedef struct ieee80211beacon {
 #define IEEE80211_VERSION(ctrl) ((ntohs(ctrl) & 0x0300) >> 8u)
 #define IEEE80211_TYPE(ctrl) ((ntohs(ctrl) & 0x0c00) >> 10u)
 #define IEEE80211_SUBTYPE(ctrl) ((ntohs(ctrl) & 0xf000) >> 12u)
+
+#define IEEE80211_MGMT_TAG_SSID		0
+#define IEEE80211_MGMT_TAG_RATES	1
+
+static void
+handle_ieee80211_mgmt(const omphalos_iface *octx,omphalos_packet *op,
+				const void *frame,size_t len){
+	const ieee80211mgmt *imgmt = frame;
+	struct {
+		void *ptr;
+		size_t len;
+	} tagtbl[1u << CHAR_BIT] = {};
+	const unsigned char *tags;
+
+	octx->diagnostic("have %zu",len);
+	if(len < sizeof(*imgmt)){
+		++op->i->malformed;
+		octx->diagnostic("%s mgmt frame too small (%zu) on %s",
+				__func__,len,op->i->name);
+		return;
+	}
+	tags = (const unsigned char *)(frame + 1);
+	len -= sizeof(*imgmt);
+	
+	// 1-byte tag number, 1-byte tag length, variable-length tag
+	while(len > 1){
+		unsigned taglen = tags[1];
+		unsigned tag = tags[0];
+
+		octx->diagnostic("0x%0x GOT TAG %u (%u): %.*s",ntohl(*(const unsigned *)tags),tag,taglen,taglen,tags + 2);
+		if(len < 2 + taglen){
+			break;
+		}
+		if(tagtbl[tag].ptr){
+			break; // duplicate tag?
+		}
+		tagtbl[tag].ptr = memdup(tags + 2,taglen);
+		tagtbl[tag].len = taglen;
+		len -= 2 + taglen;
+		tags += 2 + taglen;
+	}
+	if(len){
+		// FIXME need free tags!
+		++op->i->malformed;
+		octx->diagnostic("%s bad mgmt tags (%zu) on %s",
+				__func__,len,op->i->name);
+		return;
+	}
+	octx->diagnostic("good mgmt");
+	// FIXME do stuff
+	// FIXME need free tags!
+}
 
 static void
 handle_ieee80211_beacon(const omphalos_iface *octx,omphalos_packet *op,
@@ -65,7 +128,9 @@ handle_ieee80211_beacon(const omphalos_iface *octx,omphalos_packet *op,
 		return;
 	}
 	op->l2s = lookup_l2host(octx,op->i,ibec->h_src);
-	// FIXME handle more, extract ESSID etc
+	// There's a 32-bit FCS on the end built into the length here.
+       	len -= sizeof(*ibec) + sizeof(uint32_t);
+	handle_ieee80211_mgmt(octx,op,frame + sizeof(*ibec),len);
 }
 
 static void
