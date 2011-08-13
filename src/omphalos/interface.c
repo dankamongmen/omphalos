@@ -132,6 +132,7 @@ void free_iface(const omphalos_iface *octx,interface *i){
 	free(i->name);
 	free(i->addr);
 	free(i->bcast);
+	cleanup_l3hosts(&i->cells);
 	cleanup_l3hosts(&i->ip6hosts);
 	cleanup_l3hosts(&i->ip4hosts);
 	cleanup_l2hosts(&i->l2hosts);

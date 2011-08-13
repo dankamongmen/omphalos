@@ -3,6 +3,7 @@
 #include <sys/socket.h>
 #include <omphalos/util.h>
 #include <omphalos/hwaddrs.h>
+#include <omphalos/netaddrs.h>
 #include <omphalos/ethernet.h>
 #include <omphalos/radiotap.h>
 #include <omphalos/omphalos.h>
@@ -117,7 +118,16 @@ handle_ieee80211_mgmt(const omphalos_iface *octx,omphalos_packet *op,
 		++op->i->malformed;
 		goto freetags;
 	}
-	// FIXME do stuff
+	if(tagtbl[IEEE80211_MGMT_TAG_SSID].ptr){
+		char *argh;
+
+		if((argh = realloc(tagtbl[IEEE80211_MGMT_TAG_SSID].ptr,tagtbl[IEEE80211_MGMT_TAG_SSID].len + 1)) == NULL){
+			goto freetags;
+		}
+		tagtbl[IEEE80211_MGMT_TAG_SSID].ptr = argh;
+		argh[tagtbl[IEEE80211_MGMT_TAG_SSID].len] = '\0';
+		lookup_l3host(octx,op->i,op->l2s,AF_MAX,tagtbl[IEEE80211_MGMT_TAG_SSID].ptr);
+	}
 
 freetags:
 	for(z = 0 ; z < sizeof(tagtbl) / sizeof(*tagtbl) ; ++z){
