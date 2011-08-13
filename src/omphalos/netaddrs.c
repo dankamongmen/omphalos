@@ -1,3 +1,4 @@
+#include <errno.h>
 #include <stdlib.h>
 #include <assert.h>
 #include <omphalos/util.h>
@@ -177,6 +178,14 @@ void *l3host_get_opaque(l3host *l3){
 }
 
 int l3ntop(const l3host *l3,char *buf,size_t buflen){
+	if(l3->fam == AF_MAX){
+		if(strlen(l3->addr.str) >= buflen){
+			errno = ENOSPC;
+			return -1;
+		}
+		strcpy(buf,l3->addr.str);
+		return 0;
+	}
 	return inet_ntop(l3->fam,&l3->addr,buf,buflen) != buf;
 }
 
