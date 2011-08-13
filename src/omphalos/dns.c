@@ -14,7 +14,6 @@ void handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 	const struct dnshdr *dns = frame;
 	const unsigned char *sec;
 	uint16_t qd,an,ns,ar;
-	unsigned opcode;
 
 	if(len < sizeof(*dns)){
 		octx->diagnostic("%s malformed with %zu on %s",
@@ -22,8 +21,7 @@ void handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 		++op->i->malformed;
 		return;
 	}
-	opcode = (ntohs(dns->flags) & 0x7800) >> 11u;
-	octx->diagnostic("OPCODE: %u (0x%x)",opcode,dns->flags);
+	//opcode = (ntohs(dns->flags) & 0x7800) >> 11u;
 	qd = ntohs(dns->qdcount);
 	an = ntohs(dns->ancount);
 	ns = ntohs(dns->nscount);
