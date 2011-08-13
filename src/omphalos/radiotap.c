@@ -1,4 +1,5 @@
 #include <limits.h>
+#include <assert.h>
 #include <sys/socket.h>
 #include <omphalos/util.h>
 #include <omphalos/hwaddrs.h>
@@ -76,6 +77,7 @@ handle_ieee80211_mgmt(const omphalos_iface *octx,omphalos_packet *op,
 		size_t len;
 	} tagtbl[1u << CHAR_BIT] = {};
 	const unsigned char *tags;
+	unsigned z;
 
 	if(len < sizeof(*imgmt)){
 		++op->i->malformed;
@@ -91,10 +93,16 @@ handle_ieee80211_mgmt(const omphalos_iface *octx,omphalos_packet *op,
 		unsigned tag = tags[0];
 
 		if(len < 2 + taglen){
+			octx->diagnostic("%s bad mgmt taglen (%zu/%u) on %s",
+					__func__,len,taglen,op->i->name);
 			break;
 		}
 		if(tagtbl[tag].ptr){
-			break; // duplicate tag?
+			// Tags can be duplicated, especially the Vendor
+			// Specific tag (221)...handle that later FIXME
+			len -= 2 + taglen;
+			tags += 2 + taglen;
+			continue;
 		}
 		tagtbl[tag].ptr = memdup(tags + 2,taglen);
 		tagtbl[tag].len = taglen;
@@ -102,14 +110,19 @@ handle_ieee80211_mgmt(const omphalos_iface *octx,omphalos_packet *op,
 		tags += 2 + taglen;
 	}
 	if(len){
-		// FIXME need free tags!
+		if(len < 2){
+			octx->diagnostic("%s bad mgmt tags (%zu) on %s",
+					__func__,len,op->i->name);
+		}
 		++op->i->malformed;
-		octx->diagnostic("%s bad mgmt tags (%zu) on %s",
-				__func__,len,op->i->name);
-		return;
+		goto freetags;
 	}
 	// FIXME do stuff
-	// FIXME need free tags!
+
+freetags:
+	for(z = 0 ; z < sizeof(tagtbl) / sizeof(*tagtbl) ; ++z){
+		free(tagtbl[z].ptr);
+	}
 }
 
 static void
@@ -124,9 +137,8 @@ handle_ieee80211_beacon(const omphalos_iface *octx,omphalos_packet *op,
 		return;
 	}
 	op->l2s = lookup_l2host(octx,op->i,ibec->h_src);
-	// There's a 32-bit FCS on the end built into the length here.
-       	len -= sizeof(*ibec) + sizeof(uint32_t);
-	handle_ieee80211_mgmt(octx,op,frame + sizeof(*ibec),len);
+       	len -= sizeof(*ibec);
+	handle_ieee80211_mgmt(octx,op,(const char *)frame + sizeof(*ibec),len);
 }
 
 static void
@@ -169,10 +181,53 @@ handle_ieee80211_packet(const omphalos_iface *octx,omphalos_packet *op,
 	}
 }
 
+enum ieee80211_radiotap_type {
+	IEEE80211_RADIOTAP_TSFT = 0,
+	IEEE80211_RADIOTAP_FLAGS = 1,
+	IEEE80211_RADIOTAP_RATE = 2,
+	IEEE80211_RADIOTAP_CHANNEL = 3,
+	IEEE80211_RADIOTAP_FHSS = 4,
+	IEEE80211_RADIOTAP_DBM_ANTSIGNAL = 5,
+	IEEE80211_RADIOTAP_DBM_ANTNOISE = 6,
+	IEEE80211_RADIOTAP_LOCK_QUALITY = 7,
+	IEEE80211_RADIOTAP_TX_ATTENUATION = 8,
+	IEEE80211_RADIOTAP_DB_TX_ATTENUATION = 9,
+	IEEE80211_RADIOTAP_DBM_TX_POWER = 10,
+	IEEE80211_RADIOTAP_ANTENNA = 11,
+	IEEE80211_RADIOTAP_DB_ANTSIGNAL = 12,
+	IEEE80211_RADIOTAP_DB_ANTNOISE = 13,
+	IEEE80211_RADIOTAP_RX_FLAGS = 14,
+	IEEE80211_RADIOTAP_TX_FLAGS = 15,
+	IEEE80211_RADIOTAP_RTS_RETRIES = 16,
+	IEEE80211_RADIOTAP_DATA_RETRIES = 17,
+	IEEE80211_RADIOTAP_EXT = 31
+};
+
+/* For IEEE80211_RADIOTAP_FLAGS */
+#define IEEE80211_RADIOTAP_F_CFP	0x01    /* sent/received
+	                                         * during CFP
+	                                         */
+#define IEEE80211_RADIOTAP_F_SHORTPRE   0x02    /* sent/received
+	                                         * with short
+	                                         * preamble
+	                                         */
+#define IEEE80211_RADIOTAP_F_WEP	0x04    /* sent/received
+	                                         * with WEP encryption
+	                                         */
+#define IEEE80211_RADIOTAP_F_FRAG       0x08    /* sent/received
+	                                         * with fragmentation
+	                                         */
+#define IEEE80211_RADIOTAP_F_FCS	0x10    /* frame includes FCS */
+#define IEEE80211_RADIOTAP_F_DATAPAD    0x20    /* frame has padding between
+	                                         * 802.11 header and payload
+	                                         * (to 32-bit boundary)
+	                                         */
+
 void handle_radiotap_packet(const omphalos_iface *octx,omphalos_packet *op,
 				const void *frame,size_t len){
 	const radiotaphdr *rhdr = frame;
-	const void *ehdr;
+	const void *ehdr,*vhdr;
+	uint32_t pres;
 	unsigned rlen;
 
 	// FIXME certain packets don't have the full 802.11 header (8 bytes,
@@ -196,7 +251,19 @@ void handle_radiotap_packet(const omphalos_iface *octx,omphalos_packet *op,
 				__func__,len,rlen,op->i->name);
 		return;
 	}
-	ehdr = (const char *)frame + rlen;
 	len -= rlen;
+	pres = ntohl(rhdr->present);
+	vhdr = (const char *)frame + sizeof(*rhdr);
+	assert(!(pres & IEEE80211_RADIOTAP_TSFT)); // FIXME
+	if(pres & IEEE80211_RADIOTAP_FLAGS){
+		unsigned flags = *(const unsigned char *)vhdr;
+		++vhdr;
+		// There's a 32-bit FCS on the end built into the length here,
+		// if the FCS bit is set in Flags.
+		if(flags & IEEE80211_RADIOTAP_F_FCS){
+			len -= sizeof(uint32_t);
+		}
+	}
+	ehdr = (const char *)frame + rlen;
 	handle_ieee80211_packet(octx,op,ehdr,len);
 }
