@@ -20,6 +20,11 @@ typedef struct l3host {
 	void *opaque;
 } l3host;
 
+static l3host external_l3 = {
+	.name = "external",
+	.fam = AF_INET,
+}; // FIXME augh
+
 // FIXME like the l2addrs, need do this in constant space via LRU or something
 static l3host *
 create_l3host(int fam,const void *addr,size_t len){
@@ -46,6 +51,11 @@ void name_l3host_absolute(const omphalos_iface *octx,const interface *i,
 	}
 }
 
+static inline int
+routed_family_p(int fam){
+	return fam == AF_INET || fam == AF_INET6;
+}
+
 // This is for raw network addresses as seen on the wire, which may be from
 // outside the local network. We want only the local network address(es) of the
 // link (in a rare case, it might not have any). For unicast link addresses, a
@@ -53,33 +63,6 @@ void name_l3host_absolute(const omphalos_iface *octx,const interface *i,
 // returned is different from the wire address, an ARP probe is directed to the
 // link-layer address (this is all handled by get_route()). ARP replies are
 // link-layer only, and thus processed directly (name_l2host_local()).
-static void
-name_l3host(const omphalos_iface *octx,interface *i,struct l2host *l2,
-				l3host *l3,int family,const void *name){
-	assert(i->addrlen == ETH_ALEN); // FIXME
-	if(l3->name == NULL){
-		struct sockaddr_storage ss;
-		hwaddrint hwaddr;
-		int cat;
-
-		hwaddr = get_hwaddr(l2);
-		if((cat = categorize_ethaddr(&hwaddr)) == RTN_UNICAST){
-			// FIXME throwing out anything to which we have no
-			// route means we basically don't work pre-config.
-			// addresses pre-configuration have information, but
-			// are inferior to those post-configuration. we need a
-			// means of *updating* names whenever routes change,
-			// or as close to true route cache behavior as we like
-			if((name = get_unicast_address(octx,i,&hwaddr,family,name,&ss)) == NULL){
-				return;
-			}
-		}else if(cat == RTN_MULTICAST){
-			// FIXME Look up family-appropriate multicast names
-		}
-		name_l3host_local(octx,i,l2,l3,family,name);
-	}
-}
-
 struct l3host *lookup_l3host(const omphalos_iface *octx,interface *i,
 				struct l2host *l2,int fam,const void *addr){
         l3host *l3,**prev,**orig;
@@ -116,10 +99,24 @@ struct l3host *lookup_l3host(const omphalos_iface *octx,interface *i,
 			return l3;
 		}
 	}
+	if(routed_family_p(fam)){
+		if(categorize_ethaddr(l2) == RTN_UNICAST){
+			struct sockaddr_storage ss;
+			hwaddrint hwaddr = get_hwaddr(l2);
+			// FIXME throwing out anything to which we have no
+			// route means we basically don't work pre-config.
+			// addresses pre-configuration have information, but
+			// are inferior to those post-configuration. we need a
+			// means of *updating* names whenever routes change,
+			// or as close to true route cache behavior as we like
+			if(get_unicast_address(octx,i,&hwaddr,fam,addr,&ss) == NULL){
+				return &external_l3; // FIXME terrible
+			}
+		}
+	}
         if( (l3 = create_l3host(fam,addr,len)) ){
                 l3->next = *orig;
                 *orig = l3;
-		name_l3host(octx,i,l2,l3,fam,addr);
         }
         return l3;
 }

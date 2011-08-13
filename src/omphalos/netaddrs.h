@@ -16,10 +16,6 @@ struct l3host *lookup_l3host(const struct omphalos_iface *,struct interface *,
 				struct l2host *,int,const void *)
 				__attribute__ ((nonnull (1,2,3,5)));
 
-/*void name_l3host(const struct omphalos_iface *,struct interface *,
-			struct l2host *,struct l3host *,int,const void *)
-				__attribute__ ((nonnull (1,2,3,4,6)));*/
-
 void name_l3host_local(const struct omphalos_iface *,const struct interface *,
 			struct l2host *,struct l3host *,int,const void *)
 				__attribute__ ((nonnull (1,2,3,4,6)));
