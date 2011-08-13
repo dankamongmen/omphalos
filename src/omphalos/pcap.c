@@ -1,4 +1,5 @@
 #include <pcap.h>
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 #include <arpa/inet.h>
@@ -50,6 +51,7 @@ handle_pcap_direct(u_char *gi,const struct pcap_pkthdr *h,const u_char *bytes){
 
 static void
 handle_pcap_cooked(u_char *gi,const struct pcap_pkthdr *h,const u_char *bytes){
+	char bcast[8] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 	pcap_marshal *pm = (pcap_marshal *)gi;
 	interface *iface = pm->i; // interface for the pcap file
 	const struct pcapsll { // taken from pcap-linktype(7), "LINKTYPE_LINUX_SLL"
@@ -75,8 +77,10 @@ handle_pcap_cooked(u_char *gi,const struct pcap_pkthdr *h,const u_char *bytes){
 	}
 	packet.i = iface;
 	packet.i->addrlen = ntohs(sll->hwlen);
+	assert(packet.i->addrlen <= sizeof(addr));
 	memcpy(addr,sll->hwaddr,packet.i->addrlen);
 	packet.i->addr = addr;
+	packet.i->bcast = bcast;
 	packet.l2s = lookup_l2host(pm->octx,iface,sll->hwaddr);
 	packet.l2d = packet.l2s;
 	// proto is in network byte-order. rather than possibly switch it
@@ -97,6 +101,7 @@ handle_pcap_cooked(u_char *gi,const struct pcap_pkthdr *h,const u_char *bytes){
 		pm->octx->packet_read(&packet);
 	}
 	packet.i->addr = NULL;
+	packet.i->bcast = NULL;
 }
 
 int handle_pcap_file(const omphalos_ctx *pctx){
@@ -111,6 +116,7 @@ int handle_pcap_file(const omphalos_ctx *pctx){
 	free(pmarsh.i->name);
 	memset(pmarsh.i,0,sizeof(*pmarsh.i));
 	pmarsh.i->fd = pmarsh.i->rfd = -1;
+	pmarsh.i->flags = IFF_BROADCAST | IFF_UP | IFF_LOWER_UP;
 	// FIXME set up remainder of interface as best we can...
 	if((pmarsh.i->name = strdup(pctx->pcapfn)) == NULL){
 		return -1;
@@ -123,11 +129,12 @@ int handle_pcap_file(const omphalos_ctx *pctx){
 	switch(pcap_datalink(pcap)){
 		case DLT_EN10MB:{
 			fxn = handle_pcap_direct;
-			// FIXME how to handle ->addr itself? ->bcast?
 			pmarsh.handler = handle_ethernet_packet;
 			pmarsh.i->addrlen = ETH_ALEN;
 			pmarsh.i->addr = malloc(pmarsh.i->addrlen);
+			pmarsh.i->bcast = malloc(pmarsh.i->addrlen);
 			memset(pmarsh.i->addr,0,pmarsh.i->addrlen);
+			memset(pmarsh.i->bcast,0xff,pmarsh.i->addrlen);
 			break;
 		}case DLT_LINUX_SLL:{
 			fxn = handle_pcap_cooked;
