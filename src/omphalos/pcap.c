@@ -126,6 +126,8 @@ int handle_pcap_file(const omphalos_ctx *pctx){
 			// FIXME how to handle ->addr itself? ->bcast?
 			pmarsh.handler = handle_ethernet_packet;
 			pmarsh.i->addrlen = ETH_ALEN;
+			pmarsh.i->addr = malloc(pmarsh.i->addrlen);
+			memset(pmarsh.i->addr,0,pmarsh.i->addrlen);
 			break;
 		}case DLT_LINUX_SLL:{
 			fxn = handle_pcap_cooked;
