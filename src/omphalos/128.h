@@ -8,7 +8,8 @@ extern "C" {
 #include <stdint.h>
 
 // Use GCC vector extensions to drive SIMD
-typedef uint32_t uint128_t __attribute__ ((vector_size(16)));
+typedef uint32_t uint128_t __attribute__ ((vector_size(16)))
+			__attribute__ ((aligned (16)));
 
 int equal128(uint128_t,uint128_t);
 
