@@ -38,6 +38,10 @@ void handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 				free(buf);
 				goto malformed;
 			}
+			// If there was any previous length, it was
+			// nul-terminated. We will be writing over said nul with
+			// a '.', so count all that length. We'll then need the
+			// new characters (rlen), and a nul term.
 			if((tmp = realloc(buf,bsize + rlen + 1)) == NULL){
 				free(buf);
 				goto malformed;
@@ -46,16 +50,16 @@ void handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 			if(bsize){
 				buf[bsize - 1] = '.';
 			}
-			strncpy(buf + bsize,(const char *)sec + 1,*sec);
+			strncpy(buf + bsize,(const char *)sec + 1,rlen);
 			bsize += rlen + 1;
-			idx += *sec;
-			sec += *sec + 1;
+			buf[bsize - 1] = '\0';
+			sec += rlen + 1;
+			idx += rlen;
 		}
 		if(len <= idx || buf == NULL){
 			free(buf);
 			goto malformed;
 		}
-		buf[bsize] = '\0';
 		octx->diagnostic("QUESTION: %s",buf);
 		// FIXME
 		free(buf);
