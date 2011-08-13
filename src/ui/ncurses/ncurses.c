@@ -1098,6 +1098,10 @@ ncurses_setup(const omphalos_iface *octx){
 		errstr = "Couldn't initialize ncurses colorpair\n";
 		goto err;
 	}
+	if(init_pair(ROUTER_COLOR,COLOR_YELLOW,-1) != OK){
+		errstr = "Couldn't initialize ncurses colorpair\n";
+		goto err;
+	}
 	if(curs_set(0) == ERR){
 		errstr = "Couldn't disable cursor\n";
 		goto err;

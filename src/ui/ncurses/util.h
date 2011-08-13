@@ -39,6 +39,7 @@ enum {
 	IFACE_COLOR,			// interface summary text
 	MCAST_COLOR,			// multicast addresses
 	BCAST_COLOR,			// broadcast addresses
+	ROUTER_COLOR,			// routing l3 addresses / access points
 };
 
 #ifdef __cplusplus

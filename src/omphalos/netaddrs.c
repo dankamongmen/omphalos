@@ -12,6 +12,7 @@
 typedef struct l3host {
 	char *name;
 	int fam;	// FIXME kill determine from addr relative to arenas
+	int path;	// does it provide access elsewhere? (route/AP)
 	union {
 		uint32_t ip4;
 		uint128_t ip6;
@@ -36,6 +37,7 @@ create_l3host(int fam,const void *addr,size_t len){
 		r->opaque = NULL;
 		r->name = NULL;
 		r->fam = fam;
+		r->path = 0;
 		memcpy(&r->addr,addr,len);
 	}
 	return r;
@@ -121,6 +123,9 @@ struct l3host *lookup_l3host(const omphalos_iface *octx,interface *i,
         if( (l3 = create_l3host(fam,addr,len)) ){
                 l3->next = *orig;
                 *orig = l3;
+		if(fam == AF_BSSID){
+			l3->path = 1;
+		}
 		if(cat == RTN_MULTICAST){
 			const char *mname = ietf_multicast_lookup(fam,addr);
 			if(mname){
@@ -163,6 +168,10 @@ const char *get_l3name(const l3host *l3){
 
 void *l3host_get_opaque(l3host *l3){
 	return l3->opaque;
+}
+
+int router_p(const l3host *l3){
+	return l3->path;
 }
 
 int l3ntop(const l3host *l3,char *buf,size_t buflen){
