@@ -45,7 +45,7 @@ void name_l3host_absolute(const omphalos_iface *octx,const interface *i,
 	if(l3->name == NULL){
 		if( (l3->name = strdup(name)) ){
 			if(octx->host_event){
-				octx->host_event(i,l2,l3);
+				l3->opaque = octx->host_event(i,l2,l3);
 			}
 		}
 	}
@@ -117,6 +117,9 @@ struct l3host *lookup_l3host(const omphalos_iface *octx,interface *i,
         if( (l3 = create_l3host(fam,addr,len)) ){
                 l3->next = *orig;
                 *orig = l3;
+		if(octx->host_event){
+			l3->opaque = octx->host_event(i,l2,l3);
+		}
         }
         return l3;
 }
