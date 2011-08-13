@@ -28,6 +28,7 @@ void handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 	ar = ntohs(dns->arcount);
 	len -= sizeof(*dns);
 	sec = (const unsigned char *)frame + sizeof(*dns);
+	//octx->diagnostic("q/a/n/a: %hu/%hu/%hu/%hu",qd,an,ns,ar);
 	if(qd){
 		char *tmp,*buf = NULL;
 		unsigned char rlen;
@@ -57,12 +58,12 @@ void handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 			sec += rlen;
 			idx += rlen;
 		}
-		if(len <= idx + 4 || buf == NULL){
+		if(len < idx + 4 || buf == NULL){
 			free(buf);
 			goto malformed;
 		}
-		octx->diagnostic("TYPE: %hu CLASS: %hu",
-				ntohs(*(uint16_t *)sec),ntohs(*((uint16_t *)sec + 1)));
+		//octx->diagnostic("TYPE: %hu CLASS: %hu",
+		//		ntohs(*(uint16_t *)sec),ntohs(*((uint16_t *)sec + 1)));
 		//octx->diagnostic("QUESTION: %s",buf);
 		// FIXME
 		free(buf);
