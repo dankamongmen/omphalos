@@ -252,16 +252,24 @@ void handle_radiotap_packet(const omphalos_iface *octx,omphalos_packet *op,
 		return;
 	}
 	len -= rlen;
-	pres = ntohl(rhdr->present);
+	pres = rhdr->present;
 	vhdr = (const char *)frame + sizeof(*rhdr);
-	assert(!(pres & IEEE80211_RADIOTAP_TSFT)); // FIXME
-	if(pres & IEEE80211_RADIOTAP_FLAGS){
+	if(pres & (1u << IEEE80211_RADIOTAP_TSFT)){
+		vhdr += 8;
+	}
+	if(pres & (1u << IEEE80211_RADIOTAP_FLAGS)){
 		unsigned flags = *(const unsigned char *)vhdr;
 		++vhdr;
 		// There's a 32-bit FCS on the end built into the length here,
 		// if the FCS bit is set in Flags.
 		if(flags & IEEE80211_RADIOTAP_F_FCS){
-			len -= sizeof(uint32_t);
+			if(len < 4){
+				++op->i->malformed;
+				octx->diagnostic("%s Packet too small (%zu) on %s",
+						__func__,len,op->i->name);
+				return;
+			}
+			len -= 4;
 		}
 	}
 	ehdr = (const char *)frame + rlen;
