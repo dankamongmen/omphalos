@@ -244,7 +244,7 @@ resize_iface(const interface *i,iface_state *is){
 		}
 	}
 	redraw_iface_generic(i,is);
-	return screen_update();
+	return OK;
 }
 
 // Pass current number of columns
@@ -1216,6 +1216,8 @@ interface_cb_locked(interface *i,iface_state *ret){
 	}else if(ret->devaction > 0){
 		wstatus_locked(pad,"");
 		ret->devaction = 0;
+	}else{
+		screen_update();
 	}
 	return ret;
 }
@@ -1298,6 +1300,7 @@ host_callback_locked(const interface *i,struct l2host *l2,struct l3host *l3){
 		}
 	}
 	resize_iface(i,is);
+	screen_update();
 	return ret;
 }
 
@@ -1329,6 +1332,7 @@ neighbor_callback_locked(const interface *i,struct l2host *l2){
 		}
 	}
 	resize_iface(i,is);
+	screen_update();
 	return ret;
 }
 
