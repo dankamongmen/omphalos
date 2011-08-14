@@ -1,11 +1,11 @@
 #include <netinet/ip.h>
 #include <linux/tcp.h>
-#include <linux/icmp.h>
 #include <linux/igmp.h>
 #include <netinet/ip6.h>
 #include <omphalos/ip.h>
 #include <omphalos/udp.h>
 #include <omphalos/pim.h>
+#include <omphalos/icmp.h>
 #include <omphalos/util.h>
 #include <omphalos/hwaddrs.h>
 #include <omphalos/netaddrs.h>
@@ -23,18 +23,6 @@ handle_tcp_packet(const omphalos_iface *octx,omphalos_packet *op,const void *fra
 		return;
 	}
 	// FIXME check header len etc...
-}
-
-static void
-handle_icmp_packet(const omphalos_iface *octx,omphalos_packet *op,const void *frame,size_t len){
-	const struct icmphdr *icmp = frame;
-
-	if(len < sizeof(*icmp)){
-		octx->diagnostic("%s malformed with %zu",__func__,len);
-		++op->i->malformed;
-		return;
-	}
-	// FIXME
 }
 
 static void
@@ -85,6 +73,8 @@ void handle_ipv6_packet(const omphalos_iface *octx,omphalos_packet *op,
 		handle_udp_packet(octx,op,nhdr,plen);
 	break; }case IPPROTO_ICMP:{
 		handle_icmp_packet(octx,op,nhdr,plen);
+	break; }case IPPROTO_ICMP6:{
+		handle_icmp6_packet(octx,op,nhdr,plen);
 	break; }case IPPROTO_IGMP:{
 		handle_igmp_packet(octx,op,nhdr,plen);
 	break; }case IPPROTO_PIM:{
