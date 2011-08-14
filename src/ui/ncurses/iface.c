@@ -10,6 +10,7 @@
 #include <ncursesw/ncurses.h>
 #include <ui/ncurses/iface.h>
 #include <omphalos/netaddrs.h>
+#include <omphalos/wireless.h>
 #include <omphalos/interface.h>
 
 typedef struct l3obj {
@@ -133,11 +134,11 @@ l3obj *add_l3_to_iface(iface_state *is,l2obj *l2,struct l3host *l3h){
 	return l3;
 }
 
-void print_iface_hosts(const interface *i,const iface_state *is){
-	int rows,cols,line;
+static void
+print_iface_hosts(const interface *i,const iface_state *is,int rows,int cols){
+	int line;
 	const l2obj *l;
 
-	getmaxyx(is->subwin,rows,cols);
 	cols -= 2 + 3 + HWADDRSTRLEN(i->addrlen);
 	// If the interface is down, we don't lead with the summary line
 	line = !!interface_up_p(i);
@@ -232,26 +233,6 @@ duplexstr(unsigned dplx){
 	switch(dplx){
 		case DUPLEX_FULL: return "full"; break;
 		case DUPLEX_HALF: return "half"; break;
-		default: break;
-	}
-	return "";
-}
-
-static const char *
-modestr(unsigned dplx){
-	switch(dplx){
-		case NL80211_IFTYPE_UNSPECIFIED: return "auto"; break;
-		case NL80211_IFTYPE_ADHOC: return "adhoc"; break;
-		case NL80211_IFTYPE_STATION: return "managed"; break;
-		case NL80211_IFTYPE_AP: return "ap"; break;
-		case NL80211_IFTYPE_AP_VLAN: return "apvlan"; break;
-		case NL80211_IFTYPE_WDS: return "wds"; break;
-		case NL80211_IFTYPE_MONITOR: return "monitor"; break;
-		case NL80211_IFTYPE_MESH_POINT: return "mesh"; break;
-#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,38)
-		case NL80211_IFTYPE_P2P_CLIENT: return "p2pclient"; break;
-		case NL80211_IFTYPE_P2P_GO: return "p2pgo"; break;
-#endif
 		default: break;
 	}
 	return "";
@@ -365,10 +346,14 @@ void iface_box(WINDOW *w,const interface *i,const iface_state *is,int active){
 	}
 }
 
-void print_iface_state(const interface *i,const iface_state *is){
+static void
+print_iface_state(const interface *i,const iface_state *is,int rows){
 	char buf[U64STRLEN + 1],buf2[U64STRLEN + 1];
 	unsigned long usecdomain;
 
+	if(rows < 3){
+		return;
+	}
 	assert(wattrset(is->subwin,A_BOLD | COLOR_PAIR(IFACE_COLOR)) != ERR);
 	// FIXME broken if bps domain ever != fps domain. need unite those
 	// into one FTD stat by letting it take an object...
@@ -379,6 +364,14 @@ void print_iface_state(const interface *i,const iface_state *is){
 				prefix(timestat_val(&i->bps) * CHAR_BIT * 1000000 * 100 / usecdomain,100,buf,sizeof(buf),0),
 				prefix(timestat_val(&i->fps),1,buf2,sizeof(buf2),1),
 				is->nodes) != ERR);
+}
+
+void update_iface_state(const iface_state *is){
+	int rows,cols;
+
+	getmaxyx(is->subwin,rows,cols);
+	assert(cols); // FIXME
+	print_iface_state(is->iface,is,rows);
 }
 
 void free_iface_state(iface_state *is){
@@ -392,12 +385,16 @@ void free_iface_state(iface_state *is){
 }
 
 void redraw_iface(const interface *i,const struct iface_state *is,int active){
+	int rows,cols;
+
+	getmaxyx(is->subwin,rows,cols);
+	assert(cols); // FIXME
 	assert(werase(is->subwin) != ERR);
 	iface_box(is->subwin,i,is,active);
 	if(interface_up_p(i)){
-		print_iface_state(i,is);
+		print_iface_state(i,is,rows);
 	}
-	print_iface_hosts(i,is);
+	print_iface_hosts(i,is,rows,cols);
 }
 
 // Is even a line of the interface visible? If so, draw it, as otherwise we
@@ -465,14 +462,14 @@ int move_interface(iface_state *is,int rows,int delta,int active){
 
 // This is the number of lines we'd have in an optimal world; we might have
 // fewer available to us on this screen at this time.
-int lines_for_interface(const interface *i,const iface_state *is){
-	return 2 + is->nodes + is->hosts + interface_up_p(i);
+int lines_for_interface(const iface_state *is){
+	return 2 + is->nodes + is->hosts + interface_up_p(is->iface);
 }
 
 // Is the interface window entirely visible? We can't draw it otherwise, as it
 // will obliterate the global bounding box.
 int iface_wholly_visible_p(int rows,const iface_state *is){
-	if(is->scrline + lines_for_interface(is->iface,is) + 1 >= rows){
+	if(is->scrline + lines_for_interface(is) + 1 >= rows){
 		return 0;
 	}else if(is->scrline < 1){
 		return 0;

@@ -6,6 +6,8 @@ extern "C" {
 #endif
 
 #include <stdio.h>
+#include <linux/version.h>
+#include <linux/nl80211.h>
 
 struct iw_event;
 struct interface;
@@ -16,6 +18,26 @@ int handle_wireless_event(const struct omphalos_iface *,struct interface *,
 				const struct iw_event *,size_t);
 int iface_wireless_info(const struct omphalos_iface *,const char *,
 				struct wless_info *);
+
+static inline const char *
+modestr(unsigned dplx){
+	switch(dplx){
+		case NL80211_IFTYPE_UNSPECIFIED: return "auto"; break;
+		case NL80211_IFTYPE_ADHOC: return "adhoc"; break;
+		case NL80211_IFTYPE_STATION: return "managed"; break;
+		case NL80211_IFTYPE_AP: return "ap"; break;
+		case NL80211_IFTYPE_AP_VLAN: return "apvlan"; break;
+		case NL80211_IFTYPE_WDS: return "wds"; break;
+		case NL80211_IFTYPE_MONITOR: return "monitor"; break;
+		case NL80211_IFTYPE_MESH_POINT: return "mesh"; break;
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,38)
+		case NL80211_IFTYPE_P2P_CLIENT: return "p2pclient"; break;
+		case NL80211_IFTYPE_P2P_GO: return "p2pgo"; break;
+#endif
+		default: break;
+	}
+	return "";
+}
 
 #ifdef __cplusplus
 }

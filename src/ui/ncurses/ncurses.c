@@ -87,7 +87,7 @@ static int statuschars;	// True size, not necessarily what's available
 
 static inline int
 iface_lines_bounded(const interface *i,const struct iface_state *is,int rows){
-	int lines = lines_for_interface(i,is);
+	int lines = lines_for_interface(is);
 
 	if(lines > rows - 2){ // top and bottom border
 		lines = rows - 2;
@@ -1159,7 +1159,7 @@ packet_cb_locked(const interface *i,omphalos_packet *op){
 		if(is == current_iface && details.p){
 			iface_details(panel_window(details.p),i,details.ysize);
 		}
-		print_iface_state(i,is);
+		update_iface_state(is);
 		return 1;
 	}
 	return 0;
@@ -1194,7 +1194,7 @@ interface_cb_locked(interface *i,iface_state *ret){
 			}
 			// we're not yet in the list -- nothing points to us --
 			// though ret->prev is valid.
-			if((ret->subwin = newwin(lines_for_interface(i,ret),PAD_COLS(cols),ret->scrline,START_COL)) == NULL ||
+			if((ret->subwin = newwin(lines_for_interface(ret),PAD_COLS(cols),ret->scrline,START_COL)) == NULL ||
 					(ret->panel = new_panel(ret->subwin)) == NULL){
 				delwin(ret->subwin);
 				free(ret);
