@@ -243,6 +243,9 @@ const char *iana_lookup(const void *unsafe_oui,size_t addrlen){
 	if(categorize_ethaddr(oui) == RTN_MULTICAST){
 		return name_ethmcastaddr(oui);
 	}
+	if(oui[0] & 0x02){
+		return "IEEE 802 locally-assigned MAC";
+	}
 	return NULL;
 }
 
