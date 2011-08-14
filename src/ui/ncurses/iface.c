@@ -139,14 +139,13 @@ void print_iface_hosts(const interface *i,const iface_state *is){
 
 	getmaxyx(is->subwin,rows,cols);
 	cols -= 2 + 3 + HWADDRSTRLEN(i->addrlen);
-	assert(cols >= 0);
-	assert(rows);
 	// If the interface is down, we don't lead with the summary line
 	line = !!interface_up_p(i);
 	for(l = is->l2objs ; l ; l = l->next){
 		char hw[HWADDRSTRLEN(i->addrlen)];
 		const char *devname;
 		char legend;
+		int attrs;
 		l3obj *l3;
 		
 		if(++line + 1 >= rows){
@@ -154,25 +153,26 @@ void print_iface_hosts(const interface *i,const iface_state *is){
 		}
 		switch(l->cat){
 			case RTN_UNICAST:
-				assert(wattrset(is->subwin,COLOR_PAIR(MCAST_COLOR)) != ERR);
+				attrs = COLOR_PAIR(MCAST_COLOR);
 				legend = 'U';
 				break;
 			case RTN_LOCAL:
-				assert(wattrset(is->subwin,A_BOLD | COLOR_PAIR(MCAST_COLOR)) != ERR);
+				attrs = A_BOLD | COLOR_PAIR(MCAST_COLOR);
 				legend = 'L';
 				break;
 			case RTN_MULTICAST:
-				assert(wattrset(is->subwin,A_BOLD | COLOR_PAIR(BCAST_COLOR)) != ERR);
+				attrs = A_BOLD | COLOR_PAIR(BCAST_COLOR);
 				legend = 'M';
 				break;
 			case RTN_BROADCAST:
-				assert(wattrset(is->subwin,COLOR_PAIR(BCAST_COLOR)) != ERR);
+				attrs = COLOR_PAIR(BCAST_COLOR);
 				legend = 'B';
 				break;
 		}
 		if(!interface_up_p(i)){
-			assert(wcolor_set(is->subwin,DBORDER_COLOR,NULL) != ERR);
+			attrs = (attrs & A_BOLD) | COLOR_PAIR(DBORDER_COLOR);
 		}
+		assert(wattrset(is->subwin,attrs) != ERR);
 		l2ntop(l->l2,i->addrlen,hw);
 		if((devname = get_devname(l->l2)) == NULL){
 			if(l->cat == RTN_LOCAL){
@@ -203,16 +203,10 @@ void print_iface_hosts(const interface *i,const iface_state *is){
 			}
 			if(router_p(l3->l3)){
 				assert(wattrset(is->subwin,A_BOLD | COLOR_PAIR(ROUTER_COLOR)) != ERR);
-			} // FIXME go back to original color afterwards
+			}
 			assert(mvwprintw(is->subwin,line,1,"    %s %s",nw,name) != ERR);
+			assert(wattrset(is->subwin,attrs) != ERR);
 		}
-		/*
-		const char *nname;
-		int hlen = strlen(nname);
-		if((nname = get_name(l->l2)) == NULL){
-			nname = "";
-		}
-		*/
 	}
 }
 
@@ -412,10 +406,32 @@ static int
 iface_visible_p(int rows,const iface_state *is){
 	if(is->scrline + 1 >= rows){
 		return 0;
+	/*
+	
+	FIXME we can't draw partial bottoms yet. enable this when we can...
+
 	}else if(is->scrline + lines_for_interface(is->iface,is) < 1){
+		return 0;
+
+	...and disable the following ...
+
+	*/
+	}else if(is->scrline < 1){
 		return 0;
 	}
 	return 1;
+}
+
+static int
+iface_shrink(iface_state *is,int rows){
+	int oldrows,cols;
+
+	assert(rows);
+	getmaxyx(is->subwin,oldrows,cols);
+	assert(oldrows); // FIXME
+	assert(wresize(is->subwin,rows,cols) != ERR);
+	assert(replace_panel(is->panel,is->subwin) != ERR);
+	return 0;
 }
 
 // Move this interface, possibly hiding it or bringing it onscreen. Negative
@@ -428,15 +444,13 @@ int move_interface(iface_state *is,int rows,int delta,int active){
 
 		assert(move_panel(is->panel,is->scrline,1) != ERR);
 		redraw_iface(ii,is,active);
-	// use "will_be_visible" as "would_be_visible" here, heh
 	}else if(iface_visible_p(rows,is)){
 		// FIXME draw partial interface. until then, old behavior...
-		if(active){
-			is->scrline -= delta;
-			return -1;
-		}
-		assert(werase(is->subwin) != ERR);
-		assert(hide_panel(is->panel) != ERR);
+		interface *ii = is->iface;
+
+		iface_shrink(is,rows - is->scrline - 1);
+		assert(move_panel(is->panel,is->scrline,1) != ERR);
+		redraw_iface(ii,is,active);
 	}else if(!panel_hidden(is->panel)){
 		if(active){
 			is->scrline -= delta;

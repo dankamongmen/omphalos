@@ -4,6 +4,7 @@
 #include <netinet/ip6.h>
 #include <omphalos/ip.h>
 #include <omphalos/udp.h>
+#include <omphalos/gre.h>
 #include <omphalos/pim.h>
 #include <omphalos/icmp.h>
 #include <omphalos/util.h>
@@ -75,6 +76,8 @@ void handle_ipv6_packet(const omphalos_iface *octx,omphalos_packet *op,
 		handle_icmp_packet(octx,op,nhdr,plen);
 	break; }case IPPROTO_ICMP6:{
 		handle_icmp6_packet(octx,op,nhdr,plen);
+	break; }case IPPROTO_GRE:{
+		handle_gre_packet(octx,op,nhdr,plen);
 	break; }case IPPROTO_IGMP:{
 		handle_igmp_packet(octx,op,nhdr,plen);
 	break; }case IPPROTO_PIM:{
@@ -131,6 +134,8 @@ void handle_ipv4_packet(const omphalos_iface *octx,omphalos_packet *op,
 		handle_udp_packet(octx,op,nhdr,nlen);
 	break; }case IPPROTO_ICMP:{
 		handle_icmp_packet(octx,op,nhdr,nlen);
+	break; }case IPPROTO_GRE:{
+		handle_gre_packet(octx,op,nhdr,nlen);
 	break; }case IPPROTO_IGMP:{
 		handle_igmp_packet(octx,op,nhdr,nlen);
 	break; }case IPPROTO_PIM:{
