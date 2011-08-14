@@ -194,6 +194,11 @@ interface_promisc_p(const interface *i){
 	return (i->flags & IFF_PROMISC);
 }
 
+static inline int
+interface_virtual_p(const interface *i){
+	return i->settings_valid == SETTINGS_INVALID;
+}
+
 #ifdef __cplusplus
 }
 #endif

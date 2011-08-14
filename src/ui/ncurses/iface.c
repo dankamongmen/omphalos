@@ -155,18 +155,25 @@ print_iface_hosts(const interface *i,const iface_state *is,int rows,int cols){
 		switch(l->cat){
 			case RTN_UNICAST:
 				attrs = COLOR_PAIR(MCAST_COLOR);
+				devname = get_devname(l->l2);
 				legend = 'U';
 				break;
 			case RTN_LOCAL:
 				attrs = A_BOLD | COLOR_PAIR(MCAST_COLOR);
+				if(interface_virtual_p(i) ||
+					(devname = get_devname(l->l2)) == NULL){
+					devname = i->topinfo.devname;
+				}
 				legend = 'L';
 				break;
 			case RTN_MULTICAST:
 				attrs = A_BOLD | COLOR_PAIR(BCAST_COLOR);
+				devname = get_devname(l->l2);
 				legend = 'M';
 				break;
 			case RTN_BROADCAST:
 				attrs = COLOR_PAIR(BCAST_COLOR);
+				devname = get_devname(l->l2);
 				legend = 'B';
 				break;
 		}
@@ -175,11 +182,6 @@ print_iface_hosts(const interface *i,const iface_state *is,int rows,int cols){
 		}
 		assert(wattrset(is->subwin,attrs) != ERR);
 		l2ntop(l->l2,i->addrlen,hw);
-		if((devname = get_devname(l->l2)) == NULL){
-			if(l->cat == RTN_LOCAL){
-				devname = i->topinfo.devname;
-			}
-		}
 		if(devname){
 			int len = strlen(devname);
 
