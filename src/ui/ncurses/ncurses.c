@@ -325,7 +325,7 @@ draw_main_window(WINDOW *w){
 	if(wattroff(w,A_BOLD | COLOR_PAIR(FOOTER_COLOR)) != OK){
 		ERREXIT;
 	}
-	return screen_update();
+	return 0;
 
 err:
 	return -1;
@@ -342,13 +342,15 @@ wvstatus_locked(WINDOW *w,const char *fmt,va_list va){
 	return draw_main_window(w);
 }
 
-// NULL fmt clears the status bar
+// NULL fmt clears the status bar. wvstatus is an unlocked entry point, and
+// thus calls screen_update() on exit.
 static int
 wvstatus(WINDOW *w,const char *fmt,va_list va){
 	int ret;
 
 	pthread_mutex_lock(&bfl);
 	ret = wvstatus_locked(w,fmt,va);
+	screen_update();
 	pthread_mutex_unlock(&bfl);
 	return ret;
 }
@@ -365,14 +367,15 @@ wstatus_locked(WINDOW *w,const char *fmt,...){
 	return ret;
 }
 
-// NULL fmt clears the status bar
+// NULL fmt clears the status bar. wstatus is an unlocked entry point, and thus
+// calls screen_update() on exit.
 static int
 wstatus(WINDOW *w,const char *fmt,...){
 	va_list va;
 	int ret;
 
 	va_start(va,fmt);
-	ret = wvstatus(w,fmt,va);
+	ret = wvstatus(w,fmt,va); // calls screen_update()
 	va_end(va);
 	return ret;
 }
@@ -441,7 +444,6 @@ hide_panel_locked(struct panel_state *ps){
 		ps->p = NULL;
 		delwin(psw);
 		ps->ysize = -1;
-		screen_update();
 	}
 }
 
@@ -593,8 +595,6 @@ display_details_locked(WINDOW *mainw,struct panel_state *ps,iface_state *is){
 			ERREXIT;
 		}
 	}
-	assert(start_screen_update() != ERR);
-	assert(finish_screen_update() != ERR);
 	return 0;
 
 err:
@@ -670,12 +670,6 @@ display_help_locked(WINDOW *mainw,struct panel_state *ps){
 		ERREXIT;
 	}
 	if(helpstrs(panel_window(ps->p),1,ps->ysize) != OK){
-		ERREXIT;
-	}
-	if(start_screen_update() == ERR){
-		ERREXIT;
-	}
-	if(finish_screen_update() == ERR){
 		ERREXIT;
 	}
 	return 0;
@@ -782,7 +776,6 @@ use_next_iface_locked(WINDOW *w){
 			assert(top_panel(details.p) != ERR);
 			iface_details(panel_window(details.p),i,details.ysize);
 		}
-		screen_update();
 	}
 }
 
@@ -829,7 +822,6 @@ use_prev_iface_locked(WINDOW *w){
 			assert(top_panel(details.p) != ERR);
 			iface_details(panel_window(details.p),i,details.ysize);
 		}
-		screen_update();
 	}
 }
 
@@ -869,61 +861,73 @@ ncurses_input_thread(void *unsafe_marsh){
 		case KEY_UP: case 'k':
 			pthread_mutex_lock(&bfl);
 				use_prev_iface_locked(w);
+				screen_update();
 			pthread_mutex_unlock(&bfl);
 			break;
 		case KEY_DOWN: case 'j':
 			pthread_mutex_lock(&bfl);
 				use_next_iface_locked(w);
+				screen_update();
 			pthread_mutex_unlock(&bfl);
 			break;
 		case KEY_RESIZE:
 			pthread_mutex_lock(&bfl);{
 				resize_screen_locked(w);
+				screen_update();
 			}pthread_mutex_unlock(&bfl);
 			break;
 		case 12: // Ctrl-L FIXME
 			pthread_mutex_lock(&bfl);{
 				redraw_screen_locked();
+				screen_update();
 			}pthread_mutex_unlock(&bfl);
 			break;
 		case 'C':
 			pthread_mutex_lock(&bfl);
 				configure_prefs(w);
+				screen_update();
 			pthread_mutex_unlock(&bfl);
 			break;
 		case 'R':
 			pthread_mutex_lock(&bfl);
 				reset_all_interface_stats(w);
+				screen_update();
 			pthread_mutex_unlock(&bfl);
 			break;
 		case 'r':
 			pthread_mutex_lock(&bfl);
 				reset_current_interface_stats(w);
+				screen_update();
 			pthread_mutex_unlock(&bfl);
 			break;
 		case 'p':
 			pthread_mutex_lock(&bfl);
 				toggle_promisc_locked(octx,w);
+				screen_update();
 			pthread_mutex_unlock(&bfl);
 			break;
 		case 'd':
 			pthread_mutex_lock(&bfl);
 				down_interface_locked(octx,w);
+				screen_update();
 			pthread_mutex_unlock(&bfl);
 			break;
 		case 's':
 			pthread_mutex_lock(&bfl);
 				sniff_interface_locked(octx,w);
+				screen_update();
 			pthread_mutex_unlock(&bfl);
 			break;
 		case 'u':
 			pthread_mutex_lock(&bfl);
 				change_mtu(w);
+				screen_update();
 			pthread_mutex_unlock(&bfl);
 			break;
 		case 'm':
 			pthread_mutex_lock(&bfl);
 				change_mac(w);
+				screen_update();
 			pthread_mutex_unlock(&bfl);
 			break;
 		case 'v':{
@@ -936,6 +940,7 @@ ncurses_input_thread(void *unsafe_marsh){
 				active = (display_details_locked(w,&details,current_iface) == OK)
 					? &details : NULL;
 			}
+			screen_update();
 			pthread_mutex_unlock(&bfl);
 			break;
 		}case 'h':{
@@ -948,10 +953,12 @@ ncurses_input_thread(void *unsafe_marsh){
 				active = (display_help_locked(w,&help) == OK)
 					? &help : NULL;
 			}
+			screen_update();
 			pthread_mutex_unlock(&bfl);
 			break;
 		}default:{
 			const char *hstr = !help.p ? " ('h' for help)" : "";
+			// wstatus() locks/unlocks, and calls screen_update()
 			if(isprint(ch)){
 				wstatus(w,"unknown command '%c'%s",ch,hstr);
 			}else{
@@ -1135,7 +1142,7 @@ err:
 	return NULL;
 }
 
-static inline void
+static inline int
 packet_cb_locked(const interface *i,omphalos_packet *op){
 	iface_state *is = op->i->opaque;
 
@@ -1146,21 +1153,24 @@ packet_cb_locked(const interface *i,omphalos_packet *op){
 		timersub(&op->tv,&is->lastprinted,&tdiff);
 		udiff = timerusec(&tdiff);
 		if(udiff < 500000){ // At most one update every 1/2s
-			return;
+			return 0;
 		}
 		is->lastprinted = op->tv;
 		if(is == current_iface && details.p){
 			iface_details(panel_window(details.p),i,details.ysize);
 		}
 		print_iface_state(i,is);
-		screen_update();
+		return 1;
 	}
+	return 0;
 }
 
 static void
 packet_callback(omphalos_packet *op){
 	pthread_mutex_lock(&bfl);
-	packet_cb_locked(op->i,op);
+	if(packet_cb_locked(op->i,op)){
+		screen_update();
+	}
 	pthread_mutex_unlock(&bfl);
 }
 
@@ -1219,8 +1229,6 @@ interface_cb_locked(interface *i,iface_state *ret){
 	}else if(ret->devaction > 0){
 		wstatus_locked(pad,"");
 		ret->devaction = 0;
-	}else{
-		screen_update();
 	}
 	return ret;
 }
@@ -1231,6 +1239,7 @@ interface_callback(interface *i,void *unsafe){
 
 	pthread_mutex_lock(&bfl);
 	r = interface_cb_locked(i,unsafe);
+	screen_update();
 	pthread_mutex_unlock(&bfl);
 	return r;
 }
@@ -1241,6 +1250,7 @@ wireless_callback(interface *i,unsigned wcmd __attribute__ ((unused)),void *unsa
 
 	pthread_mutex_lock(&bfl);
 	r = interface_cb_locked(i,unsafe);
+	screen_update();
 	pthread_mutex_unlock(&bfl);
 	return r;
 }
@@ -1281,7 +1291,7 @@ interface_removed_locked(iface_state *is){
 			current_iface = NULL;
 		}
 		free(is);
-		draw_main_window(stdscr); // update iface count (calls screen_update())
+		draw_main_window(stdscr); // update iface count
 	}
 }
 
@@ -1303,7 +1313,6 @@ host_callback_locked(const interface *i,struct l2host *l2,struct l3host *l3){
 		}
 	}
 	resize_iface(i,is);
-	screen_update();
 	return ret;
 }
 
@@ -1312,7 +1321,9 @@ host_callback(const interface *i,struct l2host *l2,struct l3host *l3){
 	void *ret;
 
 	pthread_mutex_lock(&bfl);
-	ret = host_callback_locked(i,l2,l3);
+	if( (ret = host_callback_locked(i,l2,l3)) ){
+		screen_update();
+	}
 	pthread_mutex_unlock(&bfl);
 	return ret;
 }
@@ -1335,7 +1346,6 @@ neighbor_callback_locked(const interface *i,struct l2host *l2){
 		}
 	}
 	resize_iface(i,is);
-	screen_update();
 	return ret;
 }
 
@@ -1344,7 +1354,9 @@ neighbor_callback(const interface *i,struct l2host *l2){
 	void *ret;
 
 	pthread_mutex_lock(&bfl);
-	ret = neighbor_callback_locked(i,l2);
+	if( (ret = neighbor_callback_locked(i,l2)) ){
+		screen_update();
+	}
 	pthread_mutex_unlock(&bfl);
 	return ret;
 }
@@ -1353,6 +1365,7 @@ static void
 interface_removed_callback(const interface *i __attribute__ ((unused)),void *unsafe){
 	pthread_mutex_lock(&bfl);
 	interface_removed_locked(unsafe);
+	screen_update();
 	pthread_mutex_unlock(&bfl);
 }
 
