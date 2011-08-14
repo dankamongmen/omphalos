@@ -239,17 +239,19 @@ duplexstr(unsigned dplx){
 }
 
 // to be called only while ncurses lock is held
-void iface_box(WINDOW *w,const interface *i,const iface_state *is,int active){
-	int bcolor,hcolor,scrrows,scrcols;
+void iface_box(const interface *i,const iface_state *is,int active){
+	int bcolor,hcolor,rows,cols,nobottom;
+	WINDOW * const w = is->subwin;
 	size_t buslen;
 	int attrs;
 
-	getmaxyx(w,scrrows,scrcols);
+	getmaxyx(w,rows,cols);
+	nobottom = 0/* FIXME !iface_wholly_visible_p(scrrows,is)*/;
 	bcolor = interface_up_p(i) ? UBORDER_COLOR : DBORDER_COLOR;
 	hcolor = interface_up_p(i) ? UHEADING_COLOR : DHEADING_COLOR;
 	attrs = active ? A_REVERSE : A_BOLD;
 	assert(wattrset(w,attrs | COLOR_PAIR(bcolor)) == OK);
-	assert(bevel(w) == OK);
+	assert(bevel(w,nobottom) == OK);
 	assert(wattroff(w,A_REVERSE) == OK);
 	if(active){
 		assert(wattron(w,A_BOLD) == OK);
@@ -281,7 +283,7 @@ void iface_box(WINDOW *w,const interface *i,const iface_state *is,int active){
 	assert(wprintw(w,"]") != ERR);
 	assert(wattron(w,attrs) != ERR);
 	assert(wattroff(w,A_REVERSE) != ERR);
-	assert(mvwprintw(w,scrrows - 1,2,"[") != ERR);
+	assert(mvwprintw(w,rows - 1,2,"[") != ERR);
 	assert(wcolor_set(w,hcolor,NULL) != ERR);
 	if(active){
 		assert(wattron(w,A_BOLD) == OK);
@@ -337,10 +339,10 @@ void iface_box(WINDOW *w,const interface *i,const iface_state *is,int active){
 		}
 		if(i->busname){
 			buslen += strlen(i->busname) + 1;
-			assert(mvwprintw(w,scrrows - 1,scrcols - (buslen + 2),
+			assert(mvwprintw(w,rows - 1,cols - (buslen + 2),
 					"%s:%s",i->busname,i->drv.bus_info) != ERR);
 		}else{
-			assert(mvwprintw(w,scrrows - 1,scrcols - (buslen + 2),
+			assert(mvwprintw(w,rows - 1,cols - (buslen + 2),
 					"%s",i->drv.bus_info) != ERR);
 		}
 	}
@@ -390,7 +392,7 @@ void redraw_iface(const interface *i,const struct iface_state *is,int active){
 	getmaxyx(is->subwin,rows,cols);
 	assert(cols); // FIXME
 	assert(werase(is->subwin) != ERR);
-	iface_box(is->subwin,i,is,active);
+	iface_box(i,is,active);
 	if(interface_up_p(i)){
 		print_iface_state(i,is,rows);
 	}
@@ -419,18 +421,6 @@ iface_visible_p(int rows,const iface_state *is){
 	return 1;
 }
 
-static int
-iface_shrink(iface_state *is,int rows){
-	int oldrows,cols;
-
-	assert(rows);
-	getmaxyx(is->subwin,oldrows,cols);
-	assert(oldrows); // FIXME
-	assert(wresize(is->subwin,rows,cols) != ERR);
-	assert(replace_panel(is->panel,is->subwin) != ERR);
-	return 0;
-}
-
 // Move this interface, possibly hiding it or bringing it onscreen. Negative
 // delta indicates movement up, positive delta moves down. Returns a non-zero
 // if the interface is active and would be pushed offscreen.
@@ -443,11 +433,13 @@ int move_interface(iface_state *is,int rows,int delta,int active){
 		redraw_iface(ii,is,active);
 	}else if(iface_visible_p(rows,is)){
 		// FIXME draw partial interface. until then, old behavior...
-		interface *ii = is->iface;
-
-		iface_shrink(is,rows - is->scrline - 1);
-		assert(move_panel(is->panel,is->scrline,1) != ERR);
-		redraw_iface(ii,is,active);
+		if(active){
+			is->scrline -= delta;
+			return -1;
+		}
+		// FIXME see if we can shrink it first!
+		assert(werase(is->subwin) != ERR);
+		assert(hide_panel(is->panel) != ERR);
 	}else if(!panel_hidden(is->panel)){
 		if(active){
 			is->scrline -= delta;

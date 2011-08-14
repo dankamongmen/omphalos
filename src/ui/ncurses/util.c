@@ -3,26 +3,32 @@
 #include <ui/ncurses/util.h>
 #include <ncursesw/ncurses.h>
 
-int bevel(WINDOW *w){
+int bevel(WINDOW *w,int nobottom){
 	static const cchar_t bchr[] = {
 		{ .attr = 0, .chars = L"╭", },
 		{ .attr = 0, .chars = L"╮", },
 		{ .attr = 0, .chars = L"╰", },
 		{ .attr = 0, .chars = L"╯", },
 	};
-	int rows,cols,ret = 0;
+	int rows,cols;
 
 	getmaxyx(w,rows,cols);
-	ret |= box(w,0,0);
+	assert(box(w,0,0) != ERR);
 	// called as one expects: 'mvwadd_wch(w,rows - 1,cols - 1,&bchr[3]);'
 	// we get ERR returned. this is known behavior: fuck ncurses. instead,
 	// we use mvwins_wch, which doesn't update the cursor position.
 	// see http://lists.gnu.org/archive/html/bug-ncurses/2007-09/msg00001.html
-	ret |= mvwadd_wch(w,0,0,&bchr[0]);
-	ret |= mvwins_wch(w,0,cols - 1,&bchr[1]);
-	ret |= mvwadd_wch(w,rows - 1,0,&bchr[2]);
-	ret |= mvwins_wch(w,rows - 1,cols - 1,&bchr[3]);
-	return ret;
+	assert(mvwadd_wch(w,0,0,&bchr[0]) != ERR);
+	assert(mvwins_wch(w,0,cols - 1,&bchr[1]) != ERR);
+	if(!nobottom){
+		assert(hline(0,rows - 1) != ERR);
+		assert(mvwadd_wch(w,rows - 1,0,&bchr[2]) != ERR);
+		assert(mvwins_wch(w,rows - 1,cols - 1,&bchr[3]) != ERR);
+	}else{
+		assert(mvwadd_wch(w,rows - 1,0,WACS_VLINE) != ERR);
+		assert(mvwins_wch(w,rows - 1,cols - 1,WACS_VLINE) != ERR);
+	}
+	return OK;
 }
 
 // For full safety, pass in a buffer that can hold the decimal representation

@@ -92,7 +92,6 @@ void handle_ipv6_packet(const omphalos_iface *octx,omphalos_packet *op,
 void handle_ipv4_packet(const omphalos_iface *octx,omphalos_packet *op,
 				const void *frame,size_t len){
 	const struct iphdr *ip = frame;
-	//struct iphost *ips,*ipd;
 	unsigned hlen;
 
 	if(len < sizeof(*ip)){

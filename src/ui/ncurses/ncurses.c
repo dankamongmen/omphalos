@@ -104,8 +104,8 @@ iface_lines_unbounded(const interface *i,const struct iface_state *is){
 }
 
 static inline void
-iface_box_generic(WINDOW *w,const interface *i,const struct iface_state *is){
-	iface_box(w,i,is,is == current_iface);
+iface_box_generic(const interface *i,const struct iface_state *is){
+	iface_box(i,is,is == current_iface);
 }
 
 static inline int
@@ -289,7 +289,7 @@ draw_main_window(WINDOW *w){
 	// POSIX.1-2001 doesn't guarantee a terminating null on truncation
 	hostname[sizeof(hostname) - 1] = '\0';
 	assert(wcolor_set(w,BORDER_COLOR,NULL) != ERR);
-	if(bevel(w) != OK){
+	if(bevel(w,0) != OK){
 		ERREXIT;
 	}
 	if(setup_statusbar(cols)){
@@ -478,7 +478,7 @@ new_display_panel(WINDOW *w,struct panel_state *ps,int rows,int cols,const wchar
 	// memory leaks follow if we're compiled with NDEBUG! FIXME
 	assert(wattron(psw,A_BOLD) != ERR);
 	assert(wcolor_set(psw,PBORDER_COLOR,NULL) == OK);
-	assert(bevel(psw) == OK);
+	assert(bevel(psw,0) == OK);
 	assert(wattroff(psw,A_BOLD) != ERR);
 	assert(wcolor_set(psw,PHEADING_COLOR,NULL) == OK);
 	assert(mvwaddwstr(psw,0,START_COL * 2,hstr) != ERR);
@@ -764,7 +764,7 @@ use_next_iface_locked(WINDOW *w){
 			assert(move_panel(is->panel,is->scrline,START_COL) != ERR);
 			redraw_iface_generic(i,is);
 		}else{
-			iface_box_generic(oldis->subwin,oldis->iface,oldis);
+			iface_box_generic(oldis->iface,oldis);
 			resize_iface(i,is);
 		}
 		if(panel_hidden(oldis->panel)){
@@ -810,7 +810,7 @@ use_prev_iface_locked(WINDOW *w){
 			assert(move_panel(is->panel,is->scrline,START_COL) != ERR);
 			redraw_iface_generic(i,is);
 		}else{
-			iface_box_generic(oldis->subwin,oldis->iface,oldis);
+			iface_box_generic(oldis->iface,oldis);
 			resize_iface(i,is);
 		}
 		if(panel_hidden(oldis->panel)){

@@ -11,7 +11,7 @@ extern "C" {
 #define U64STRLEN 20	// Does not include a '\0' (18,446,744,073,709,551,616)
 #define U64FMT "%-20ju"
 
-int bevel(WINDOW *);
+int bevel(WINDOW *,int);
 
 char *genprefix(uintmax_t,unsigned,char *,size_t,int,unsigned,int);
 
