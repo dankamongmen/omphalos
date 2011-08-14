@@ -406,17 +406,37 @@ void redraw_iface(const interface *i,const struct iface_state *is,int active){
 	print_iface_hosts(i,is);
 }
 
+// Is even a line of the interface visible? If so, draw it, as otherwise we
+// have useless, disconcerting blank space.
+static int
+iface_visible_p(int rows,const iface_state *is){
+	if(is->scrline + 1 >= rows){
+		return 0;
+	}else if(is->scrline + lines_for_interface(is->iface,is) < 1){
+		return 0;
+	}
+	return 1;
+}
+
 // Move this interface, possibly hiding it or bringing it onscreen. Negative
 // delta indicates movement up, positive delta moves down. Returns a non-zero
 // if the interface is active and would be pushed offscreen.
 int move_interface(iface_state *is,int rows,int delta,int active){
 	is->scrline += delta;
-	if(iface_visible_p(rows,is)){
+	if(iface_wholly_visible_p(rows,is)){
 		interface *ii = is->iface;
 
 		assert(move_panel(is->panel,is->scrline,1) != ERR);
 		redraw_iface(ii,is,active);
 	// use "will_be_visible" as "would_be_visible" here, heh
+	}else if(iface_visible_p(rows,is)){
+		// FIXME draw partial interface. until then, old behavior...
+		if(active){
+			is->scrline -= delta;
+			return -1;
+		}
+		assert(werase(is->subwin) != ERR);
+		assert(hide_panel(is->panel) != ERR);
 	}else if(!panel_hidden(is->panel)){
 		if(active){
 			is->scrline -= delta;
@@ -437,8 +457,8 @@ int lines_for_interface(const interface *i,const iface_state *is){
 
 // Is the interface window entirely visible? We can't draw it otherwise, as it
 // will obliterate the global bounding box.
-int iface_visible_p(int rows,const iface_state *is){
-	if(is->scrline + lines_for_interface(is->iface,is) >= rows){
+int iface_wholly_visible_p(int rows,const iface_state *is){
+	if(is->scrline + lines_for_interface(is->iface,is) + 1 >= rows){
 		return 0;
 	}else if(is->scrline < 1){
 		return 0;

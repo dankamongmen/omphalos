@@ -1201,7 +1201,7 @@ interface_cb_locked(interface *i,iface_state *ret){
 			// Want the subdisplay left above this new iface,
 			// should they intersect.
 			assert(bottom_panel(ret->panel) == OK);
-			if(!iface_visible_p(rows,ret)){
+			if(!iface_wholly_visible_p(rows,ret)){
 				assert(hide_panel(ret->panel) != ERR);
 			}
 			draw_main_window(stdscr); // update iface count
