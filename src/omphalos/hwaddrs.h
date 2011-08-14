@@ -38,6 +38,12 @@ int l2hostcmp(const struct l2host *,const struct l2host *,size_t)
 int l2categorize(const struct interface *,const struct l2host *)
 				__attribute__ ((nonnull (1,2)));
 
+// Stats
+void l2srcpkt(struct l2host *) __attribute__ ((nonnull (1)));
+void l2dstpkt(struct l2host *) __attribute__ ((nonnull (1)));
+uintmax_t get_srcpkts(const struct l2host *) __attribute__ ((nonnull (1)));
+uintmax_t get_dstpkts(const struct l2host *) __attribute__ ((nonnull (1)));
+
 #ifdef __cplusplus
 }
 #endif

@@ -14,11 +14,15 @@
 // No need to store addrlen, since all objects in a given arena have the
 // same length of hardware address.
 typedef struct l2host {
-	hwaddrint hwaddr;
-	const char *devname;	// description based off lladdress
+	hwaddrint hwaddr;		// hardware address
+	const char *devname;		// text description based off lladdress
 	struct l2host *next;
-	void *opaque;		// FIXME not sure about how this is being done
+	uintmax_t srcpkts,dstpkts;	// stats
+	void *opaque;
 } l2host;
+
+static inline l2host *
+create_l2host(const interface *,const void *) __attribute__ ((malloc));
 
 // FIXME replace internals with LRU acquisition...
 // FIXME caller must set ->next
@@ -27,6 +31,7 @@ create_l2host(const interface *i,const void *hwaddr){
 	l2host *l2;
 
 	if( (l2 = malloc(sizeof(*l2))) ){
+		l2->dstpkts = l2->srcpkts = 0;
 		l2->hwaddr = 0;
 		memcpy(&l2->hwaddr,hwaddr,i->addrlen);
 		l2->opaque = NULL;
@@ -60,7 +65,9 @@ l2host *lookup_l2host(const omphalos_iface *octx,interface *i,const void *hwaddr
 			return l2;
 		}
 	}
-	if( (l2 = create_l2host(i,hwaddr)) ){
+	l2 = create_l2host(i,hwaddr);
+	assert(l2);
+	if(l2){
 		l2->next = i->l2hosts;
 		i->l2hosts = l2;
 		if(octx->neigh_event){
@@ -135,4 +142,20 @@ hwaddrint get_hwaddr(const l2host *l2){
 
 const char *get_devname(const l2host *l2){
 	return l2->devname;
+}
+
+void l2srcpkt(l2host *l2){
+	++l2->srcpkts;
+}
+
+void l2dstpkt(l2host *l2){
+	++l2->dstpkts;
+}
+
+uintmax_t get_srcpkts(const l2host *l2){
+	return l2->srcpkts;
+}
+
+uintmax_t get_dstpkts(const l2host *l2){
+	return l2->dstpkts;
 }

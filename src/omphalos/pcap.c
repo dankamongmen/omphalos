@@ -40,10 +40,15 @@ handle_pcap_direct(u_char *gi,const struct pcap_pkthdr *h,const u_char *bytes){
 		pm->octx->diagnostic("Partial capture (%u/%ub)",h->caplen,h->len);
 		return;
 	}
+	memset(&packet,0,sizeof(packet));
 	packet.i = iface;
-	// FIXME how to handle .addr itself? broadcast?
-	packet.i->addrlen = ETH_ALEN; // FIXME ???
 	pm->handler(pm->octx,&packet,bytes,h->len);
+	if(packet.l2s){
+		l2srcpkt(packet.l2s);
+	}
+	if(packet.l2d){
+		l2dstpkt(packet.l2d);
+	}
 	if(pm->octx->packet_read){
 		pm->octx->packet_read(&packet);
 	}
@@ -96,6 +101,12 @@ handle_pcap_cooked(u_char *gi,const struct pcap_pkthdr *h,const u_char *bytes){
 			++iface->noprotocol;
 			break;
 		}
+	}
+	if(packet.l2s){
+		l2srcpkt(packet.l2s);
+	}
+	if(packet.l2d){
+		l2dstpkt(packet.l2d);
 	}
 	if(pm->octx->packet_read){
 		pm->octx->packet_read(&packet);

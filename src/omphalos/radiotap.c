@@ -171,7 +171,6 @@ handle_ieee80211_packet(const omphalos_iface *octx,omphalos_packet *op,
 				IEEE80211_VERSION(ihdr->control),op->i->name);
 		return;
 	}
-	op->l2s = NULL;
 	op->l2d = lookup_l2host(octx,op->i,ihdr->h_dest);
 	switch(IEEE80211_TYPE(ihdr->control)){
 		case MANAGEMENT_FRAME:{
