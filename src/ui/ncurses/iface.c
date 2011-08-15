@@ -136,10 +136,9 @@ l3obj *add_l3_to_iface(iface_state *is,l2obj *l2,struct l3host *l3h){
 
 static void
 print_iface_hosts(const interface *i,const iface_state *is,int rows,int cols){
-	int line;
 	const l2obj *l;
+	int line;
 
-	cols -= 2 + 3 + HWADDRSTRLEN(i->addrlen);
 	// If the interface is down, we don't lead with the summary line
 	line = !!interface_up_p(i);
 	for(l = is->l2objs ; l ; l = l->next){
@@ -183,15 +182,20 @@ print_iface_hosts(const interface *i,const iface_state *is,int rows,int cols){
 		assert(wattrset(is->subwin,attrs) != ERR);
 		l2ntop(l->l2,i->addrlen,hw);
 		if(devname){
-			int len = strlen(devname);
+			size_t len = strlen(devname);
 
-			if(len > cols){
-				len = cols;
+			if(len > cols - 5 - HWADDRSTRLEN(i->addrlen)){
+				len = cols - 5 - HWADDRSTRLEN(i->addrlen);
 			}
 			assert(mvwprintw(is->subwin,line,1," %c %s %.*s",
 				legend,hw,cols - 1,devname) != ERR);
 		}else{
 			assert(mvwprintw(is->subwin,line,1," %c %s",legend,hw) != ERR);
+		}
+		{
+			char sbuf[PREFIXSTRLEN + 1],dbuf[PREFIXSTRLEN + 1];
+			mvwprintw(is->subwin,line,cols - PREFIXSTRLEN * 2 - 2,PREFIXFMT" "PREFIXFMT,prefix(get_srcpkts(l->l2),1,sbuf,sizeof(sbuf),1),
+					prefix(get_dstpkts(l->l2),1,dbuf,sizeof(dbuf),1));
 		}
 		for(l3 = l->l3objs ; l3 ; l3 = l3->next){
 			char nw[INET6_ADDRSTRLEN + 1]; // FIXME
@@ -368,14 +372,6 @@ print_iface_state(const interface *i,const iface_state *is,int rows){
 				prefix(timestat_val(&i->bps) * CHAR_BIT * 1000000 * 100 / usecdomain,100,buf,sizeof(buf),0),
 				prefix(timestat_val(&i->fps),1,buf2,sizeof(buf2),1),
 				is->nodes) != ERR);
-}
-
-void update_iface_state(const iface_state *is){
-	int rows,cols;
-
-	getmaxyx(is->subwin,rows,cols);
-	assert(cols); // FIXME
-	print_iface_state(is->iface,is,rows);
 }
 
 void free_iface_state(iface_state *is){
