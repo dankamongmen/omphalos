@@ -67,18 +67,57 @@ process_reverse_lookup(const char *buf,int *fam,struct sockaddr_storage *addr){
 	return 0;
 }
 
+static inline size_t
+ustrlen(const unsigned char *s){
+	return strlen((const char *)s);
+}
+
+static inline char *
+ustrcat(char *to,const unsigned char *s){
+	return strcat(to,(const char *)s);
+}
+
 static char *
 extract_dns_record(size_t len,const unsigned char *sec,unsigned *class,
-			unsigned *type,unsigned *bsize){
+			unsigned *type,unsigned *idx,const unsigned char *orig){
 	unsigned char rlen;
+	unsigned bsize = 0;
 	char *buf = NULL;
-	unsigned idx = 0;
 
-	*bsize = 0;
-	while(len > ++idx && (rlen = *sec++)){
+	*idx = 0;
+	while(len > ++*idx && (rlen = *sec++)){
 		char *tmp;
 
-		if(rlen >= 192 || rlen + idx > len){
+		if((rlen & 0xc0) == 0xc0){
+			unsigned offset;
+
+			if(*idx > len){
+				free(buf);
+				return NULL;
+			}
+			offset = ((rlen & 0x3f) << 8u) + *sec;
+			if(offset >= sec - orig){
+				free(buf);
+				return NULL;
+			}
+			if((tmp = realloc(buf,bsize + ustrlen(orig + offset) + 1)) == NULL){
+				free(buf);
+				return NULL;
+			}
+			buf = tmp;
+			if(bsize){
+				buf[bsize - 1] = '.';
+			}
+			ustrcat(buf + bsize,orig + offset);
+			// FIXME convert tags to '.''s
+			bsize += ustrlen(orig + offset) + 1;
+			++sec;
+			++*idx;
+			break;
+		}else if((rlen & 0xc0) != 0x0){	// not allowed
+			free(buf);
+			return NULL;
+		}else if(rlen + *idx > len){
 			free(buf);
 			return NULL;
 		}
@@ -86,34 +125,37 @@ extract_dns_record(size_t len,const unsigned char *sec,unsigned *class,
 		// nul-terminated. We will be writing over said nul with
 		// a '.', so count all that length. We'll then need the
 		// new characters (rlen), and a nul term.
-		if((tmp = realloc(buf,*bsize + rlen + 1)) == NULL){
+		if((tmp = realloc(buf,bsize + rlen + 1)) == NULL){
 			free(buf);
 			return NULL;
 		}
 		buf = tmp;
-		if(*bsize){
-			buf[*bsize - 1] = '.';
+		if(bsize){
+			buf[bsize - 1] = '.';
 		}
-		strncpy(buf + *bsize,(const char *)sec,rlen);
-		*bsize += rlen + 1;
-		buf[*bsize - 1] = '\0';
+		strncpy(buf + bsize,(const char *)sec,rlen);
+		bsize += rlen + 1;
+		buf[bsize - 1] = '\0';
 		sec += rlen;
-		idx += rlen;
+		*idx += rlen;
 	}
-	if(len < idx + 4 || buf == NULL){
+	if(len < *idx + 4 || buf == NULL){
 		free(buf);
 		return NULL;
 	}
 	*class = *((uint16_t *)sec + 1);
 	*type = *(uint16_t *)sec;
-	*bsize += 4;
+	*idx += 4;
 	return buf;
 }
 
 void handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void *frame,size_t len){
 	const struct dnshdr *dns = frame;
+	unsigned class,type,bsize;
 	const unsigned char *sec;
 	uint16_t qd,an,ns,ar;
+	char *buf;
+
 
 	if(len < sizeof(*dns)){
 		octx->diagnostic("%s malformed with %zu on %s",
@@ -131,10 +173,7 @@ void handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 	sec = (const unsigned char *)frame + sizeof(*dns);
 	//octx->diagnostic("q/a/n/a: %hu/%hu/%hu/%hu",qd,an,ns,ar);
 	if(qd){
-		unsigned class,type,bsize;
-		char *buf;
-
-		buf = extract_dns_record(len,sec,&class,&type,&bsize);
+		buf = extract_dns_record(len,sec,&class,&type,&bsize,frame);
 		if(buf == NULL){
 			goto malformed;
 		}
@@ -144,6 +183,7 @@ void handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 				int fam;
 
 				if(process_reverse_lookup(buf,&fam,&ss)){
+					free(buf);
 					goto malformed;
 				}
 			}
@@ -156,9 +196,14 @@ void handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 		len -= bsize;
 	}
 	if(an){
-		if(len == 0){
+		buf = extract_dns_record(len,sec,&class,&type,&bsize,frame);
+		if(buf == NULL){
 			goto malformed;
 		}
+		// FIXME handle
+		free(buf);
+		sec += bsize;
+		len -= bsize;
 	}
 	if(ns){
 		if(len == 0){
