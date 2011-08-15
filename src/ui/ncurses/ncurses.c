@@ -52,7 +52,6 @@ extern int mvwprintw(WINDOW *,int,int,const char *,...) __attribute__ ((format (
 #define START_COL 1
 #define PAD_COLS(cols) ((cols) - START_COL * 2)
 #define START_LINE 1
-#define PREFIXSTRLEN U64STRLEN
 
 // FIXME we ought precreate the subwindows, and show/hide them rather than
 // creating and destroying them every time.
@@ -135,8 +134,8 @@ screen_update(void){
 }
 
 static inline void
-redraw_iface_generic(const interface *i,const struct iface_state *is){
-	redraw_iface(i,is,is == current_iface);
+redraw_iface_generic(const struct iface_state *is){
+	redraw_iface(is->iface,is,is == current_iface);
 }
 
 static inline int
@@ -243,7 +242,7 @@ resize_iface(const interface *i,iface_state *is){
 			assert(replace_panel(is->panel,is->subwin) != ERR);
 		}
 	}
-	redraw_iface_generic(i,is);
+	redraw_iface_generic(is);
 	return OK;
 }
 
@@ -756,13 +755,13 @@ use_next_iface_locked(WINDOW *w){
 			assert(wresize(is->subwin,iface_lines_bounded(i,is,rows),PAD_COLS(cols)) != ERR);
 			assert(replace_panel(is->panel,is->subwin) != ERR);
 			assert(move_panel(is->panel,is->scrline,START_COL) != ERR);
-			redraw_iface_generic(i,is);
+			redraw_iface_generic(is);
 			assert(show_panel(is->panel) != ERR);
 		}else if(is->scrline < oldis->scrline){
 			is->scrline = oldis->scrline + (iface_lines_bounded(oldis->iface,oldis,rows) - iface_lines_bounded(i,is,rows));
 			push_interfaces_above(is,rows,-(iface_lines_bounded(i,is,rows) + 1));
 			assert(move_panel(is->panel,is->scrline,START_COL) != ERR);
-			redraw_iface_generic(i,is);
+			redraw_iface_generic(is);
 		}else{
 			iface_box_generic(oldis->iface,oldis);
 			resize_iface(i,is);
@@ -802,13 +801,13 @@ use_prev_iface_locked(WINDOW *w){
 			assert(wresize(is->subwin,iface_lines_bounded(i,is,rows),PAD_COLS(cols)) != ERR);
 			assert(replace_panel(is->panel,is->subwin) != ERR);
 			assert(move_panel(is->panel,is->scrline,START_COL) != ERR);
-			redraw_iface_generic(i,is);
+			redraw_iface_generic(is);
 			assert(show_panel(is->panel) != ERR);
 		}else if(is->scrline > oldis->scrline){
 			is->scrline = 1;
 			push_interfaces_below(is,rows,iface_lines_bounded(i,is,rows) + 1);
 			assert(move_panel(is->panel,is->scrline,START_COL) != ERR);
-			redraw_iface_generic(i,is);
+			redraw_iface_generic(is);
 		}else{
 			iface_box_generic(oldis->iface,oldis);
 			resize_iface(i,is);
@@ -1159,7 +1158,7 @@ packet_cb_locked(const interface *i,omphalos_packet *op){
 		if(is == current_iface && details.p){
 			iface_details(panel_window(details.p),i,details.ysize);
 		}
-		update_iface_state(is);
+		redraw_iface_generic(is);
 		return 1;
 	}
 	return 0;

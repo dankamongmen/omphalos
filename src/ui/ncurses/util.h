@@ -10,6 +10,8 @@ extern "C" {
 
 #define U64STRLEN 20	// Does not include a '\0' (18,446,744,073,709,551,616)
 #define U64FMT "%-20ju"
+#define PREFIXSTRLEN 7	// Does not include a '\0' (xxx.xxU)
+#define PREFIXFMT "%7s"
 
 int bevel(WINDOW *,int);
 
