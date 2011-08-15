@@ -77,6 +77,11 @@ ustrcat(char *to,const unsigned char *s){
 	return strcat(to,(const char *)s);
 }
 
+static inline char *
+ustrcpy(char *to,const unsigned char *s){
+	return strcpy(to,(const char *)s);
+}
+
 static char *
 extract_dns_extra(size_t len,const unsigned char *sec,unsigned *ttl,unsigned *idx,int count){
 	unsigned bsize = 0;
@@ -148,7 +153,7 @@ extract_dns_record(size_t len,const unsigned char *sec,unsigned *class,
 			if(bsize){
 				buf[bsize - 1] = '.';
 			}
-			ustrcat(buf + bsize,orig + offset);
+			ustrcpy(buf + bsize,orig + offset);
 			// FIXME convert tags to '.''s
 			bsize += ustrlen(orig + offset) + 1;
 			++sec;
