@@ -32,20 +32,27 @@ typedef struct radiotaphdr {
 	unsigned order: 1;
 } control __attribute__ ((packed));*/
 
+// This is all you get in the lowest common denominator (control frame). Note
+// that data frames have bssid first, rather than dest, so you can't rely on
+// that field without checking the type.
 typedef struct ieee80211hdr {
 	uint16_t control;
 	uint16_t duration;
-	unsigned char h_dest[ETH_ALEN];
-	// FIXME unsigned char h_src[ETH_ALEN]; see below
 } __attribute__ ((packed)) ieee80211hdr;
+
+typedef struct ieee80211ctrl {
+	uint16_t control;
+	uint16_t duration;
+	unsigned char h_dest[ETH_ALEN];
+} __attribute__ ((packed)) ieee80211ctrl;
 
 // IEEE 802.11 data encapsulation.
 typedef struct ieee80211data {
 	uint16_t control;
 	uint16_t duration;
-	unsigned char h_dest[ETH_ALEN];
 	unsigned char bssid[ETH_ALEN];
 	unsigned char h_src[ETH_ALEN];
+	unsigned char h_dest[ETH_ALEN];
 	uint16_t fraqseq;
 } __attribute__ ((packed)) ieee80211data;
 
@@ -165,9 +172,24 @@ handle_ieee80211_mgmt(const omphalos_iface *octx,omphalos_packet *op,
 }
 
 static void
+handle_ieee80211_ctrl(const omphalos_iface *octx,omphalos_packet *op,
+				const void *frame,size_t len){
+	const ieee80211ctrl *ictrl = frame;
+
+	if(len < sizeof(*ictrl)){
+		++op->i->malformed;
+		octx->diagnostic("%s Packet too small (%zu) on %s",
+				__func__,len,op->i->name);
+		return;
+	}
+	op->l2d = lookup_l2host(octx,op->i,ictrl->h_dest);
+	len -= sizeof(*ictrl);
+}
+
+static void
 handle_ieee80211_data(const omphalos_iface *octx,omphalos_packet *op,
 				const void *frame,size_t len){
-	const ieee80211mgmtdata *idata = frame;
+	const ieee80211data *idata = frame;
 
 	if(len < sizeof(*idata)){
 		++op->i->malformed;
@@ -175,8 +197,8 @@ handle_ieee80211_data(const omphalos_iface *octx,omphalos_packet *op,
 				__func__,len,op->i->name);
 		return;
 	}
+	op->l2s = lookup_l2host(octx,op->i,idata->h_dest);
 	op->l2s = lookup_l2host(octx,op->i,idata->h_src);
-	op->l3s = lookup_l3host(octx,op->i,op->l2s,AF_BSSID,idata->bssid);
        	len -= sizeof(*idata);
 	// FIXME and do what??
 }
@@ -200,16 +222,16 @@ handle_ieee80211_packet(const omphalos_iface *octx,omphalos_packet *op,
 				IEEE80211_VERSION(ihdr->control),op->i->name);
 		return;
 	}
-	op->l2d = lookup_l2host(octx,op->i,ihdr->h_dest);
 	switch(IEEE80211_TYPE(ihdr->control)){
 		case MANAGEMENT_FRAME:{
 			unsigned stype = IEEE80211_SUBTYPE(ihdr->control);
 
-			if(stype == IEEE80211_SUBTYPE_BEACON || stype == IEEE80211_SUBTYPE_PROBE_RESPONSE){
+			if(stype != IEEE80211_SUBTYPE_PROBE_REQUEST){
 				handle_ieee80211_mgmt(octx,op,frame,len);
 			}
 		}break;
 		case CONTROL_FRAME:{
+			handle_ieee80211_ctrl(octx,op,frame,len);
 		}break;
 		case DATA_FRAME:{
 			handle_ieee80211_data(octx,op,frame,len);
