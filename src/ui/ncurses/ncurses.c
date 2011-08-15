@@ -299,11 +299,11 @@ draw_main_window(WINDOW *w){
 	// 5 for '|', space before and after, and %2d-formatted integer
 	scol = cols - 5 - __builtin_strlen(PROGNAME) - 1 - __builtin_strlen(VERSION)
 		- 1 - __builtin_strlen("on") - 1 - strlen(hostname)
-		- 5 - __builtin_strlen("ifaces");
+		- 5 - __builtin_strlen("iface" - (count_interface != 1));
 	assert(mvwprintw(w,0,scol,"[") != ERR);
 	assert(wattron(w,A_BOLD | COLOR_PAIR(HEADER_COLOR)) != ERR);
-	assert(wprintw(w,"%s %s on %s | %2d ifaces",PROGNAME,VERSION,
-			hostname,count_interface) != ERR);
+	assert(wprintw(w,"%s %s on %s | %d iface%s",PROGNAME,VERSION,
+			hostname,count_interface,count_interface == 1 ? "" : "s") != ERR);
 	if(wattroff(w,A_BOLD | COLOR_PAIR(HEADER_COLOR)) != OK){
 		ERREXIT;
 	}
@@ -1257,6 +1257,7 @@ wireless_callback(interface *i,unsigned wcmd __attribute__ ((unused)),void *unsa
 static inline void
 interface_removed_locked(iface_state *is){
 	if(is){
+		const int visible = !panel_hidden(is->panel);
 		int rows,cols;
 
 		free_iface_state(is);
@@ -1282,15 +1283,18 @@ interface_removed_locked(iface_state *is){
 			getmaxyx(pad,scrrows,scrcols);
 			assert(scrcols);
 			assert(cols);
-			for(ci = is->next ; ci->scrline > is->scrline ; ci = ci->next){
-				move_interface_generic(ci,scrrows,-(rows + 1));
+			if(visible){
+				for(ci = is->next ; ci->scrline > is->scrline ; ci = ci->next){
+					move_interface_generic(ci,scrrows,-(rows + 1));
+				}
 			}
 		}else{
 			// If details window exists, destroy it FIXME
 			current_iface = NULL;
 		}
+		// Calls draw_main_window(), which will update iface count
+		wstatus_locked(stdscr,"%s went away",is->iface->name);
 		free(is);
-		draw_main_window(stdscr); // update iface count
 	}
 }
 
