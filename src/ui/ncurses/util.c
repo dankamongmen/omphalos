@@ -21,7 +21,6 @@ int bevel(WINDOW *w,int nobottom){
 	assert(mvwadd_wch(w,0,0,&bchr[0]) != ERR);
 	assert(mvwins_wch(w,0,cols - 1,&bchr[1]) != ERR);
 	if(!nobottom){
-		assert(hline(0,rows - 1) != ERR);
 		assert(mvwadd_wch(w,rows - 1,0,&bchr[2]) != ERR);
 		assert(mvwins_wch(w,rows - 1,cols - 1,&bchr[3]) != ERR);
 	}else{
