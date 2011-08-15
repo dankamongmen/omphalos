@@ -18,6 +18,7 @@ typedef struct l3host {
 		uint128_t ip6;
 		char mac[ETH_ALEN];
 	} addr;		// FIXME sigh
+	uintmax_t srcpkts,dstpkts;
 	struct l3host *next;
 	void *opaque;
 } l3host;
@@ -38,6 +39,7 @@ create_l3host(int fam,const void *addr,size_t len){
 		r->name = NULL;
 		r->fam = fam;
 		r->path = 0;
+		r->srcpkts = r->dstpkts = 0;
 		memcpy(&r->addr,addr,len);
 	}
 	return r;
@@ -194,4 +196,20 @@ void cleanup_l3hosts(l3host **list){
 		free(l3);
 	}
 	*list = NULL;
+}
+
+void l3_srcpkt(l3host *l3){
+	++l3->srcpkts;
+}
+
+void l3_dstpkt(l3host *l3){
+	++l3->dstpkts;
+}
+
+uintmax_t l3_get_srcpkt(const l3host *l3){
+	return l3->srcpkts;
+}
+
+uintmax_t l3_get_dstpkt(const l3host *l3){
+	return l3->dstpkts;
 }
