@@ -21,7 +21,8 @@ struct dnshdr {
 // FIXME is it safe to be using (possibly signed) naked chars?
 // FIXME handle AAAA lookups (".ip6.arpa")!
 static int
-process_reverse_lookup(const char *buf,size_t len,int *fam,struct sockaddr_storage *addr){
+process_reverse_lookup(const char *buf,int *fam,struct sockaddr_storage *addr){
+	const size_t len = strlen(buf);
 	char obuf[INET6_ADDRSTRLEN];
 	const char *chunk,*c;
 	unsigned quad;
@@ -31,7 +32,7 @@ process_reverse_lookup(const char *buf,size_t len,int *fam,struct sockaddr_stora
 		return -1;
 	}
 	const size_t xlen = len - __builtin_strlen(".in-addr.arpa");
-	if(strcmp(buf + xlen - 1,".in-addr.arpa")){
+	if(strcmp(buf + xlen,".in-addr.arpa")){
 		return -1;
 	}
 	// Don't need to worry about checks against len, since we'll hit 'i'
@@ -58,7 +59,7 @@ process_reverse_lookup(const char *buf,size_t len,int *fam,struct sockaddr_stora
 	while(quad--){
 		strcat(obuf,q[quad]);
 	}
-	obuf[xlen - 1] = '\0';
+	obuf[xlen] = '\0';
 	if(inet_pton(AF_INET,obuf,addr) != 1){
 		return -1;
 	}
@@ -142,7 +143,7 @@ void handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 				struct sockaddr_storage ss;
 				int fam;
 
-				if(process_reverse_lookup(buf,bsize,&fam,&ss)){
+				if(process_reverse_lookup(buf,&fam,&ss)){
 					goto malformed;
 				}
 			}
