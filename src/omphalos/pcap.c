@@ -49,6 +49,12 @@ handle_pcap_direct(u_char *gi,const struct pcap_pkthdr *h,const u_char *bytes){
 	if(packet.l2d){
 		l2dstpkt(packet.l2d);
 	}
+	if(packet.l3s){
+		l3_srcpkt(packet.l3s);
+	}
+	if(packet.l3d){
+		l3_dstpkt(packet.l3d);
+	}
 	if(pm->octx->packet_read){
 		pm->octx->packet_read(&packet);
 	}
@@ -107,6 +113,12 @@ handle_pcap_cooked(u_char *gi,const struct pcap_pkthdr *h,const u_char *bytes){
 	}
 	if(packet.l2d){
 		l2dstpkt(packet.l2d);
+	}
+	if(packet.l3s){
+		l3_srcpkt(packet.l3s);
+	}
+	if(packet.l3d){
+		l3_dstpkt(packet.l3d);
 	}
 	if(pm->octx->packet_read){
 		pm->octx->packet_read(&packet);
