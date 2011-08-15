@@ -146,6 +146,9 @@ void cleanup_interfaces(const omphalos_iface *pctx){
 	for(i = 0 ; i < sizeof(interfaces) / sizeof(*interfaces) ; ++i){
 		int r;
 
+		if(interfaces[i].name){
+			pctx->diagnostic("Shutting down %s",interfaces[i].name);
+		}
 		free_iface(pctx,&interfaces[i]);
 		if( (r = pthread_mutex_destroy(&interfaces[i].lock)) ){
 			pctx->diagnostic("Couldn't destroy lock on %d (%s?)",r,strerror(r));
