@@ -212,6 +212,11 @@ print_iface_hosts(const interface *i,const iface_state *is,int rows,int cols){
 				assert(wattrset(is->subwin,A_BOLD | COLOR_PAIR(ROUTER_COLOR)) != ERR);
 			}
 			assert(mvwprintw(is->subwin,line,1,"    %s %s",nw,name) != ERR);
+			{
+				char sbuf[PREFIXSTRLEN + 1],dbuf[PREFIXSTRLEN + 1];
+				mvwprintw(is->subwin,line,cols - PREFIXSTRLEN * 2 - 2,PREFIXFMT" "PREFIXFMT,prefix(l3_get_srcpkt(l3->l3),1,sbuf,sizeof(sbuf),1),
+						prefix(l3_get_dstpkt(l3->l3),1,dbuf,sizeof(dbuf),1));
+			}
 			assert(wattrset(is->subwin,attrs) != ERR);
 		}
 	}

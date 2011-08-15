@@ -14,6 +14,7 @@
 #include <linux/if_packet.h>
 #include <omphalos/netlink.h>
 #include <omphalos/psocket.h>
+#include <omphalos/netaddrs.h>
 #include <omphalos/omphalos.h>
 #include <omphalos/ethernet.h>
 #include <omphalos/interface.h>
@@ -242,6 +243,12 @@ int handle_ring_packet(const omphalos_iface *octx,interface *iface,int fd,void *
 	}
 	if(packet.l2d){
 		l2dstpkt(packet.l2d);
+	}
+	if(packet.l3s){
+		l3_srcpkt(packet.l3s);
+	}
+	if(packet.l3d){
+		l3_dstpkt(packet.l3d);
 	}
 	if(octx->packet_read){
 		octx->packet_read(&packet);
