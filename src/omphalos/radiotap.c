@@ -39,15 +39,25 @@ typedef struct ieee80211hdr {
 	// FIXME unsigned char h_src[ETH_ALEN]; see below
 } __attribute__ ((packed)) ieee80211hdr;
 
-// IEEE 802.11 beacon header. Followed by an IEEE 802.11 management frame.
-typedef struct ieee80211beacon {
+// IEEE 802.11 data encapsulation.
+typedef struct ieee80211data {
+	uint16_t control;
+	uint16_t duration;
+	unsigned char h_dest[ETH_ALEN];
+	unsigned char bssid[ETH_ALEN];
+	unsigned char h_src[ETH_ALEN];
+	uint16_t fraqseq;
+} __attribute__ ((packed)) ieee80211data;
+
+// IEEE 802.11 management data. Followed by an IEEE 802.11 management frame.
+typedef struct ieee80211mgmtdata {
 	uint16_t control;
 	uint16_t duration;
 	unsigned char h_dest[ETH_ALEN];
 	unsigned char h_src[ETH_ALEN];
 	unsigned char bssid[ETH_ALEN];
 	uint16_t fraqseq;
-} __attribute__ ((packed)) ieee80211beacon;
+} __attribute__ ((packed)) ieee80211mgmtdata;
 
 // Fixed portion (12 bytes) of an IEEE 802.11 management frame. Followed by a
 // tagged variable-length portion.
@@ -57,10 +67,12 @@ typedef struct ieee80211mgmt {
 	uint16_t capabilities;
 } __attribute__ ((packed)) ieee80211mgmt;
 
-#define MANAGEMENT_FRAME		0
-#define IEEE80211_SUBTYPE_BEACON	8
-#define CONTROL_FRAME			1
-#define DATA_FRAME			2
+#define MANAGEMENT_FRAME			0
+#define IEEE80211_SUBTYPE_PROBE_REQUEST		4
+#define IEEE80211_SUBTYPE_PROBE_RESPONSE	5
+#define IEEE80211_SUBTYPE_BEACON		8
+#define CONTROL_FRAME				1
+#define DATA_FRAME				2
 
 #define IEEE80211_VERSION(ctrl) ((ntohs(ctrl) & 0x0300) >> 8u)
 #define IEEE80211_TYPE(ctrl) ((ntohs(ctrl) & 0x0c00) >> 10u)
@@ -70,7 +82,7 @@ typedef struct ieee80211mgmt {
 #define IEEE80211_MGMT_TAG_RATES	1
 
 static void
-handle_ieee80211_mgmt(const omphalos_iface *octx,omphalos_packet *op,
+handle_ieee80211_mgmtfix(const omphalos_iface *octx,omphalos_packet *op,
 				const void *frame,size_t len){
 	const ieee80211mgmt *imgmt = frame;
 	struct {
@@ -136,9 +148,9 @@ freetags:
 }
 
 static void
-handle_ieee80211_beacon(const omphalos_iface *octx,omphalos_packet *op,
+handle_ieee80211_mgmt(const omphalos_iface *octx,omphalos_packet *op,
 				const void *frame,size_t len){
-	const ieee80211beacon *ibec = frame;
+	const ieee80211mgmtdata *ibec = frame;
 
 	if(len < sizeof(*ibec)){
 		++op->i->malformed;
@@ -149,7 +161,24 @@ handle_ieee80211_beacon(const omphalos_iface *octx,omphalos_packet *op,
 	op->l2s = lookup_l2host(octx,op->i,ibec->h_src);
        	len -= sizeof(*ibec);
 	op->l3s = lookup_l3host(octx,op->i,op->l2s,AF_BSSID,ibec->bssid);
-	handle_ieee80211_mgmt(octx,op,(const char *)frame + sizeof(*ibec),len);
+	handle_ieee80211_mgmtfix(octx,op,(const char *)frame + sizeof(*ibec),len);
+}
+
+static void
+handle_ieee80211_data(const omphalos_iface *octx,omphalos_packet *op,
+				const void *frame,size_t len){
+	const ieee80211mgmtdata *idata = frame;
+
+	if(len < sizeof(*idata)){
+		++op->i->malformed;
+		octx->diagnostic("%s Packet too small (%zu) on %s",
+				__func__,len,op->i->name);
+		return;
+	}
+	op->l2s = lookup_l2host(octx,op->i,idata->h_src);
+	op->l3s = lookup_l3host(octx,op->i,op->l2s,AF_BSSID,idata->bssid);
+       	len -= sizeof(*idata);
+	// FIXME and do what??
 }
 
 static void
@@ -174,13 +203,16 @@ handle_ieee80211_packet(const omphalos_iface *octx,omphalos_packet *op,
 	op->l2d = lookup_l2host(octx,op->i,ihdr->h_dest);
 	switch(IEEE80211_TYPE(ihdr->control)){
 		case MANAGEMENT_FRAME:{
-			if(IEEE80211_SUBTYPE(ihdr->control) == IEEE80211_SUBTYPE_BEACON){
-				handle_ieee80211_beacon(octx,op,frame,len);
+			unsigned stype = IEEE80211_SUBTYPE(ihdr->control);
+
+			if(stype == IEEE80211_SUBTYPE_BEACON || stype == IEEE80211_SUBTYPE_PROBE_RESPONSE){
+				handle_ieee80211_mgmt(octx,op,frame,len);
 			}
 		}break;
 		case CONTROL_FRAME:{
 		}break;
 		case DATA_FRAME:{
+			handle_ieee80211_data(octx,op,frame,len);
 		}break;
 		default:{
 			++op->i->noprotocol;
