@@ -13,6 +13,7 @@
 #include <omphalos/ethernet.h>
 #include <omphalos/radiotap.h>
 #include <omphalos/omphalos.h>
+#include <omphalos/netaddrs.h>
 #include <omphalos/interface.h>
 
 static interface pcap_file_interface = {
