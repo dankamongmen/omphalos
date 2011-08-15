@@ -69,40 +69,41 @@ process_reverse_lookup(const char *buf,size_t len,int *fam,struct sockaddr_stora
 static char *
 extract_dns_record(size_t len,const unsigned char *sec,unsigned *class,
 			unsigned *type,unsigned *bsize){
-	unsigned char rlen,*buf = NULL;
+	unsigned char rlen;
+	char *buf = NULL;
 	unsigned idx = 0;
 
 	*bsize = 0;
 	while(len > ++idx && (rlen = *sec++)){
-		const unsigned char *tmp;
+		char *tmp;
 
 		if(rlen >= 192 || rlen + idx > len){
 			free(buf);
-			goto malformed;
+			return NULL;
 		}
 		// If there was any previous length, it was
 		// nul-terminated. We will be writing over said nul with
 		// a '.', so count all that length. We'll then need the
 		// new characters (rlen), and a nul term.
-		if((tmp = realloc(buf,bsize + rlen + 1)) == NULL){
+		if((tmp = realloc(buf,*bsize + rlen + 1)) == NULL){
 			free(buf);
-			goto malformed;
+			return NULL;
 		}
 		buf = tmp;
-		if(bsize){
-			buf[bsize - 1] = '.';
+		if(*bsize){
+			buf[*bsize - 1] = '.';
 		}
-		strncpy(buf + bsize,(const char *)sec,rlen);
-		bsize += rlen + 1;
-		buf[bsize - 1] = '\0';
+		strncpy(buf + *bsize,(const char *)sec,rlen);
+		*bsize += rlen + 1;
+		buf[*bsize - 1] = '\0';
 		sec += rlen;
 		idx += rlen;
 	}
 	if(len < idx + 4 || buf == NULL){
 		free(buf);
-		goto malformed;
+		return NULL;
 	}
-	*class = *((uint16_t *)sec + 1)
+	*class = *((uint16_t *)sec + 1);
 	*type = *(uint16_t *)sec;
 	*bsize += 4;
 	return buf;
@@ -129,14 +130,15 @@ void handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 	sec = (const unsigned char *)frame + sizeof(*dns);
 	//octx->diagnostic("q/a/n/a: %hu/%hu/%hu/%hu",qd,an,ns,ar);
 	if(qd){
-		size_t bsize;
+		unsigned class,type,bsize;
+		char *buf;
 
-		buf = extract_dns_record(sec,len,&class,&type,&bsize);
+		buf = extract_dns_record(len,sec,&class,&type,&bsize);
 		if(buf == NULL){
 			goto malformed;
 		}
 		if(class == DNS_CLASS_IN){
-			if(rr == DNS_TYPE_PTR){
+			if(type == DNS_TYPE_PTR){
 				struct sockaddr_storage ss;
 				int fam;
 
