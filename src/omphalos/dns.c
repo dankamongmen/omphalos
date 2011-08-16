@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <stdint.h>
 #include <omphalos/dns.h>
+#include <omphalos/util.h>
 #include <asm/byteorder.h>
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
@@ -82,30 +83,23 @@ ustrcpy(char *to,const unsigned char *s){
 	return strcpy(to,(const char *)s);
 }
 
-static char *
+static void *
 extract_dns_extra(size_t len,const unsigned char *sec,unsigned *ttl,unsigned *idx){
-	unsigned bsize = 0;
-	char *buf = NULL;
 	uint16_t rdlen;
-	char *tmp;
+	char *buf;
 
 	*idx = 0;
 	if(len < 6u + *idx){
-		free(buf);
 		return NULL;
 	}
 	*ttl = ntohl(*(const uint32_t *)sec);
 	rdlen = ntohs(*((const uint16_t *)sec + 2));
 	if(len < rdlen + 6u + *idx){
-		free(buf);
 		return NULL;
 	}
-	if((tmp = realloc(buf,bsize + rdlen + 1)) == NULL){
-		free(buf);
+	if((buf = memdup(((const uint16_t *)sec + 3),rdlen)) == NULL){
 		return NULL;
 	}
-	buf = tmp;
-	bsize += rdlen + 1;
 	sec += 6 + rdlen;
 	*idx += 6 + rdlen;
 	return buf;
@@ -231,21 +225,21 @@ void handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 	}
 	while(an--){
 		unsigned ttl;
+		char *data;
 
 		buf = extract_dns_record(len,sec,&class,&type,&bsize,frame);
 		if(buf == NULL){
 			goto malformed;
 		}
-		// FIXME handle
-		free(buf);
 		sec += bsize;
 		len -= bsize;
-		buf = extract_dns_extra(len,sec,&ttl,&bsize);
-		if(buf == NULL){
+		data = extract_dns_extra(len,sec,&ttl,&bsize);
+		if(data == NULL){
+			free(buf);
 			goto malformed;
 		}
-		// FIXME handle
 		free(buf);
+		free(data);
 		sec += bsize;
 		len -= bsize;
 	}
