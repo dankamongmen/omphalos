@@ -83,38 +83,31 @@ ustrcpy(char *to,const unsigned char *s){
 }
 
 static char *
-extract_dns_extra(size_t len,const unsigned char *sec,unsigned *ttl,unsigned *idx,int count){
+extract_dns_extra(size_t len,const unsigned char *sec,unsigned *ttl,unsigned *idx){
 	unsigned bsize = 0;
 	char *buf = NULL;
 	uint16_t rdlen;
+	char *tmp;
 
 	*idx = 0;
-	while(count--){
-		char *tmp;
-
-		if(len < 6u + *idx){
-			free(buf);
-			return NULL;
-		}
-		*ttl = ntohl(*(const uint32_t *)sec);
-		rdlen = ntohs(*((const uint16_t *)sec + 2));
-		if(len < rdlen + 6u + *idx){
-			free(buf);
-			return NULL;
-		}
-		if((tmp = realloc(buf,bsize + rdlen + 1)) == NULL){
-			free(buf);
-			return NULL;
-		}
-		buf = tmp;
-		bsize += rdlen + 1;
-		sec += 6 + rdlen;
-		*idx += 6 + rdlen;
-	}
-	if(count > 0){
+	if(len < 6u + *idx){
 		free(buf);
 		return NULL;
 	}
+	*ttl = ntohl(*(const uint32_t *)sec);
+	rdlen = ntohs(*((const uint16_t *)sec + 2));
+	if(len < rdlen + 6u + *idx){
+		free(buf);
+		return NULL;
+	}
+	if((tmp = realloc(buf,bsize + rdlen + 1)) == NULL){
+		free(buf);
+		return NULL;
+	}
+	buf = tmp;
+	bsize += rdlen + 1;
+	sec += 6 + rdlen;
+	*idx += 6 + rdlen;
 	return buf;
 }
 
@@ -236,7 +229,7 @@ void handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 		sec += bsize;
 		len -= bsize;
 	}
-	if(an){
+	while(an--){
 		unsigned ttl;
 
 		buf = extract_dns_record(len,sec,&class,&type,&bsize,frame);
@@ -247,7 +240,7 @@ void handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 		free(buf);
 		sec += bsize;
 		len -= bsize;
-		buf = extract_dns_extra(len,sec,&ttl,&bsize,an);
+		buf = extract_dns_extra(len,sec,&ttl,&bsize);
 		if(buf == NULL){
 			goto malformed;
 		}
