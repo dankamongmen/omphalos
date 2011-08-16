@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <string.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <omphalos/128.h>
