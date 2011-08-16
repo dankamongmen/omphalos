@@ -89,19 +89,16 @@ extract_dns_extra(size_t len,const unsigned char *sec,unsigned *ttl,unsigned *id
 	uint16_t rdlen;
 
 	*idx = 0;
-	while(--count){
+	while(count--){
 		char *tmp;
 
 		if(len < 6u + *idx){
-			fprintf(stderr,"SHITTY 1 %zu\n",len);
 			free(buf);
 			return NULL;
 		}
-		*ttl = *(const uint32_t *)sec;
-		fprintf(stderr,"TTL: %u\n",ntohl(*ttl));
-		rdlen = *((const uint16_t *)sec + 2);
+		*ttl = ntohl(*(const uint32_t *)sec);
+		rdlen = ntohs(*((const uint16_t *)sec + 2));
 		if(len < rdlen + 6u + *idx){
-			fprintf(stderr,"SHITTY 2 %hu\n",rdlen);
 			free(buf);
 			return NULL;
 		}
@@ -115,7 +112,6 @@ extract_dns_extra(size_t len,const unsigned char *sec,unsigned *ttl,unsigned *id
 		*idx += 6 + rdlen;
 	}
 	if(count > 0){
-			fprintf(stderr,"SHITTY 3 %d\n",count);
 		free(buf);
 		return NULL;
 	}
@@ -255,7 +251,6 @@ void handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 		if(buf == NULL){
 			goto malformed;
 		}
-		fprintf(stderr,"[%s]\n",buf);
 		// FIXME handle
 		free(buf);
 		sec += bsize;
