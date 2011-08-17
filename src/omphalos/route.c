@@ -2,6 +2,7 @@
 #include <linux/version.h>
 #include <omphalos/route.h>
 #include <linux/rtnetlink.h>
+#include <omphalos/netaddrs.h>
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
 
@@ -67,6 +68,7 @@ int handle_rtm_newroute(const omphalos_iface *octx,const struct nlmsghdr *nl){
 		octx->diagnostic("Unknown route family %u",rt->rtm_family);
 		return -1;
 	}
+	memset(ag,0,flen);
 	rlen = nl->nlmsg_len - NLMSG_LENGTH(sizeof(*rt));
 	ra = (struct rtattr *)((char *)(NLMSG_DATA(nl)) + sizeof(*rt));
 	while(RTA_OK(ra,rlen)){
@@ -106,8 +108,11 @@ int handle_rtm_newroute(const omphalos_iface *octx,const struct nlmsghdr *nl){
 						flen,RTA_PAYLOAD(ra));
 				break;
 			}
-			memcpy(ag,RTA_DATA(ra),flen);
-			pag = ag;
+			// We get 0.0.0.0 as the gateway when there's no 'via'
+			if(memcmp(ag,RTA_DATA(ra),flen)){
+				memcpy(ag,RTA_DATA(ra),flen);
+				pag = ag;
+			}
 		break;}case RTA_PRIORITY:{
 		break;}case RTA_PREFSRC:{
 			if(RTA_PAYLOAD(ra) != flen){
