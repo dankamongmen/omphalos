@@ -21,9 +21,8 @@ DFLAGS:=-D_FILE_OFFSET_BITS=64 -D_XOPEN_SOURCE_EXTENDED -D_GNU_SOURCE
 CFLAGS+=$(DFLAGS) -march=native -pthread -I$(SRC) -fpic -fstrict-aliasing -fvisibility=hidden -Wall -W -Wextra -Werror -O2
 DBCFLAGS+=$(DFLAGS) -march=native -pthread -I$(SRC) -fpic -fstrict-aliasing -fvisibility=hidden -Wall -W -Wextra -Werror -g -ggdb
 CFLAGS:=$(DBCFLAGS)
-# FIXME doesn't work with gold, there we need:
-#GOLDLFLAGS+=-Wl,-O2,--enable-new-dtags,--as-needed,--warn-common
-LFLAGS+=-Wl,-O2,--default-symver,--enable-new-dtags,--as-needed,--warn-common
+# FIXME can't use --default-symver with GNU gold
+LFLAGS+=-Wl,-O2,--enable-new-dtags,--as-needed,--warn-common
 LFLAGS+=-lpcap -lcap -lpciaccess -lsysfs
 CTAGS?=$(shell (which ctags || echo ctags) 2> /dev/null)
 XSLTPROC?=$(shell (which xsltproc || echo xsltproc) 2> /dev/null)

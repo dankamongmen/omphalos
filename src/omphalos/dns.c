@@ -123,7 +123,7 @@ extract_dns_record(size_t len,const unsigned char *sec,unsigned *class,
 				free(buf);
 				return NULL;
 			}
-			offset = ((rlen & 0x3f) << 8u) + *sec;
+			offset = ((rlen & ~0xc0) << 8u) + *sec;
 			if(offset >= sec - orig){
 				free(buf);
 				return NULL;
