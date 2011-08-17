@@ -117,7 +117,7 @@ extract_dns_record(size_t len,const unsigned char *sec,unsigned *class,
 		char *tmp;
 
 		if((rlen & 0xc0) == 0xc0){
-			unsigned offset;
+			unsigned offset,z,zz;
 
 			if(*idx > len){
 				free(buf);
@@ -128,7 +128,8 @@ extract_dns_record(size_t len,const unsigned char *sec,unsigned *class,
 				free(buf);
 				return NULL;
 			}
-			if((tmp = realloc(buf,bsize + ustrlen(orig + offset) + 1)) == NULL){
+			z = ustrlen(orig + offset);
+			if((tmp = realloc(buf,bsize + z + 1)) == NULL){
 				free(buf);
 				return NULL;
 			}
@@ -136,9 +137,24 @@ extract_dns_record(size_t len,const unsigned char *sec,unsigned *class,
 			if(bsize){
 				buf[bsize - 1] = '.';
 			}
-			ustrcpy(buf + bsize,orig + offset);
-			// FIXME convert tags to '.''s
-			bsize += ustrlen(orig + offset) + 1;
+			buf[bsize + z] = '\0';
+			zz = 0;
+			while(orig[offset + zz]){
+				if(orig[offset + zz] & 0xc0){
+					// 0xc0 is legal -- FIXME fuck me, recurse?
+					free(buf);
+					return NULL;
+				}
+				if(zz + orig[offset + zz] >= z){
+					free(buf);
+					return NULL;
+				}
+				memcpy(buf + bsize + zz,orig + offset + zz + 1,orig[offset + zz]);
+				zz += orig[offset + zz] + 1;
+				buf[bsize + zz - 1] = '.';
+			}
+			buf[bsize + zz - 1] = '\0';
+			bsize += z;
 			++sec;
 			++*idx;
 			break;
@@ -205,6 +221,21 @@ void handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 		if(buf == NULL){
 			goto malformed;
 		}
+		free(buf);
+		sec += bsize;
+		len -= bsize;
+	}
+	while(an--){
+		unsigned ttl;
+		char *data;
+
+		buf = extract_dns_record(len,sec,&class,&type,&bsize,frame);
+		if(buf == NULL){
+			goto malformed;
+		}
+		octx->diagnostic("lookup [%s]",buf);
+		sec += bsize;
+		len -= bsize;
 		if(class == DNS_CLASS_IN){
 			if(type == DNS_TYPE_PTR){
 				struct sockaddr_storage ss;
@@ -219,20 +250,6 @@ void handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 			//		,ntohs(*((uint16_t *)sec + 1)));
 		}
 		// FIXME handle A/AAAA
-		free(buf);
-		sec += bsize;
-		len -= bsize;
-	}
-	while(an--){
-		unsigned ttl;
-		char *data;
-
-		buf = extract_dns_record(len,sec,&class,&type,&bsize,frame);
-		if(buf == NULL){
-			goto malformed;
-		}
-		sec += bsize;
-		len -= bsize;
 		data = extract_dns_extra(len,sec,&ttl,&bsize);
 		if(data == NULL){
 			free(buf);
