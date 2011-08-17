@@ -122,22 +122,30 @@ dns_inflate(char *buf,unsigned *bsize,const unsigned char *orig,unsigned offset,
 	if(*bsize){
 		buf[*bsize - 1] = '.';
 	}
-	buf[*bsize + z] = '\0';
 	zz = 0;
 	while(orig[offset + zz]){
 		if(orig[offset + zz] & 0xc0){
-			// 0xc0 is legal -- FIXME fuck me, recurse?
+			if((orig[offset + zz] & 0xc0) == 0xc0){
+				unsigned newoffset;
+				char *tmp;
+
+				newoffset = ((orig[offset + zz] & ~0xc0) << 8u) + orig[offset + zz + 1];
+				if((tmp = dns_inflate(buf,bsize,orig,newoffset,offset + zz)) == NULL){
+					free(buf);
+				}
+				return tmp;
+			}
 			return NULL;
 		}
 		if(zz + orig[offset + zz] >= z){
 			return NULL;
 		}
-		memcpy(buf + *bsize + zz,orig + offset + zz + 1,orig[offset + zz]);
+		memcpy(buf + *bsize,orig + offset + zz + 1,orig[offset + zz]);
+		*bsize += orig[offset + zz] + 1;
 		zz += orig[offset + zz] + 1;
-		buf[*bsize + zz - 1] = '.';
+		buf[*bsize - 1] = '.';
 	}
-	buf[*bsize + zz - 1] = '\0';
-	*bsize += z;
+	buf[*bsize - 1] = '\0';
 	return buf;
 }
 
