@@ -290,7 +290,6 @@ void handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 				// FIXME perform routing lookup on ss to get
 				// the desired interface and see whether we care
 				// about this address
-				octx->diagnostic("NAMING [%s]\n",data);
 				name_l3host_hack(octx,op->i,fam,ss,data);
 			}
 			//octx->diagnostic("TYPE: %hu CLASS: %hu",
