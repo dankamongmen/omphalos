@@ -105,6 +105,42 @@ extract_dns_extra(size_t len,const unsigned char *sec,unsigned *ttl,unsigned *id
 	return buf;
 }
 
+// inflate the previous dns data at offset into buf, which we are responsible
+// for resizing. data must have been previous, or else we can go into a loop!
+static char *
+dns_inflate(char *buf,unsigned *bsize,const unsigned char *orig,unsigned offset,
+				unsigned curoffset){
+	size_t z,zz;
+
+	if(curoffset <= offset){ // forward references are disallowed
+		return NULL;
+	}
+	z = ustrlen(orig + offset);
+	if((buf = realloc(buf,*bsize + z + 1)) == NULL){
+		return NULL; // caller is responsible for free()ing
+	}
+	if(*bsize){
+		buf[*bsize - 1] = '.';
+	}
+	buf[*bsize + z] = '\0';
+	zz = 0;
+	while(orig[offset + zz]){
+		if(orig[offset + zz] & 0xc0){
+			// 0xc0 is legal -- FIXME fuck me, recurse?
+			return NULL;
+		}
+		if(zz + orig[offset + zz] >= z){
+			return NULL;
+		}
+		memcpy(buf + *bsize + zz,orig + offset + zz + 1,orig[offset + zz]);
+		zz += orig[offset + zz] + 1;
+		buf[*bsize + zz - 1] = '.';
+	}
+	buf[*bsize + zz - 1] = '\0';
+	*bsize += z;
+	return buf;
+}
+
 static char *
 extract_dns_record(size_t len,const unsigned char *sec,unsigned *class,
 			unsigned *type,unsigned *idx,const unsigned char *orig){
@@ -117,7 +153,7 @@ extract_dns_record(size_t len,const unsigned char *sec,unsigned *class,
 		char *tmp;
 
 		if((rlen & 0xc0) == 0xc0){
-			unsigned offset,z,zz;
+			unsigned offset;
 
 			if(*idx > len){
 				free(buf);
@@ -128,33 +164,11 @@ extract_dns_record(size_t len,const unsigned char *sec,unsigned *class,
 				free(buf);
 				return NULL;
 			}
-			z = ustrlen(orig + offset);
-			if((tmp = realloc(buf,bsize + z + 1)) == NULL){
+			if((tmp = dns_inflate(buf,&bsize,orig,offset,sec - orig)) == NULL){
 				free(buf);
 				return NULL;
 			}
 			buf = tmp;
-			if(bsize){
-				buf[bsize - 1] = '.';
-			}
-			buf[bsize + z] = '\0';
-			zz = 0;
-			while(orig[offset + zz]){
-				if(orig[offset + zz] & 0xc0){
-					// 0xc0 is legal -- FIXME fuck me, recurse?
-					free(buf);
-					return NULL;
-				}
-				if(zz + orig[offset + zz] >= z){
-					free(buf);
-					return NULL;
-				}
-				memcpy(buf + bsize + zz,orig + offset + zz + 1,orig[offset + zz]);
-				zz += orig[offset + zz] + 1;
-				buf[bsize + zz - 1] = '.';
-			}
-			buf[bsize + zz - 1] = '\0';
-			bsize += z;
 			++sec;
 			++*idx;
 			break;
