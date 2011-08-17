@@ -47,11 +47,14 @@ void cleanup_naming(const omphalos_iface *octx){
 	if( (er = pthread_mutex_destroy(&rqueue_lock)) ){
 		octx->diagnostic("Error destroying resolvq lock (%s)",strerror(er));
 	}
+	er = 0;
 	if( (r = rqueue) ){
 		r->prev->next = NULL;
 		do{
 			rqueue = r->next;
 			free(r);
+			++er;
 		}while( (r = rqueue) );
 	}
+	octx->diagnostic("%d outstanding resolutions",er);
 }

@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <omphalos/util.h>
 #include <omphalos/ietf.h>
+#include <omphalos/resolv.h>
 #include <omphalos/hwaddrs.h>
 #include <omphalos/netaddrs.h>
 #include <omphalos/omphalos.h>
@@ -41,6 +42,7 @@ create_l3host(int fam,const void *addr,size_t len){
 		r->path = 0;
 		r->srcpkts = r->dstpkts = 0;
 		memcpy(&r->addr,addr,len);
+		queue_for_naming(r);
 	}
 	return r;
 }

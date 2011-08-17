@@ -13,6 +13,7 @@
 #include <omphalos/pcap.h>
 #include <sys/capability.h>
 #include <omphalos/privs.h>
+#include <omphalos/resolv.h>
 #include <omphalos/hwaddrs.h>
 #include <omphalos/netlink.h>
 #include <omphalos/omphalos.h>
@@ -174,4 +175,5 @@ void omphalos_cleanup(const omphalos_ctx *pctx){
 	cleanup_iana_naming();
 	stop_pci_support();
 	stop_usb_support();
+	cleanup_naming(&pctx->iface);
 }
