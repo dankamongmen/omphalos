@@ -494,6 +494,8 @@ get_unicast_address(const struct omphalos_iface *octx,interface *i,
 			const void *hwaddr,int fam,const void *addr,void *r){
 	int ret = 0;
 
+	assert(octx); // FIXME
+	assert(hwaddr); // FIXME
 	switch(fam){
 		case AF_INET:{
 			const ip4route *i4r = get_route4(i,addr);
@@ -509,14 +511,19 @@ get_unicast_address(const struct omphalos_iface *octx,interface *i,
 					// an arp probe to the original address.
 					// this will detect colocated hosts
 					// with different network settings.
-					if( (i4r = get_route4(i,&i4r->via)) ){
-						if(i4r->addrs & ROUTE_HAS_SRC){
+					/*
+					const ip4route *i4v;
+
+					if( (i4v = get_route4(i,&i4r->via)) ){
+						if(i4v->addrs & ROUTE_HAS_SRC){
+							uint32_t v = i4v->src;
+							assert(*(const uint32_t *)&i4v->src);
 							send_arp_probe(octx,i,hwaddr,
-									&i4r->via,
+									addr,
 									sizeof(uint32_t),
-									&i4r->src);
+									&i4v->src);
 						}
-					}
+					}*/
 				}else{
 					ret = 1;
 					memcpy(r,addr,sizeof(uint32_t));
