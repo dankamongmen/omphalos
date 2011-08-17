@@ -23,7 +23,7 @@ struct dnshdr {
 // FIXME is it safe to be using (possibly signed) naked chars?
 // FIXME handle AAAA lookups (".ip6.arpa")!
 static int
-process_reverse_lookup(const char *buf,int *fam,struct sockaddr_storage *addr){
+process_reverse_lookup(const char *buf,int *fam,void *addr){
 	const size_t len = strlen(buf);
 	char obuf[INET6_ADDRSTRLEN];
 	const char *chunk,*c;
@@ -41,7 +41,7 @@ process_reverse_lookup(const char *buf,int *fam,struct sockaddr_storage *addr){
 	// from 'in-addr.arpa' and exit.
 	chunk = buf;
 	for(quad = 0 ; quad < 4 ; ++quad){
-		for(c = chunk ; c - chunk < 3 ; ++c){
+		for(c = chunk ; c - chunk < 4 ; ++c){
 			if(isdigit(*c)){
 				q[quad][c - chunk] = *c;
 			}else if(*c == '.'){
@@ -50,7 +50,7 @@ process_reverse_lookup(const char *buf,int *fam,struct sockaddr_storage *addr){
 				return -1;
 			}
 		}
-		if(c - buf == 3){
+		if(c - buf == 4){
 			return -1;
 		}
 		q[quad][c - chunk] = '.';
@@ -256,7 +256,7 @@ void handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 		if(buf == NULL){
 			goto malformed;
 		}
-		octx->diagnostic("lookup [%s]",buf);
+		//octx->diagnostic("lookup [%s]",buf);
 		sec += bsize;
 		len -= bsize;
 		data = extract_dns_extra(len,sec,&ttl,&bsize);
@@ -265,15 +265,19 @@ void handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 			goto malformed;
 		}
 		if(class == DNS_CLASS_IN){
-			struct sockaddr_storage ss;
 			int fam;
 
 			if(type == DNS_TYPE_PTR){
-				if(process_reverse_lookup(buf,&fam,&ss)){
+				char ss[16]; // FIXME
+
+				if(process_reverse_lookup(buf,&fam,ss)){
 					free(buf);
 					goto malformed;
 				}
-				name_l3host_hack(octx,op->i,fam,&ss,buf);
+				// FIXME perform routing lookup on ss to get
+				// the desired interface and see whether we care
+				// about this address
+				name_l3host_hack(octx,op->i,fam,ss,data);
 			}
 			//octx->diagnostic("TYPE: %hu CLASS: %hu",
 			//		,ntohs(*((uint16_t *)sec + 1)));
