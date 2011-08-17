@@ -56,15 +56,18 @@ void handle_arp_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 	case __constant_ntohs(ARPOP_REQUEST):{
 		//name_l3host_local(octx,op->i,op->l2s,op->l3s,fam,saddr);
 		// FIXME reply with ARP spoof...
-	break;}case __constant_ntohs(ARPOP_REPLY):{
+		break;
+	}case __constant_ntohs(ARPOP_REPLY):{
 		//name_l3host_local(octx,op->i,op->l2s,op->l3s,fam,saddr);
 		daddr = (const char *)ap + sizeof(*ap) + ap->ar_hln * 2 + ap->ar_pln;
 		op->l3d = lookup_l3host(octx,op->i,op->l2d,fam,daddr);
-	break;}default:{
+		break;
+	}default:{
 		++op->i->noprotocol;
 		octx->diagnostic("%s %s unknown ARP op %u",__func__,
 					op->i->name,ap->ar_op);
-	break;}}
+		break;
+	}}
 }
 
 void send_arp_probe(const omphalos_iface *octx,interface *i,const void *hwaddr,
