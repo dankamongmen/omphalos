@@ -25,6 +25,7 @@ void name_l3host_absolute(const struct omphalos_iface *,const struct interface *
 				__attribute__ ((nonnull (1,2,3,4,5)));
 
 char *l3addrstr(const struct l3host *) __attribute__ ((nonnull (1)));
+char *netaddrstr(int,const void *) __attribute__ ((nonnull (2)));
 
 int l3ntop(const struct l3host *,char *,size_t) __attribute__ ((nonnull (1,2)));
 

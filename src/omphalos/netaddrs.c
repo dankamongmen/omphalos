@@ -167,6 +167,19 @@ char *l3addrstr(const struct l3host *l3){
 	return buf;
 }
 
+char *netaddrstr(int fam,const void *addr){
+	const size_t len = INET6_ADDRSTRLEN + 1;
+	char *buf;
+
+	if( (buf = malloc(len)) ){
+		if(inet_ntop(fam,addr,buf,len) != buf){
+			free(buf);
+			buf = NULL;
+		}
+	}
+	return buf;
+}
+
 int l3addr_eq_p(const l3host *l3,int fam,const void *addr){
 	if(l3->fam != fam){
 		return 0;
