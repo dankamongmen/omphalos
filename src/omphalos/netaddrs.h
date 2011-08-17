@@ -43,6 +43,8 @@ int router_p(const struct l3host *) __attribute__ ((nonnull (1)));
 void l3_srcpkt(struct l3host *) __attribute__ ((nonnull (1)));
 void l3_dstpkt(struct l3host *) __attribute__ ((nonnull (1)));
 
+// Filth FIXME
+void name_l3host_hack(const struct omphalos_iface *,struct interface *,int,const void *,const char *);
 #ifdef __cplusplus
 }
 #endif

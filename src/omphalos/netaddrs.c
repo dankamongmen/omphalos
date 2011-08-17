@@ -61,6 +61,41 @@ routed_family_p(int fam){
 	return fam == AF_INET || fam == AF_INET6;
 }
 
+// FIXME unspeakably foul. for dns nameback. must reimplement, ugh.
+void name_l3host_hack(const omphalos_iface *octx,interface *i,
+				int fam,const void *addr,const char *name){
+        l3host *l3;
+	typeof(l3->addr) cmp;
+	size_t len;
+
+	switch(fam){
+		case AF_INET:
+			len = 4;
+			l3 = i->ip4hosts;
+			break;
+		case AF_INET6:
+			len = 16;
+			l3 = i->ip6hosts;
+			break;
+		default:
+			octx->diagnostic("Can't lookup l3 type %d",fam);
+			return;
+	}
+	assert(len <= sizeof(cmp));
+	memcpy(&cmp,addr,sizeof(cmp));
+	while(l3){
+		if(memcmp(&l3->addr,&cmp,len) == 0){
+			if(l3->name == NULL && (l3->name = strdup(name)) ){
+				if(octx->iface_event){
+					octx->iface_event(i,i->opaque);
+				}
+			}
+		}
+		l3 = l3->next;
+	}
+	// we don't create new ones, as they'd have no l2 to be bound to
+}
+
 // This is for raw network addresses as seen on the wire, which may be from
 // outside the local network. We want only the local network address(es) of the
 // link (in a rare case, it might not have any). For unicast link addresses, a

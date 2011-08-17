@@ -4,6 +4,7 @@
 #include <omphalos/dns.h>
 #include <omphalos/util.h>
 #include <asm/byteorder.h>
+#include <omphalos/netaddrs.h>
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
 
@@ -258,25 +259,26 @@ void handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 		octx->diagnostic("lookup [%s]",buf);
 		sec += bsize;
 		len -= bsize;
-		if(class == DNS_CLASS_IN){
-			if(type == DNS_TYPE_PTR){
-				struct sockaddr_storage ss;
-				int fam;
-
-				if(process_reverse_lookup(buf,&fam,&ss)){
-					free(buf);
-					goto malformed;
-				}
-			}
-			//octx->diagnostic("TYPE: %hu CLASS: %hu",
-			//		,ntohs(*((uint16_t *)sec + 1)));
-		}
-		// FIXME handle A/AAAA
 		data = extract_dns_extra(len,sec,&ttl,&bsize);
 		if(data == NULL){
 			free(buf);
 			goto malformed;
 		}
+		if(class == DNS_CLASS_IN){
+			struct sockaddr_storage ss;
+			int fam;
+
+			if(type == DNS_TYPE_PTR){
+				if(process_reverse_lookup(buf,&fam,&ss)){
+					free(buf);
+					goto malformed;
+				}
+				name_l3host_hack(octx,op->i,fam,&ss,buf);
+			}
+			//octx->diagnostic("TYPE: %hu CLASS: %hu",
+			//		,ntohs(*((uint16_t *)sec + 1)));
+		}
+		// FIXME handle A/AAAA
 		free(buf);
 		free(data);
 		sec += bsize;
