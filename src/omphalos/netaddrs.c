@@ -134,7 +134,7 @@ struct l3host *lookup_l3host(const omphalos_iface *octx,interface *i,
 			if(mname){
 				l3->name = strdup(mname);
 			}
-		}else if(cat == RTN_UNICAST){
+		}else if(cat == RTN_UNICAST || cat == RTN_LOCAL){
 			queue_for_naming(i,l2,l3);
 		}else{
 			// FIXME do what with broadcast?
@@ -171,7 +171,6 @@ int l3addr_eq_p(const l3host *l3,int fam,const void *addr){
 	if(l3->fam != fam){
 		return 0;
 	}else if(fam == AF_INET){
-		fprintf(stderr,"0x%0x 0x%0x\n",*(uint32_t *)&l3->addr.ip4,*(uint32_t *)addr);
 		return !memcmp(&l3->addr.ip4,addr,4);
 	}else if(fam == AF_INET6){
 		return !memcmp(&l3->addr.ip6,addr,16);

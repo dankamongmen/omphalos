@@ -40,7 +40,6 @@ int queue_for_naming(struct interface *i,struct l2host *l2,struct l3host *l3){
 	return create_resolvq(i,l2,l3) ? 0 : -1;
 }
 
-#include <stdio.h>
 int offer_resolution(const omphalos_iface *octx,int fam,const void *addr,const char *name){
 	resolvq *r,**p;
 
@@ -52,7 +51,6 @@ int offer_resolution(const omphalos_iface *octx,int fam,const void *addr,const c
 			break;
 		}
 	}
-	fprintf(stderr,"done: %p\n",r);
 	return 0;
 }
 
