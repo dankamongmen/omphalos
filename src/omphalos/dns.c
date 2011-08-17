@@ -45,15 +45,15 @@ process_reverse_lookup(const char *buf,int *fam,void *addr){
 			if(isdigit(*c)){
 				q[quad][c - chunk] = *c;
 			}else if(*c == '.'){
+				q[quad][c - chunk] = '.';
 				break;
 			}else{
 				return -1;
 			}
 		}
-		if(c - buf == 4){
+		if(c - chunk == 4){
 			return -1;
 		}
-		q[quad][c - chunk] = '.';
 		q[quad][c - chunk + 1] = '\0';
 		chunk = c + 1;
 	}
@@ -82,28 +82,6 @@ ustrcat(char *to,const unsigned char *s){
 static inline char *
 ustrcpy(char *to,const unsigned char *s){
 	return strcpy(to,(const char *)s);
-}
-
-static void *
-extract_dns_extra(size_t len,const unsigned char *sec,unsigned *ttl,unsigned *idx){
-	uint16_t rdlen;
-	char *buf;
-
-	*idx = 0;
-	if(len < 6u + *idx){
-		return NULL;
-	}
-	*ttl = ntohl(*(const uint32_t *)sec);
-	rdlen = ntohs(*((const uint16_t *)sec + 2));
-	if(len < rdlen + 6u + *idx){
-		return NULL;
-	}
-	if((buf = memdup(((const uint16_t *)sec + 3),rdlen)) == NULL){
-		return NULL;
-	}
-	sec += 6 + rdlen;
-	*idx += 6 + rdlen;
-	return buf;
 }
 
 // inflate the previous dns data at offset into buf, which we are responsible
@@ -206,13 +184,48 @@ extract_dns_record(size_t len,const unsigned char *sec,unsigned *class,
 		sec += rlen;
 		*idx += rlen;
 	}
-	if(len < *idx + 4 || buf == NULL){
-		free(buf);
+	if(buf == NULL){
 		return NULL;
 	}
-	*class = *((uint16_t *)sec + 1);
-	*type = *(uint16_t *)sec;
-	*idx += 4;
+	if(class || type){
+		if(len < *idx + 4){
+			free(buf);
+			return NULL;
+		}
+		*class = *((uint16_t *)sec + 1);
+		*type = *(uint16_t *)sec;
+		*idx += 4;
+	}
+	return buf;
+}
+
+static void *
+extract_dns_extra(size_t len,const unsigned char *sec,unsigned *ttl,
+				unsigned *idx,const unsigned char *orig,
+				unsigned type){
+	unsigned newidx;
+	uint16_t rdlen;
+	char *buf;
+
+	*idx = 0;
+	if(len < 6u + *idx){
+		return NULL;
+	}
+	*ttl = ntohl(*(const uint32_t *)sec);
+	rdlen = ntohs(*((const uint16_t *)sec + 2));
+	// FIXME incorrect given possibility of compression!
+	if(len < rdlen + 6u + *idx){
+		return NULL;
+	}
+	*idx += 6;
+	sec += 6;
+	if(type == DNS_TYPE_PTR){
+		buf = extract_dns_record(len,sec,NULL,NULL,&newidx,orig);
+	}else{
+		buf = memdup(sec,rdlen);
+	}
+	sec += rdlen;
+	*idx += rdlen;
 	return buf;
 }
 
@@ -238,7 +251,7 @@ void handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 	ar = ntohs(dns->arcount);
 	len -= sizeof(*dns);
 	sec = (const unsigned char *)frame + sizeof(*dns);
-	//octx->diagnostic("q/a/n/a: %hu/%hu/%hu/%hu",qd,an,ns,ar);
+	// octx->diagnostic("q/a/n/a: %hu/%hu/%hu/%hu",qd,an,ns,ar);
 	if(qd){
 		buf = extract_dns_record(len,sec,&class,&type,&bsize,frame);
 		if(buf == NULL){
@@ -256,10 +269,10 @@ void handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 		if(buf == NULL){
 			goto malformed;
 		}
-		//octx->diagnostic("lookup [%s]",buf);
+		// octx->diagnostic("lookup [%s]",buf);
 		sec += bsize;
 		len -= bsize;
-		data = extract_dns_extra(len,sec,&ttl,&bsize);
+		data = extract_dns_extra(len,sec,&ttl,&bsize,frame,type);
 		if(data == NULL){
 			free(buf);
 			goto malformed;
@@ -277,6 +290,7 @@ void handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 				// FIXME perform routing lookup on ss to get
 				// the desired interface and see whether we care
 				// about this address
+				octx->diagnostic("NAMING [%s]\n",data);
 				name_l3host_hack(octx,op->i,fam,ss,data);
 			}
 			//octx->diagnostic("TYPE: %hu CLASS: %hu",
@@ -288,12 +302,12 @@ void handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 		sec += bsize;
 		len -= bsize;
 	}
-	if(ns){
+	while(ns--){
 		if(len == 0){
 			goto malformed;
 		}
 	}
-	if(ar){
+	while(ar--){
 		if(len == 0){
 			goto malformed;
 		}
