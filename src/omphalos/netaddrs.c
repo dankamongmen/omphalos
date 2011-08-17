@@ -42,7 +42,6 @@ create_l3host(int fam,const void *addr,size_t len){
 		r->path = 0;
 		r->srcpkts = r->dstpkts = 0;
 		memcpy(&r->addr,addr,len);
-		queue_for_naming(r);
 	}
 	return r;
 }
@@ -61,41 +60,6 @@ void name_l3host_absolute(const omphalos_iface *octx,const interface *i,
 static inline int
 routed_family_p(int fam){
 	return fam == AF_INET || fam == AF_INET6;
-}
-
-// FIXME unspeakably foul. for dns nameback. must reimplement, ugh.
-void name_l3host_hack(const omphalos_iface *octx,interface *i,
-				int fam,const void *addr,const char *name){
-        l3host *l3;
-	typeof(l3->addr) cmp;
-	size_t len;
-
-	switch(fam){
-		case AF_INET:
-			len = 4;
-			l3 = i->ip4hosts;
-			break;
-		case AF_INET6:
-			len = 16;
-			l3 = i->ip6hosts;
-			break;
-		default:
-			octx->diagnostic("Can't lookup l3 type %d",fam);
-			return;
-	}
-	assert(len <= sizeof(cmp));
-	memcpy(&cmp,addr,sizeof(cmp));
-	while(l3){
-		if(memcmp(&l3->addr,&cmp,len) == 0){
-			if(l3->name == NULL && (l3->name = strdup(name)) ){
-				if(octx->iface_event){
-					octx->iface_event(i,i->opaque);
-				}
-			}
-		}
-		l3 = l3->next;
-	}
-	// we don't create new ones, as they'd have no l2 to be bound to
 }
 
 // This is for raw network addresses as seen on the wire, which may be from
@@ -170,6 +134,8 @@ struct l3host *lookup_l3host(const omphalos_iface *octx,interface *i,
 			if(mname){
 				l3->name = strdup(mname);
 			}
+		}else if(cat == RTN_UNICAST){
+			queue_for_naming(i,l2,l3);
 		}else{
 			// FIXME do what with broadcast?
 		}
@@ -199,6 +165,18 @@ char *l3addrstr(const struct l3host *l3){
 		assert(l3ntop(l3,buf,len) == 0);
 	}
 	return buf;
+}
+
+int l3addr_eq_p(const l3host *l3,int fam,const void *addr){
+	if(l3->fam != fam){
+		return 0;
+	}else if(fam == AF_INET){
+		fprintf(stderr,"0x%0x 0x%0x\n",*(uint32_t *)&l3->addr.ip4,*(uint32_t *)addr);
+		return !memcmp(&l3->addr.ip4,addr,4);
+	}else if(fam == AF_INET6){
+		return !memcmp(&l3->addr.ip6,addr,16);
+	}
+	return 0;
 }
 
 const char *get_l3name(const l3host *l3){

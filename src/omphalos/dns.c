@@ -4,7 +4,7 @@
 #include <omphalos/dns.h>
 #include <omphalos/util.h>
 #include <asm/byteorder.h>
-#include <omphalos/netaddrs.h>
+#include <omphalos/resolv.h>
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
 
@@ -290,7 +290,7 @@ void handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 				// FIXME perform routing lookup on ss to get
 				// the desired interface and see whether we care
 				// about this address
-				name_l3host_hack(octx,op->i,fam,ss,data);
+				offer_resolution(octx,fam,ss,data);
 			}
 			//octx->diagnostic("TYPE: %hu CLASS: %hu",
 			//		,ntohs(*((uint16_t *)sec + 1)));

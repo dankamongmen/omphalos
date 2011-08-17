@@ -38,13 +38,12 @@ uintmax_t l3_get_dstpkt(const struct l3host *) __attribute__ ((nonnull (1)));
 
 // Predicates
 int router_p(const struct l3host *) __attribute__ ((nonnull (1)));
+int l3addr_eq_p(const struct l3host *,int,const void *) __attribute__ ((nonnull (1,3)));
 
 // Statistics
 void l3_srcpkt(struct l3host *) __attribute__ ((nonnull (1)));
 void l3_dstpkt(struct l3host *) __attribute__ ((nonnull (1)));
 
-// Filth FIXME
-void name_l3host_hack(const struct omphalos_iface *,struct interface *,int,const void *,const char *);
 #ifdef __cplusplus
 }
 #endif

@@ -339,10 +339,11 @@ int main(int argc,char * const *argv){
 		}
 	}
 	if(omphalos_init(&pctx)){
+	fprintf(stderr,"fuck me!\n");
 		cleanup_tty_ui();
 		return EXIT_FAILURE;
 	}
-	cleanup_tty_ui();
+	fprintf(stderr,"fuck me!\n");
 	if(dump_output(stdout) < 0){
 		if(errno != ENOMEM){
 			fprintf(stderr,"Couldn't write output (%s?)\n",strerror(errno));
@@ -350,5 +351,6 @@ int main(int argc,char * const *argv){
 		return EXIT_FAILURE;
 	}
 	omphalos_cleanup(&pctx);
+	cleanup_tty_ui();
 	return EXIT_SUCCESS;
 }
