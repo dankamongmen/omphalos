@@ -291,6 +291,8 @@ void handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 				// the desired interface and see whether we care
 				// about this address
 				offer_resolution(octx,fam,ss,data);
+			}else if(type == DNS_TYPE_A){
+				offer_resolution(octx,AF_INET,data,buf);
 			}
 			//octx->diagnostic("TYPE: %hu CLASS: %hu",
 			//		,ntohs(*((uint16_t *)sec + 1)));
