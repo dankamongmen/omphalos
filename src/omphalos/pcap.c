@@ -95,6 +95,7 @@ handle_pcap_cooked(u_char *gi,const struct pcap_pkthdr *h,const u_char *bytes){
 	packet.i->bcast = bcast;
 	packet.l2s = lookup_l2host(pm->octx,iface,sll->hwaddr);
 	packet.l2d = packet.l2s;
+	packet.l3proto = ntohs(sll->proto);
 	// proto is in network byte-order. rather than possibly switch it
 	// every time, we provide the cases in network byte-order
 	switch(sll->proto){
