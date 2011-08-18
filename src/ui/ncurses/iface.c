@@ -475,18 +475,16 @@ int iface_wholly_visible_p(int rows,const iface_state *is){
 	return 1;
 }
 
-void expand_interface_locked(iface_state *is){
+void expand_interface(iface_state *is){
 	if(is->expansion == EXPANSION_MAX){
 		return;
 	}
 	++is->expansion;
-	redraw_iface(is->iface,is,1);
 }
 
-void collapse_interface_locked(iface_state *is){
+void collapse_interface(iface_state *is){
 	if(is->expansion == 0){
 		return;
 	}
 	--is->expansion;
-	redraw_iface(is->iface,is,1);
 }

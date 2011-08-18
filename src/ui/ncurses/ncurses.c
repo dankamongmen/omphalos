@@ -928,7 +928,8 @@ ncurses_input_thread(void *unsafe_marsh){
 		case '+':
 			pthread_mutex_lock(&bfl);
 			if(current_iface){
-				expand_interface_locked(current_iface);
+				expand_interface(current_iface);
+				resize_iface(current_iface->iface,current_iface);
 				screen_update();
 			}
 			pthread_mutex_unlock(&bfl);
@@ -936,7 +937,8 @@ ncurses_input_thread(void *unsafe_marsh){
 		case '-':
 			pthread_mutex_lock(&bfl);
 			if(current_iface){
-				collapse_interface_locked(current_iface);
+				collapse_interface(current_iface);
+				resize_iface(current_iface->iface,current_iface);
 				screen_update();
 			}
 			pthread_mutex_unlock(&bfl);
