@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <omphalos/iana.h>
+#include <omphalos/util.h>
 #include <omphalos/inotify.h>
 #include <omphalos/ethernet.h>
 #include <omphalos/omphalos.h>
@@ -50,8 +51,10 @@ free_ouitries(ouitrie **tries){
 static void
 parse_file(const omphalos_iface *octx){
 	unsigned allocerr;
-	char buf[256]; // FIXME
+	const char *line;
 	FILE *fp;
+	char *b;
+	int l;
 
 	if((fp = fopen(ianafn,"r")) == NULL){
 		octx->diagnostic("Coudln't open %s (%s?)",ianafn,strerror(errno));
@@ -59,16 +62,18 @@ parse_file(const omphalos_iface *octx){
 	}
 	clearerr(fp);
 	allocerr = 0;
-	while(fgets(buf,sizeof(buf),fp)){
+	b = NULL;
+	l = 0;
+	while( (line = fgetl(&b,&l,fp)) ){
 		unsigned long hex;
 		unsigned char b;
 		ouitrie *cur,*c;
 		char *end,*nl;
 
-		if((hex = strtoul(buf,&end,16)) > ((1u << 24u) - 1)){
+		if((hex = strtoul(line,&end,16)) > ((1u << 24u) - 1)){
 			continue;
 		}
-		if(!isspace(*end) || end == buf){
+		if(!isspace(*end) || end == line){
 			continue;
 		}
 		while(isspace(*end)){
@@ -109,6 +114,7 @@ parse_file(const omphalos_iface *octx){
 		}
 		allocerr = 0;
 	}
+	free(b);
 	if(allocerr){
 		octx->diagnostic("Couldn't allocate for %s",ianafn);
 	}else if(ferror(fp)){
