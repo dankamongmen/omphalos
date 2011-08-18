@@ -234,13 +234,29 @@ void handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 	unsigned class,type,bsize;
 	const unsigned char *sec;
 	uint16_t qd,an,ns,ar;
+	union {
+		uint128_t addr6;
+		uint32_t addr4;
+	} nsaddru;
+	void *nsaddr = &nsaddru;
 	char *buf;
-
+	int nsfam;
 
 	if(len < sizeof(*dns)){
 		octx->diagnostic("%s malformed with %zu on %s",
 				__func__,len,op->i->name);
 		++op->i->malformed;
+		return;
+	}
+	if(op->l3proto == ETH_P_IP){
+		nsfam = AF_INET;
+		nsaddru.addr4 = get_l3addr_in(op->l3s);
+	}else if(op->l3proto == ETH_P_IPV6){
+		nsfam = AF_INET6;
+		nsaddru.addr6 = get_l3addr_in6(op->l3s);
+	}else{
+		octx->diagnostic("DNS on %s:0x%x",op->i->name,op->l3proto);
+		++op->i->noprotocol;
 		return;
 	}
 	//opcode = (ntohs(dns->flags) & 0x7800) >> 11u;
@@ -290,11 +306,14 @@ void handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 				// FIXME perform routing lookup on ss to get
 				// the desired interface and see whether we care
 				// about this address
-				offer_resolution(octx,fam,ss,data,NAMING_LEVEL_REVDNS);
+				offer_resolution(octx,fam,ss,data,
+						NAMING_LEVEL_REVDNS,nsfam,nsaddr);
 			}else if(type == DNS_TYPE_A){
-				offer_resolution(octx,AF_INET,data,buf,NAMING_LEVEL_DNS);
+				offer_resolution(octx,AF_INET,data,buf,
+						NAMING_LEVEL_DNS,nsfam,nsaddr);
 			}else if(type == DNS_TYPE_AAAA){
-				offer_resolution(octx,AF_INET6,data,buf,NAMING_LEVEL_DNS);
+				offer_resolution(octx,AF_INET6,data,buf,
+						NAMING_LEVEL_DNS,nsfam,nsaddr);
 			}
 			//octx->diagnostic("TYPE: %hu CLASS: %hu",
 			//		,ntohs(*((uint16_t *)sec + 1)));

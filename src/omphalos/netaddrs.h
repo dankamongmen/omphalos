@@ -6,6 +6,7 @@ extern "C" {
 #endif
 
 #include <stdint.h>
+#include <omphalos/128.h>
 
 struct l2host;
 struct l3host;
@@ -45,6 +46,8 @@ const char *get_l3name(const struct l3host *) __attribute__ ((nonnull (1)));
 void *l3host_get_opaque(struct l3host *) __attribute__ ((nonnull (1)));
 uintmax_t l3_get_srcpkt(const struct l3host *) __attribute__ ((nonnull (1)));
 uintmax_t l3_get_dstpkt(const struct l3host *) __attribute__ ((nonnull (1)));
+uint32_t get_l3addr_in(const struct l3host *) __attribute__ ((nonnull (1)));
+uint128_t get_l3addr_in6(const struct l3host *) __attribute__ ((nonnull (1)));
 
 // Predicates
 int router_p(const struct l3host *) __attribute__ ((nonnull (1)));

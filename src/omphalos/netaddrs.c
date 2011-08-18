@@ -200,6 +200,14 @@ int l3addr_eq_p(const l3host *l3,int fam,const void *addr){
 	return 0;
 }
 
+uint32_t get_l3addr_in(const l3host *l3){
+	return l3->addr.ip4;
+}
+
+uint128_t get_l3addr_in6(const l3host *l3){
+	return l3->addr.ip6;
+}
+
 const char *get_l3name(const l3host *l3){
 	return l3->name;
 }

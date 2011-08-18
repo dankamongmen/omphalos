@@ -20,18 +20,30 @@ typedef struct resolvq {
 } resolvq;
 
 typedef struct resolver {
-	struct in_addr ina;
+	struct in_addr addr;
 	struct resolver *next;
 } resolver;
 
-static resolver *resolvers;
 static char *resolvconf_fn;
+static resolver *resolvers,*resolvers6;
 static pthread_mutex_t resolver_lock = PTHREAD_MUTEX_INITIALIZER;
 
 // Resolv queue is global to all interfaces, since there's no required mapping
 // between routes to resolvers and interfaces.
 static resolvq *rqueue;
 static pthread_mutex_t rqueue_lock = PTHREAD_MUTEX_INITIALIZER;
+
+static resolver *
+create_resolver(const void *addr,size_t len){
+	resolver *r;
+
+	assert(len <= sizeof(r->addr));
+	if( (r = malloc(sizeof(*r))) ){
+		memcpy(&r->addr,addr,len);
+		r->next = NULL;
+	}
+	return r;
+}
 
 static void
 free_resolvers(resolver **r){
@@ -64,10 +76,37 @@ int queue_for_naming(struct interface *i,struct l2host *l2,struct l3host *l3){
 	return create_resolvq(i,l2,l3) ? 0 : -1;
 }
 
+static void
+offer_nameserver(int nsfam,const void *nameserver){
+	resolver **head,*r;
+	size_t len;
+
+	pthread_mutex_lock(&resolver_lock);
+	if(nsfam == AF_INET){
+		head = &resolvers;
+		len = 4;
+	}else if(nsfam == AF_INET6){
+		head = &resolvers6;
+		len = 16;
+	}
+	for(r = *head ; r ; r = r->next){
+		if(memcmp(&r->addr,nameserver,len) == 0){
+			break;
+		}
+	}
+	if(r == NULL && (r = create_resolver(nameserver,len)) ){
+		r->next = *head;
+		*head = r;
+	}
+	pthread_mutex_unlock(&resolver_lock);
+}
+
 int offer_resolution(const omphalos_iface *octx,int fam,const void *addr,
-				const char *name,namelevel nlevel){
+				const char *name,namelevel nlevel,
+				int nsfam,const void *nameserver){
 	resolvq *r,**p;
 
+	offer_nameserver(nsfam,nameserver);
 	for(p = &rqueue ; (r = *p) ; p = &r->next){
 		if(l3addr_eq_p(r->l3,fam,addr)){
 			name_l3host_absolute(octx,r->i,r->l2,r->l3,name,nlevel);
@@ -79,18 +118,6 @@ int offer_resolution(const omphalos_iface *octx,int fam,const void *addr,
 		}
 	}
 	return 0;
-}
-
-static resolver *
-create_resolver(const void *addr,size_t len){
-	resolver *r;
-
-	assert(len <= sizeof(r->ina));
-	if( (r = malloc(sizeof(*r))) ){
-		memcpy(&r->ina,addr,len);
-		r->next = NULL;
-	}
-	return r;
 }
 
 static void
@@ -192,6 +219,7 @@ int cleanup_naming(const omphalos_iface *octx){
 	if( (er = pthread_mutex_destroy(&resolver_lock)) ){
 		octx->diagnostic("Error destroying resolver lock (%s)",strerror(er));
 	}
+	free_resolvers(&resolvers6);
 	free_resolvers(&resolvers);
 	free(resolvconf_fn);
 	resolvconf_fn = NULL;
