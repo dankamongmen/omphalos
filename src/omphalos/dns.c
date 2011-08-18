@@ -293,6 +293,8 @@ void handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 				offer_resolution(octx,fam,ss,data);
 			}else if(type == DNS_TYPE_A){
 				offer_resolution(octx,AF_INET,data,buf);
+			}else if(type == DNS_TYPE_AAAA){
+				offer_resolution(octx,AF_INET6,data,buf);
 			}
 			//octx->diagnostic("TYPE: %hu CLASS: %hu",
 			//		,ntohs(*((uint16_t *)sec + 1)));
