@@ -25,7 +25,13 @@ typedef struct l2obj {
 	struct l3obj *l3objs;
 } l2obj;
 
-#define EXPANSION_MAX 2
+enum {
+	EXPANSION_NONE,
+	EXPANSION_NODES,
+	EXPANSION_HOSTS
+};
+
+#define EXPANSION_MAX EXPANSION_HOSTS
 
 iface_state *create_interface_state(interface *i){
 	iface_state *ret;
@@ -142,6 +148,9 @@ print_iface_hosts(const interface *i,const iface_state *is,int rows,int cols){
 	const l2obj *l;
 	int line;
 
+	if(is->expansion < EXPANSION_NODES){
+		return;
+	}
 	// If the interface is down, we don't lead with the summary line
 	line = !!interface_up_p(i);
 	for(l = is->l2objs ; l ; l = l->next){
@@ -200,27 +209,29 @@ print_iface_hosts(const interface *i,const iface_state *is,int rows,int cols){
 			mvwprintw(is->subwin,line,cols - PREFIXSTRLEN * 2 - 2,PREFIXFMT" "PREFIXFMT,prefix(get_srcpkts(l->l2),1,sbuf,sizeof(sbuf),1),
 					prefix(get_dstpkts(l->l2),1,dbuf,sizeof(dbuf),1));
 		}
-		for(l3 = l->l3objs ; l3 ; l3 = l3->next){
-			char nw[INET6_ADDRSTRLEN + 1]; // FIXME
-			const char *name;
+		if(is->expansion >= EXPANSION_HOSTS){
+			for(l3 = l->l3objs ; l3 ; l3 = l3->next){
+				char nw[INET6_ADDRSTRLEN + 1]; // FIXME
+				const char *name;
 
-			if(++line + 1 >= rows){
-				break;
+				if(++line + 1 >= rows){
+					break;
+				}
+				l3ntop(l3->l3,nw,sizeof(nw));
+				if((name = get_l3name(l3->l3)) == NULL){
+					name = "";
+				}
+				if(router_p(l3->l3)){
+					assert(wattrset(is->subwin,A_BOLD | COLOR_PAIR(ROUTER_COLOR)) != ERR);
+				}
+				assert(mvwprintw(is->subwin,line,1,"    %s %s",nw,name) != ERR);
+				{
+					char sbuf[PREFIXSTRLEN + 1],dbuf[PREFIXSTRLEN + 1];
+					mvwprintw(is->subwin,line,cols - PREFIXSTRLEN * 2 - 2,PREFIXFMT" "PREFIXFMT,prefix(l3_get_srcpkt(l3->l3),1,sbuf,sizeof(sbuf),1),
+							prefix(l3_get_dstpkt(l3->l3),1,dbuf,sizeof(dbuf),1));
+				}
+				assert(wattrset(is->subwin,attrs) != ERR);
 			}
-			l3ntop(l3->l3,nw,sizeof(nw));
-			if((name = get_l3name(l3->l3)) == NULL){
-				name = "";
-			}
-			if(router_p(l3->l3)){
-				assert(wattrset(is->subwin,A_BOLD | COLOR_PAIR(ROUTER_COLOR)) != ERR);
-			}
-			assert(mvwprintw(is->subwin,line,1,"    %s %s",nw,name) != ERR);
-			{
-				char sbuf[PREFIXSTRLEN + 1],dbuf[PREFIXSTRLEN + 1];
-				mvwprintw(is->subwin,line,cols - PREFIXSTRLEN * 2 - 2,PREFIXFMT" "PREFIXFMT,prefix(l3_get_srcpkt(l3->l3),1,sbuf,sizeof(sbuf),1),
-						prefix(l3_get_dstpkt(l3->l3),1,dbuf,sizeof(dbuf),1));
-			}
-			assert(wattrset(is->subwin,attrs) != ERR);
 		}
 	}
 }
@@ -461,7 +472,9 @@ int move_interface(iface_state *is,int rows,int delta,int active){
 // This is the number of lines we'd have in an optimal world; we might have
 // fewer available to us on this screen at this time.
 int lines_for_interface(const iface_state *is){
-	return 2 + is->nodes + is->hosts + interface_up_p(is->iface);
+	return 2 + interface_up_p(is->iface) +
+		((is->expansion < EXPANSION_NODES) ? 0 : is->nodes) +
+		((is->expansion < EXPANSION_HOSTS) ? 0 : is->hosts);
 }
 
 // Is the interface window entirely visible? We can't draw it otherwise, as it
