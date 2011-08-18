@@ -55,7 +55,7 @@ btowdup(const char *s){
 	return w;
 }
 
-const char *fgetl(char **,int *,FILE *) __attribute__ ((nonnull (1,2,3)))
+char *fgetl(char **,int *,FILE *) __attribute__ ((nonnull (1,2,3)))
 		__attribute__ ((warn_unused_result));
 
 #ifdef __cplusplus

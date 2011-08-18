@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <omphalos/util.h>
 
-const char *fgetl(char **buf,int *s,FILE *fp){
+char *fgetl(char **buf,int *s,FILE *fp){
 	int r = 0;
 
 	do{
