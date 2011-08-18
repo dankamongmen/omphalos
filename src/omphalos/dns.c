@@ -140,7 +140,7 @@ extract_dns_record(size_t len,const unsigned char *sec,unsigned *class,
 		char *tmp;
 
 		if((rlen & 0xc0) == 0xc0){
-			unsigned offset;
+			ptrdiff_t offset;
 
 			if(*idx > len){
 				free(buf);
