@@ -145,7 +145,7 @@ handle_ieee80211_mgmtfix(const omphalos_iface *octx,omphalos_packet *op,
 		}
 		tagtbl[IEEE80211_MGMT_TAG_SSID].ptr = tmp;
 		tmp[tagtbl[IEEE80211_MGMT_TAG_SSID].len] = '\0';
-		name_l3host_absolute(octx,op->i,op->l2s,op->l3s,tmp);
+		name_l3host_absolute(octx,op->i,op->l2s,op->l3s,tmp,NAMING_LEVEL_MAX);
 	}
 
 freetags:

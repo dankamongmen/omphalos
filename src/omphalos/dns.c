@@ -290,11 +290,11 @@ void handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 				// FIXME perform routing lookup on ss to get
 				// the desired interface and see whether we care
 				// about this address
-				offer_resolution(octx,fam,ss,data);
+				offer_resolution(octx,fam,ss,data,NAMING_LEVEL_REVDNS);
 			}else if(type == DNS_TYPE_A){
-				offer_resolution(octx,AF_INET,data,buf);
+				offer_resolution(octx,AF_INET,data,buf,NAMING_LEVEL_DNS);
 			}else if(type == DNS_TYPE_AAAA){
-				offer_resolution(octx,AF_INET6,data,buf);
+				offer_resolution(octx,AF_INET6,data,buf,NAMING_LEVEL_DNS);
 			}
 			//octx->diagnostic("TYPE: %hu CLASS: %hu",
 			//		,ntohs(*((uint16_t *)sec + 1)));

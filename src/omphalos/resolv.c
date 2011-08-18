@@ -40,14 +40,17 @@ int queue_for_naming(struct interface *i,struct l2host *l2,struct l3host *l3){
 	return create_resolvq(i,l2,l3) ? 0 : -1;
 }
 
-int offer_resolution(const omphalos_iface *octx,int fam,const void *addr,const char *name){
+int offer_resolution(const omphalos_iface *octx,int fam,const void *addr,
+				const char *name,namelevel nlevel){
 	resolvq *r,**p;
 
 	for(p = &rqueue ; (r = *p) ; p = &r->next){
 		if(l3addr_eq_p(r->l3,fam,addr)){
-			*p = r->next;
-			name_l3host_absolute(octx,r->i,r->l2,r->l3,name);
-			free(r);
+			name_l3host_absolute(octx,r->i,r->l2,r->l3,name,nlevel);
+			if(nlevel >= NAMING_LEVEL_REVDNS){
+				*p = r->next;
+				free(r);
+			}
 			break;
 		}
 	}

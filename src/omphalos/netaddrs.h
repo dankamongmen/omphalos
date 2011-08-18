@@ -14,16 +14,23 @@ struct omphalos_iface;
 
 #define AF_BSSID (AF_MAX + 1)
 
+typedef enum {
+	NAMING_LEVEL_NONE,	// No name
+	NAMING_LEVEL_DNS,	// Direct lookup maps multiple names to an IP
+	NAMING_LEVEL_REVDNS,	// Reverse lookup is unique for each IP
+	NAMING_LEVEL_MAX
+} namelevel;
+
 struct l3host *lookup_l3host(const struct omphalos_iface *,struct interface *,
 				struct l2host *,int,const void *)
 				__attribute__ ((nonnull (1,2,3,5)));
 
 void name_l3host_local(const struct omphalos_iface *,const struct interface *,
-			struct l2host *,struct l3host *,int,const void *)
+			struct l2host *,struct l3host *,int,const void *,namelevel)
 				__attribute__ ((nonnull (1,2,3,4,6)));
 
 void name_l3host_absolute(const struct omphalos_iface *,const struct interface *,
-			struct l2host *,struct l3host *,const char *)
+			struct l2host *,struct l3host *,const char *,namelevel)
 				__attribute__ ((nonnull (1,2,3,4,5)));
 
 char *l3addrstr(const struct l3host *) __attribute__ ((nonnull (1)));

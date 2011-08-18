@@ -20,6 +20,7 @@ typedef struct l3host {
 		char mac[ETH_ALEN];
 	} addr;		// FIXME sigh
 	uintmax_t srcpkts,dstpkts;
+	namelevel nlevel;
 	struct l3host *next;
 	void *opaque;
 } l3host;
@@ -41,15 +42,22 @@ create_l3host(int fam,const void *addr,size_t len){
 		r->fam = fam;
 		r->path = 0;
 		r->srcpkts = r->dstpkts = 0;
+		r->nlevel = NAMING_LEVEL_NONE;
 		memcpy(&r->addr,addr,len);
 	}
 	return r;
 }
 
 void name_l3host_absolute(const omphalos_iface *octx,const interface *i,
-			struct l2host *l2,l3host *l3,const char *name){
-	if(l3->name == NULL){
-		if( (l3->name = strdup(name)) ){
+			struct l2host *l2,l3host *l3,const char *name,
+			namelevel nlevel){
+	if(l3->nlevel < nlevel){
+		char *tmp;
+
+		if( (tmp = strdup(name)) ){
+			free(l3->name);
+			l3->name = tmp;
+			l3->nlevel = nlevel;
 			if(octx->host_event){
 				l3->opaque = octx->host_event(i,l2,l3);
 			}
@@ -147,12 +155,13 @@ struct l3host *lookup_l3host(const omphalos_iface *octx,interface *i,
 }
 
 void name_l3host_local(const omphalos_iface *octx,const interface *i,
-		struct l2host *l2,l3host *l3,int family,const void *name){
+		struct l2host *l2,l3host *l3,int family,const void *name,
+		namelevel nlevel){
 	if(l3->name == NULL){
 		char b[INET6_ADDRSTRLEN];
 
 		if(inet_ntop(family,name,b,sizeof(b)) == b){
-			name_l3host_absolute(octx,i,l2,l3,b);
+			name_l3host_absolute(octx,i,l2,l3,b,nlevel);
 		}
 	}
 }
