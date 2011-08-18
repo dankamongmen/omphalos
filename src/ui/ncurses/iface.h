@@ -32,6 +32,7 @@ typedef struct iface_state {
 					//  or more hosts; a host MUST have one
 					//  or more nodes)
 	struct l2obj *l2objs;		// l2 entity list
+	unsigned expansion;		// degree of expansion/collapse
 	struct iface_state *next,*prev;
 } iface_state;
 
@@ -48,6 +49,9 @@ int move_interface(struct iface_state *,int,int,int);
 
 struct l2obj *add_l2_to_iface(const struct interface *,struct iface_state *,struct l2host *);
 struct l3obj *add_l3_to_iface(struct iface_state *,struct l2obj *,struct l3host *);
+
+void expand_interface_locked(struct iface_state *);
+void collapse_interface_locked(struct iface_state *);
 
 #ifdef __cplusplus
 }

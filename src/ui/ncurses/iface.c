@@ -25,6 +25,8 @@ typedef struct l2obj {
 	struct l3obj *l3objs;
 } l2obj;
 
+#define EXPANSION_MAX 2
+
 iface_state *create_interface_state(interface *i){
 	iface_state *ret;
 	const char *tstr;
@@ -37,6 +39,7 @@ iface_state *create_interface_state(interface *i){
 			ret->typestr = tstr;
 			ret->lastprinted.tv_sec = ret->lastprinted.tv_usec = 0;
 			ret->iface = i;
+			ret->expansion = EXPANSION_MAX;
 		}
 	}
 	return ret;
@@ -470,4 +473,20 @@ int iface_wholly_visible_p(int rows,const iface_state *is){
 		return 0;
 	}
 	return 1;
+}
+
+void expand_interface_locked(iface_state *is){
+	if(is->expansion == EXPANSION_MAX){
+		return;
+	}
+	++is->expansion;
+	redraw_iface(is->iface,is,1);
+}
+
+void collapse_interface_locked(iface_state *is){
+	if(is->expansion == 0){
+		return;
+	}
+	--is->expansion;
+	redraw_iface(is->iface,is,1);
 }

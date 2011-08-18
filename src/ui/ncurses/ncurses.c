@@ -265,7 +265,7 @@ setup_statusbar(int cols){
 			struct tm tm;
 
 			if(localtime_r(&t,&tm)){
-				strftime(sm,s,"launched at %T. 'H' toggles help.",&tm);
+				strftime(sm,s,"launched at %T. 'h' toggles help.",&tm);
 			}else{
 				sm[0] = '\0';
 			}
@@ -622,14 +622,14 @@ static const wchar_t *helps[] = {
 	L"'c': crypto configuration",
 	L"       configure algorithm stepdown, WEP/WPA cracking, SSL MitM", */
 	L"'C': configuration",
-	L"'k'/'↑': previous interface   'j'/'↓': next interface",
-	L"'h'/'←': collapse interface   'l'/'→': expand interface",
 	L"<⏎Enter>: browse interface    <␛Esc>: leave interface browser",
+	L"'k'/'↑': previous interface   'j'/'↓': next interface",
+	L"'-'/'←': collapse interface   '+'/'→': expand interface",
 	L"'m': change device MAC        'u': change device MTU",
 	L"'r': reset interface's stats  'R': reset all interfaces' stats",
 	L"'d': bring down device        'p': toggle promiscuity",
 	L"'s': toggle sniffing, bringing up interface if down",
-	L"'v': view interface details   'H': toggle this help display",
+	L"'v': view interface details   'h': toggle this help display",
 	L"'q': quit                     ctrl+'L': redraw the screen",
 	NULL
 };
@@ -667,7 +667,7 @@ display_help_locked(WINDOW *mainw,struct panel_state *ps){
 	const int helpcols = max_helpstr_len(helps) + 4; // spacing + borders
 
 	memset(ps,0,sizeof(*ps));
-	if(new_display_panel(mainw,ps,helprows,helpcols,L"press 'H' to dismiss help")){
+	if(new_display_panel(mainw,ps,helprows,helpcols,L"press 'h' to dismiss help")){
 		ERREXIT;
 	}
 	if(helpstrs(panel_window(ps->p),1,ps->ysize) != OK){
@@ -925,6 +925,22 @@ ncurses_input_thread(void *unsafe_marsh){
 				screen_update();
 			pthread_mutex_unlock(&bfl);
 			break;
+		case '+':
+			pthread_mutex_lock(&bfl);
+			if(current_iface){
+				expand_interface_locked(current_iface);
+				screen_update();
+			}
+			pthread_mutex_unlock(&bfl);
+			break;
+		case '-':
+			pthread_mutex_lock(&bfl);
+			if(current_iface){
+				collapse_interface_locked(current_iface);
+				screen_update();
+			}
+			pthread_mutex_unlock(&bfl);
+			break;
 		case 'm':
 			pthread_mutex_lock(&bfl);
 				change_mac(w);
@@ -944,7 +960,7 @@ ncurses_input_thread(void *unsafe_marsh){
 			screen_update();
 			pthread_mutex_unlock(&bfl);
 			break;
-		}case 'H':{
+		}case 'h':{
 			pthread_mutex_lock(&bfl);
 			if(help.p){
 				hide_panel_locked(&help);
@@ -958,7 +974,7 @@ ncurses_input_thread(void *unsafe_marsh){
 			pthread_mutex_unlock(&bfl);
 			break;
 		}default:{
-			const char *hstr = !help.p ? " ('H' for help)" : "";
+			const char *hstr = !help.p ? " ('h' for help)" : "";
 			// wstatus() locks/unlocks, and calls screen_update()
 			if(isprint(ch)){
 				wstatus(w,"unknown command '%c'%s",ch,hstr);
