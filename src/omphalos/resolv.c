@@ -1,9 +1,11 @@
+#include <stdio.h>
 #include <assert.h>
 #include <pthread.h>
 #include <omphalos/dns.h>
 #include <omphalos/util.h>
 #include <asm/byteorder.h>
 #include <omphalos/resolv.h>
+#include <omphalos/inotify.h>
 #include <omphalos/netaddrs.h>
 #include <omphalos/omphalos.h>
 
@@ -13,6 +15,8 @@ typedef struct resolvq {
 	struct interface *i;
 	struct resolvq *next;
 } resolvq;
+
+static char *resolvconf_fn;
 
 // Resolv queue is global to all interfaces, since there's no required mapping
 // between routes to resolvers and interfaces.
@@ -57,6 +61,33 @@ int offer_resolution(const omphalos_iface *octx,int fam,const void *addr,
 	return 0;
 }
 
+static void
+parse_resolv_conf(const omphalos_iface *octx){
+	FILE *fp;
+
+	if((fp = fopen(resolvconf_fn,"r")) == NULL){
+		octx->diagnostic("Couldn't open %s",resolvconf_fn);
+		return;
+	}
+	fclose(fp);
+	octx->diagnostic("Reloaded resolvers from %s",resolvconf_fn);
+}
+
+int init_naming(const omphalos_iface *octx,const char *resolvconf){
+	if((resolvconf_fn = strdup(resolvconf)) == NULL){
+		goto err;
+	}
+	if(watch_file(octx,resolvconf,parse_resolv_conf)){
+		goto err;
+	}
+	return 0;
+
+err:
+	free(resolvconf_fn);
+	resolvconf_fn = NULL;
+	return -1;
+}
+
 int cleanup_naming(const omphalos_iface *octx){
 	resolvq *r;
 	int er;
@@ -71,5 +102,7 @@ int cleanup_naming(const omphalos_iface *octx){
 	if( (er = pthread_mutex_destroy(&rqueue_lock)) ){
 		octx->diagnostic("Error destroying resolvq lock (%s)",strerror(er));
 	}
+	free(resolvconf_fn);
+	resolvconf_fn = NULL;
 	return er;
 }

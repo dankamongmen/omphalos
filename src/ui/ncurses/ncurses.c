@@ -65,6 +65,7 @@ struct panel_state {
 static struct panel_state *active;
 static struct panel_state help = PANEL_STATE_INITIALIZER;
 static struct panel_state details = PANEL_STATE_INITIALIZER;
+static struct panel_state network = PANEL_STATE_INITIALIZER;
 
 // FIXME granularize things, make packet handler iret-like
 static pthread_mutex_t bfl = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
@@ -587,6 +588,29 @@ iface_details(WINDOW *hw,const interface *i,int rows){
 	return OK;
 }
 
+#define NETWORKROWS 1	// FIXME
+
+static int
+display_network_locked(WINDOW *mainw,struct panel_state *ps){
+	memset(ps,0,sizeof(*ps));
+	if(new_display_panel(mainw,ps,NETWORKROWS,0,L"press 'n' to dismiss display")){
+		ERREXIT;
+	}
+	// FIXME display network info
+	return 0;
+
+err:
+	if(ps->p){
+		WINDOW *psw = panel_window(ps->p);
+
+		hide_panel(ps->p);
+		del_panel(ps->p);
+		delwin(psw);
+	}
+	memset(ps,0,sizeof(*ps));
+	return -1;
+}
+
 static int
 display_details_locked(WINDOW *mainw,struct panel_state *ps,iface_state *is){
 	memset(ps,0,sizeof(*ps));
@@ -626,14 +650,15 @@ static const wchar_t *helps[] = {
 	L"'c': crypto configuration",
 	L"       configure algorithm stepdown, WEP/WPA cracking, SSL MitM", */
 	L"'C': configuration",
-	L"<⏎Enter>: browse interface    <␛Esc>: leave interface browser",
+	L"'⏎Enter': browse interface    '␛Esc': leave interface browser",
 	L"'k'/'↑': previous interface   'j'/'↓': next interface",
 	L"'-'/'←': collapse interface   '+'/'→': expand interface",
 	L"'m': change device MAC        'u': change device MTU",
 	L"'r': reset interface's stats  'R': reset all interfaces' stats",
 	L"'d': bring down device        'p': toggle promiscuity",
 	L"'s': toggle sniffing, bringing up interface if down",
-	L"'v': view interface details   'h': toggle this help display",
+	L"'v': view interface details   'n': view networking details",
+	L"'h': toggle this help display",
 	L"'q': quit                     ctrl+'L': redraw the screen",
 	NULL
 };
@@ -961,6 +986,19 @@ ncurses_input_thread(void *unsafe_marsh){
 			}else{
 				hide_panel_locked(active);
 				active = (display_details_locked(w,&details,current_iface) == OK)
+					? &details : NULL;
+			}
+			screen_update();
+			pthread_mutex_unlock(&bfl);
+			break;
+		}case 'n':{
+			pthread_mutex_lock(&bfl);
+			if(network.p){
+				hide_panel_locked(&network);
+				active = NULL;
+			}else{
+				hide_panel_locked(active);
+				active = (display_network_locked(w,&network) == OK)
 					? &details : NULL;
 			}
 			screen_update();

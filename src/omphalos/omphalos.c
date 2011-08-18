@@ -22,6 +22,7 @@
 
 #define DEFAULT_USERNAME "nobody"
 #define DEFAULT_IANA_FILENAME "ieee-oui.txt" // from arp-scan's 'get-oui'
+#define DEFAULT_RESOLVCONF_FILENAME "/etc/resolv.conf"
 
 static void
 usage(const char *arg0,int ret){
@@ -119,6 +120,9 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 	if(pctx->ianafn == NULL){
 		pctx->ianafn = DEFAULT_IANA_FILENAME;
 	}
+	if(pctx->resolvconf == NULL){
+		pctx->resolvconf = DEFAULT_RESOLVCONF_FILENAME;
+	}
 	// Drop privileges (possibly requiring a setuid()), and mask
 	// cancellation signals, before creating other threads.
 	if(pctx->pcapfn){
@@ -140,6 +144,11 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 	pctx->iface.diagnostic = default_diagnostic;
 	if(pctx->ianafn && strcmp(pctx->ianafn,"")){
 		if(init_iana_naming(&pctx->iface,pctx->ianafn)){
+			return -1;
+		}
+	}
+	if(pctx->resolvconf && strcmp(pctx->resolvconf,"")){
+		if(init_naming(&pctx->iface,pctx->resolvconf)){
 			return -1;
 		}
 	}
