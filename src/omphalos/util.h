@@ -24,6 +24,10 @@ MMalloc(const omphalos_iface *octx,size_t s,const char *fname){
 #define Malloc(octx,s) MMalloc(octx,s,__func__)
 
 static inline void *
+memdup(const void *,size_t) __attribute__ ((warn_unused_result))
+	__attribute__ ((nonnull (1))) __attribute__ ((malloc));
+
+static inline void *
 memdup(const void *s,size_t l){
 	void *r;
 
@@ -32,6 +36,10 @@ memdup(const void *s,size_t l){
 	}
 	return r;
 }
+
+static inline wchar_t *
+btowdup(const char *) __attribute__ ((warn_unused_result))
+	__attribute__ ((nonnull (1))) __attribute__ ((malloc));
 
 static inline wchar_t *
 btowdup(const char *s){
@@ -46,6 +54,9 @@ btowdup(const char *s){
 	}
 	return w;
 }
+
+const char *fgetl(char **,int *,FILE *) __attribute__ ((nonnull (1,2,3)))
+		__attribute__ ((warn_unused_result));
 
 #ifdef __cplusplus
 }
