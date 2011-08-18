@@ -63,12 +63,21 @@ int offer_resolution(const omphalos_iface *octx,int fam,const void *addr,
 
 static void
 parse_resolv_conf(const omphalos_iface *octx){
+	const char *line;
 	FILE *fp;
+	char *b;
+	int l;
 
 	if((fp = fopen(resolvconf_fn,"r")) == NULL){
 		octx->diagnostic("Couldn't open %s",resolvconf_fn);
 		return;
 	}
+	b = NULL;
+	l = 0;
+	while( (line = fgetl(&b,&l,fp)) ){
+		// FIXME
+	}
+	free(b);
 	fclose(fp);
 	octx->diagnostic("Reloaded resolvers from %s",resolvconf_fn);
 }

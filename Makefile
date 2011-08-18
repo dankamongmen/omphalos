@@ -1,6 +1,6 @@
 .DELTE_ON_ERROR:
 .DEFAULT_GOAL:=test
-.PHONY: all bin lib doc livetest test clean clobber install uninstall
+.PHONY: all bin lib doc livetest test valgrind clean clobber install uninstall
 .PHONY:	bless sudobless
 
 VERSION=0.0.1
@@ -69,6 +69,9 @@ livetest: sudobless $(IANAOUI)
 
 test: all $(TESTPCAPS) $(IANAOUI)
 	for i in $(TESTPCAPS) ; do $(OMPHALOS)-tty -f $$i -u "" || exit 1 ; done
+
+valgrind: all $(TESTPCAPS) $(IANAOUI)
+	for i in $(TESTPCAPS) ; do valgrind --tool=memcheck --leak-check=full $(OMPHALOS)-tty -f $$i -u "" || exit 1 ; done
 
 $(IANAOUI):
 	get-oui -v -f $@
