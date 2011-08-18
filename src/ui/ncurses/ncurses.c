@@ -218,6 +218,10 @@ resize_iface(const interface *i,iface_state *is){
 		// push other interfaces offscreen, or at least the selected ones
 		// on grow down, check if we're selected; if not, check to
 		// ensure none get pushed off down. vice versa.
+		if(nlines < subrows){
+			assert(werase(is->subwin) == OK);
+			screen_update();
+		}
 		if(nlines + is->scrline < rows){
 			int delta = nlines - subrows;
 
