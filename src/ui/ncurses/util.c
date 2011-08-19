@@ -69,27 +69,26 @@ char *genprefix(uintmax_t val,unsigned decimal,char *buf,size_t bsize,
 }
 
 #define REFRESH 60 // Screen refresh rate in Hz FIXME
-#define SACRIFICE 16 // FIXME one more than COLOR_WHITE aieeeeeeee! terrible
 #include <unistd.h>
 void fade(unsigned sec){
 	const unsigned us = sec * 1000000 / (REFRESH / 2); // max 1/2 of real
 	short fg[MAX_OMPHALOS_COLOR],bg[MAX_OMPHALOS_COLOR];
-	short or[SACRIFICE],og[SACRIFICE],ob[SACRIFICE];
-	short r[SACRIFICE],g[SACRIFICE],b[SACRIFICE];
+	short or[COLOR_MAX],og[COLOR_MAX],ob[COLOR_MAX];
+	short r[COLOR_MAX],g[COLOR_MAX],b[COLOR_MAX];
 	unsigned quanta = sec * (REFRESH / 2),q;
 	int flip = 0,p;
 
 	for(p = 0 ; p < MAX_OMPHALOS_COLOR ; ++p){
 		assert(pair_content(p,fg + p,bg + p) == OK);
 	}
-	for(p = 0 ; p < SACRIFICE ; ++p){
+	for(p = 0 ; p < COLOR_MAX ; ++p){
 		assert(color_content(p,r + p,g + p,b + p) == OK);
 		or[p] = r[p];
 		og[p] = g[p];
 		ob[p] = b[p];
 	}
 	for(q = 0 ; q < quanta ; ++q){
-		for(p = 0 ; p < SACRIFICE ; ++p){
+		for(p = 0 ; p < COLOR_MAX ; ++p){
 			r[p] -= or[p] / quanta;
 			g[p] -= og[p] / quanta;
 			b[p] -= ob[p] / quanta;
@@ -106,17 +105,17 @@ void fade(unsigned sec){
 				init_color(fg[p],r[fg[p]],g[fg[p]],b[fg[p]]);
 				//init_pair(p,fg[p],bg[p]);
 			/*}else{
-				init_color(SACRIFICE,r[fg[p]],g[fg[p]],b[fg[p]]);
-				init_pair(p,SACRIFICE,bg[p]);
+				init_color(COLOR_MAX,r[fg[p]],g[fg[p]],b[fg[p]]);
+				init_pair(p,COLOR_MAX,bg[p]);
 			}*/
 		}
 		wrefresh(curscr);
 		usleep(us * 2);
 	}
-	for(p = 0 ; p < MAX_OMPHALOS_COLOR ; ++p){
+	for(p = 0 ; p < COLOR_MAX ; ++p){
 		assert(init_color(p,or[p],og[p],ob[p]) == OK);
 	}
-	for(p = 0 ; p < SACRIFICE ; ++p){
+	for(p = 0 ; p < MAX_OMPHALOS_COLOR ; ++p){
 		assert(init_pair(p,fg[p],bg[p]) == OK);
 	}
 	wrefresh(curscr);
