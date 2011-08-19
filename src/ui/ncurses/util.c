@@ -68,6 +68,17 @@ char *genprefix(uintmax_t val,unsigned decimal,char *buf,size_t bsize,
 	return buf;
 }
 
+int setup_extended_colors(void){
+	int ret = OK;
+
+	if(can_change_color() != TRUE){
+		return ERR;
+	}
+	ret |= init_color(COLOR_BOLDBLUE,0,0,1000);
+	ret |= init_color(COLOR_BOLDCYAN,0,1000,1000);
+	return ret;
+}
+
 #define REFRESH 60 // Screen refresh rate in Hz FIXME
 #include <unistd.h>
 void fade(unsigned sec){
@@ -76,7 +87,7 @@ void fade(unsigned sec){
 	short or[COLOR_MAX],og[COLOR_MAX],ob[COLOR_MAX];
 	short r[COLOR_MAX],g[COLOR_MAX],b[COLOR_MAX];
 	unsigned quanta = sec * (REFRESH / 2),q;
-	int flip = 0,p;
+	int p;
 
 	for(p = 0 ; p < MAX_OMPHALOS_COLOR ; ++p){
 		assert(pair_content(p,fg + p,bg + p) == OK);
@@ -96,18 +107,8 @@ void fade(unsigned sec){
 			g[p] = g[p] < 0 ? 0 : g[p];
 			b[p] = b[p] < 0 ? 0 : b[p];
 		}
-		++flip;
-		// Deep magic. We must convince ncurses that the screen changed,
-		// or else nothing is repainted. Redefine the color pair,
-		// flipping between the real color and a spare color.
 		for(p = 0 ; p < MAX_OMPHALOS_COLOR ; ++p){
-			//if(flip % 2){
-				init_color(fg[p],r[fg[p]],g[fg[p]],b[fg[p]]);
-				//init_pair(p,fg[p],bg[p]);
-			/*}else{
-				init_color(COLOR_MAX,r[fg[p]],g[fg[p]],b[fg[p]]);
-				init_pair(p,COLOR_MAX,bg[p]);
-			}*/
+			init_color(fg[p],r[fg[p]],g[fg[p]],b[fg[p]]);
 		}
 		wrefresh(curscr);
 		usleep(us * 2);

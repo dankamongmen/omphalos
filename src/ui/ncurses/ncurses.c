@@ -1116,6 +1116,10 @@ ncurses_setup(const omphalos_iface *octx){
 		errstr = "Couldn't set blocking input\n";
 		goto err;
 	}
+	if(setup_extended_colors() != OK){
+		errstr = "Couldn't initialize extended colors\n";
+		goto err;
+	}
 	if(init_pair(BORDER_COLOR,COLOR_GREEN,-1) != OK){
 		errstr = "Couldn't initialize ncurses colorpair\n";
 		goto err;

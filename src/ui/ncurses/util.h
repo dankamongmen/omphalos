@@ -47,6 +47,8 @@ enum {
 	MAX_OMPHALOS_COLOR
 };
 
+int setup_extended_colors(void);
+
 // FIXME on 8-color terminals (linux, xterm), we can't define more than
 // COLOR_WHITE + 1 colors at once. we'll need use A_BOLD there, which is not a
 // problem since we can't fade on those terminals anyway (can_color_change()

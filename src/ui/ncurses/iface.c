@@ -13,6 +13,9 @@
 #include <omphalos/wireless.h>
 #include <omphalos/interface.h>
 
+#undef A_BOLD
+#define A_BOLD 0
+
 typedef struct l3obj {
 	struct l3obj *next;
 	struct l3host *l3;
@@ -165,12 +168,12 @@ print_iface_hosts(const interface *i,const iface_state *is,int rows,int cols){
 		}
 		switch(l->cat){
 			case RTN_UNICAST:
-				attrs = COLOR_PAIR(MCAST_COLOR);
+				attrs = COLOR_PAIR(UCAST_COLOR);
 				devname = get_devname(l->l2);
 				legend = 'U';
 				break;
 			case RTN_LOCAL:
-				attrs = A_BOLD | COLOR_PAIR(MCAST_COLOR);
+				attrs = COLOR_PAIR(LCAST_COLOR);
 				if(interface_virtual_p(i) ||
 					(devname = get_devname(l->l2)) == NULL){
 					devname = i->topinfo.devname;
@@ -178,7 +181,7 @@ print_iface_hosts(const interface *i,const iface_state *is,int rows,int cols){
 				legend = 'L';
 				break;
 			case RTN_MULTICAST:
-				attrs = A_BOLD | COLOR_PAIR(BCAST_COLOR);
+				attrs = COLOR_PAIR(MCAST_COLOR);
 				devname = get_devname(l->l2);
 				legend = 'M';
 				break;
