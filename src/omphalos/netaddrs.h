@@ -50,7 +50,6 @@ uint32_t get_l3addr_in(const struct l3host *) __attribute__ ((nonnull (1)));
 uint128_t get_l3addr_in6(const struct l3host *) __attribute__ ((nonnull (1)));
 
 // Predicates
-int router_p(const struct l3host *) __attribute__ ((nonnull (1)));
 int l3addr_eq_p(const struct l3host *,int,const void *) __attribute__ ((nonnull (1,3)));
 
 // Statistics

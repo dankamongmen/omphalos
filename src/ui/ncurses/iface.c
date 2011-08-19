@@ -221,9 +221,6 @@ print_iface_hosts(const interface *i,const iface_state *is,int rows,int cols){
 				if((name = get_l3name(l3->l3)) == NULL){
 					name = "";
 				}
-				if(router_p(l3->l3)){
-					assert(wattrset(is->subwin,A_BOLD | COLOR_PAIR(ROUTER_COLOR)) != ERR);
-				}
 				assert(mvwprintw(is->subwin,line,1,"    %s %s",nw,name) != ERR);
 				{
 					char sbuf[PREFIXSTRLEN + 1],dbuf[PREFIXSTRLEN + 1];
