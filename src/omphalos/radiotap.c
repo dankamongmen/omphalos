@@ -90,7 +90,7 @@ typedef struct ieee80211mgmt {
 
 static void
 handle_ieee80211_mgmtfix(const omphalos_iface *octx,omphalos_packet *op,
-				const void *frame,size_t len){
+				const void *frame,size_t len,unsigned freq){
 	const ieee80211mgmt *imgmt = frame;
 	struct {
 		void *ptr;
@@ -140,11 +140,13 @@ handle_ieee80211_mgmtfix(const omphalos_iface *octx,omphalos_packet *op,
 	if(tagtbl[IEEE80211_MGMT_TAG_SSID].ptr){
 		char *tmp;
 
-		if((tmp = realloc(tagtbl[IEEE80211_MGMT_TAG_SSID].ptr,tagtbl[IEEE80211_MGMT_TAG_SSID].len + 1)) == NULL){
+		// 8 for 16-bit frequency + unit plus space
+		if((tmp = realloc(tagtbl[IEEE80211_MGMT_TAG_SSID].ptr,8 + tagtbl[IEEE80211_MGMT_TAG_SSID].len + 1)) == NULL){
 			goto freetags;
 		}
 		tagtbl[IEEE80211_MGMT_TAG_SSID].ptr = tmp;
-		tmp[tagtbl[IEEE80211_MGMT_TAG_SSID].len] = '\0';
+		// FIXME ugh
+		snprintf(tmp + tagtbl[IEEE80211_MGMT_TAG_SSID].len,9," %u.%02uGHz",freq / 1000,(freq % 1000) / 10);
 		name_l3host_absolute(octx,op->i,op->l2s,op->l3s,tmp,NAMING_LEVEL_MAX);
 	}
 
@@ -156,7 +158,7 @@ freetags:
 
 static void
 handle_ieee80211_mgmt(const omphalos_iface *octx,omphalos_packet *op,
-				const void *frame,size_t len){
+				const void *frame,size_t len,unsigned freq){
 	const ieee80211mgmtdata *ibec = frame;
 
 	if(len < sizeof(*ibec)){
@@ -168,7 +170,7 @@ handle_ieee80211_mgmt(const omphalos_iface *octx,omphalos_packet *op,
 	op->l2s = lookup_l2host(octx,op->i,ibec->h_src);
        	len -= sizeof(*ibec);
 	op->l3s = lookup_l3host(octx,op->i,op->l2s,AF_BSSID,ibec->bssid);
-	handle_ieee80211_mgmtfix(octx,op,(const char *)frame + sizeof(*ibec),len);
+	handle_ieee80211_mgmtfix(octx,op,(const char *)frame + sizeof(*ibec),len,freq);
 }
 
 static void
@@ -205,7 +207,7 @@ handle_ieee80211_data(const omphalos_iface *octx,omphalos_packet *op,
 
 static void
 handle_ieee80211_packet(const omphalos_iface *octx,omphalos_packet *op,
-				const void *frame,size_t len){
+				const void *frame,size_t len,unsigned freq){
 	const ieee80211hdr *ihdr = frame;
 
 	// FIXME certain packets don't have the full 802.11 header (8 bytes,
@@ -227,7 +229,7 @@ handle_ieee80211_packet(const omphalos_iface *octx,omphalos_packet *op,
 			unsigned stype = IEEE80211_SUBTYPE(ihdr->control);
 
 			if(stype != IEEE80211_SUBTYPE_PROBE_REQUEST){
-				handle_ieee80211_mgmt(octx,op,frame,len);
+				handle_ieee80211_mgmt(octx,op,frame,len,freq);
 			}
 		}break;
 		case CONTROL_FRAME:{
@@ -291,8 +293,9 @@ void handle_radiotap_packet(const omphalos_iface *octx,omphalos_packet *op,
 				const void *frame,size_t len){
 	const radiotaphdr *rhdr = frame;
 	const void *ehdr,*vhdr;
+	unsigned rlen,alignbit;
 	uint32_t pres;
-	unsigned rlen;
+	uint16_t freq;
 
 	// FIXME certain packets don't have the full 802.11 header (8 bytes,
 	// control/duration/h_dest, seems to be the minimum).
@@ -324,14 +327,19 @@ void handle_radiotap_packet(const omphalos_iface *octx,omphalos_packet *op,
 			goto malformed;
 		}
 		vhdr += 8;
+		rlen -= 8;
+		// preserves 64-bit alignment
 	}
+	// How many bits off are we from 64-bit alignment, assuming the
+	// beginning is so aligned?
+	alignbit = 0;
 	if(pres & (1u << IEEE80211_RADIOTAP_FLAGS)){
-		uint32_t flags;
+		uint8_t flags;
 		if(rlen < 1){
 			goto malformed;
 		}
-		flags = *(const uint32_t *)vhdr;
-		vhdr = (const uint32_t *)vhdr + 1;
+		flags = *(const uint8_t *)vhdr;
+		++vhdr;
 		// There's a 32-bit FCS on the end built into the length here,
 		// if the FCS bit is set in Flags. This affects actual 'len'.
 		if(flags & IEEE80211_RADIOTAP_F_FCS){
@@ -340,8 +348,38 @@ void handle_radiotap_packet(const omphalos_iface *octx,omphalos_packet *op,
 			}
 			len -= 4;
 		}
+		--rlen;
+		alignbit = 8;
 	}
-	handle_ieee80211_packet(octx,op,ehdr,len);
+	if(pres & (1u << IEEE80211_RADIOTAP_RATE)){
+		if(rlen < 1){
+			goto malformed;
+		}
+		++vhdr;
+		--rlen;
+		alignbit = alignbit + 8 % 64;
+	}
+	if(pres & (1u << IEEE80211_RADIOTAP_CHANNEL)){
+		// uint16_t flags;
+		if(alignbit % 16){
+			if(rlen < 1){
+				goto malformed;
+			}
+			++vhdr;
+			--rlen;
+			alignbit = alignbit + 8 % 64;
+		}
+		if(rlen < 4){
+			goto malformed;
+		}
+		freq = *(const uint16_t *)vhdr;
+		// flags = *((const uint16_t *)vhdr + 1);
+		rlen -= 4;
+		vhdr += 4;
+	}else{
+		freq = 0;
+	}
+	handle_ieee80211_packet(octx,op,ehdr,len,freq);
 	return;
 
 malformed:
