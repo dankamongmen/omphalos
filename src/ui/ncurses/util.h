@@ -44,6 +44,8 @@ enum {
 	ROUTER_COLOR,			// routing l3 addresses / access points
 };
 
+void fade(unsigned);
+
 #ifdef __cplusplus
 }
 #endif

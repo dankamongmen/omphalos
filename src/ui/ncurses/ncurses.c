@@ -292,7 +292,7 @@ draw_main_window(WINDOW *w){
 	}
 	// POSIX.1-2001 doesn't guarantee a terminating null on truncation
 	hostname[sizeof(hostname) - 1] = '\0';
-	assert(wcolor_set(w,BORDER_COLOR,NULL) != ERR);
+	assert(wattrset(w,A_DIM | COLOR_PAIR(BORDER_COLOR)) != ERR);
 	if(bevel(w,0) != OK){
 		ERREXIT;
 	}
@@ -306,15 +306,15 @@ draw_main_window(WINDOW *w){
 		- 1 - __builtin_strlen("on") - 1 - strlen(hostname)
 		- 5 - __builtin_strlen("iface" - (count_interface != 1));
 	assert(mvwprintw(w,0,scol,"[") != ERR);
-	assert(wattron(w,A_BOLD | COLOR_PAIR(HEADER_COLOR)) != ERR);
+	//assert(wattron(w,A_BOLD | COLOR_PAIR(HEADER_COLOR)) != ERR);
 	assert(wprintw(w,"%s %s on %s | %d iface%s",PROGNAME,VERSION,
 			hostname,count_interface,count_interface == 1 ? "" : "s") != ERR);
-	if(wattroff(w,A_BOLD | COLOR_PAIR(HEADER_COLOR)) != OK){
+	/*if(wattroff(w,A_BOLD | COLOR_PAIR(HEADER_COLOR)) != OK){
 		ERREXIT;
 	}
 	if(wcolor_set(w,BORDER_COLOR,NULL) != OK){
 		ERREXIT;
-	}
+	}*/
 	if(wprintw(w,"]") < 0){
 		ERREXIT;
 	}
@@ -1482,6 +1482,7 @@ int main(int argc,char * const *argv){
 		return EXIT_FAILURE;
 	}
 	omphalos_cleanup(&pctx);
+	fade(1);
 	if(mandatory_cleanup(&pad)){
 		return EXIT_FAILURE;
 	}

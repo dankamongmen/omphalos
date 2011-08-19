@@ -67,3 +67,41 @@ char *genprefix(uintmax_t val,unsigned decimal,char *buf,size_t bsize,
 	}
 	return buf;
 }
+
+#define REFRESH 60 // Screen refresh rate in Hz FIXME
+#define SACRIFICE 8 // FIXME one more than COLOR_WHITE aieeeeeeee! terrible
+#include <unistd.h>
+void fade(unsigned sec){
+	const unsigned quanta = REFRESH / 2; // max 1/2 of real refresh rate
+	const unsigned us = sec * 1000000 / quanta; // period between shifts
+	const int PAIR = BORDER_COLOR;
+	short fg,bg,r,g,b,or,og,ob;
+	int flip = 0;
+
+	pair_content(PAIR,&fg,&bg);
+	color_content(fg,&r,&g,&b);
+	or = r;
+	og = g;
+	ob = b;
+	while(r || g || b){
+		r -= or / quanta;
+		g -= og / quanta;
+		b -= ob / quanta;
+		r = r < 0 ? 0 : r;
+		g = g < 0 ? 0 : g;
+		b = b < 0 ? 0 : b;
+		// Deep magic. We must convince ncurses that the screen changed,
+		// or else nothing is repainted. Redefine the color pair,
+		// flipping between the real color and a spare color.
+		if(++flip % 2){
+			init_color(fg,r,g,b);
+			init_pair(PAIR,fg,bg);
+		}else{
+			init_color(SACRIFICE,r,g,b);
+			init_pair(PAIR,SACRIFICE,bg);
+		}
+		wrefresh(curscr);
+		usleep(us);
+	}
+	init_pair(PAIR,fg,bg);
+}
