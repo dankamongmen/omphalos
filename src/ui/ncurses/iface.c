@@ -306,6 +306,10 @@ void iface_box(const interface *i,const iface_state *is,int active){
 		assert(wattron(w,A_BOLD) == OK);
 	}
 	assert(wprintw(w,"]") != ERR);
+	assert(wmove(w,0,cols - 4) != ERR);
+	assert(wattron(w,A_BOLD) == OK);
+	assert(waddwstr(w,is->expansion == EXPANSION_MAX ? L"[-]" :
+				is->expansion == 0 ? L"[+]" : L"[±]") != ERR);
 	assert(wattron(w,attrs) != ERR);
 	assert(wattroff(w,A_REVERSE) != ERR);
 	assert(mvwprintw(w,rows - 1,2,"[") != ERR);
