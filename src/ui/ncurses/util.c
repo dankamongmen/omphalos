@@ -68,14 +68,15 @@ char *genprefix(uintmax_t val,unsigned decimal,char *buf,size_t bsize,
 	return buf;
 }
 
+// FIXME 680 is taken from "RGB_ON" in the ncurses sources
 int setup_extended_colors(void){
 	int ret = OK;
 
 	if(can_change_color() != TRUE){
 		return ERR;
 	}
-	ret |= init_color(COLOR_BOLDBLUE,0,0,1000);
-	ret |= init_color(COLOR_BOLDCYAN,0,1000,1000);
+	ret |= init_color(COLOR_BOLDBLUE,0,0,680);
+	ret |= init_color(COLOR_BOLDCYAN,0,680,680);
 	return ret;
 }
 
