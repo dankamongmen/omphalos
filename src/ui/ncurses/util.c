@@ -69,7 +69,7 @@ char *genprefix(uintmax_t val,unsigned decimal,char *buf,size_t bsize,
 }
 
 #define REFRESH 60 // Screen refresh rate in Hz FIXME
-#define SACRIFICE 8 // FIXME one more than COLOR_WHITE aieeeeeeee! terrible
+#define SACRIFICE 16 // FIXME one more than COLOR_WHITE aieeeeeeee! terrible
 #include <unistd.h>
 void fade(unsigned sec){
 	const unsigned us = sec * 1000000 / (REFRESH / 2); // max 1/2 of real
@@ -104,16 +104,19 @@ void fade(unsigned sec){
 		for(p = 0 ; p < MAX_OMPHALOS_COLOR ; ++p){
 			//if(flip % 2){
 				init_color(fg[p],r[fg[p]],g[fg[p]],b[fg[p]]);
-				init_pair(p,fg[p],bg[p]);
+				//init_pair(p,fg[p],bg[p]);
 			/*}else{
 				init_color(SACRIFICE,r[fg[p]],g[fg[p]],b[fg[p]]);
 				init_pair(p,SACRIFICE,bg[p]);
 			}*/
 		}
 		wrefresh(curscr);
-		usleep(us);
+		usleep(us * 2);
 	}
 	for(p = 0 ; p < MAX_OMPHALOS_COLOR ; ++p){
+		assert(init_color(p,or[p],og[p],ob[p]) == OK);
+	}
+	for(p = 0 ; p < SACRIFICE ; ++p){
 		assert(init_pair(p,fg[p],bg[p]) == OK);
 	}
 	wrefresh(curscr);

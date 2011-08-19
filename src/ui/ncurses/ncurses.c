@@ -38,6 +38,9 @@
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
 
+#undef A_BOLD
+#define A_BOLD 0
+
 #define ERREXIT endwin() ; fprintf(stderr,"ncurses failure|%s|%d\n",__func__,__LINE__); abort() ; goto err
 
 // Add ((format (printf))) attributes to ncurses functions, which sadly
@@ -1481,8 +1484,10 @@ int main(int argc,char * const *argv){
 		fprintf(stderr,"Error in omphalos_init() (%s?)\n",strerror(err));
 		return EXIT_FAILURE;
 	}
-	omphalos_cleanup(&pctx);
+	pthread_mutex_lock(&bfl);
 	fade(1);
+	pthread_mutex_unlock(&bfl);
+	omphalos_cleanup(&pctx);
 	if(mandatory_cleanup(&pad)){
 		return EXIT_FAILURE;
 	}

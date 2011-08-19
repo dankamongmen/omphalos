@@ -13,6 +13,9 @@
 #include <omphalos/wireless.h>
 #include <omphalos/interface.h>
 
+#undef A_BOLD
+#define A_BOLD 0
+
 typedef struct l3obj {
 	struct l3obj *next;
 	struct l3host *l3;
