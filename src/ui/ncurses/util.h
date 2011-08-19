@@ -55,7 +55,7 @@ int setup_extended_colors(void);
 // returns FALSE).
 enum {
 	COLOR_BOLDCYAN  = COLOR_WHITE + 1,
-	COLOR_BOLDBLUE,
+	COLOR_PURPLE,
 	COLOR_MAX
 };
 

@@ -38,9 +38,6 @@
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
 
-#undef A_BOLD
-#define A_BOLD 0
-
 #define ERREXIT endwin() ; fprintf(stderr,"ncurses failure|%s|%d\n",__func__,__LINE__); abort() ; goto err
 
 // Add ((format (printf))) attributes to ncurses functions, which sadly
@@ -1166,7 +1163,7 @@ ncurses_setup(const omphalos_iface *octx){
 	}
 	assert(init_pair(LCAST_COLOR,COLOR_BOLDCYAN,-1) == OK);
 	assert(init_pair(UCAST_COLOR,COLOR_CYAN,-1) == OK);
-	assert(init_pair(MCAST_COLOR,COLOR_BOLDBLUE,-1) == OK);
+	assert(init_pair(MCAST_COLOR,COLOR_PURPLE,-1) == OK);
 	assert(init_pair(BCAST_COLOR,COLOR_BLUE,-1) == OK);
 	if(init_pair(ROUTER_COLOR,COLOR_YELLOW,-1) != OK){
 		errstr = "Couldn't initialize ncurses colorpair\n";
