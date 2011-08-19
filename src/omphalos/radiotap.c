@@ -326,12 +326,12 @@ void handle_radiotap_packet(const omphalos_iface *octx,omphalos_packet *op,
 		vhdr += 8;
 	}
 	if(pres & (1u << IEEE80211_RADIOTAP_FLAGS)){
-		unsigned flags;
+		uint32_t flags;
 		if(rlen < 1){
 			goto malformed;
 		}
-		flags = *(const unsigned char *)vhdr;
-		++vhdr;
+		flags = *(const uint32_t *)vhdr;
+		vhdr = (const uint32_t *)vhdr + 1;
 		// There's a 32-bit FCS on the end built into the length here,
 		// if the FCS bit is set in Flags. This affects actual 'len'.
 		if(flags & IEEE80211_RADIOTAP_F_FCS){
