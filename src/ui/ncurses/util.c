@@ -72,36 +72,49 @@ char *genprefix(uintmax_t val,unsigned decimal,char *buf,size_t bsize,
 #define SACRIFICE 8 // FIXME one more than COLOR_WHITE aieeeeeeee! terrible
 #include <unistd.h>
 void fade(unsigned sec){
-	const unsigned quanta = REFRESH / 2; // max 1/2 of real refresh rate
-	const unsigned us = sec * 1000000 / quanta; // period between shifts
-	const int PAIR = BORDER_COLOR;
-	short fg,bg,r,g,b,or,og,ob;
-	int flip = 0;
+	const unsigned us = sec * 1000000 / (REFRESH / 2); // max 1/2 of real
+	short fg[MAX_OMPHALOS_COLOR],bg[MAX_OMPHALOS_COLOR];
+	short or[SACRIFICE],og[SACRIFICE],ob[SACRIFICE];
+	short r[SACRIFICE],g[SACRIFICE],b[SACRIFICE];
+	unsigned quanta = sec * (REFRESH / 2),q;
+	int flip = 0,p;
 
-	pair_content(PAIR,&fg,&bg);
-	color_content(fg,&r,&g,&b);
-	or = r;
-	og = g;
-	ob = b;
-	while(r || g || b){
-		r -= or / quanta;
-		g -= og / quanta;
-		b -= ob / quanta;
-		r = r < 0 ? 0 : r;
-		g = g < 0 ? 0 : g;
-		b = b < 0 ? 0 : b;
+	for(p = 0 ; p < MAX_OMPHALOS_COLOR ; ++p){
+		assert(pair_content(p,fg + p,bg + p) == OK);
+	}
+	for(p = 0 ; p < SACRIFICE ; ++p){
+		assert(color_content(p,r + p,g + p,b + p) == OK);
+		or[p] = r[p];
+		og[p] = g[p];
+		ob[p] = b[p];
+	}
+	for(q = 0 ; q < quanta ; ++q){
+		for(p = 0 ; p < SACRIFICE ; ++p){
+			r[p] -= or[p] / quanta;
+			g[p] -= og[p] / quanta;
+			b[p] -= ob[p] / quanta;
+			r[p] = r[p] < 0 ? 0 : r[p];
+			g[p] = g[p] < 0 ? 0 : g[p];
+			b[p] = b[p] < 0 ? 0 : b[p];
+		}
+		++flip;
 		// Deep magic. We must convince ncurses that the screen changed,
 		// or else nothing is repainted. Redefine the color pair,
 		// flipping between the real color and a spare color.
-		if(++flip % 2){
-			init_color(fg,r,g,b);
-			init_pair(PAIR,fg,bg);
-		}else{
-			init_color(SACRIFICE,r,g,b);
-			init_pair(PAIR,SACRIFICE,bg);
+		for(p = 0 ; p < MAX_OMPHALOS_COLOR ; ++p){
+			//if(flip % 2){
+				init_color(fg[p],r[fg[p]],g[fg[p]],b[fg[p]]);
+				init_pair(p,fg[p],bg[p]);
+			/*}else{
+				init_color(SACRIFICE,r[fg[p]],g[fg[p]],b[fg[p]]);
+				init_pair(p,SACRIFICE,bg[p]);
+			}*/
 		}
 		wrefresh(curscr);
 		usleep(us);
 	}
-	init_pair(PAIR,fg,bg);
+	for(p = 0 ; p < MAX_OMPHALOS_COLOR ; ++p){
+		assert(init_pair(p,fg[p],bg[p]) == OK);
+	}
+	wrefresh(curscr);
 }

@@ -42,6 +42,7 @@ enum {
 	MCAST_COLOR,			// multicast addresses
 	BCAST_COLOR,			// broadcast addresses
 	ROUTER_COLOR,			// routing l3 addresses / access points
+	MAX_OMPHALOS_COLOR
 };
 
 void fade(unsigned);
