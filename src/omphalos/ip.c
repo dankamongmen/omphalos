@@ -4,6 +4,7 @@
 #include <netinet/ip6.h>
 #include <omphalos/ip.h>
 #include <omphalos/udp.h>
+#include <omphalos/tcp.h>
 #include <omphalos/gre.h>
 #include <omphalos/pim.h>
 #include <omphalos/icmp.h>
@@ -13,18 +14,6 @@
 #include <omphalos/ethernet.h>
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
-
-static void
-handle_tcp_packet(const omphalos_iface *octx,omphalos_packet *op,const void *frame,size_t len){
-	const struct tcphdr *tcp = frame;
-
-	if(len < sizeof(*tcp)){
-		octx->diagnostic("%s malformed with %zu",__func__,len);
-		++op->i->malformed;
-		return;
-	}
-	// FIXME check header len etc...
-}
 
 static void
 handle_igmp_packet(const omphalos_iface *octx,omphalos_packet *op,const void *frame,size_t len){
