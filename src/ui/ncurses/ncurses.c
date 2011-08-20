@@ -306,7 +306,7 @@ draw_main_window(WINDOW *w){
 		- 1 - __builtin_strlen("on") - 1 - strlen(hostname)
 		- 5 - __builtin_strlen("iface" - (count_interface != 1));
 	assert(mvwprintw(w,0,scol,"[") != ERR);
-	//assert(wattron(w,A_BOLD | COLOR_PAIR(HEADER_COLOR)) != ERR);
+	assert(wattron(w,A_BOLD | COLOR_PAIR(HEADER_COLOR)) != ERR);
 	assert(wprintw(w,"%s %s on %s | %d iface%s",PROGNAME,VERSION,
 			hostname,count_interface,count_interface == 1 ? "" : "s") != ERR);
 	/*if(wattroff(w,A_BOLD | COLOR_PAIR(HEADER_COLOR)) != OK){
