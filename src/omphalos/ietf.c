@@ -35,19 +35,40 @@ ietf_multicast_ipv4(const uint32_t *ip){
 	return "RFC 1112 segment multicast";
 }
 
-static const uint128_t IP6_MDNS = { __constant_htonl(0xff020000),
-       __constant_htonl(0x00000000), __constant_htonl(0x00000000),
-       __constant_htonl(0x000000fb), };
-
+static const struct {
+	uint128_t ip;
+	const char *name;
+} ip6mcasts[] = {
+	{
+		.ip = { __constant_htonl(0xff020000), __constant_htonl(0x00000000),
+			__constant_htonl(0x00000000), __constant_htonl(0x000000fb), },
+		.name = "mDNS (IANA)",
+	},
+	{
+		.ip = { __constant_htonl(0xff020000), __constant_htonl(0x00000000),
+			__constant_htonl(0x00000000), __constant_htonl(0x00000001), },
+		.name = "All nodes (IANA)",
+	},
+	{
+		.ip = { __constant_htonl(0xff020000), __constant_htonl(0x00000000),
+			__constant_htonl(0x00000000), __constant_htonl(0x00000002), },
+		.name = "All routers (IANA)",
+	},
+	{ .name = NULL, }
+};
 
 static const char *
 ietf_multicast_ipv6(const uint32_t *ip){
 	uint128_t alignedip = { ip[0], ip[1], ip[2], ip[3] };
+	const typeof(*ip6mcasts) *mcast;
+
 	if(!IN6_IS_ADDR_MULTICAST(&alignedip)){
 		return NULL;
 	}
-	if(equal128(alignedip,IP6_MDNS)){
-		return "mDNS (IANA)";
+	for(mcast = ip6mcasts ; (*mcast).name ; ++mcast){
+		if(equal128(alignedip,(*mcast).ip)){
+			return (*mcast).name;
+		}
 	}
 	return "RFC 4291 multicast";
 }
