@@ -310,12 +310,9 @@ draw_main_window(WINDOW *w){
 	assert(wattron(w,A_BOLD | COLOR_PAIR(HEADER_COLOR)) != ERR);
 	assert(wprintw(w,"%s %s on %s | %d iface%s",PROGNAME,VERSION,
 			hostname,count_interface,count_interface == 1 ? "" : "s") != ERR);
-	/*if(wattroff(w,A_BOLD | COLOR_PAIR(HEADER_COLOR)) != OK){
+	if(wattrset(w,COLOR_PAIR(BORDER_COLOR)) != OK){
 		ERREXIT;
 	}
-	if(wcolor_set(w,BORDER_COLOR,NULL) != OK){
-		ERREXIT;
-	}*/
 	if(wprintw(w,"]") < 0){
 		ERREXIT;
 	}
