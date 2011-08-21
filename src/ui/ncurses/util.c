@@ -117,8 +117,5 @@ void fade(unsigned sec){
 	for(p = 0 ; p < COLOR_MAX ; ++p){
 		assert(init_color(p,or[p],og[p],ob[p]) == OK);
 	}
-	for(p = 0 ; p < MAX_OMPHALOS_COLOR ; ++p){
-		assert(init_pair(p,fg[p],bg[p]) == OK);
-	}
 	wrefresh(curscr);
 }

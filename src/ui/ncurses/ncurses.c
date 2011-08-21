@@ -136,7 +136,7 @@ screen_update(void){
 
 static inline void
 redraw_iface_generic(const struct iface_state *is){
-	redraw_iface(is->iface,is,is == current_iface);
+	redraw_iface(is,is == current_iface);
 }
 
 static inline int
@@ -223,6 +223,7 @@ resize_iface(const interface *i,iface_state *is){
 			assert(werase(is->subwin) == OK);
 			screen_update();
 		}
+		// Try to expand down first. If that won't work, expand up.
 		if(nlines + is->scrline < rows){
 			int delta = nlines - subrows;
 
@@ -341,7 +342,7 @@ wvstatus_locked(WINDOW *w,const char *fmt,va_list va){
 	if(fmt == NULL){
 		statusmsg[0] = '\0';
 	}else{
-		assert(vsnprintf(statusmsg,statuschars,fmt,va) < statuschars);
+		vsnprintf(statusmsg,statuschars,fmt,va);
 	}
 	return draw_main_window(w);
 }

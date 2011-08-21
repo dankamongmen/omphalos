@@ -268,7 +268,7 @@ void iface_box(const interface *i,const iface_state *is,int active){
 	int attrs;
 
 	getmaxyx(w,rows,cols);
-	nobottom = 0/* FIXME !iface_wholly_visible_p(scrrows,is)*/;
+	nobottom = !iface_wholly_visible_p(-1,is);
 	bcolor = interface_up_p(i) ? UBORDER_COLOR : DBORDER_COLOR;
 	hcolor = interface_up_p(i) ? UHEADING_COLOR : DHEADING_COLOR;
 	attrs = active ? A_REVERSE : A_BOLD;
@@ -404,7 +404,8 @@ void free_iface_state(iface_state *is){
 	}
 }
 
-void redraw_iface(const interface *i,const struct iface_state *is,int active){
+void redraw_iface(const iface_state *is,int active){
+	const interface *i = is->iface;
 	int rows,cols;
 
 	getmaxyx(is->subwin,rows,cols);
@@ -423,16 +424,8 @@ static int
 iface_visible_p(int rows,const iface_state *is){
 	if(is->scrline + 1 >= rows){
 		return 0;
-	/*
-	
-	FIXME we can't draw partial bottoms yet. enable this when we can...
-
-	}else if(is->scrline + lines_for_interface(is->iface,is) < 1){
+	}else if(is->scrline + lines_for_interface(is) < 1){
 		return 0;
-
-	...and disable the following ...
-
-	*/
 	}else if(is->scrline < 1){
 		return 0;
 	}
@@ -445,17 +438,15 @@ iface_visible_p(int rows,const iface_state *is){
 int move_interface(iface_state *is,int rows,int delta,int active){
 	is->scrline += delta;
 	if(iface_wholly_visible_p(rows,is)){
-		interface *ii = is->iface;
-
 		assert(move_panel(is->panel,is->scrline,1) != ERR);
-		redraw_iface(ii,is,active);
+		redraw_iface(is,active);
 	}else if(iface_visible_p(rows,is)){
-		// FIXME draw partial interface. until then, old behavior...
+		// If we're active, resist the attempt to move us offscreen.
 		if(active){
 			is->scrline -= delta;
 			return -1;
 		}
-		// FIXME see if we can shrink it first!
+		// FIXME old pre-partial behavior
 		assert(werase(is->subwin) != ERR);
 		assert(hide_panel(is->panel) != ERR);
 	}else if(!panel_hidden(is->panel)){
@@ -463,7 +454,6 @@ int move_interface(iface_state *is,int rows,int delta,int active){
 			is->scrline -= delta;
 			return -1;
 		}
-		// FIXME see if we can shrink it first!
 		assert(werase(is->subwin) != ERR);
 		assert(hide_panel(is->panel) != ERR);
 	}
@@ -481,6 +471,12 @@ int lines_for_interface(const iface_state *is){
 // Is the interface window entirely visible? We can't draw it otherwise, as it
 // will obliterate the global bounding box.
 int iface_wholly_visible_p(int rows,const iface_state *is){
+	if(rows < 0){
+		int cols;
+
+		getmaxyx(stdscr,rows,cols);
+		assert(cols >= 0);
+	}
 	if(is->scrline + lines_for_interface(is) + 1 >= rows){
 		return 0;
 	}else if(is->scrline < 1){

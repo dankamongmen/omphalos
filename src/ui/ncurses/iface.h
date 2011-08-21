@@ -38,7 +38,7 @@ typedef struct iface_state {
 
 // FIXME also try to move this
 void iface_box(const struct interface *,const struct iface_state *,int);
-void redraw_iface(const struct interface *,const struct iface_state *,int);
+void redraw_iface(const struct iface_state *,int);
 
 struct iface_state *create_interface_state(struct interface *);
 void free_iface_state(struct iface_state *);
