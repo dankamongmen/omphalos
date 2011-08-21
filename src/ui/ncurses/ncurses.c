@@ -136,7 +136,7 @@ screen_update(void){
 
 static inline void
 redraw_iface_generic(const struct iface_state *is){
-	redraw_iface(is->iface,is,is == current_iface);
+	redraw_iface(is,is == current_iface);
 }
 
 static inline int
@@ -223,6 +223,7 @@ resize_iface(const interface *i,iface_state *is){
 			assert(werase(is->subwin) == OK);
 			screen_update();
 		}
+		// Try to expand down first. If that won't work, expand up.
 		if(nlines + is->scrline < rows){
 			int delta = nlines - subrows;
 
@@ -309,12 +310,9 @@ draw_main_window(WINDOW *w){
 	assert(wattron(w,A_BOLD | COLOR_PAIR(HEADER_COLOR)) != ERR);
 	assert(wprintw(w,"%s %s on %s | %d iface%s",PROGNAME,VERSION,
 			hostname,count_interface,count_interface == 1 ? "" : "s") != ERR);
-	/*if(wattroff(w,A_BOLD | COLOR_PAIR(HEADER_COLOR)) != OK){
+	if(wattrset(w,COLOR_PAIR(BORDER_COLOR)) != OK){
 		ERREXIT;
 	}
-	if(wcolor_set(w,BORDER_COLOR,NULL) != OK){
-		ERREXIT;
-	}*/
 	if(wprintw(w,"]") < 0){
 		ERREXIT;
 	}
@@ -341,7 +339,7 @@ wvstatus_locked(WINDOW *w,const char *fmt,va_list va){
 	if(fmt == NULL){
 		statusmsg[0] = '\0';
 	}else{
-		assert(vsnprintf(statusmsg,statuschars,fmt,va) < statuschars);
+		vsnprintf(statusmsg,statuschars,fmt,va);
 	}
 	return draw_main_window(w);
 }

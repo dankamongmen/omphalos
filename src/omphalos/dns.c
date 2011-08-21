@@ -284,7 +284,7 @@ void handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 		if(buf == NULL){
 			goto malformed;
 		}
-		// octx->diagnostic("lookup [%s]",buf);
+		//octx->diagnostic("lookup [%s]",buf);
 		sec += bsize;
 		len -= bsize;
 		data = extract_dns_extra(len,sec,&ttl,&bsize,frame,type);
@@ -298,15 +298,16 @@ void handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 			if(type == DNS_TYPE_PTR){
 				char ss[16]; // FIXME
 
-				if(process_reverse_lookup(buf,&fam,ss)){
-					free(buf);
-					goto malformed;
-				}
-				// FIXME perform routing lookup on ss to get
-				// the desired interface and see whether we care
-				// about this address
-				offer_resolution(octx,fam,ss,data,
+				// A failure here doesn't mean the response is
+				// malformed, necessarily, but simply that it
+				// wasn't for an address (mDNS SD does this).
+				if(process_reverse_lookup(buf,&fam,ss) == 0){
+					// FIXME perform routing lookup on ss to get
+					// the desired interface and see whether we care
+					// about this address
+					offer_resolution(octx,fam,ss,data,
 						NAMING_LEVEL_REVDNS,nsfam,nsaddr);
+				}
 			}else if(type == DNS_TYPE_A){
 				offer_resolution(octx,AF_INET,data,buf,
 						NAMING_LEVEL_DNS,nsfam,nsaddr);
