@@ -39,20 +39,25 @@ static const struct {
 	uint128_t ip;
 	const char *name;
 } ip6mcasts[] = {
-	{
+	{ // ff02::1
+		.ip = { __constant_htonl(0xff020000), __constant_htonl(0x00000000),
+			__constant_htonl(0x00000000), __constant_htonl(0x00000001), },
+		.name = "All segment hosts (RFC 2375)",
+	},
+	{ // ff02::2
+		.ip = { __constant_htonl(0xff020000), __constant_htonl(0x00000000),
+			__constant_htonl(0x00000000), __constant_htonl(0x00000002), },
+		.name = "All segment routers (RFC 2375)",
+	},
+	{ // ff02::fb
 		.ip = { __constant_htonl(0xff020000), __constant_htonl(0x00000000),
 			__constant_htonl(0x00000000), __constant_htonl(0x000000fb), },
 		.name = "mDNS (IANA)",
 	},
-	{
-		.ip = { __constant_htonl(0xff020000), __constant_htonl(0x00000000),
-			__constant_htonl(0x00000000), __constant_htonl(0x00000001), },
-		.name = "All nodes (IANA)",
-	},
-	{
-		.ip = { __constant_htonl(0xff020000), __constant_htonl(0x00000000),
+	{ // ff05::2
+		.ip = { __constant_htonl(0xff050000), __constant_htonl(0x00000000),
 			__constant_htonl(0x00000000), __constant_htonl(0x00000002), },
-		.name = "All routers (IANA)",
+		.name = "All site routers (RFC 2375)",
 	},
 	{ .name = NULL, }
 };
