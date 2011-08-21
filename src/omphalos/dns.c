@@ -261,14 +261,13 @@ void handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 	}
 	//opcode = (ntohs(dns->flags) & 0x7800) >> 11u;
 	qd = ntohs(dns->qdcount);
-	assert(qd == 1);
 	an = ntohs(dns->ancount);
 	ns = ntohs(dns->nscount);
 	ar = ntohs(dns->arcount);
 	len -= sizeof(*dns);
 	sec = (const unsigned char *)frame + sizeof(*dns);
 	// octx->diagnostic("q/a/n/a: %hu/%hu/%hu/%hu",qd,an,ns,ar);
-	if(qd){
+	while(qd--){
 		buf = extract_dns_record(len,sec,&class,&type,&bsize,frame);
 		if(buf == NULL){
 			goto malformed;
