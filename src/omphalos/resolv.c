@@ -107,6 +107,7 @@ int offer_resolution(const omphalos_iface *octx,int fam,const void *addr,
 	resolvq *r,**p;
 
 	offer_nameserver(nsfam,nameserver);
+	pthread_mutex_lock(&rqueue_lock);
 	for(p = &rqueue ; (r = *p) ; p = &r->next){
 		if(l3addr_eq_p(r->l3,fam,addr)){
 			name_l3host_absolute(octx,r->i,r->l2,r->l3,name,nlevel);
@@ -117,6 +118,7 @@ int offer_resolution(const omphalos_iface *octx,int fam,const void *addr,
 			break;
 		}
 	}
+	pthread_mutex_unlock(&rqueue_lock);
 	return 0;
 }
 
