@@ -56,7 +56,6 @@ int setup_extended_colors(void);
 enum {
 	COLOR_BOLDCYAN  = COLOR_WHITE + 1,
 	COLOR_PURPLE,
-	COLOR_MAX
 };
 
 void fade(unsigned);
