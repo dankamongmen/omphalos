@@ -100,7 +100,7 @@ struct l3host *lookup_l3host(const omphalos_iface *octx,interface *i,
 			return NULL; // FIXME
 	}
 	if(routed_family_p(fam)){
-		if((cat = l2categorize(i,l2)) == RTN_UNICAST){
+		if((cat = l2categorize(i,l2)) == RTN_UNICAST || cat == RTN_LOCAL){
 			struct sockaddr_storage ss;
 			hwaddrint hwaddr = get_hwaddr(l2);
 			// FIXME throwing out anything to which we have no
@@ -117,7 +117,6 @@ struct l3host *lookup_l3host(const omphalos_iface *octx,interface *i,
 		cat = RTN_UNICAST;
 	}
 	// FIXME probably want to make this per-node
-	// FIXME only track local addresses, not those we route to
 	assert(len <= sizeof(cmp));
 	memcpy(&cmp,addr,sizeof(cmp));
 	for(prev = orig ; (l3 = *prev) ; prev = &l3->next){

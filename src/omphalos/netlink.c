@@ -385,6 +385,7 @@ void reap_thread(const omphalos_iface *octx,interface *i){
 	//  - the thread wakes, dies, and is joined
 	//  - we safely close the fd and free the pmarsh
 	pthread_mutex_lock(&i->pmarsh->lock);
+		assert(i->pmarsh->tid);
 		if( (errno = pthread_kill(i->pmarsh->tid,SIGCHLD)) ){
 			octx->diagnostic("Couldn't signal thread (%s?)",strerror(errno));
 		} // FIXME check return codes here
