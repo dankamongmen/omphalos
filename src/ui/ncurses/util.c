@@ -85,22 +85,22 @@ int setup_extended_colors(void){
 void fade(unsigned sec){
 	const unsigned us = sec * 1000000 / (REFRESH / 2); // max 1/2 of real
 	short fg[MAX_OMPHALOS_COLOR],bg[MAX_OMPHALOS_COLOR];
-	short or[COLOR_MAX],og[COLOR_MAX],ob[COLOR_MAX];
-	short r[COLOR_MAX],g[COLOR_MAX],b[COLOR_MAX];
+	short or[COLORS],og[COLORS],ob[COLORS];
+	short r[COLORS],g[COLORS],b[COLORS];
 	unsigned quanta = sec * (REFRESH / 2),q;
 	int p;
 
 	for(p = 0 ; p < MAX_OMPHALOS_COLOR ; ++p){
 		assert(pair_content(p,fg + p,bg + p) == OK);
 	}
-	for(p = 0 ; p < COLOR_MAX ; ++p){
+	for(p = 0 ; p < COLORS ; ++p){
 		assert(color_content(p,r + p,g + p,b + p) == OK);
 		or[p] = r[p];
 		og[p] = g[p];
 		ob[p] = b[p];
 	}
 	for(q = 0 ; q < quanta ; ++q){
-		for(p = 0 ; p < COLOR_MAX ; ++p){
+		for(p = 0 ; p < COLORS ; ++p){
 			r[p] -= or[p] / quanta;
 			g[p] -= og[p] / quanta;
 			b[p] -= ob[p] / quanta;
@@ -114,7 +114,7 @@ void fade(unsigned sec){
 		wrefresh(curscr);
 		usleep(us * 2);
 	}
-	for(p = 0 ; p < COLOR_MAX ; ++p){
+	for(p = 0 ; p < COLORS ; ++p){
 		assert(init_color(p,or[p],og[p],ob[p]) == OK);
 	}
 	wrefresh(curscr);
