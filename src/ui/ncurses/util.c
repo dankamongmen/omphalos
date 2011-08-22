@@ -76,7 +76,7 @@ int setup_extended_colors(void){
 		return ERR;
 	}
 	ret |= init_color(COLOR_BOLDCYAN,0,999,999);
-	ret |= init_color(COLOR_PURPLE,680 / 2,0,999);
+	ret |= init_color(COLOR_PURPLE,333,333,999);
 	return ret;
 }
 
