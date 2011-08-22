@@ -84,15 +84,11 @@ int setup_extended_colors(void){
 #include <unistd.h>
 void fade(unsigned sec){
 	const unsigned us = sec * 1000000 / (REFRESH / 2); // max 1/2 of real
-	short fg[MAX_OMPHALOS_COLOR],bg[MAX_OMPHALOS_COLOR];
 	short or[COLORS],og[COLORS],ob[COLORS];
 	short r[COLORS],g[COLORS],b[COLORS];
 	unsigned quanta = sec * (REFRESH / 2),q;
 	unsigned p;
 
-	for(p = 0 ; p < MAX_OMPHALOS_COLOR ; ++p){
-		assert(pair_content(p,fg + p,bg + p) == OK);
-	}
 	for(p = 0 ; p < sizeof(or) / sizeof(*or) ; ++p){
 		assert(color_content(p,r + p,g + p,b + p) == OK);
 		or[p] = r[p];
@@ -109,7 +105,7 @@ void fade(unsigned sec){
 			b[p] = b[p] < 0 ? 0 : b[p];
 		}
 		for(p = 0 ; p < MAX_OMPHALOS_COLOR ; ++p){
-			init_color(fg[p],r[fg[p]],g[fg[p]],b[fg[p]]);
+			init_color(p,r[p],g[p],b[p]);
 		}
 		wrefresh(curscr);
 		usleep(us * 2);
