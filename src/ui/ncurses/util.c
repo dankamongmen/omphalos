@@ -88,19 +88,19 @@ void fade(unsigned sec){
 	short or[COLORS],og[COLORS],ob[COLORS];
 	short r[COLORS],g[COLORS],b[COLORS];
 	unsigned quanta = sec * (REFRESH / 2),q;
-	int p;
+	unsigned p;
 
 	for(p = 0 ; p < MAX_OMPHALOS_COLOR ; ++p){
 		assert(pair_content(p,fg + p,bg + p) == OK);
 	}
-	for(p = 0 ; p < COLORS ; ++p){
+	for(p = 0 ; p < sizeof(or) / sizeof(*or) ; ++p){
 		assert(color_content(p,r + p,g + p,b + p) == OK);
 		or[p] = r[p];
 		og[p] = g[p];
 		ob[p] = b[p];
 	}
 	for(q = 0 ; q < quanta ; ++q){
-		for(p = 0 ; p < COLORS ; ++p){
+		for(p = 0 ; p < sizeof(r) / sizeof(*r) ; ++p){
 			r[p] -= or[p] / quanta;
 			g[p] -= og[p] / quanta;
 			b[p] -= ob[p] / quanta;
@@ -114,7 +114,7 @@ void fade(unsigned sec){
 		wrefresh(curscr);
 		usleep(us * 2);
 	}
-	for(p = 0 ; p < COLORS ; ++p){
+	for(p = 0 ; p < sizeof(or) / sizeof(*or) ; ++p){
 		assert(init_color(p,or[p],og[p],ob[p]) == OK);
 	}
 	wrefresh(curscr);
