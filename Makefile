@@ -82,7 +82,7 @@ $(OMPHALOS)-ncurses: $(COREOBJS) $(NCURSESOBJS)
 
 $(OMPHALOS)-tty: $(COREOBJS) $(TTYOBJS)
 	@mkdir -p $(@D)
-	$(CC) $(CFLAGS) -o $@ $^ $(LFLAGS) -lreadline
+	$(CC) $(CFLAGS) -o $@ $^ $(LFLAGS) -lreadline -lncursesw
 
 $(OUT)/%.o: %.c $(CINCS) $(MAKEFILE)
 	@mkdir -p $(@D)
