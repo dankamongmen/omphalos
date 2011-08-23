@@ -68,7 +68,9 @@ char *genprefix(uintmax_t val,unsigned decimal,char *buf,size_t bsize,
 	return buf;
 }
 
-// FIXME 680 is taken from "RGB_ON" in the ncurses sources
+// FIXME 680 is taken from "RGB_ON" in the ncurses sources. we're using
+// standard vga colors explicitly.
+// FIXME dark evil hackery aieeeee
 int setup_extended_colors(void){
 	int ret = OK;
 
@@ -76,8 +78,15 @@ int setup_extended_colors(void){
 		return ERR;
 	}
 	// rgb of 0->0, 85->333, 128->500, 170->666, 192->750, 255->999
+	ret |= init_color(COLOR_RED,666,0,0);
+	ret |= init_color(COLOR_BLUE,0,180,999);
+	ret |= init_color(COLOR_GREEN,0,500,0);
+	ret |= init_color(9,999,333,333);
+	ret |= init_color(10,333,999,333);
+	ret |= init_color(12,333,333,999);
+	ret |= init_color(COLOR_PURPLE,999,333,999);
 	ret |= init_color(COLOR_BOLDCYAN,333,999,999);
-	ret |= init_color(COLOR_PURPLE,333,333,999);
+	ret |= wrefresh(curscr);
 	return ret;
 }
 
@@ -90,6 +99,7 @@ void fade(unsigned sec){
 	unsigned quanta = sec * (REFRESH / 2),q;
 	unsigned p;
 
+	attroff(A_BOLD);
 	for(p = 0 ; p < sizeof(or) / sizeof(*or) ; ++p){
 		assert(color_content(p,r + p,g + p,b + p) == OK);
 		or[p] = r[p];
@@ -105,7 +115,7 @@ void fade(unsigned sec){
 			g[p] = g[p] < 0 ? 0 : g[p];
 			b[p] = b[p] < 0 ? 0 : b[p];
 		}
-		for(p = 0 ; p < MAX_OMPHALOS_COLOR ; ++p){
+		for(p = 0 ; p < sizeof(r) / sizeof(*r) ; ++p){
 			init_color(p,r[p],g[p],b[p]);
 		}
 		wrefresh(curscr);
@@ -114,5 +124,6 @@ void fade(unsigned sec){
 	for(p = 0 ; p < sizeof(or) / sizeof(*or) ; ++p){
 		assert(init_color(p,or[p],og[p],ob[p]) == OK);
 	}
+	setup_extended_colors();
 	wrefresh(curscr);
 }

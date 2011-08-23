@@ -54,8 +54,8 @@ int setup_extended_colors(void);
 // problem since we can't fade on those terminals anyway (can_color_change()
 // returns FALSE).
 enum {
-	COLOR_BOLDCYAN  = COLOR_WHITE + 1,
-	COLOR_PURPLE,
+	COLOR_PURPLE = 13,
+	COLOR_BOLDCYAN  = 14,
 };
 
 void fade(unsigned);
