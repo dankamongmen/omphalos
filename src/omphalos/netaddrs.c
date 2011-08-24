@@ -138,8 +138,11 @@ struct l3host *lookup_l3host(const omphalos_iface *octx,interface *i,
 			}
 		}else if(cat == RTN_UNICAST || cat == RTN_LOCAL){
 			queue_for_naming(i,l2,l3);
-		}else{
-			// FIXME do what with broadcast?
+		}else if(cat == RTN_BROADCAST){
+			const char *mname = ietf_bcast_lookup(fam,addr);
+			if(mname){
+				l3->name = strdup(mname);
+			}
 		}
 		if(octx->host_event){
 			l3->opaque = octx->host_event(i,l2,l3);

@@ -86,3 +86,20 @@ const char *ietf_multicast_lookup(int fam,const void *addr){
 	}
 	return NULL;
 }
+
+static const char *
+ietf_bcast_ipv4(const uint32_t *ip){
+	const uint32_t localb = 0xffffffffu;
+
+	if(memcmp(ip,&localb,4) == 0){
+		return "Local IPv4 broadcast (RFC 919)";
+	}
+	return NULL;
+}
+
+const char *ietf_bcast_lookup(int fam,const void *addr){
+	if(fam == AF_INET){
+		return ietf_bcast_ipv4(addr);
+	}
+	return NULL;
+}

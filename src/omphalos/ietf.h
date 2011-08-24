@@ -5,8 +5,8 @@
 extern "C" {
 #endif
 
-// Look up the 24-bit OUI against IANA specifications.
 const char *ietf_multicast_lookup(int,const void *);
+const char *ietf_bcast_lookup(int,const void *);
 
 #ifdef __cplusplus
 }
