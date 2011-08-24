@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <sys/socket.h>
 #include <linux/version.h>
 #include <omphalos/route.h>
@@ -179,6 +180,24 @@ int handle_rtm_newroute(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	return 0;
 
 err:
+	return -1;
+}
+
+
+// Determine how to send a packet to a layer 3 address.
+int get_router(int fam,const void *addr,struct routepath *rp){
+	assert(fam && addr && rp); // FIXME
+	return -1;
+}
+
+// Call get_router() on the address, acquire a TX frame from the discovered
+// interface, Initialize it with proper L2 and L3 data.
+int get_routed_frame(int fam,const void *addr,struct routepath *rp,
+			void **frame,size_t *flen,size_t *hlen){
+	if(get_router(fam,addr,rp)){
+		return -1;
+	}
+	assert(frame && flen && hlen); // FIXME
 	return -1;
 }
 

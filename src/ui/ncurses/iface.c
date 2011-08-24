@@ -262,18 +262,17 @@ duplexstr(unsigned dplx){
 
 // to be called only while ncurses lock is held
 void iface_box(const interface *i,const iface_state *is,int active){
-	int bcolor,hcolor,rows,cols,nobottom;
 	WINDOW * const w = is->subwin;
+	int bcolor,hcolor,rows,cols;
 	size_t buslen;
 	int attrs;
 
 	getmaxyx(w,rows,cols);
-	nobottom = !iface_wholly_visible_p(-1,is);
 	bcolor = interface_up_p(i) ? UBORDER_COLOR : DBORDER_COLOR;
 	hcolor = interface_up_p(i) ? UHEADING_COLOR : DHEADING_COLOR;
 	attrs = active ? A_REVERSE : A_BOLD;
 	assert(wattrset(w,attrs | COLOR_PAIR(bcolor)) == OK);
-	assert(bevel(w,nobottom) == OK);
+	assert(bevel(w,0) == OK);
 	assert(wattroff(w,A_REVERSE) == OK);
 	if(active){
 		assert(wattron(w,A_BOLD) == OK);
