@@ -16,6 +16,16 @@ typedef struct route {
 	unsigned maskbits;
 } route;
 
+// To do longest-match routing, we need to keep:
+//  (a) a partition of the address space, pointing to the longest match for
+//       each distinct section. each node stores 1 or more (in the case of
+//       equal-length multipath) routes, and a pointer to:
+//  (b) the next-longest match.
+//
+// A route may be pointed at by more than one node (the default routes will be
+// eventually pointed to by any and all nodes save their own), but does not
+// point to more than one node.
+
 int handle_rtm_delroute(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	const struct rtmsg *rt = NLMSG_DATA(nl);
 	struct rtattr *ra;
@@ -189,6 +199,8 @@ err:
 
 // Determine how to send a packet to a layer 3 address.
 int get_router(int fam,const void *addr,struct routepath *rp){
+	// FIXME we will want an actual cross-interface routing table rather
+	// than iterating over all interfaces, eek
 	assert(fam && addr && rp); // FIXME
 	return -1;
 }
