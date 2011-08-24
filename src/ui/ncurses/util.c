@@ -78,8 +78,9 @@ int setup_extended_colors(void){
 		return ERR;
 	}
 	// rgb of 0->0, 85->333, 128->500, 170->666, 192->750, 255->999
+	ret |= init_color(COLOR_BLACK,180,180,180);
 	ret |= init_color(COLOR_RED,666,0,0);
-	ret |= init_color(COLOR_BLUE,0,180,999);
+	ret |= init_color(COLOR_BLUE,0,333,750);
 	ret |= init_color(COLOR_GREEN,0,500,0);
 	ret |= init_color(9,999,333,333);
 	ret |= init_color(10,333,999,333);
