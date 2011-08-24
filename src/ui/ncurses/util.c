@@ -121,6 +121,8 @@ void fade(unsigned sec){
 		wrefresh(curscr);
 		usleep(us * 2);
 	}
+	// FIXME also want all other windows cleared. best to interleave the
+	// fade with actual interface shutdown so they're naturally gone
 	for(p = 0 ; p < sizeof(or) / sizeof(*or) ; ++p){
 		assert(init_color(p,or[p],og[p],ob[p]) == OK);
 	}
