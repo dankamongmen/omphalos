@@ -115,8 +115,6 @@ void fade(unsigned sec){
 			r[p] = r[p] < 0 ? 0 : r[p];
 			g[p] = g[p] < 0 ? 0 : g[p];
 			b[p] = b[p] < 0 ? 0 : b[p];
-		}
-		for(p = 0 ; p < sizeof(r) / sizeof(*r) ; ++p){
 			init_color(p,r[p],g[p],b[p]);
 		}
 		wrefresh(curscr);
