@@ -1,6 +1,7 @@
 #include <ctype.h>
 #include <assert.h>
 #include <stdint.h>
+#include <omphalos/tx.h>
 #include <omphalos/dns.h>
 #include <omphalos/util.h>
 #include <asm/byteorder.h>
@@ -341,4 +342,21 @@ malformed:
 			__func__,len,op->i->name);
 	++op->i->malformed;
 	return;
+}
+
+void tx_dns_a(const omphalos_iface *octx,int fam,const void *addr,
+		const char *question){
+	interface *i;
+	void *frame;
+	size_t flen;
+
+	assert(fam && addr && question); // FIXME
+	// FIXME need get route for addr
+	// FIXME need get interface for route
+	i = NULL; // FIXME
+	if((frame = get_tx_frame(octx,i,&flen)) == NULL){
+		return;
+	}
+	// FIXME set up dns packet
+	send_tx_frame(octx,i,frame);
 }
