@@ -358,6 +358,23 @@ void tx_dns_a(const omphalos_iface *octx,int fam,const void *addr,
 	if((frame = get_tx_frame(octx,rp.i,&flen)) == NULL){
 		return;
 	}
-	// FIXME set up dns packet
+	// FIXME set up A question
+	send_tx_frame(octx,rp.i,frame);
+}
+
+void tx_dns_aaaa(const omphalos_iface *octx,int fam,const void *addr,
+		const char *question){
+	struct routepath rp;
+	void *frame;
+	size_t flen;
+
+	assert(question); // FIXME
+	if(get_router(fam,addr,&rp)){
+		return;
+	}
+	if((frame = get_tx_frame(octx,rp.i,&flen)) == NULL){
+		return;
+	}
+	// FIXME set up AAAA question
 	send_tx_frame(octx,rp.i,frame);
 }

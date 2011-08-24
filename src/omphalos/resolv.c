@@ -72,8 +72,23 @@ create_resolvq(struct interface *i,struct l2host *l2,struct l3host *l3){
 	return r;
 }
 
-int queue_for_naming(struct interface *i,struct l2host *l2,struct l3host *l3){
-	return create_resolvq(i,l2,l3) ? 0 : -1;
+int queue_for_naming(const struct omphalos_iface *octx,struct interface *i,
+			struct l2host *l2,struct l3host *l3,dnstxfxn dnsfxn){
+	char revstr[] = ""; // FIXME generate appropriate reverse query
+
+	if(create_resolvq(i,l2,l3) == NULL){
+		return -1;
+	}
+	pthread_mutex_lock(&resolver_lock);
+	// FIXME round-robin or even use the simple resolv.conf algorithm
+	if(resolvers){
+		dnsfxn(octx,AF_INET,resolvers,revstr);
+	}
+	if(resolvers6){
+		dnsfxn(octx,AF_INET6,resolvers6,revstr);
+	}
+	pthread_mutex_unlock(&resolver_lock);
+	return 0;
 }
 
 static void
@@ -88,6 +103,9 @@ offer_nameserver(int nsfam,const void *nameserver){
 	}else if(nsfam == AF_INET6){
 		head = &resolvers6;
 		len = 16;
+	}else{
+		pthread_mutex_unlock(&resolver_lock);
+		return;
 	}
 	for(r = *head ; r ; r = r->next){
 		if(memcmp(&r->addr,nameserver,len) == 0){

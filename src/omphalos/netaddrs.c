@@ -1,6 +1,7 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <omphalos/dns.h>
 #include <omphalos/util.h>
 #include <omphalos/ietf.h>
 #include <omphalos/resolv.h>
@@ -79,6 +80,7 @@ struct l3host *lookup_l3host(const omphalos_iface *octx,interface *i,
 				struct l2host *l2,int fam,const void *addr){
         l3host *l3,**prev,**orig;
 	typeof(l3->addr) cmp;
+	dnstxfxn dnsfxn;
 	size_t len;
 	int cat;
 
@@ -86,10 +88,12 @@ struct l3host *lookup_l3host(const omphalos_iface *octx,interface *i,
 		case AF_INET:
 			len = 4;
 			orig = &i->ip4hosts;
+			dnsfxn = tx_dns_a;
 			break;
 		case AF_INET6:
 			len = 16;
 			orig = &i->ip6hosts;
+			dnsfxn = tx_dns_aaaa;
 			break;
 		case AF_BSSID:
 			len = ETH_ALEN;
@@ -137,7 +141,9 @@ struct l3host *lookup_l3host(const omphalos_iface *octx,interface *i,
 				l3->name = strdup(mname);
 			}
 		}else if(cat == RTN_UNICAST || cat == RTN_LOCAL){
-			queue_for_naming(i,l2,l3);
+			if(dnsfxn){
+				queue_for_naming(octx,i,l2,l3,dnsfxn);
+			}
 		}else if(cat == RTN_BROADCAST){
 			const char *mname = ietf_bcast_lookup(fam,addr);
 			if(mname){
