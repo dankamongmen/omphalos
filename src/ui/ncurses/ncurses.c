@@ -953,6 +953,7 @@ ncurses_input_thread(void *unsafe_marsh){
 			pthread_mutex_unlock(&bfl);
 			break;
 		case '+':
+		case KEY_RIGHT:
 			pthread_mutex_lock(&bfl);
 			if(current_iface){
 				expand_interface(current_iface);
@@ -962,6 +963,7 @@ ncurses_input_thread(void *unsafe_marsh){
 			pthread_mutex_unlock(&bfl);
 			break;
 		case '-':
+		case KEY_LEFT:
 			pthread_mutex_lock(&bfl);
 			if(current_iface){
 				collapse_interface(current_iface);
