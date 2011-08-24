@@ -1,11 +1,14 @@
 #include <assert.h>
 #include <sys/socket.h>
+#include <omphalos/tx.h>
 #include <linux/version.h>
 #include <omphalos/route.h>
 #include <linux/rtnetlink.h>
 #include <omphalos/netaddrs.h>
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
+
+// FIXME need locking on all of this!!!
 
 typedef struct route {
 	sa_family_t family;
@@ -192,12 +195,15 @@ int get_router(int fam,const void *addr,struct routepath *rp){
 
 // Call get_router() on the address, acquire a TX frame from the discovered
 // interface, Initialize it with proper L2 and L3 data.
-int get_routed_frame(int fam,const void *addr,struct routepath *rp,
-			void **frame,size_t *flen,size_t *hlen){
+int get_routed_frame(const omphalos_iface *octx,int fam,const void *addr,
+			struct routepath *rp,void **frame,size_t *flen,size_t *hlen){
 	if(get_router(fam,addr,rp)){
 		return -1;
 	}
-	assert(frame && flen && hlen); // FIXME
+	if((*frame = get_tx_frame(octx,rp->i,flen)) == NULL){
+		return -1;
+	}
+	assert(hlen); // FIXME set up the l2/l3 headers
 	return -1;
 }
 
