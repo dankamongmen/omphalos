@@ -352,6 +352,7 @@ void tx_dns_a(const omphalos_iface *octx,int fam,const void *addr,
 	size_t flen;
 
 	assert(question); // FIXME
+	//octx->diagnostic("Looking up [%s]",question);
 	if(get_router(fam,addr,&rp)){
 		return;
 	}
@@ -369,6 +370,7 @@ void tx_dns_aaaa(const omphalos_iface *octx,int fam,const void *addr,
 	size_t flen;
 
 	assert(question); // FIXME
+	//octx->diagnostic("Looking up [%s]",question);
 	if(get_router(fam,addr,&rp)){
 		return;
 	}
