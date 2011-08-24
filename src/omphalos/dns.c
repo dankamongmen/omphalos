@@ -5,6 +5,7 @@
 #include <omphalos/dns.h>
 #include <omphalos/util.h>
 #include <asm/byteorder.h>
+#include <omphalos/route.h>
 #include <omphalos/resolv.h>
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
@@ -346,17 +347,17 @@ malformed:
 
 void tx_dns_a(const omphalos_iface *octx,int fam,const void *addr,
 		const char *question){
-	interface *i;
+	struct routepath rp;
 	void *frame;
 	size_t flen;
 
-	assert(fam && addr && question); // FIXME
-	// FIXME need get route for addr
-	// FIXME need get interface for route
-	i = NULL; // FIXME
-	if((frame = get_tx_frame(octx,i,&flen)) == NULL){
+	assert(question); // FIXME
+	if(get_router(fam,addr,&rp)){
+		return;
+	}
+	if((frame = get_tx_frame(octx,rp.i,&flen)) == NULL){
 		return;
 	}
 	// FIXME set up dns packet
-	send_tx_frame(octx,i,frame);
+	send_tx_frame(octx,rp.i,frame);
 }

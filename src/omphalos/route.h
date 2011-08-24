@@ -5,11 +5,28 @@
 extern "C" {
 #endif
 
+struct l2host;
+struct l3host;
 struct nlmsghdr;
+struct interface;
 struct omphalos_iface;
 
 int handle_rtm_delroute(const struct omphalos_iface *,const struct nlmsghdr *);
 int handle_rtm_newroute(const struct omphalos_iface *,const struct nlmsghdr *);
+
+struct routepath {
+	struct interface *i;
+	struct l2host *l2;
+	struct l3host *l3;
+};
+
+// Determine how to send a packet to a layer 3 address.
+int get_router(int,const void *,struct routepath *);
+
+// Call get_router() on the address, acquire a TX frame from the discovered
+// interface,
+int get_routed_frame(int,const void *,struct routepath *,
+			void **,size_t *,size_t *);
 
 #ifdef __cplusplus
 }
