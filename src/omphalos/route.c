@@ -16,6 +16,8 @@ typedef struct route {
 	unsigned maskbits;
 } route;
 
+static route *ip_table4,*ip_table6;
+
 // To do longest-match routing, we need to keep:
 //  (a) a partition of the address space, pointing to the longest match for
 //       each distinct section. each node stores 1 or more (in the case of
@@ -25,6 +27,20 @@ typedef struct route {
 // A route may be pointed at by more than one node (the default routes will be
 // eventually pointed to by any and all nodes save their own), but does not
 // point to more than one node.
+static route *
+create_route(void){
+	route *r;
+
+	if( (r = malloc(sizeof(*r))) ){
+		memset(r,0,sizeof(*r));
+	}
+	return r;
+}
+
+static void
+free_route(route *r){
+	free(r);
+}
 
 int handle_rtm_delroute(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	const struct rtmsg *rt = NLMSG_DATA(nl);
@@ -58,27 +74,29 @@ int handle_rtm_newroute(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	int rlen,iif,oif;
 	interface *iface;
 	size_t flen;
-	route r;
+	route *r;
 
 	iif = oif = -1;
 	pas = pag = NULL; // pointers set only once as/ag are copied into
-	memset(&r,0,sizeof(r));
-	switch( (r.family = rt->rtm_family) ){
+	if((r = create_route()) == NULL){
+		return -1;
+	}
+	switch( (r->family = rt->rtm_family) ){
 	case AF_INET:{
 		flen = sizeof(uint32_t);
-		as = &((struct sockaddr_in *)&r.sss)->sin_addr;
-		ad = &((struct sockaddr_in *)&r.ssd)->sin_addr;
-		ag = &((struct sockaddr_in *)&r.ssg)->sin_addr;
+		as = &((struct sockaddr_in *)&r->sss)->sin_addr;
+		ad = &((struct sockaddr_in *)&r->ssd)->sin_addr;
+		ag = &((struct sockaddr_in *)&r->ssg)->sin_addr;
 	break;}case AF_INET6:{
 		flen = sizeof(uint32_t) * 4;
-		as = &((struct sockaddr_in6 *)&r.sss)->sin6_addr;
-		ad = &((struct sockaddr_in6 *)&r.ssd)->sin6_addr;
-		ag = &((struct sockaddr_in6 *)&r.ssg)->sin6_addr;
+		as = &((struct sockaddr_in6 *)&r->sss)->sin6_addr;
+		ad = &((struct sockaddr_in6 *)&r->ssd)->sin6_addr;
+		ag = &((struct sockaddr_in6 *)&r->ssg)->sin6_addr;
 	break;}default:{
 		flen = 0;
 	break;} }
-	r.maskbits = rt->rtm_dst_len;
-	if(flen == 0 || flen > sizeof(r.sss.__ss_padding)){
+	r->maskbits = rt->rtm_dst_len;
+	if(flen == 0 || flen > sizeof(r->sss.__ss_padding)){
 		octx->diagnostic("Unknown route family %u",rt->rtm_family);
 		return -1;
 	}
@@ -164,13 +182,13 @@ int handle_rtm_newroute(const omphalos_iface *octx,const struct nlmsghdr *nl){
 		// blackhole routes typically have no output interface
 		return 0;
 	}
-	if(r.family == AF_INET){
-		if(add_route4(iface,ad,pag,pas,r.maskbits,iif)){
+	if(r->family == AF_INET){
+		if(add_route4(iface,ad,pag,pas,r->maskbits,iif)){
 			octx->diagnostic("Couldn't add route to %s",iface->name);
 			return -1;
 		}
-	}else if(r.family == AF_INET6){
-		if(add_route6(iface,ad,pag,pas,r.maskbits,iif)){
+	}else if(r->family == AF_INET6){
+		if(add_route6(iface,ad,pag,pas,r->maskbits,iif)){
 			octx->diagnostic("Couldn't add route to %s",iface->name);
 			return -1;
 		}
@@ -179,7 +197,7 @@ int handle_rtm_newroute(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	/*{
 		char str[INET6_ADDRSTRLEN];
 		inet_ntop(rt->rtm_family,ad,str,sizeof(str));
-		octx->diagnostic("[%8s] route to %s/%u %s",iface->name,str,r.maskbits,
+		octx->diagnostic("[%8s] route to %s/%u %s",iface->name,str,r->maskbits,
 			rt->rtm_type == RTN_LOCAL ? "(local)" :
 			rt->rtm_type == RTN_BROADCAST ? "(broadcast)" :
 			rt->rtm_type == RTN_UNREACHABLE ? "(unreachable)" :
@@ -190,19 +208,33 @@ int handle_rtm_newroute(const omphalos_iface *octx,const struct nlmsghdr *nl){
 			rt->rtm_type == RTN_MULTICAST ? "(multicast)" :
 			"");
 	}*/
+	free_route(r);
 	return 0;
 
 err:
+	free_route(r);
 	return -1;
 }
 
-
 // Determine how to send a packet to a layer 3 address.
 int get_router(int fam,const void *addr,struct routepath *rp){
+	route *rt;
+
 	// FIXME we will want an actual cross-interface routing table rather
 	// than iterating over all interfaces, eek
-	assert(fam && addr && rp); // FIXME
-	return -1;
+	assert(fam && addr); // FIXME
+	if(fam == AF_INET){
+		rt = ip_table4;
+	}else if(fam == AF_INET6){
+		rt = ip_table6;
+	}else{
+		return -1;
+	}
+	assert(rt); // FIXME
+	rp->i = NULL;
+	rp->l2 = NULL;
+	rp->l3 = NULL;
+	return 0;
 }
 
 // Call get_router() on the address, acquire a TX frame from the discovered
