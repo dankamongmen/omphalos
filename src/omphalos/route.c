@@ -223,7 +223,9 @@ err:
 }
 
 // Determine how to send a packet to a layer 3 address.
+// FIXME this whole functions is just incredibly godawful
 int get_router(int fam,const void *addr,struct routepath *rp){
+	uint128_t maskaddr;
 	size_t len;
 	route *rt;
 
@@ -232,15 +234,32 @@ int get_router(int fam,const void *addr,struct routepath *rp){
 	if(fam == AF_INET){
 		rt = ip_table4;
 		len = 4;
+		maskaddr[0] = *(const uint32_t *)addr;
 	}else if(fam == AF_INET6){
 		rt = ip_table6;
 		len = 16;
+		maskaddr = *(const uint128_t *)addr;
 	}else{
 		return -1;
 	}
 	while(rt){
-		// FIXME need to mask with maskbits
-		if(memcmp(&rt->ssd,addr,len) == 0){
+		uint128_t tmp; // FIXME so lame
+		unsigned z;
+
+		for(z = 0 ; z < len / 4 ; ++z){
+			if(rt->maskbits > 32 * z){
+				if(rt->maskbits >= 32 * (z + 1)){
+					tmp[z] = maskaddr[z];
+				}else{
+					uint32_t mask = ~0U << (32 - rt->maskbits % 32);
+
+					tmp[z] = maskaddr[z] & mask;
+				}
+			}else{
+				tmp[z] = 0;
+			}
+		}
+		if(memcmp(&rt->ssd,&tmp,len) == 0){
 			break;
 		}
 		rt = rt->next;
