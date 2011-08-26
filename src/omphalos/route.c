@@ -13,6 +13,7 @@
 // FIXME use a multibit trie rather than ultra-lame linked list yeargh
 // see varghese's 'networking algorithmics' sec 11.8
 typedef struct route {
+	interface *iface;
 	sa_family_t family;
 	struct sockaddr_storage sss,ssd,ssg;
 	unsigned maskbits;
@@ -75,7 +76,6 @@ int handle_rtm_newroute(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	void *as,*ad,*ag,*pag,*pas;
 	struct rtattr *ra;
 	int rlen,iif,oif;
-	interface *iface;
 	size_t flen;
 	route *r;
 
@@ -177,8 +177,8 @@ int handle_rtm_newroute(const omphalos_iface *octx,const struct nlmsghdr *nl){
 		octx->diagnostic("%d excess bytes on newlink message",rlen);
 	}
 	if(oif > -1){
-		if((iface = iface_by_idx(oif)) == NULL){
-			octx->diagnostic("Unknown output interface %d on %s",oif,iface->name);
+		if((r->iface = iface_by_idx(oif)) == NULL){
+			octx->diagnostic("Unknown output interface %d on %s",oif,r->iface->name);
 			goto err;
 		}
 	}else{
@@ -186,15 +186,15 @@ int handle_rtm_newroute(const omphalos_iface *octx,const struct nlmsghdr *nl){
 		return 0;
 	}
 	if(r->family == AF_INET){
-		if(add_route4(iface,ad,pag,pas,r->maskbits,iif)){
-			octx->diagnostic("Couldn't add route to %s",iface->name);
+		if(add_route4(r->iface,ad,pag,pas,r->maskbits,iif)){
+			octx->diagnostic("Couldn't add route to %s",r->iface->name);
 			return -1;
 		}
 		r->next = ip_table4;
 		ip_table4 = r;
 	}else if(r->family == AF_INET6){
-		if(add_route6(iface,ad,pag,pas,r->maskbits,iif)){
-			octx->diagnostic("Couldn't add route to %s",iface->name);
+		if(add_route6(r->iface,ad,pag,pas,r->maskbits,iif)){
+			octx->diagnostic("Couldn't add route to %s",r->iface->name);
 			return -1;
 		}
 		r->next = ip_table6;
@@ -204,7 +204,7 @@ int handle_rtm_newroute(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	/*{
 		char str[INET6_ADDRSTRLEN];
 		inet_ntop(rt->rtm_family,ad,str,sizeof(str));
-		octx->diagnostic("[%8s] route to %s/%u %s",iface->name,str,r->maskbits,
+		octx->diagnostic("[%8s] route to %s/%u %s",r->iface->name,str,r->maskbits,
 			rt->rtm_type == RTN_LOCAL ? "(local)" :
 			rt->rtm_type == RTN_BROADCAST ? "(broadcast)" :
 			rt->rtm_type == RTN_UNREACHABLE ? "(unreachable)" :
@@ -248,7 +248,7 @@ int get_router(int fam,const void *addr,struct routepath *rp){
 	if(rt == NULL){
 		return -1;
 	}
-	rp->i = NULL;
+	rp->i = rt->iface;
 	rp->l2 = NULL;
 	rp->l3 = NULL;
 	return 0;
