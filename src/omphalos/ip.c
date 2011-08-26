@@ -134,3 +134,18 @@ void handle_ipv4_packet(const omphalos_iface *octx,omphalos_packet *op,
 				op->i->name,ip->protocol);
 	break; } }
 }
+
+int prep_ipv4_header(void *frame,size_t flen,uint32_t src,uint32_t dst,uint16_t proto){
+	struct iphdr *ip;
+
+	if(flen < sizeof(*ip)){
+		return -1;
+	}
+	ip = frame;
+	memset(ip,0,sizeof(*ip));
+	ip->version = 4;
+	ip->saddr = src;
+	ip->daddr = dst;
+	ip->protocol = proto;
+	return sizeof(*ip);
+}

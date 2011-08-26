@@ -265,3 +265,16 @@ void handle_ethernet_packet(const omphalos_iface *octx,omphalos_packet *op,
 		}
 	}
 }
+
+int prep_eth_header(void *frame,size_t len,const interface *i,const void *dst,
+						uint16_t proto){
+	struct ethhdr *e = frame;
+
+	if(len < ETH_HLEN){
+		return -1;
+	}
+	memcpy(&e->h_dest,dst,ETH_ALEN);
+	memcpy(&e->h_source,i->addr,ETH_ALEN);
+	e->h_proto = proto;
+	return ETH_HLEN;
+}

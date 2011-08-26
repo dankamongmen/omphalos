@@ -5,6 +5,8 @@
 extern "C" {
 #endif
 
+#include <omphalos/128.h>
+
 struct l2host;
 struct l3host;
 struct nlmsghdr;
@@ -18,6 +20,7 @@ struct routepath {
 	struct interface *i;
 	struct l2host *l2;
 	struct l3host *l3;
+	uint128_t src;	// FIXME
 };
 
 // Determine how to send a packet to a layer 3 address.

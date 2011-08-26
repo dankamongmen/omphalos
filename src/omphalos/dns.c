@@ -2,11 +2,13 @@
 #include <assert.h>
 #include <stdint.h>
 #include <omphalos/tx.h>
+#include <omphalos/ip.h>
 #include <omphalos/dns.h>
 #include <omphalos/util.h>
 #include <asm/byteorder.h>
 #include <omphalos/route.h>
 #include <omphalos/resolv.h>
+#include <omphalos/ethernet.h>
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
 
@@ -349,18 +351,51 @@ malformed:
 
 void tx_dns_a(const omphalos_iface *octx,int fam,const void *addr,
 		const char *question){
+	struct dnshdr *dnshdr;
 	struct routepath rp;
+	size_t flen,tlen;
+	hwaddrint hw;
 	void *frame;
-	size_t flen;
+	int r;
 
-	octx->diagnostic("Looking up [%s]",question);
 	if(get_router(fam,addr,&rp)){
 		return;
 	}
 	if((frame = get_tx_frame(octx,rp.i,&flen)) == NULL){
 		return;
 	}
-	// FIXME set up A question
+	hw = get_hwaddr(rp.l2);
+	if((r = prep_eth_header(frame,flen,rp.i,&hw,ETH_P_IP)) < 0){
+		abort_tx_frame(rp.i,frame);
+		return;
+	}
+	tlen = r;
+	if(fam == AF_INET){
+		uint32_t addr4 = *(const uint32_t *)addr;
+		uint32_t src4 = rp.src[3];
+
+		r = prep_ipv4_header(frame + tlen,flen - tlen,src4,addr4,IPPROTO_UDP);
+	}else if(fam == AF_INET6){
+		// FIXME
+	}
+	if(r < 0){
+		abort_tx_frame(rp.i,frame);
+		return;
+	}
+	tlen += r;
+	if(flen - tlen < sizeof(*dnshdr)){
+		abort_tx_frame(rp.i,frame);
+		return;
+	}
+	dnshdr = (struct dnshdr *)((char *)frame + tlen);
+	dnshdr->id = 0;
+	dnshdr->flags = 0;
+	dnshdr->qdcount = 1;
+	dnshdr->ancount = 0;
+	dnshdr->nscount = 0;
+	dnshdr->arcount = 0;
+	tlen += sizeof(struct dnshdr);
+	memcpy((char *)frame + tlen,question,strlen(question));
 	send_tx_frame(octx,rp.i,frame);
 }
 

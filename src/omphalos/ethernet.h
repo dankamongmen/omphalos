@@ -20,6 +20,9 @@ struct omphalos_packet;
 void handle_ethernet_packet(const struct omphalos_iface *,
 				struct omphalos_packet *,const void *,size_t);
 
+int prep_eth_header(void *,size_t,const struct interface *,const void *,
+			uint16_t) __attribute__ ((nonnull (1,3,4)));
+
 // The actual length received might be off due to padding up to 60 octets,
 // the minimum Ethernet frame (discounting 4-octet FCS). In the presence of
 // 802.1q VLAN tagging, the minimum Ethernet frame is 64 bytes (again
