@@ -13,6 +13,7 @@
 #include <omphalos/pcap.h>
 #include <sys/capability.h>
 #include <omphalos/privs.h>
+#include <omphalos/route.h>
 #include <omphalos/resolv.h>
 #include <omphalos/hwaddrs.h>
 #include <omphalos/netlink.h>
@@ -180,6 +181,7 @@ int omphalos_init(const omphalos_ctx *pctx){
 
 void omphalos_cleanup(const omphalos_ctx *pctx){
 	cleanup_interfaces(&pctx->iface);
+	free_routes();
 	cleanup_pcap(&pctx->iface);
 	cleanup_iana_naming();
 	stop_pci_support();

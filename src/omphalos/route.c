@@ -10,10 +10,13 @@
 
 // FIXME need locking on all of this!!!
 
+// FIXME use a multibit trie rather than ultra-lame linked list yeargh
+// see varghese's 'networking algorithmics' sec 11.8
 typedef struct route {
 	sa_family_t family;
 	struct sockaddr_storage sss,ssd,ssg;
 	unsigned maskbits;
+	struct route *next;
 } route;
 
 static route *ip_table4,*ip_table6;
@@ -187,11 +190,15 @@ int handle_rtm_newroute(const omphalos_iface *octx,const struct nlmsghdr *nl){
 			octx->diagnostic("Couldn't add route to %s",iface->name);
 			return -1;
 		}
+		r->next = ip_table4;
+		ip_table4 = r;
 	}else if(r->family == AF_INET6){
 		if(add_route6(iface,ad,pag,pas,r->maskbits,iif)){
 			octx->diagnostic("Couldn't add route to %s",iface->name);
 			return -1;
 		}
+		r->next = ip_table6;
+		ip_table6 = r;
 	}
 	// FIXME need a route callback in octx
 	/*{
@@ -208,7 +215,6 @@ int handle_rtm_newroute(const omphalos_iface *octx,const struct nlmsghdr *nl){
 			rt->rtm_type == RTN_MULTICAST ? "(multicast)" :
 			"");
 	}*/
-	free_route(r);
 	return 0;
 
 err:
@@ -218,19 +224,30 @@ err:
 
 // Determine how to send a packet to a layer 3 address.
 int get_router(int fam,const void *addr,struct routepath *rp){
+	size_t len;
 	route *rt;
 
 	// FIXME we will want an actual cross-interface routing table rather
 	// than iterating over all interfaces, eek
-	assert(fam && addr); // FIXME
 	if(fam == AF_INET){
 		rt = ip_table4;
+		len = 4;
 	}else if(fam == AF_INET6){
 		rt = ip_table6;
+		len = 16;
 	}else{
 		return -1;
 	}
-	assert(rt); // FIXME
+	while(rt){
+		// FIXME need to mask with maskbits
+		if(memcmp(&rt->ssd,addr,len) == 0){
+			break;
+		}
+		rt = rt->next;
+	}
+	if(rt == NULL){
+		return -1;
+	}
 	rp->i = NULL;
 	rp->l2 = NULL;
 	rp->l3 = NULL;
@@ -251,3 +268,15 @@ int get_routed_frame(const omphalos_iface *octx,int fam,const void *addr,
 	return -1;
 }
 
+void free_routes(void){
+	route *rt;
+
+	while( (rt = ip_table4) ){
+		ip_table4 = rt->next;
+		free_route(rt);
+	}
+	while( (rt = ip_table6) ){
+		ip_table6 = rt->next;
+		free_route(rt);
+	}
+}

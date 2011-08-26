@@ -31,6 +31,8 @@ int get_router(int,const void *,struct routepath *);
 int get_routed_frame(const struct omphalos_iface *,int,const void *,
 			struct routepath *,void **,size_t *,size_t *);
 
+void free_routes(void);
+
 #ifdef __cplusplus
 }
 #endif
