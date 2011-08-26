@@ -73,9 +73,8 @@ create_resolvq(struct interface *i,struct l2host *l2,struct l3host *l3){
 }
 
 int queue_for_naming(const struct omphalos_iface *octx,struct interface *i,
-			struct l2host *l2,struct l3host *l3,dnstxfxn dnsfxn){
-	char revstr[] = ""; // FIXME generate appropriate reverse query
-
+			struct l2host *l2,struct l3host *l3,dnstxfxn dnsfxn,
+			const char *revstr){
 	if(create_resolvq(i,l2,l3) == NULL){
 		return -1;
 	}

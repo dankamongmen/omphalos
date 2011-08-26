@@ -10,6 +10,8 @@
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
 
+#define IP4_REVSTR ".in-addr.arpa"
+
 #define DNS_CLASS_IN	__constant_ntohs(1u)
 #define DNS_TYPE_A	__constant_ntohs(1u)
 #define DNS_TYPE_PTR	__constant_ntohs(12u)
@@ -32,11 +34,11 @@ process_reverse_lookup(const char *buf,int *fam,void *addr){
 	unsigned quad;
 	char q[4][5];
 
-	if(len < __builtin_strlen(".in-addr.arpa")){
+	if(len < __builtin_strlen(IP4_REVSTR)){
 		return -1;
 	}
-	const size_t xlen = len - __builtin_strlen(".in-addr.arpa");
-	if(strcmp(buf + xlen,".in-addr.arpa")){
+	const size_t xlen = len - __builtin_strlen(IP4_REVSTR);
+	if(strcmp(buf + xlen,IP4_REVSTR)){
 		return -1;
 	}
 	// Don't need to worry about checks against len, since we'll hit 'i'
@@ -351,8 +353,7 @@ void tx_dns_a(const omphalos_iface *octx,int fam,const void *addr,
 	void *frame;
 	size_t flen;
 
-	assert(question); // FIXME
-	//octx->diagnostic("Looking up [%s]",question);
+	octx->diagnostic("Looking up [%s]",question);
 	if(get_router(fam,addr,&rp)){
 		return;
 	}
@@ -369,8 +370,7 @@ void tx_dns_aaaa(const omphalos_iface *octx,int fam,const void *addr,
 	void *frame;
 	size_t flen;
 
-	assert(question); // FIXME
-	//octx->diagnostic("Looking up [%s]",question);
+	octx->diagnostic("Looking up [%s]",question);
 	if(get_router(fam,addr,&rp)){
 		return;
 	}
@@ -379,4 +379,27 @@ void tx_dns_aaaa(const omphalos_iface *octx,int fam,const void *addr,
 	}
 	// FIXME set up AAAA question
 	send_tx_frame(octx,rp.i,frame);
+}
+
+char *rev_dns_a(const void *i4){
+	size_t l = INET_ADDRSTRLEN + strlen(IP4_REVSTR) + 1;
+	const uint32_t ip = *(const uint32_t *)i4;
+	char *buf;
+
+	if( (buf = malloc(l)) ){
+		uint32_t mask;
+		unsigned shr;
+		int r;
+
+		for(mask = 0xff000000u, shr = 24 ; mask ; mask >>= 8u, shr -= 8){
+			r += sprintf(buf + r,"%u.",(ip & mask) >> shr);
+		}
+		sprintf(buf + r - 1,IP4_REVSTR);
+	}
+	return buf;
+}
+
+char *rev_dns_aaaa(const void *i6){
+	assert(i6);
+	return NULL; // FIXME
 }

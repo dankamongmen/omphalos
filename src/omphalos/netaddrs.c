@@ -78,6 +78,7 @@ routed_family_p(int fam){
 // link-layer only, and thus processed directly (name_l2host_local()).
 struct l3host *lookup_l3host(const omphalos_iface *octx,interface *i,
 				struct l2host *l2,int fam,const void *addr){
+	char *(*revstrfxn)(const void *);
         l3host *l3,**prev,**orig;
 	typeof(l3->addr) cmp;
 	dnstxfxn dnsfxn;
@@ -89,15 +90,19 @@ struct l3host *lookup_l3host(const omphalos_iface *octx,interface *i,
 			len = 4;
 			orig = &i->ip4hosts;
 			dnsfxn = tx_dns_a;
+			revstrfxn = rev_dns_a;
 			break;
 		case AF_INET6:
 			len = 16;
 			orig = &i->ip6hosts;
 			dnsfxn = tx_dns_aaaa;
+			revstrfxn = rev_dns_aaaa;
 			break;
 		case AF_BSSID:
 			len = ETH_ALEN;
 			orig = &i->cells;
+			dnsfxn = NULL;
+			revstrfxn = NULL;
 			break;
 		default:
 			octx->diagnostic("Can't lookup l3 type %d",fam);
@@ -141,8 +146,11 @@ struct l3host *lookup_l3host(const omphalos_iface *octx,interface *i,
 				l3->name = strdup(mname);
 			}
 		}else if(cat == RTN_UNICAST || cat == RTN_LOCAL){
-			if(dnsfxn){
-				queue_for_naming(octx,i,l2,l3,dnsfxn);
+			char *rev;
+
+			if(dnsfxn && (rev = revstrfxn(addr))){
+				queue_for_naming(octx,i,l2,l3,dnsfxn,rev);
+				free(rev);
 			}
 		}else if(cat == RTN_BROADCAST){
 			const char *mname = ietf_bcast_lookup(fam,addr);
