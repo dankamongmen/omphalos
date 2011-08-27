@@ -3,3 +3,37 @@ Data Organization and Entry Points
 
 Our input sources include packet sockets, the operating system's netlink
 infrastructure, filesystem events, and UI events.
+
+Actions invoked by the UI and service interrogations performed automatically by
+omphalos will most often operate naturally at layer 3 or above: a port scan
+cannot be run against a MAC, nor can a DNS request be issued to one. Inputs
+from the packet socket, however, are most naturally keyed off of layer 2
+(especially since a given layer 3 address can show up on multiple layer 2
+networks, which MAC addresses' global uniqueness property makes less common).
+The netlink layer, meanwhile, refers almost exclusively to logical interfaces,
+and various device properties are associated with physical interfaces.
+
+It must be remembered that misconfigured and adversarial peers can violate the
+expected properties at any layer save the physical. Other cases to consider,
+with definite effects on network modeling, include:
+
+ - multipath routing
+ - line bonding
+ - proxy ARP
+ - disconnected IP networks (local overload of global IP space)
+ - multiple cards on the same medium
+ - multihoming
+ - fail-over/load-balancing
+ - unconfigured local networking
+ - movement among physical networks without local networking changes
+ - same mac address on different networks
+ - etc. ...
+
+It would be useful if logical interfaces could determine that they share a
+medium, but this seems impossible in the general case. Seeing the same hardware
+address on multiple interfaces could be the result of generated addresses,
+misconfigurations, adversaries, or use of well-known addresses (primarily
+multicast and broadcast). Seeing the other card's generated packets could be
+the result of misconfiguration, adversarial routing/bridging, adversarial
+packet generation (a node with connections to both distinct media could
+replicate packets from one to another), etc.
