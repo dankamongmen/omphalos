@@ -1,0 +1,5 @@
+Data Organization and Entry Points
+==================================
+
+Our input sources include packet sockets, the operating system's netlink
+infrastructure, filesystem events, and UI events.
