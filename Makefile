@@ -31,21 +31,27 @@ PREFIX?=/usr/local
 ifeq ($(UNAME),FreeBSD)
 DOCPREFIX?=$(PREFIX)/man
 MANBIN?=makewhatis
-LDCONFIG?=ldconfig -m
 else
 DOCPREFIX?=$(PREFIX)/share/man
 MANBIN?=mandb
-LDCONFIG?=ldconfig
 endif
 
-MAN3SRC:=$(wildcard $(DOC)/man/man3/*)
-MAN3:=$(addprefix $(OUT)/,$(MAN3SRC:%.xml=%.3$(PROJ)))
+MANDIR:=doc/man
+MAN1SRC:=$(wildcard $(MANDIR)/man1/*)
+MAN1:=$(addprefix $(OUT)/,$(MAN1SRC:%.xml=%.1$(PROJ)))
+MAN1OBJ:=$(addprefix $(OUT)/,$(MAN1SRC:%.xml=%.1))
+DOCS:=$(MAN1OBJ)
 
-all: $(TAGS) lib bin
+# Any old XSLT processor ought do, but you might need change the invocation.
+XSLTPROC?=$(shell (which xsltproc || echo xsltproc) 2> /dev/null)
+# This can be a URL; it's the docbook-to-manpage XSL
+#DOC2MANXSL?=--nonet /usr/share/xml/docbook/stylesheet/docbook-xsl/manpages/docb
+
+all: $(TAGS) lib bin doc
 
 bin: $(BIN)
 
-doc: $(MAN3)
+doc: $(MAN1OBJ)
 
 lib: $(LIB)
 
@@ -90,7 +96,7 @@ $(OUT)/%.o: %.c $(CINCS) $(MAKEFILE)
 
 # Should the network be inaccessible, and local copies are installed, try:
 #DOC2MANXSL?=--nonet
-$(OUT)/%.1omphalos: %.xml
+$(OUT)/%.1: %.xml
 	@mkdir -p $(@D)
 	$(XSLTPROC) --writesubtree $(@D) -o $@ $(DOC2MANXSL) $<
 
@@ -116,9 +122,10 @@ install: all doc
 	$(INSTALL) -m 0644 $(realpath $(LIB)) $(PREFIX)/lib
 	@mkdir -p $(PREFIX)/include
 	@$(INSTALL) -m 0644 $(wildcard $(SRC)/lib$(PROJ)/*.h) $(PREFIX)/include
-	@mkdir -p $(DOCPREFIX)/man3
-	@$(INSTALL) -m 0644 $(MAN3) $(DOCPREFIX)/man3
-	@echo "Running $(LDCONFIG) $(PREFIX)/lib..." && $(LDCONFIG) $(PREFIX)/lib
+	@mkdir -p $(DOCPREFIX)/man1
+	@$(INSTALL) -m 0644 $(MAN1) $(DOCPREFIX)/man1
 	@echo "Running $(MANBIN) $(DOCPREFIX)..." && $(MANBIN) $(DOCPREFIX)
 
 uninstall:
+	rm -f $(addprefix $(DOCPREFIX)/man1/,$(notdir $(MAN1OBJ)))
+	@echo "Running $(MANBIN) $(DOCPREFIX)..." && $(MANBIN) $(DOCPREFIX)
