@@ -1161,9 +1161,9 @@ ncurses_setup(const omphalos_iface *octx){
 		errstr = "Couldn't initialize ncurses colorpair\n";
 		goto err;
 	}
-	assert(init_pair(LCAST_COLOR,COLOR_BOLDCYAN,-1) == OK);
+	assert(init_pair(LCAST_COLOR,COLOR_CYAN,-1) == OK);
 	assert(init_pair(UCAST_COLOR,COLOR_CYAN,-1) == OK);
-	assert(init_pair(MCAST_COLOR,COLOR_PURPLE,-1) == OK);
+	assert(init_pair(MCAST_COLOR,COLOR_BLUE,-1) == OK);
 	assert(init_pair(BCAST_COLOR,COLOR_BLUE,-1) == OK);
 	if(init_pair(ROUTER_COLOR,COLOR_YELLOW,-1) != OK){
 		errstr = "Couldn't initialize ncurses colorpair\n";

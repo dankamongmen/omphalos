@@ -85,8 +85,6 @@ int setup_extended_colors(void){
 	ret |= init_color(9,999,333,333);
 	ret |= init_color(10,333,999,333);
 	ret |= init_color(12,333,333,999);
-	ret |= init_color(COLOR_PURPLE,999,333,999);
-	ret |= init_color(COLOR_BOLDCYAN,333,999,999);
 	ret |= wrefresh(curscr);
 	return ret;
 }
