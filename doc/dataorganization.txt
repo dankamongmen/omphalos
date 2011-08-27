@@ -37,3 +37,21 @@ multicast and broadcast). Seeing the other card's generated packets could be
 the result of misconfiguration, adversarial routing/bridging, adversarial
 packet generation (a node with connections to both distinct media could
 replicate packets from one to another), etc.
+
+Indexing
+========
+
+We need be able to index by logical interface, hardware address, and network
+address. Network addresses need be indexed by range, with the ranges organized
+by routes. Interfaces contain many hardware addresses; these hardware addresses
+may be shared between interfaces, and up to two entities ('ourselves' and
+'others') may shared a hardware address on any given interface (this indicates
+a misconfiguration, our seizure of another address, or seizure by some other
+entity of our own. We cannot generally differentiate between two hosts sharing
+a MAC address). Hardware addresses may contain many local network addresses and
+many routes. Network addresses are associated with some number of hardware
+addresses, potentially on different interfaces. Routes are associated with a
+single network address and a single interface. Note that the network address is
+not necessary to actually route through the hardware address; routing only
+requires the router's network address if the corresponding hardware address is
+missing from the neighbor cache.
