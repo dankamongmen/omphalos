@@ -351,6 +351,7 @@ malformed:
 
 void tx_dns_a(const omphalos_iface *octx,int fam,const void *addr,
 		const char *question){
+	struct tpacket_hdr *thdr;
 	struct dnshdr *dnshdr;
 	struct routepath rp;
 	size_t flen,tlen;
@@ -396,7 +397,10 @@ void tx_dns_a(const omphalos_iface *octx,int fam,const void *addr,
 	dnshdr->nscount = 0;
 	dnshdr->arcount = 0;
 	tlen += sizeof(struct dnshdr);
+	// FIXME doubt this works
 	memcpy((char *)frame + tlen,question,strlen(question));
+	thdr = frame;
+	thdr->tp_len = tlen + strlen(question);
 	send_tx_frame(octx,rp.i,frame);
 }
 

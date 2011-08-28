@@ -34,12 +34,15 @@ void *get_tx_frame(const omphalos_iface *octx,interface *i,size_t *fsize){
 // same interface. Yes, we will see packets we generate on the RX ring.
 void send_tx_frame(const omphalos_iface *octx,interface *i,void *frame){
 	struct tpacket_hdr *thdr = frame;
+	uint32_t tplen = thdr->tp_len;
 
-	++i->txframes;
-	i->txbytes += thdr->tp_len;
 	thdr->tp_status = TP_STATUS_SEND_REQUEST;
 	if(send(i->fd,NULL,0,0) < 0){
 		octx->diagnostic("Error transmitting on %s",i->name);
+		++i->txerrors;
+	}else{
+		i->txbytes += tplen;
+		++i->txframes;
 	}
 }
 
