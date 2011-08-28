@@ -274,8 +274,6 @@ int get_router(int fam,const void *addr,struct routepath *rp){
 		rt = rt->next;
 	}
 	if(rt == NULL){
-		const unsigned char *add = addr;
-		fprintf(stderr,"Couldn't route TX packet to %08x %08x %08x %08x\n\n",add[0],add[1],add[2],add[3]);
 		return -1;
 	}
 	rp->i = rt->iface;
