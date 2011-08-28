@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <stddef.h>
 #include <sys/socket.h>
 #include <omphalos/tx.h>
 #include <linux/version.h>
@@ -18,6 +19,7 @@ typedef struct route {
 	struct sockaddr_storage sss,ssd,ssg;
 	unsigned maskbits;
 	struct route *next;
+	int gateway;
 } route;
 
 static route *ip_table4,*ip_table6;
@@ -73,14 +75,14 @@ int handle_rtm_delroute(const omphalos_iface *octx,const struct nlmsghdr *nl){
 
 int handle_rtm_newroute(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	const struct rtmsg *rt = NLMSG_DATA(nl);
-	void *as,*ad,*ag,*pag,*pas;
+	void *as,*ad,*ag,*pas;
 	struct rtattr *ra;
 	int rlen,iif,oif;
 	size_t flen;
 	route *r;
 
+	pas = NULL; // pointers set only once as/ag are copied into
 	iif = oif = -1;
-	pas = pag = NULL; // pointers set only once as/ag are copied into
 	if((r = create_route()) == NULL){
 		return -1;
 	}
@@ -143,10 +145,14 @@ int handle_rtm_newroute(const omphalos_iface *octx,const struct nlmsghdr *nl){
 						flen,RTA_PAYLOAD(ra));
 				break;
 			}
+			if(r->gateway){
+				octx->diagnostic("Got two gateways for route");
+				break;
+			}
 			// We get 0.0.0.0 as the gateway when there's no 'via'
 			if(memcmp(ag,RTA_DATA(ra),flen)){
 				memcpy(ag,RTA_DATA(ra),flen);
-				pag = ag;
+				r->gateway = 1;
 			}
 		break;}case RTA_PRIORITY:{
 		break;}case RTA_PREFSRC:{
@@ -186,14 +192,14 @@ int handle_rtm_newroute(const omphalos_iface *octx,const struct nlmsghdr *nl){
 		return 0;
 	}
 	if(r->family == AF_INET){
-		if(add_route4(r->iface,ad,pag,pas,r->maskbits,iif)){
+		if(add_route4(r->iface,ad,r->gateway ? ag : NULL,pas,r->maskbits,iif)){
 			octx->diagnostic("Couldn't add route to %s",r->iface->name);
 			return -1;
 		}
 		r->next = ip_table4;
 		ip_table4 = r;
 	}else if(r->family == AF_INET6){
-		if(add_route6(r->iface,ad,pag,pas,r->maskbits,iif)){
+		if(add_route6(r->iface,ad,r->gateway ? ag : NULL,pas,r->maskbits,iif)){
 			octx->diagnostic("Couldn't add route to %s",r->iface->name);
 			return -1;
 		}
@@ -225,8 +231,9 @@ err:
 // Determine how to send a packet to a layer 3 address.
 // FIXME this whole functions is just incredibly godawful
 int get_router(int fam,const void *addr,struct routepath *rp){
+	const void *gateway;
+	size_t gwoffset,len;
 	uint128_t maskaddr;
-	size_t len;
 	route *rt;
 
 	// FIXME we will want an actual cross-interface routing table rather
@@ -235,10 +242,12 @@ int get_router(int fam,const void *addr,struct routepath *rp){
 		rt = ip_table4;
 		len = 4;
 		maskaddr[0] = *(const uint32_t *)addr;
+		gwoffset = offsetof(struct sockaddr_in,sin_addr);
 	}else if(fam == AF_INET6){
 		rt = ip_table6;
 		len = 16;
 		maskaddr = *(const uint128_t *)addr;
+		gwoffset = offsetof(struct sockaddr_in6,sin6_addr);
 	}else{
 		return -1;
 	}
@@ -268,10 +277,13 @@ int get_router(int fam,const void *addr,struct routepath *rp){
 		return -1;
 	}
 	rp->i = rt->iface;
-	// FIXME we have the interface. find the l3
-	rp->l3 = NULL;
-	rp->l2 = l3_getlastl2(rp->l3);
-	assert(rp->i && rp->l2 && rp->l3); // FIXME
+	gateway = rt->gateway ? (const char *)&rt->ssg + gwoffset : addr;
+	if((rp->l3 = find_l3host(rp->i,fam,gateway)) == NULL){
+		return -1;
+	}
+	if((rp->l2 = l3_getlastl2(rp->l3)) == NULL){
+		return -1;
+	}
 	return 0;
 }
 

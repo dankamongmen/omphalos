@@ -361,6 +361,7 @@ void tx_dns_a(const omphalos_iface *octx,int fam,const void *addr,
 	if(get_router(fam,addr,&rp)){
 		return;
 	}
+	octx->diagnostic("looking up [%s]",question);
 	if((frame = get_tx_frame(octx,rp.i,&flen)) == NULL){
 		return;
 	}
