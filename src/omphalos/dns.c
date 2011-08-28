@@ -14,6 +14,7 @@
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
 
+#define IP4_REVSTR_DECODED ".in-addr.arpa"
 #define IP4_REVSTR "\x07" "in-addr" "\x04" "arpa"
 
 #define DNS_CLASS_IN	__constant_ntohs(1u)
@@ -40,12 +41,11 @@ process_reverse_lookup(const char *buf,int *fam,void *addr){
 	unsigned quad;
 	char q[4][5];
 
-	if(len < __builtin_strlen(IP4_REVSTR)){
+	if(len < __builtin_strlen(IP4_REVSTR_DECODED)){
 		return -1;
 	}
-	const size_t xlen = len - __builtin_strlen(IP4_REVSTR);
-	// FIXME how on earth does this work? '.' ought be DNS length tags...?
-	if(strcmp(buf + xlen,IP4_REVSTR)){
+	const size_t xlen = len - __builtin_strlen(IP4_REVSTR_DECODED);
+	if(strcmp(buf + xlen,IP4_REVSTR_DECODED)){
 		return -1;
 	}
 	// Don't need to worry about checks against len, since we'll hit 'i'

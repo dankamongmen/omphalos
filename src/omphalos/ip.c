@@ -15,6 +15,8 @@
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
 
+#define DEFAULT_IP4_TTL 64
+
 static void
 handle_igmp_packet(const omphalos_iface *octx,omphalos_packet *op,const void *frame,size_t len){
 	const struct igmphdr *igmp = frame;
@@ -146,6 +148,7 @@ int prep_ipv4_header(void *frame,size_t flen,uint32_t src,uint32_t dst,uint16_t 
 	memset(ip,0,sizeof(*ip));
 	ip->version = 4;
 	ip->ihl = sizeof(*ip) >> 2u;
+	ip->ttl = DEFAULT_IP4_TTL;
 	ip->saddr = src;
 	ip->daddr = dst;
 	ip->protocol = proto;
