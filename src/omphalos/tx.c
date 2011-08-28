@@ -17,7 +17,7 @@ void *get_tx_frame(const omphalos_iface *octx,interface *i,size_t *fsize){
 	void *ret;
 
 	if(thdr == NULL){
-		octx->diagnostic("Can't transmit on %s",i->name);
+		octx->diagnostic("Can't transmit on %s (fd %d)",i->name,i->fd);
 		return NULL;
 	}
 	// FIXME need also check for TP_WRONG_FORMAT methinks?
