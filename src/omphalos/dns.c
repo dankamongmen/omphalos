@@ -395,9 +395,9 @@ void tx_dns_a(const omphalos_iface *octx,int fam,const void *addr,
 		abort_tx_frame(rp.i,frame);
 		return;
 	}
+	// Stash the <l3 headers' total size, so we can set tot_len when done
+	*totlen = tlen;
 	tlen += r;
-	// Stash the l2 headers' total size, so we can set tot_len when done
-	*totlen = tlen - sizeof(*thdr);
 	if(flen - tlen < sizeof(*udp)){
 		abort_tx_frame(rp.i,frame);
 		return;
@@ -411,8 +411,8 @@ void tx_dns_a(const omphalos_iface *octx,int fam,const void *addr,
 		return;
 	}
 	dnshdr = (struct dnshdr *)((char *)frame + tlen);
-	dnshdr->id = 0;
-	dnshdr->flags = 0;
+	dnshdr->id = random();
+	dnshdr->flags = htons(0x0100u);
 	dnshdr->qdcount = htons(1);
 	dnshdr->ancount = 0;
 	dnshdr->nscount = 0;
@@ -424,7 +424,7 @@ void tx_dns_a(const omphalos_iface *octx,int fam,const void *addr,
 	*(uint16_t *)((char *)frame + tlen + 1) = ntohs(DNS_TYPE_PTR);
 	*(uint16_t *)((char *)frame + tlen + 1 + 2) = ntohs(DNS_CLASS_IN);
 	tlen += 4;
-	thdr->tp_len = tlen;
+	thdr->tp_len = tlen - sizeof(*thdr);
 	udp->len += strlen(question) + 1 + 4;
 	udp->len = htons(udp->len);
 	*totlen = htons(tlen - *totlen);
