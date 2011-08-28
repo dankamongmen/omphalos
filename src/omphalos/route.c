@@ -277,7 +277,6 @@ int get_router(int fam,const void *addr,struct routepath *rp){
 		return -1;
 	}
 	rp->i = rt->iface;
-	assert(rt->sss.ss_family);
 	memcpy(&rp->src,(const char *)&rt->sss + gwoffset,len);
 	memset(&gw,0,sizeof(gw));
 	memcpy(&gw,rt->ssg.ss_family ? (const char *)&rt->ssg + gwoffset : addr,len);

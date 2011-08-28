@@ -18,6 +18,7 @@ void handle_ipv6_packet(const struct omphalos_iface *,struct omphalos_packet *,
 					const void *,size_t);
 
 int prep_ipv4_header(void *,size_t,uint32_t,uint32_t,uint16_t);
+uint16_t ipv4_csum(const void *hdr) __attribute__ ((nonnull (1)));
 
 #ifdef __cplusplus
 }
