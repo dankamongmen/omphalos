@@ -367,11 +367,13 @@ void tx_dns_a(const omphalos_iface *octx,int fam,const void *addr,
 		return;
 	}
 	hw = get_hwaddr(rp.l2);
-	if((r = prep_eth_header(frame,flen,rp.i,&hw,ETH_P_IP)) < 0){
+	thdr = frame;
+	tlen = sizeof(*thdr);
+	if((r = prep_eth_header(frame + tlen,flen - tlen,rp.i,&hw,ETH_P_IP)) < 0){
 		abort_tx_frame(rp.i,frame);
 		return;
 	}
-	tlen = r;
+	tlen += r;
 	if(fam == AF_INET){
 		uint32_t addr4 = *(const uint32_t *)addr;
 		uint32_t src4 = rp.src[3];
@@ -399,7 +401,6 @@ void tx_dns_a(const omphalos_iface *octx,int fam,const void *addr,
 	tlen += sizeof(struct dnshdr);
 	// FIXME doubt this works
 	memcpy((char *)frame + tlen,question,strlen(question));
-	thdr = frame;
 	thdr->tp_len = tlen + strlen(question);
 	send_tx_frame(octx,rp.i,frame);
 }
