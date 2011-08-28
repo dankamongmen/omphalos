@@ -275,6 +275,6 @@ int prep_eth_header(void *frame,size_t len,const interface *i,const void *dst,
 	}
 	memcpy(&e->h_dest,dst,ETH_ALEN);
 	memcpy(&e->h_source,i->addr,ETH_ALEN);
-	e->h_proto = proto;
+	e->h_proto = htons(proto);
 	return ETH_HLEN;
 }

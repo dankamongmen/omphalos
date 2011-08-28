@@ -7,6 +7,7 @@
 #include <linux/if_packet.h>
 #include <omphalos/hwaddrs.h>
 #include <omphalos/psocket.h>
+#include <omphalos/ethernet.h>
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
 
@@ -78,9 +79,7 @@ void prepare_arp_probe(const omphalos_iface *octx,const interface *i,
 	thdr = frame;
 	// FIXME what about non-ethernet
 	ehdr = (struct ethhdr *)((char *)frame + sizeof(*thdr));
-	memcpy(ehdr->h_dest,haddr,hln);
-	memcpy(ehdr->h_source,i->addr,hln);
-	ehdr->h_proto = ntohs(ETH_P_ARP);
+	assert(prep_eth_header(ehdr,*flen - sizeof(*thdr),i,haddr,ETH_P_ARP) == sizeof(struct ethhdr));
 	thdr->tp_len = sizeof(struct ethhdr) + sizeof(struct arphdr)
 		+ hln * 2 + pln * 2;
 	ahdr = (struct arphdr *)((char *)ehdr + sizeof(*ehdr));
