@@ -6,6 +6,7 @@
 #include <omphalos/tx.h>
 #include <omphalos/ip.h>
 #include <omphalos/dns.h>
+#include <omphalos/udp.h>
 #include <omphalos/util.h>
 #include <asm/byteorder.h>
 #include <omphalos/route.h>
@@ -429,6 +430,7 @@ void tx_dns_a(const omphalos_iface *octx,int fam,const void *addr,
 	udp->len = htons(udp->len);
 	*totlen = htons(tlen - *totlen);
 	iphdr->check = ipv4_csum(iphdr);
+	udp->check = udp4_csum(iphdr);
 	send_tx_frame(octx,rp.i,frame);
 }
 
