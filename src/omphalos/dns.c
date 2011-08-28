@@ -395,9 +395,9 @@ void tx_dns_a(const omphalos_iface *octx,int fam,const void *addr,
 		abort_tx_frame(rp.i,frame);
 		return;
 	}
+	tlen += r;
 	// Stash the l2 headers' total size, so we can set tot_len when done
 	*totlen = tlen - sizeof(*thdr);
-	tlen += r;
 	if(flen - tlen < sizeof(*udp)){
 		abort_tx_frame(rp.i,frame);
 		return;
@@ -428,7 +428,7 @@ void tx_dns_a(const omphalos_iface *octx,int fam,const void *addr,
 	udp->len += strlen(question) + 1 + 4;
 	udp->len = htons(udp->len);
 	*totlen = htons(tlen - *totlen);
-	iphdr->csum = ipv4_csum(iphdr);
+	iphdr->check = ipv4_csum(iphdr);
 	send_tx_frame(octx,rp.i,frame);
 }
 
