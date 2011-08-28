@@ -135,6 +135,7 @@ void handle_ipv4_packet(const omphalos_iface *octx,omphalos_packet *op,
 	break; } }
 }
 
+// Doesn't set ->tot_len; that must be done by the caller.
 int prep_ipv4_header(void *frame,size_t flen,uint32_t src,uint32_t dst,uint16_t proto){
 	struct iphdr *ip;
 
@@ -144,6 +145,7 @@ int prep_ipv4_header(void *frame,size_t flen,uint32_t src,uint32_t dst,uint16_t 
 	ip = frame;
 	memset(ip,0,sizeof(*ip));
 	ip->version = 4;
+	ip->ihl = sizeof(*ip) >> 2u;
 	ip->saddr = src;
 	ip->daddr = dst;
 	ip->protocol = proto;

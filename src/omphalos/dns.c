@@ -1,6 +1,7 @@
 #include <ctype.h>
 #include <assert.h>
 #include <stdint.h>
+#include <linux/ip.h>
 #include <omphalos/tx.h>
 #include <omphalos/ip.h>
 #include <omphalos/dns.h>
@@ -355,6 +356,7 @@ void tx_dns_a(const omphalos_iface *octx,int fam,const void *addr,
 	struct dnshdr *dnshdr;
 	struct routepath rp;
 	size_t flen,tlen;
+	uint16_t *totlen;
 	hwaddrint hw;
 	void *frame;
 	int r;
@@ -378,6 +380,7 @@ void tx_dns_a(const omphalos_iface *octx,int fam,const void *addr,
 		uint32_t addr4 = *(const uint32_t *)addr;
 		uint32_t src4 = rp.src[3];
 
+		totlen = &((struct iphdr *)(frame + tlen))->tot_len;
 		r = prep_ipv4_header(frame + tlen,flen - tlen,src4,addr4,IPPROTO_UDP);
 	}else if(fam == AF_INET6){
 		// FIXME
@@ -386,6 +389,8 @@ void tx_dns_a(const omphalos_iface *octx,int fam,const void *addr,
 		abort_tx_frame(rp.i,frame);
 		return;
 	}
+	// Stash the l2 headers' total size, so we can set tot_len when done
+	*totlen = tlen - sizeof(*thdr);
 	tlen += r;
 	if(flen - tlen < sizeof(*dnshdr)){
 		abort_tx_frame(rp.i,frame);
@@ -401,7 +406,9 @@ void tx_dns_a(const omphalos_iface *octx,int fam,const void *addr,
 	tlen += sizeof(struct dnshdr);
 	// FIXME doubt this works
 	memcpy((char *)frame + tlen,question,strlen(question));
-	thdr->tp_len = tlen + strlen(question);
+	tlen += strlen(question);
+	thdr->tp_len = tlen;
+	*totlen = htons(tlen - *totlen);
 	send_tx_frame(octx,rp.i,frame);
 }
 
