@@ -382,7 +382,7 @@ void tx_dns_a(const omphalos_iface *octx,int fam,const void *addr,
 	tlen += r;
 	if(fam == AF_INET){
 		uint32_t addr4 = *(const uint32_t *)addr;
-		uint32_t src4 = rp.src[3];
+		uint32_t src4 = rp.src[0];
 
 		totlen = &((struct iphdr *)(frame + tlen))->tot_len;
 		r = prep_ipv4_header(frame + tlen,flen - tlen,src4,addr4,IPPROTO_UDP);
