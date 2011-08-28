@@ -14,7 +14,7 @@
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
 
-#define IP4_REVSTR ".in-addr.arpa"
+#define IP4_REVSTR "\x07" "in-addr" "\x04" "arpa"
 
 #define DNS_CLASS_IN	__constant_ntohs(1u)
 #define DNS_TYPE_A	__constant_ntohs(1u)
@@ -44,6 +44,7 @@ process_reverse_lookup(const char *buf,int *fam,void *addr){
 		return -1;
 	}
 	const size_t xlen = len - __builtin_strlen(IP4_REVSTR);
+	// FIXME how on earth does this work? '.' ought be DNS length tags...?
 	if(strcmp(buf + xlen,IP4_REVSTR)){
 		return -1;
 	}
@@ -368,7 +369,6 @@ void tx_dns_a(const omphalos_iface *octx,int fam,const void *addr,
 	if(get_router(fam,addr,&rp)){
 		return;
 	}
-	octx->diagnostic("looking up [%s]",question);
 	if((frame = get_tx_frame(octx,rp.i,&flen)) == NULL){
 		return;
 	}
@@ -404,7 +404,7 @@ void tx_dns_a(const omphalos_iface *octx,int fam,const void *addr,
 	udp->dest = htons(DNS_TARGET_PORT);
 	udp->source = 31337; // FIXME lol
 	tlen += sizeof(*udp);
-	if(flen - tlen < sizeof(*dnshdr)){
+	if(flen - tlen < sizeof(*dnshdr) + strlen(question) + 1 + 4){
 		abort_tx_frame(rp.i,frame);
 		return;
 	}
@@ -416,12 +416,14 @@ void tx_dns_a(const omphalos_iface *octx,int fam,const void *addr,
 	dnshdr->nscount = 0;
 	dnshdr->arcount = 0;
 	tlen += sizeof(struct dnshdr);
-	udp->len = sizeof(struct dnshdr);
-	// FIXME doubt this works
-	memcpy((char *)frame + tlen,question,strlen(question));
-	tlen += strlen(question);
+	udp->len = sizeof(struct udphdr) + sizeof(struct dnshdr);
+	memcpy((char *)frame + tlen,question,strlen(question) + 1);
+	tlen += strlen(question) + 1;
+	*(uint16_t *)((char *)frame + tlen + 1) = ntohs(DNS_TYPE_PTR);
+	*(uint16_t *)((char *)frame + tlen + 1 + 2) = ntohs(DNS_CLASS_IN);
+	tlen += 4;
 	thdr->tp_len = tlen;
-	udp->len += strlen(question);
+	udp->len += strlen(question) + 1 + 4;
 	udp->len = htons(udp->len);
 	*totlen = htons(tlen - *totlen);
 	send_tx_frame(octx,rp.i,frame);
@@ -455,9 +457,13 @@ char *rev_dns_a(const void *i4){
 		int r;
 
 		for(mask = 0xff000000u, shr = 24 ; mask ; mask >>= 8u, shr -= 8){
-			r += sprintf(buf + r,"%u.",(ip & mask) >> shr);
+			int r2;
+
+			r2 = sprintf(buf + r,".%u",(ip & mask) >> shr);
+			buf[r] = r2 - 1;
+			r += r2;
 		}
-		sprintf(buf + r - 1,IP4_REVSTR);
+		sprintf(buf + r,IP4_REVSTR);
 	}
 	return buf;
 }
