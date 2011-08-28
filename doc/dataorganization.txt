@@ -114,4 +114,13 @@ the receiving interface -- if we can't, it's probably due to one of:
 None of these are particularly interesting, or even necessarily
 distinguishable, save the last; if we're lacking configuration, it ought
 usually be possible to infer it  -- so far as is necessary to communicate with
-entities we've seen -- via active analysis. 
+entities we've seen -- via active analysis. ARP can be used to determine
+whether a hardware address claims a given IP address; a router will not (Proxy
+ARP, as mentioned before, can complicate this). An ARP probe requires an IP
+address, which we might not have (or might not be in the same network as the
+address seen due to misconfiguration etc), but we can spoof someone else's and
+gather information that way (indeed, it might be possible to use the target's
+own IP address (which we must know) as our source, so long as we supply our
+hardware address as a source, and receive the reply). We run the risk in this
+case, however, of upsetting other nodes' own ARP caches, and thus ought be
+prepared to forward traffic in the case of an unintentional MitM.
