@@ -268,7 +268,7 @@ int get_router(int fam,const void *addr,struct routepath *rp){
 		return -1;
 	}
 	rp->i = rt->iface;
-	// FIXME we have the interface. find the neighbor.
+	// FIXME we have the interface. find the neighbor via finding the l3.
 	rp->l2 = NULL;
 	rp->l3 = NULL;
 	assert(rp->i && rp->l2 && rp->l3); // FIXME

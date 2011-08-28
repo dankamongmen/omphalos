@@ -22,6 +22,9 @@ typedef struct l3host {
 	uintmax_t srcpkts,dstpkts;
 	namelevel nlevel;
 	struct l3host *next;
+	struct l2host *l2;	// FIXME we only keep the most recent l2host
+				// seen with this address. ought keep all, or
+				// at the very least one per interface...
 	void *opaque;
 } l3host;
 
@@ -38,6 +41,7 @@ create_l3host(int fam,const void *addr,size_t len){
 	assert(len <= sizeof(r->addr));
 	if( (r = malloc(sizeof(*r))) ){
 		r->opaque = NULL;
+		r->last = NULL;
 		r->name = NULL;
 		r->fam = fam;
 		r->srcpkts = r->dstpkts = 0;
@@ -105,7 +109,7 @@ struct l3host *lookup_l3host(const omphalos_iface *octx,interface *i,
 			revstrfxn = NULL;
 			break;
 		default:
-			octx->diagnostic("Can't lookup l3 type %d",fam);
+			octx->diagnostic("Don't support l3 type %d",fam);
 			return NULL; // FIXME
 	}
 	if(routed_family_p(fam)){
@@ -134,10 +138,12 @@ struct l3host *lookup_l3host(const omphalos_iface *octx,interface *i,
 			*prev = l3->next;
 			l3->next = *orig;
 			*orig = l3;
+			l3->l2 = l2; // Update the last l2 FIXME
 			return l3;
 		}
 	}
         if( (l3 = create_l3host(fam,addr,len)) ){
+		l3->l2 = l2;
                 l3->next = *orig;
                 *orig = l3;
 		if(cat == RTN_MULTICAST){
@@ -264,4 +270,8 @@ uintmax_t l3_get_srcpkt(const l3host *l3){
 
 uintmax_t l3_get_dstpkt(const l3host *l3){
 	return l3->dstpkts;
+}
+
+struct l2host *l3_getlastl2(l3host *l3){
+	return l3->l2;
 }
