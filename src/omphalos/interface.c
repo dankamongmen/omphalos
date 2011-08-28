@@ -172,8 +172,9 @@ int print_all_iface_stats(FILE *fp,interface *agg){
 }
 
 // FIXME need to check and ensure they don't overlap with existing routes
-int add_route4(interface *i,const struct in_addr *s,const struct in_addr *via,
-			const struct in_addr *src,unsigned blen,int iif){
+int add_route4(const omphalos_iface *octx,interface *i,const struct in_addr *s,
+		const struct in_addr *via,const struct in_addr *src,
+		unsigned blen,int iif){
 	ip4route *r,**prev;
 
 	if((r = malloc(sizeof(*r))) == NULL){
@@ -182,8 +183,12 @@ int add_route4(interface *i,const struct in_addr *s,const struct in_addr *via,
 	r->addrs = 0;
 	memcpy(&r->dst,s,sizeof(*s));
 	if(src){
+		struct l2host *l2;
+
 		memcpy(&r->src,src,sizeof(*src));
 		r->addrs |= ROUTE_HAS_SRC;
+		l2 = lookup_l2host(octx,i,i->addr);
+		lookup_l3host(octx,i,l2,AF_INET,src);
 	}
 	if(via){
 		memcpy(&r->via,via,sizeof(*via));
@@ -203,8 +208,9 @@ int add_route4(interface *i,const struct in_addr *s,const struct in_addr *via,
 	return 0;
 }
 
-int add_route6(interface *i,const struct in6_addr *s,const struct in6_addr *via,
-			const struct in6_addr *src,unsigned blen,int iif){
+int add_route6(const omphalos_iface *octx,interface *i,const struct in6_addr *s,
+		const struct in6_addr *via,const struct in6_addr *src,
+		unsigned blen,int iif){
 	ip6route *r;
 
 	if((r = malloc(sizeof(*r))) == NULL){
@@ -213,8 +219,12 @@ int add_route6(interface *i,const struct in6_addr *s,const struct in6_addr *via,
 	r->addrs = 0;
 	memcpy(&r->dst,s,sizeof(*s));
 	if(src){
+		struct l2host *l2;
+
 		memcpy(&r->src,src,sizeof(*src));
 		r->addrs |= ROUTE_HAS_SRC;
+		l2 = lookup_l2host(octx,i,i->addr);
+		lookup_l3host(octx,i,l2,AF_INET6,src);
 	}
 	if(via){
 		memcpy(&r->via,via,sizeof(*via));
