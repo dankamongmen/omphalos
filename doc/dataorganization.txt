@@ -98,6 +98,32 @@ not necessary to actually route through the hardware address; routing only
 requires the router's network address if the corresponding hardware address is
 missing from the neighbor cache.
 
+An l2node is a hardware address. An l3host is an address which some local
+machine claims via ARP, or the set of addresses seen from some local machine
+which it does *not* claim via ARP. Note that while routers are specified via
+network addresses (and discovered thusly using netlink), their *hardware*
+addresses are necessary and sufficient to use them. The union of all interfaces'
+l3hosts provide complete information regarding both routes and neighbors as
+known to omphalos.
+
+Packet Transmission
+===================
+
+If targeting a layer 2 address (as in ARP), we can simply construct the packet
+and put it on the wire -- no indexing is necessary. Normally, we're targeting a
+layer 3 address. This requires a corresponding layer 2 hardware address. If the
+transmission is taken in immediate response to some received packet, we have
+all this info, and can proceed directly. Otherwise, we find the l3host via
+keying into the global l3host table on destination address. This provides us
+with a (possibly local) route. The route object knows its associated interface
+in O(1), and thus our proper source hardware address (also in O(1)). The route
+object also knows the next hop, if one exists; otherwise the destination is
+considered the next hop. Routes don't typically specify the destination
+hardware address, but we will usually know it. Since we need it to actually
+route, whether we know it or not, stash a reference in the route object as soon
+as it's learned (and actively try to learn it upon gatewayed route discovery).
+This provides us with all necessary destination information.
+
 Packet Receipt
 ==============
 
@@ -124,3 +150,28 @@ own IP address (which we must know) as our source, so long as we supply our
 hardware address as a source, and receive the reply). We run the risk in this
 case, however, of upsetting other nodes' own ARP caches, and thus ought be
 prepared to forward traffic in the case of an unintentional MitM.
+
+Since packet transmission must often be keyed off a layer 3 address, we'd like
+full knowledge of the route, interface, and hardware address relations
+directly accessible from the l3 objects. Since we're using packet reception to
+learn many of these details, that's a natural place to perform the binding.
+It further facilitates detection of addresses duplicated across interfaces and
+hardware addresses, should that ever prove useful. Finally, this allows
+automatic reconfiguration of the routing database based on what we really see
+in the network (and thus it can be abused by adversaries if we're not careful).
+
+So, on packet receipt:
+
+ - Ensure a reference to the interface
+ - Find the l2 address within the interface's neighbor LRU, or insert it
+ - Find the l3 address within the global table
+ - If it is found, compare the route info to this data, possibly updating it.
+ - If it is not found, and it corresponds to a local route we know, add an
+	l3host for the address, and store a reference in our neighbor table.
+ - If it is not found, and it corresponds to a non-local route we know, exit.
+ - If it is not found, and does not correspond to a route we know, hit the
+	source MAC address with an ARP for the network address. A positive
+	reply indicates a local address, Proxy ARP, or an adversary. A negative
+	reply cannot indicate much, but suggests the possibility of a route at
+	the source hardware address to at least the source network address.
+
