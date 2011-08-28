@@ -358,6 +358,7 @@ void tx_dns_a(const omphalos_iface *octx,int fam,const void *addr,
 		const char *question){
 	struct tpacket_hdr *thdr;
 	struct dnshdr *dnshdr;
+	struct iphdr *iphdr;
 	struct routepath rp;
 	struct udphdr *udp;
 	size_t flen,tlen;
@@ -385,7 +386,8 @@ void tx_dns_a(const omphalos_iface *octx,int fam,const void *addr,
 		uint32_t src4 = rp.src[0];
 
 		totlen = &((struct iphdr *)(frame + tlen))->tot_len;
-		r = prep_ipv4_header(frame + tlen,flen - tlen,src4,addr4,IPPROTO_UDP);
+		iphdr = frame + tlen;
+		r = prep_ipv4_header(iphdr,flen - tlen,src4,addr4,IPPROTO_UDP);
 	}else if(fam == AF_INET6){
 		// FIXME
 	}
@@ -426,6 +428,7 @@ void tx_dns_a(const omphalos_iface *octx,int fam,const void *addr,
 	udp->len += strlen(question) + 1 + 4;
 	udp->len = htons(udp->len);
 	*totlen = htons(tlen - *totlen);
+	iphdr->csum = ipv4_csum(iphdr);
 	send_tx_frame(octx,rp.i,frame);
 }
 

@@ -154,3 +154,31 @@ int prep_ipv4_header(void *frame,size_t flen,uint32_t src,uint32_t dst,uint16_t 
 	ip->protocol = proto;
 	return sizeof(*ip);
 }
+
+uint16_t ipv4_csum(const void *hdr){
+	size_t len = ((const struct iphdr *)hdr)->ihl << 2u;
+	const uint_fast16_t *cur;
+	uint_fast16_t sum,fold;
+	const uint16_t *hcur;
+	unsigned z;
+
+	sum = 0;
+	cur = hdr;
+	for(z = 0 ; z < len / sizeof(*cur) ; ++z){
+		sum += cur[z];
+	}
+	hcur = (const uint16_t *)(cur + z);
+	for(z = 0 ; z < (len % sizeof(*cur)) / 2 ; ++z){
+		sum += hcur[z];
+	}
+	if(len % 2){
+		sum += ((const unsigned char *)hdr)[len - 1] << 8u;
+	}
+	fold = 0;
+	for(z = 0 ; z < sizeof(*cur) / 2 ; ++z){
+		fold += sum & 0xffffu;
+		sum >>= 16u;
+	}
+	return ~fold;
+}
+
