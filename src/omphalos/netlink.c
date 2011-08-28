@@ -422,18 +422,13 @@ pmarsh_create(void){
 static int
 prepare_packet_sockets(const omphalos_iface *octx,interface *iface,int idx){
 	if( (iface->pmarsh = pmarsh_create()) ){
-		if(iface->arptype == ARPHRD_LOOPBACK){
-			iface->ts = 0;
-			iface->fd = -1;
-		}else{
-			if((iface->fd = packet_socket(octx,ETH_P_ALL)) < 0){
-				goto err;
-			}
-			if((iface->ts = mmap_tx_psocket(octx,iface->fd,idx,
-					iface->mtu,&iface->txm,&iface->ttpr)) <= 0){
-				close(iface->fd);
-				goto err;
-			}
+		if((iface->fd = packet_socket(octx,ETH_P_ALL)) < 0){
+			goto err;
+		}
+		if((iface->ts = mmap_tx_psocket(octx,iface->fd,idx,
+				iface->mtu,&iface->txm,&iface->ttpr)) <= 0){
+			close(iface->fd);
+			goto err;
 		}
 		if((iface->rfd = packet_socket(octx,ETH_P_ALL)) >= 0){
 			if( (iface->rs = mmap_rx_psocket(octx,iface->rfd,idx,
