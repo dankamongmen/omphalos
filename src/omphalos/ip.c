@@ -149,10 +149,11 @@ int prep_ipv4_header(void *frame,size_t flen,uint32_t src,uint32_t dst,uint16_t 
 	ip->version = 4;
 	ip->ihl = sizeof(*ip) >> 2u;
 	ip->ttl = DEFAULT_IP4_TTL;
+	ip->id = random();
 	ip->saddr = src;
 	ip->daddr = dst;
 	ip->protocol = proto;
-	return sizeof(*ip);
+	return ip->ihl << 2u;
 }
 
 uint16_t ipv4_csum(const void *hdr){
