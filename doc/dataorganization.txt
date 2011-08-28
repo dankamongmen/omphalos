@@ -38,7 +38,10 @@ route from either interface). Since we present an interface-centric UI to the
 user, and retain knowledge of routes as implied by observed traffic, we can
 meaningfully distinguish across destination network addresses seen on multiple
 media or from multiple hardware addresses (using this information, of course,
-represents a deviation from configured routing policy).
+represents a deviation from configured routing policy).This is an explicit
+objective: a fundamental goal of omphalos is to discover routes beyond the
+local network, even when no configuration exists. Otherwise, we could simply
+make use of the kernel routing and neighbor caches, and be done with it.
 
 Knowledge Forward
 =================
