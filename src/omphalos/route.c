@@ -268,9 +268,9 @@ int get_router(int fam,const void *addr,struct routepath *rp){
 		return -1;
 	}
 	rp->i = rt->iface;
-	// FIXME we have the interface. find the neighbor via finding the l3.
-	rp->l2 = NULL;
+	// FIXME we have the interface. find the l3
 	rp->l3 = NULL;
+	rp->l2 = l3_getlastl2(rp->l3);
 	assert(rp->i && rp->l2 && rp->l3); // FIXME
 	return 0;
 }

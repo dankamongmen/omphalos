@@ -41,8 +41,8 @@ create_l3host(int fam,const void *addr,size_t len){
 	assert(len <= sizeof(r->addr));
 	if( (r = malloc(sizeof(*r))) ){
 		r->opaque = NULL;
-		r->last = NULL;
 		r->name = NULL;
+		r->l2 = NULL;
 		r->fam = fam;
 		r->srcpkts = r->dstpkts = 0;
 		r->nlevel = NAMING_LEVEL_NONE;
