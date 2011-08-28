@@ -55,3 +55,23 @@ single network address and a single interface. Note that the network address is
 not necessary to actually route through the hardware address; routing only
 requires the router's network address if the corresponding hardware address is
 missing from the neighbor cache.
+
+Upon receipt of a packet, we know ab initio:
+
+ - the interface on which it was received, *if* we use sockaddr_ll (sll_ifindex
+	field), or we're binding a SOCK_RAW socket to each interface. We're
+	doing the latter.
+ - whether it was ours or not, *if* we use sockaddr_ll (sll_pkttype field).
+	we're using SOCK_RAW with our AF_PACKETs, though, since SOCK_DGRAM
+	doesn't provide us with the destination address.
+ - source hardware address (sll_addr, or look at the physical header) and
+	address length *if* we use sockaddr_ll (sll_halen field) or we're
+	binding a SOCK_RAW socket to each interface, after discovering its
+	hardware address length. Note that this assumed all hardware on a given
+	medium have the same hardware length.
+ - destination hardware address *iff* we're using SOCK_RAW.
+ - physical layer protocol (sll_protocol field, or look at the physical header).
+ - length of the frame
+
+Of these, the addresses and protocol are set by the sender. Everything else can
+be trusted as objectively "accurate".
