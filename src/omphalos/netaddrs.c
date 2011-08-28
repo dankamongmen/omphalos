@@ -73,6 +73,36 @@ routed_family_p(int fam){
 	return fam == AF_INET || fam == AF_INET6;
 }
 
+// A global lookup without lower-level information. It doesn't create a new
+// entry if none exists. No support for BSSID lookup.
+struct l3host *find_l3host(interface *i,int fam,const void *addr){
+        l3host *l3;
+	typeof(l3->addr) cmp;
+	size_t len;
+
+	switch(fam){
+		case AF_INET:
+			len = 4;
+			l3 = i->ip4hosts;
+			break;
+		case AF_INET6:
+			len = 16;
+			l3 = i->ip6hosts;
+			break;
+		default:
+			return NULL; // FIXME
+	}
+	assert(len <= sizeof(cmp));
+	memcpy(&cmp,addr,sizeof(cmp));
+	while(l3){
+		if(memcmp(&l3->addr,&cmp,len) == 0){
+			return l3;
+		}
+		l3 = l3->next;
+	}
+	return NULL;
+}
+
 // This is for raw network addresses as seen on the wire, which may be from
 // outside the local network. We want only the local network address(es) of the
 // link (in a rare case, it might not have any). For unicast link addresses, a
