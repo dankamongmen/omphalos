@@ -30,6 +30,19 @@ with definite effects on network modeling, include:
  - overeager dhcp
  - etc. ...
 
+Furthermore, omphalos might run in an environment not meaningfully
+supported on a typical networking stack, for instance one where two interfaces
+are connected to two distinct media which happen to use the same RFC 1938 or
+RFC 4193 addresses (Linux would treat this as the same network, and freely
+route from either interface). Since we present an interface-centric UI to the
+user, and retain knowledge of routes as implied by observed traffic, we can
+meaningfully distinguish across destination network addresses seen on multiple
+media or from multiple hardware addresses (using this information, of course,
+represents a deviation from configured routing policy).
+
+Knowledge Forward
+=================
+
 Upon receipt of a packet, we know ab initio:
 
  - the interface on which it was received, *if* we use sockaddr_ll (sll_ifindex
@@ -99,12 +112,12 @@ requires the router's network address if the corresponding hardware address is
 missing from the neighbor cache.
 
 An l2node is a hardware address. An l3host is an address which some local
-machine claims via ARP, or the set of addresses seen from some local machine
-which it does *not* claim via ARP. Note that while routers are specified via
-network addresses (and discovered thusly using netlink), their *hardware*
-addresses are necessary and sufficient to use them. The union of all interfaces'
-l3hosts provide complete information regarding both routes and neighbors as
-known to omphalos.
+machine claims via ARP, an address in which we are interested, or the set of
+addresses seen from some local machine which it does *not* claim via ARP. Note
+that while routers are specified via network addresses (and discovered thusly
+using netlink), their *hardware* addresses are necessary and sufficient to use
+them. The union of all interfaces' l3hosts provide complete information
+regarding both routes and neighbors as known to omphalos.
 
 Packet Transmission
 ===================
@@ -174,4 +187,3 @@ So, on packet receipt:
 	reply indicates a local address, Proxy ARP, or an adversary. A negative
 	reply cannot indicate much, but suggests the possibility of a route at
 	the source hardware address to at least the source network address.
-
