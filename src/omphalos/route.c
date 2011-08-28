@@ -19,7 +19,6 @@ typedef struct route {
 	struct sockaddr_storage sss,ssd,ssg;
 	unsigned maskbits;
 	struct route *next;
-	int gateway;
 } route;
 
 static route *ip_table4,*ip_table6;
@@ -75,13 +74,12 @@ int handle_rtm_delroute(const omphalos_iface *octx,const struct nlmsghdr *nl){
 
 int handle_rtm_newroute(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	const struct rtmsg *rt = NLMSG_DATA(nl);
-	void *as,*ad,*ag,*pas;
 	struct rtattr *ra;
+	void *as,*ad,*ag;
 	int rlen,iif,oif;
 	size_t flen;
 	route *r;
 
-	pas = NULL; // pointers set only once as/ag are copied into
 	iif = oif = -1;
 	if((r = create_route()) == NULL){
 		return -1;
@@ -105,7 +103,6 @@ int handle_rtm_newroute(const omphalos_iface *octx,const struct nlmsghdr *nl){
 		octx->diagnostic("Unknown route family %u",rt->rtm_family);
 		return -1;
 	}
-	memset(ag,0,flen);
 	rlen = nl->nlmsg_len - NLMSG_LENGTH(sizeof(*rt));
 	ra = (struct rtattr *)((char *)(NLMSG_DATA(nl)) + sizeof(*rt));
 	while(RTA_OK(ra,rlen)){
@@ -124,7 +121,7 @@ int handle_rtm_newroute(const omphalos_iface *octx,const struct nlmsghdr *nl){
 				break;
 			}
 			memcpy(as,RTA_DATA(ra),flen);
-			pas = as;
+			r->sss.ss_family = r->family;
 		break;}case RTA_IIF:{
 			if(RTA_PAYLOAD(ra) != sizeof(int)){
 				octx->diagnostic("Expected %zu iface bytes, got %lu",
@@ -145,24 +142,25 @@ int handle_rtm_newroute(const omphalos_iface *octx,const struct nlmsghdr *nl){
 						flen,RTA_PAYLOAD(ra));
 				break;
 			}
-			if(r->gateway){
+			if(r->ssg.ss_family){
 				octx->diagnostic("Got two gateways for route");
 				break;
 			}
 			// We get 0.0.0.0 as the gateway when there's no 'via'
 			if(memcmp(ag,RTA_DATA(ra),flen)){
 				memcpy(ag,RTA_DATA(ra),flen);
-				r->gateway = 1;
+				r->ssg.ss_family = r->family;
 			}
 		break;}case RTA_PRIORITY:{
 		break;}case RTA_PREFSRC:{
+			// FIXME can be blown away by regular src item
 			if(RTA_PAYLOAD(ra) != flen){
 				octx->diagnostic("Expected %zu src bytes, got %lu",
 						flen,RTA_PAYLOAD(ra));
 				break;
 			}
 			memcpy(as,RTA_DATA(ra),flen);
-			pas = as;
+			r->sss.ss_family = r->family;
 		break;}case RTA_METRICS:{
 		break;}case RTA_MULTIPATH:{
 		// break;}case RTA_PROTOINFO:{ // unused
@@ -191,17 +189,20 @@ int handle_rtm_newroute(const omphalos_iface *octx,const struct nlmsghdr *nl){
 		// blackhole routes typically have no output interface
 		return 0;
 	}
+	if(!r->sss.ss_family){ // FIXME very dubious
+		goto err;
+	}
 	if(r->family == AF_INET){
-		if(add_route4(r->iface,ad,r->gateway ? ag : NULL,pas,r->maskbits,iif)){
+		if(add_route4(r->iface,ad,r->ssg.ss_family ? ag : NULL,r->sss.ss_family ? as : NULL,r->maskbits,iif)){
 			octx->diagnostic("Couldn't add route to %s",r->iface->name);
-			return -1;
+			goto err;
 		}
 		r->next = ip_table4;
 		ip_table4 = r;
 	}else if(r->family == AF_INET6){
-		if(add_route6(r->iface,ad,r->gateway ? ag : NULL,pas,r->maskbits,iif)){
+		if(add_route6(r->iface,ad,r->ssg.ss_family ? ag : NULL,r->sss.ss_family ? as : NULL,r->maskbits,iif)){
 			octx->diagnostic("Couldn't add route to %s",r->iface->name);
-			return -1;
+			goto err;
 		}
 		r->next = ip_table6;
 		ip_table6 = r;
@@ -210,7 +211,7 @@ int handle_rtm_newroute(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	/*{
 		char str[INET6_ADDRSTRLEN];
 		inet_ntop(rt->rtm_family,ad,str,sizeof(str));
-		octx->diagnostic("[%8s] route to %s/%u %s",r->iface->name,str,r->maskbits,
+		octx->diagnostic("[%8s] new route to %s/%u %s",r->iface->name,str,r->maskbits,
 			rt->rtm_type == RTN_LOCAL ? "(local)" :
 			rt->rtm_type == RTN_BROADCAST ? "(broadcast)" :
 			rt->rtm_type == RTN_UNREACHABLE ? "(unreachable)" :
@@ -231,9 +232,8 @@ err:
 // Determine how to send a packet to a layer 3 address.
 // FIXME this whole functions is just incredibly godawful
 int get_router(int fam,const void *addr,struct routepath *rp){
-	const void *gateway;
+	uint128_t maskaddr,gw;
 	size_t gwoffset,len;
-	uint128_t maskaddr;
 	route *rt;
 
 	// FIXME we will want an actual cross-interface routing table rather
@@ -268,17 +268,25 @@ int get_router(int fam,const void *addr,struct routepath *rp){
 				tmp[z] = 0;
 			}
 		}
-		if(memcmp(&rt->ssd,&tmp,len) == 0){
+		if(memcmp((const char *)&rt->ssd + gwoffset,&tmp,len) == 0){
 			break;
 		}
 		rt = rt->next;
 	}
 	if(rt == NULL){
+		const unsigned char *add = addr;
+		fprintf(stderr,"Couldn't route TX packet to %08x %08x %08x %08x\n\n",add[0],add[1],add[2],add[3]);
 		return -1;
 	}
 	rp->i = rt->iface;
-	gateway = rt->gateway ? (const char *)&rt->ssg + gwoffset : addr;
-	if((rp->l3 = find_l3host(rp->i,fam,gateway)) == NULL){
+	assert(rt->sss.ss_family);
+	memcpy(&rp->src,(const char *)&rt->sss + gwoffset,len);
+	memset(&gw,0,sizeof(gw));
+	memcpy(&gw,rt->ssg.ss_family ? (const char *)&rt->ssg + gwoffset : addr,len);
+	if(fam == AF_INET){
+		gw[0] = ntohl(gw[0]);
+	}
+	if((rp->l3 = find_l3host(rp->i,fam,&gw)) == NULL){
 		return -1;
 	}
 	if((rp->l2 = l3_getlastl2(rp->l3)) == NULL){
