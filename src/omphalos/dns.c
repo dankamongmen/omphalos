@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <stdint.h>
 #include <linux/ip.h>
+#include <linux/udp.h>
 #include <omphalos/tx.h>
 #include <omphalos/ip.h>
 #include <omphalos/dns.h>
@@ -19,6 +20,8 @@
 #define DNS_TYPE_A	__constant_ntohs(1u)
 #define DNS_TYPE_PTR	__constant_ntohs(12u)
 #define DNS_TYPE_AAAA	__constant_ntohs(28u)
+
+#define DNS_TARGET_PORT 53	// FIXME terrible
 
 struct dnshdr {
 	uint16_t id;
@@ -355,6 +358,7 @@ void tx_dns_a(const omphalos_iface *octx,int fam,const void *addr,
 	struct tpacket_hdr *thdr;
 	struct dnshdr *dnshdr;
 	struct routepath rp;
+	struct udphdr *udp;
 	size_t flen,tlen;
 	uint16_t *totlen;
 	hwaddrint hw;
@@ -392,6 +396,14 @@ void tx_dns_a(const omphalos_iface *octx,int fam,const void *addr,
 	// Stash the l2 headers' total size, so we can set tot_len when done
 	*totlen = tlen - sizeof(*thdr);
 	tlen += r;
+	if(flen - tlen < sizeof(*udp)){
+		abort_tx_frame(rp.i,frame);
+		return;
+	}
+	udp = (struct udphdr *)((char *)frame + tlen);
+	udp->dest = htons(DNS_TARGET_PORT);
+	udp->source = 31337; // FIXME lol
+	tlen += sizeof(*udp);
 	if(flen - tlen < sizeof(*dnshdr)){
 		abort_tx_frame(rp.i,frame);
 		return;
@@ -399,15 +411,18 @@ void tx_dns_a(const omphalos_iface *octx,int fam,const void *addr,
 	dnshdr = (struct dnshdr *)((char *)frame + tlen);
 	dnshdr->id = 0;
 	dnshdr->flags = 0;
-	dnshdr->qdcount = 1;
+	dnshdr->qdcount = htons(1);
 	dnshdr->ancount = 0;
 	dnshdr->nscount = 0;
 	dnshdr->arcount = 0;
 	tlen += sizeof(struct dnshdr);
+	udp->len = sizeof(struct dnshdr);
 	// FIXME doubt this works
 	memcpy((char *)frame + tlen,question,strlen(question));
 	tlen += strlen(question);
 	thdr->tp_len = tlen;
+	udp->len += strlen(question);
+	udp->len = htons(udp->len);
 	*totlen = htons(tlen - *totlen);
 	send_tx_frame(octx,rp.i,frame);
 }
