@@ -406,6 +406,7 @@ void tx_dns_a(const omphalos_iface *octx,int fam,const void *addr,
 	udp = (struct udphdr *)((char *)frame + tlen);
 	udp->dest = htons(DNS_TARGET_PORT);
 	udp->source = 31337; // FIXME lol
+	udp->check = 0u;
 	tlen += sizeof(*udp);
 	if(flen - tlen < sizeof(*dnshdr) + strlen(question) + 1 + 4){
 		abort_tx_frame(rp.i,frame);

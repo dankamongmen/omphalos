@@ -41,9 +41,8 @@ uint16_t udp4_csum(const void *hdr){
 	const struct udphdr *uh = (const void *)((const char *)hdr + (ih->ihl << 2u));
 	const void *data = (const char *)uh + sizeof(*uh);
 	uint16_t dlen = ntohs(uh->len);
-	const uint_fast16_t *cur;
-	uint_fast16_t sum,fold;
-	const uint16_t *hcur;
+	const uint16_t *cur;
+	uint16_t sum,fold;
 	unsigned z;
 
 	sum = 0;
@@ -51,29 +50,21 @@ uint16_t udp4_csum(const void *hdr){
 	sum += (ih->daddr & 0xffffu) + (ih->daddr >> 16u);
 	sum += ih->protocol;
 	sum += dlen + sizeof(*uh);
-	cur = (const uint_fast16_t *)uh;
-	for(z = 0 ; z < sizeof(*uh) / sizeof(*cur) ; ++z){
+	cur = (const uint16_t *)uh;
+	for(z = 0 ; z < (sizeof(*uh) + dlen) / sizeof(*cur) ; ++z){
 		sum += cur[z];
-	}
-	cur = data;
-	for(z = 0 ; z < dlen / sizeof(*cur) ; ++z){
-		sum += cur[z];
-	}
-	hcur = (const uint16_t *)(cur + z);
-	for(z = 0 ; z < (dlen % sizeof(*cur)) / 2 ; ++z){
-		sum += hcur[z];
 	}
 	if(dlen % 2){
-		sum += ((const unsigned char *)data)[dlen - 1] << 8u;
+		sum += ((uint16_t)(((const unsigned char *)data)[dlen - 1])) << 8u;
 	}
 	fold = 0;
 	for(z = 0 ; z < sizeof(*cur) / 2 ; ++z){
 		fold += sum & 0xffffu;
 		sum >>= 16u;
 	}
-	if(fold == ~0u){
-		fold = 0u;
+	if((fold = ~fold) == 0u){
+		fold = 0xffffu;
 	}
-	return ~fold;
+	return fold;
 }
 
