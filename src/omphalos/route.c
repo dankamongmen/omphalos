@@ -255,6 +255,7 @@ int get_router(int fam,const void *addr,struct routepath *rp){
 		uint128_t tmp; // FIXME so lame
 		unsigned z;
 
+		// Construct a properly-masked version of maskaddr
 		for(z = 0 ; z < len / 4 ; ++z){
 			if(rt->maskbits > 32 * z){
 				if(rt->maskbits >= 32 * (z + 1)){
@@ -262,7 +263,7 @@ int get_router(int fam,const void *addr,struct routepath *rp){
 				}else{
 					uint32_t mask = ~0U << (32 - rt->maskbits % 32);
 
-					tmp[z] = maskaddr[z] & mask;
+					tmp[z] = htonl(maskaddr[z]) & mask;
 				}
 			}else{
 				tmp[z] = 0;
