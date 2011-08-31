@@ -92,20 +92,21 @@ int setup_extended_colors(void){
 #define REFRESH 60 // Screen refresh rate in Hz FIXME
 #include <unistd.h>
 void fade(unsigned sec){
-	const unsigned us = sec * 1000000 / (REFRESH / 2); // max 1/2 of real
+	const unsigned quanta = sec * (REFRESH / 4);
+	const unsigned us = sec * 1000000 / quanta;
 	short or[COLORS],og[COLORS],ob[COLORS];
 	short r[COLORS],g[COLORS],b[COLORS];
-	unsigned quanta = sec * (REFRESH / 2),q;
-	unsigned p;
+	unsigned q;
 
-	attroff(A_BOLD);
-	for(p = 0 ; p < sizeof(or) / sizeof(*or) ; ++p){
-		assert(color_content(p,r + p,g + p,b + p) == OK);
-		or[p] = r[p];
-		og[p] = g[p];
-		ob[p] = b[p];
+	for(q = 0 ; q < sizeof(or) / sizeof(*or) ; ++q){
+		assert(color_content(q,r + q,g + q,b + q) == OK);
+		or[q] = r[q];
+		og[q] = g[q];
+		ob[q] = b[q];
 	}
 	for(q = 0 ; q < quanta ; ++q){
+		unsigned p;
+
 		for(p = 0 ; p < sizeof(r) / sizeof(*r) ; ++p){
 			r[p] -= or[p] / quanta;
 			g[p] -= og[p] / quanta;
@@ -116,12 +117,16 @@ void fade(unsigned sec){
 			init_color(p,r[p],g[p],b[p]);
 		}
 		wrefresh(curscr);
-		usleep(us * 2);
+		usleep(us);
+		// We ought feed back the actual time interval and perhaps
+		// fade more rapidly based on the result. This ought control
+		// flicker in all circumstances, becoming a single palette fade
+		// in the limit (ie, no fade at all).
 	}
 	// FIXME also want all other windows cleared. best to interleave the
 	// fade with actual interface shutdown so they're naturally gone
-	for(p = 0 ; p < sizeof(or) / sizeof(*or) ; ++p){
-		assert(init_color(p,or[p],og[p],ob[p]) == OK);
+	for(q = 0 ; q < sizeof(or) / sizeof(*or) ; ++q){
+		assert(init_color(q,or[q],og[q],ob[q]) == OK);
 	}
 	setup_extended_colors();
 	wrefresh(curscr);
