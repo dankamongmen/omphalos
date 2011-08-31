@@ -13,9 +13,9 @@ struct omphalos_packet;
 void handle_dns_packet(const struct omphalos_iface *,struct omphalos_packet *,
 			const void *,size_t) __attribute__ ((nonnull (1,2,3)));
 
-void tx_dns_a(const struct omphalos_iface *,int,const void *,const char *)
+int tx_dns_a(const struct omphalos_iface *,int,const void *,const char *)
 		__attribute__ ((nonnull (1,3,4)));
-void tx_dns_aaaa(const struct omphalos_iface *,int,const void *,const char *)
+int tx_dns_aaaa(const struct omphalos_iface *,int,const void *,const char *)
 		__attribute__ ((nonnull (1,3,4)));
 
 // Generate reverse DNS lookup strings

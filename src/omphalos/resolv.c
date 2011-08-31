@@ -75,19 +75,23 @@ create_resolvq(struct interface *i,struct l2host *l2,struct l3host *l3){
 int queue_for_naming(const struct omphalos_iface *octx,struct interface *i,
 			struct l2host *l2,struct l3host *l3,dnstxfxn dnsfxn,
 			const char *revstr){
+	int ret;
+
 	if(create_resolvq(i,l2,l3) == NULL){
 		return -1;
 	}
-	pthread_mutex_lock(&resolver_lock);
+	if(pthread_mutex_lock(&resolver_lock)){
+		return -1;
+	}
 	// FIXME round-robin or even use the simple resolv.conf algorithm
 	if(resolvers){
-		dnsfxn(octx,AF_INET,resolvers,revstr);
+		ret = dnsfxn(octx,AF_INET,resolvers,revstr);
 	}
 	if(resolvers6){
-		dnsfxn(octx,AF_INET6,resolvers6,revstr);
+		ret = dnsfxn(octx,AF_INET6,resolvers6,revstr);
 	}
 	pthread_mutex_unlock(&resolver_lock);
-	return 0;
+	return ret;
 }
 
 static void

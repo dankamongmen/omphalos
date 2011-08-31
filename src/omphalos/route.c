@@ -230,7 +230,7 @@ err:
 }
 
 // Determine how to send a packet to a layer 3 address.
-// FIXME this whole functions is just incredibly godawful
+// FIXME this whole function is just incredibly godawful
 int get_router(int fam,const void *addr,struct routepath *rp){
 	uint128_t maskaddr,gw;
 	size_t gwoffset,len;

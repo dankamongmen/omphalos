@@ -12,7 +12,7 @@ struct l2host;
 struct interface;
 struct omphalos_iface;
 
-typedef void
+typedef int
 (*dnstxfxn)(const struct omphalos_iface *,int,const void *,const char *);
 
 int queue_for_naming(const struct omphalos_iface *,struct interface *i,
