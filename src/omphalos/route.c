@@ -192,6 +192,11 @@ int handle_rtm_newroute(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	if(!r->sss.ss_family){ // FIXME very dubious
 		goto err;
 	}
+	if(r->ssg.ss_family){
+		send_arp_probe(octx,r->iface,r->iface->bcast,ag,
+					r->iface->addrlen,as);
+
+	}
 	if(r->family == AF_INET){
 		if(add_route4(octx,r->iface,ad,r->ssg.ss_family ? ag : NULL,r->sss.ss_family ? as : NULL,r->maskbits,iif)){
 			octx->diagnostic("Couldn't add route to %s",r->iface->name);
