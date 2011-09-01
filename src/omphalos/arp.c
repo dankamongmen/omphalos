@@ -76,6 +76,9 @@ void send_arp_probe(const omphalos_iface *octx,interface *i,const void *hwaddr,
 	size_t flen;
 
 	if( (frame = get_tx_frame(octx,i,&flen)) ){
+		char addrstr[HWADDRSTRLEN(addrlen)];
+		hwntop(addr,sizeof(addrstr),addrstr);
+		octx->diagnostic("Probing %s on %s",addrstr,i->name);
 		prepare_arp_probe(octx,i,frame,&flen,hwaddr,i->addrlen,
 					addr,addrlen,saddr);
 		send_tx_frame(octx,i,frame);
