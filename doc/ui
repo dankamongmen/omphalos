@@ -1,12 +1,92 @@
-The UI is modeled on a rotating reel with interfaces printed on the outside
-(think of a slot machine). This way, continuous rotation is possible without
-wraparound at some arbitrary point. This seems much more intuitive on touch
-screens, an eventual environment of omphalos.
+I. Design Principles
 
-Interfaces grow and shrink. It is not useful for an interface to grow larger
-than the screen itself, yet their logical size does arbitrarily grow. We thus
-arbitrarily cap size at the screensize; it is thus required that we can scroll
-through more interface details than can be displayed in the interface.
+Display space is a scarce resource, and we must maximize its utilization. The
+first design principle is thus that there ought never be blank space (save
+kerning at the character and interface level) when data is available for
+display (when the user requests less detail, that means the detailed data is
+unavailable. Collapsed interfaces thus might not fill the screen, though a
+screen's worth of data certainly exists). Horizontal space must be used
+effectively.
+
+Navigation in two dimensions is difficult; our second design principle is thus
+that horizontal movement is modal movement, and not movement within a view. We
+might one day support different views of the data by moving horizontally --
+list views of layer 2 and layer 3 addresses could be useful. No single view,
+however, requires or supports horizontal movement.
+
+II. Organization of interfaces on-screen
+
+There can be more interfaces than there are rows, so even at the lowest level
+of detail, we're not assured that all interfaces can possibly be simultaneously
+onscreen. Thus, we must deal with hidden or partially-hidden interfaces. The UI
+is thus modeled on a rotating reel with interfaces printed on the outside
+(think of a slot machine). The alternatives would be an oriented circular list,
+aka traditional wraparound at some "beginning" and "end" of the list induced by
+a break in symmetry, and absence of wraparound entirely (a simple list). The
+rotating reel more naturally matches gesture and mousewheel (continuous)
+interfaces, while retaining support for button/keyboard (discrete) interfaces.
+Furthermore, certain complexities are avoided (searches can place their results
+anywhere on the screen and still fill the screen, there is no "last interface"
+which, upon a shrink, would also have to move down to fill the screen, etc).
+
+The rotating wheel does have its disadvantages: when there is less than a
+screen's worth of data, there are no effects due arbitrary orientations.
+Wraparound would then be more intuitive than rotation, which in this limit acts
+more like a permutation. Furthermore, gesture-friendly operations like "get the
+second from the top" become impossible. It is rare, however, that so little
+data is available; on the other hand, as the number of interfaces increases,
+fewer and fewer interfaces can be localized with gestures based on a single
+point of orientation. The first issue can be further addressed with smooth
+scrolling (in which case the general movement is indicated). The second issue
+can be addressed with quality search capabilities.
+
+Searching for interfaces requires specification, which is difficult in the
+absence of a keyboard. There thus ought be a navigation widget which compacts
+interfaces, and makes use of wraparound rather than rotation. Within this
+widget, all interfaces are normalized to a single size, and thus the problems
+otherwise associated with wraparound are avoided.
+
+III. Interface display
+
+Interfaces grow and shrink for a number of reasons:
+
+ - new data (possibly expand, possibly beyond screen)
+ - removed data (possibly shrink)
+ - details level increase (possibly expand, possibly beyond screen)
+ - details level decrease (possibly shrink)
+ - state change to DOWN (always shrink)
+ - state change to UP (always expand, possibly beyond screen)
+ - another interface shrinks (possibly expand, possibly move onscreen)
+  - ... or is moved offscreen
+ - another interface expands (possibly shrink, possibly move offscreen)
+    ... or is moved onscreen
+ - becoming the active interface (possibly expand, possibly move onscreen)
+ - becoming an inactive interface (possibly shrink, possibly move offscreen)
+ - screen resize (all cases are possible)
+
+It is not useful for an interface to grow larger than the screen itself, yet
+their logical sizes grow arbitrarily. We cap size at the screensize; it is thus
+required that we can scroll through more interface details than can be
+displayed in the interface, and indicate the presence of undisplayed data.
+
+When an interface is moved, or it grows, it can move on or offscreen. Since
+most row-changing operations are of order less than the interface's vertical
+size, between zero and two interfaces are, logically, partially visible at any
+given time. Rather than draw partial interfaces as expected, however, we always
+draw fully boxed interfaces, even if the box is all that is displayed (at the
+expense of up to one line of interface details, and violation of the Law of
+Least Astonishment). This is due to three facts:
+
+ - an interface logically larger than the screen could then partially spill
+    across both screen boundaries, conflating scrolling of intrainterface data
+    with that of scrolling interfaces themselves,
+ - interfaces themselves *do* have vertical orientation; the interface name,
+    arguably necessary for sensible interpretation of any data, is printed on
+    the top border. thus it is undesirable to display an interface without
+    displaying its top border, as could happen at the top of the screen. this
+    is not a worry on the bottom of the screen, but partial interfaces on only
+    half the screen would be the least sane option of all, and
+ - it is slightly easier to implement.
 
 If any interfaces are displayed, one is the "current interface", the default
 target of UI actions. This interface ought always be onscreen. Since it can
