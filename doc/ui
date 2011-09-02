@@ -1,0 +1,27 @@
+The UI is modeled on a rotating reel with interfaces printed on the outside
+(think of a slot machine). This way, continuous rotation is possible without
+wraparound at some arbitrary point. This seems much more intuitive on touch
+screens, an eventual environment of omphalos.
+
+Interfaces grow and shrink. It is not useful for an interface to grow larger
+than the screen itself, yet their logical size does arbitrarily grow. We thus
+arbitrarily cap size at the screensize; it is thus required that we can scroll
+through more interface details than can be displayed in the interface.
+
+If any interfaces are displayed, one is the "current interface", the default
+target of UI actions. This interface ought always be onscreen. Since it can
+grow arbitrarily, starting from some size at some row, we must support pushing
+interfaces both up and down, and possibly offscreen. Pushing on an interface
+means that interface pushes in the same direction; growing an interface can
+thus result in numerous interfaces being pushed. Interfaces other than the
+current interface can also grow, though they must not push the current
+interface offscreen. While the current interface can grow in either direction,
+other interfaces will:
+
+ - grow in the direction opposite the current, unless this would push them
+    partially offscreen (it's best if the current interface not move at all).
+ - otherwise, push in the direction of the current interface, unless this would
+    push the current interface partially offscreen (better to move the current
+    interface than to possibly hide the new data).
+ - otherwise, partially push themselves offscreen.
+
