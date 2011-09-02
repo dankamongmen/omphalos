@@ -224,7 +224,8 @@ print_iface_hosts(const interface *i,const iface_state *is,int rows,int cols){
 				assert(mvwprintw(is->subwin,line,1,"    %s %s",nw,name) != ERR);
 				{
 					char sbuf[PREFIXSTRLEN + 1],dbuf[PREFIXSTRLEN + 1];
-					mvwprintw(is->subwin,line,cols - PREFIXSTRLEN * 2 - 2,PREFIXFMT" "PREFIXFMT,prefix(l3_get_srcpkt(l3->l3),1,sbuf,sizeof(sbuf),1),
+					mvwprintw(is->subwin,line,cols - PREFIXSTRLEN * 2 - 2,PREFIXFMT" "PREFIXFMT,
+							prefix(l3_get_srcpkt(l3->l3),1,sbuf,sizeof(sbuf),1),
 							prefix(l3_get_dstpkt(l3->l3),1,dbuf,sizeof(dbuf),1));
 				}
 				assert(wattrset(is->subwin,attrs) != ERR);
@@ -374,7 +375,7 @@ void iface_box(const interface *i,const iface_state *is,int active){
 }
 
 static void
-print_iface_state(const interface *i,const iface_state *is,int rows){
+print_iface_state(const interface *i,const iface_state *is,int rows,int cols){
 	char buf[U64STRLEN + 1],buf2[U64STRLEN + 1];
 	unsigned long usecdomain;
 
@@ -387,10 +388,11 @@ print_iface_state(const interface *i,const iface_state *is,int rows){
 	// FIXME this leads to a "ramp-up" period where we approach steady state
 	usecdomain = i->bps.usec * i->bps.total;
 	assert(mvwprintw(is->subwin,1,1,"Last %lus: %7sb/s (%sp) Nodes: %-5u",
-				usecdomain / 1000000,
-				prefix(timestat_val(&i->bps) * CHAR_BIT * 1000000 * 100 / usecdomain,100,buf,sizeof(buf),0),
-				prefix(timestat_val(&i->fps),1,buf2,sizeof(buf2),1),
-				is->nodes) != ERR);
+		usecdomain / 1000000,
+		prefix(timestat_val(&i->bps) * CHAR_BIT * 1000000 * 100 / usecdomain,100,buf,sizeof(buf),0),
+		prefix(timestat_val(&i->fps),1,buf2,sizeof(buf2),1),
+		is->nodes) != ERR);
+	assert(mvwprintw(is->subwin,1,cols - PREFIXSTRLEN * 2 + 2,"Src    Dest") != ERR);
 }
 
 void free_iface_state(iface_state *is){
@@ -408,11 +410,10 @@ void redraw_iface(const iface_state *is,int active){
 	int rows,cols;
 
 	getmaxyx(is->subwin,rows,cols);
-	assert(cols); // FIXME
 	assert(werase(is->subwin) != ERR);
 	iface_box(i,is,active);
 	if(interface_up_p(i)){
-		print_iface_state(i,is,rows);
+		print_iface_state(i,is,rows,cols);
 	}
 	print_iface_hosts(i,is,rows,cols);
 }
