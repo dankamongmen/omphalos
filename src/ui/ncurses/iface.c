@@ -204,7 +204,7 @@ print_iface_hosts(const interface *i,const iface_state *is,int rows,int cols){
 		}else{
 			assert(mvwprintw(is->subwin,line,1," %c %s",legend,hw) != ERR);
 		}
-		{
+		if(interface_up_p(i)){
 			char sbuf[PREFIXSTRLEN + 1],dbuf[PREFIXSTRLEN + 1];
 			mvwprintw(is->subwin,line,cols - PREFIXSTRLEN * 2 - 2,PREFIXFMT" "PREFIXFMT,prefix(get_srcpkts(l->l2),1,sbuf,sizeof(sbuf),1),
 					prefix(get_dstpkts(l->l2),1,dbuf,sizeof(dbuf),1));
