@@ -104,4 +104,3 @@ other interfaces will:
     push the current interface partially offscreen (better to move the current
     interface than to possibly hide the new data).
  - otherwise, partially push themselves offscreen.
-
