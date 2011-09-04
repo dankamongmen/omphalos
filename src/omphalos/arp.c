@@ -54,7 +54,6 @@ void handle_arp_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 	op->l3s = lookup_l3host(octx,op->i,op->l2s,fam,saddr);
 	switch(ap->ar_op){
 	case __constant_ntohs(ARPOP_REQUEST):{
-		octx->diagnostic("arp probe");
 		//name_l3host_local(octx,op->i,op->l2s,op->l3s,fam,saddr);
 		// FIXME reply with ARP spoof...
 		break;

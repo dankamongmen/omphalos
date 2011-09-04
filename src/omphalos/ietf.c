@@ -12,6 +12,7 @@
 #define RFC1112_LOCAL_BASE __constant_htonl(0xe0000000)
 #define RFC1112_LOCAL_MASK __constant_htonl(0xffffff00)
 
+// The 224.0.0.0/24 administered IPv4 multicast addresses
 #define RFC1112_LOCAL_ALL_HOSTS		__constant_htonl(0xe0000001)
 #define RFC1112_LOCAL_ALL_ROUTERS	__constant_htonl(0xe0000002)
 #define RFC1112_LOCAL_IGMP3		__constant_htonl(0xe0000016)
@@ -51,6 +52,11 @@ static const struct {
 		.ip = { __constant_htonl(0xff020000), __constant_htonl(0x00000000),
 			__constant_htonl(0x00000000), __constant_htonl(0x00000002), },
 		.name = "All segment routers (RFC 2375)",
+	},
+	{ // ff02::16
+		.ip = { __constant_htonl(0xff020000), __constant_htonl(0x00000000),
+			__constant_htonl(0x00000000), __constant_htonl(0x00000016), },
+		.name = "MLDv2 (RFC 4604)",
 	},
 	{ // ff02::fb
 		.ip = { __constant_htonl(0xff020000), __constant_htonl(0x00000000),
