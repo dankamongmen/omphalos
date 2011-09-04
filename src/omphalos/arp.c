@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <sys/socket.h>
 #include <omphalos/tx.h>
 #include <linux/if_arp.h>
@@ -8,6 +9,8 @@
 #include <omphalos/omphalos.h>
 #include <omphalos/ethernet.h>
 #include <omphalos/interface.h>
+
+static const unsigned char PROBESRC[16] = {};
 
 void handle_arp_packet(const omphalos_iface *octx,omphalos_packet *op,const void *frame,size_t len){
 	const struct arphdr *ap = frame;
@@ -52,8 +55,12 @@ void handle_arp_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 	}
 	saddr = (const char *)ap + sizeof(*ap) + ap->ar_hln;
 	// ARP probes as specified by RFC 5227 set the source address to
-	// 0.0.0.0; these oughtn't be linked to the hardware addresses...FIXME
-	op->l3s = lookup_local_l3host(octx,op->i,op->l2s,fam,saddr);
+	// 0.0.0.0; these oughtn't be linked to the hardware addresses.
+	if(ap->ar_pln <= sizeof(PROBESRC)){
+		if(memcmp(PROBESRC,saddr,ap->ar_pln)){
+			op->l3s = lookup_local_l3host(octx,op->i,op->l2s,fam,saddr);
+		}
+	}
 	switch(ap->ar_op){
 	case __constant_ntohs(ARPOP_REQUEST):{ // FIXME reply with ARP spoof...
 		break;
@@ -67,7 +74,11 @@ void handle_arp_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 		cat = l2categorize(op->i,op->l2d);
 		if(cat == RTN_LOCAL || cat == RTN_UNICAST){
 			daddr = (const char *)ap + sizeof(*ap) + ap->ar_hln * 2 + ap->ar_pln;
-			op->l3d = lookup_local_l3host(octx,op->i,op->l2d,fam,daddr);
+			if(ap->ar_pln <= sizeof(PROBESRC)){
+				if(memcmp(PROBESRC,daddr,ap->ar_pln)){
+					op->l3d = lookup_local_l3host(octx,op->i,op->l2d,fam,daddr);
+				}
+			}
 		}
 		break;
 	}default:{
@@ -84,9 +95,9 @@ void send_arp_probe(const omphalos_iface *octx,interface *i,const void *hwaddr,
 	size_t flen;
 
 	if( (frame = get_tx_frame(octx,i,&flen)) ){
-		char addrstr[HWADDRSTRLEN(addrlen)];
-		hwntop(addr,sizeof(addrstr),addrstr);
-		octx->diagnostic("Probing %s on %s",addrstr,i->name);
+		/*char addrstr[INET6_ADDRSTRLEN];
+		inet_ntop(addrlen == 4 ? AF_INET:AF_INET6,addr,addrstr,sizeof(addrstr));
+		octx->diagnostic("Probing %s on %s",addrstr,i->name);*/
 		prepare_arp_probe(octx,i,frame,&flen,hwaddr,i->addrlen,
 					addr,addrlen,saddr);
 		send_tx_frame(octx,i,frame);
