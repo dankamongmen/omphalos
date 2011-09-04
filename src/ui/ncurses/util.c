@@ -74,7 +74,7 @@ char *genprefix(uintmax_t val,unsigned decimal,char *buf,size_t bsize,
 int setup_extended_colors(void){
 	int ret = OK;
 
-	if(can_change_color() != TRUE){
+	/*if(can_change_color() != TRUE){
 		return ERR;
 	}
 	// rgb of 0->0, 85->333, 128->500, 170->666, 192->750, 255->999
@@ -85,7 +85,7 @@ int setup_extended_colors(void){
 	ret |= init_color(9,999,333,333);
 	ret |= init_color(10,333,999,333);
 	ret |= init_color(12,333,333,999);
-	ret |= wrefresh(curscr);
+	ret |= wrefresh(curscr);*/
 	return ret;
 }
 

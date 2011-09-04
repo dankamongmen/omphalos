@@ -1481,9 +1481,9 @@ int main(int argc,char * const *argv){
 		fprintf(stderr,"Error in omphalos_init() (%s?)\n",strerror(err));
 		return EXIT_FAILURE;
 	}
-	pthread_mutex_lock(&bfl);
+	/*pthread_mutex_lock(&bfl);
 	fade(1);
-	pthread_mutex_unlock(&bfl);
+	pthread_mutex_unlock(&bfl);*/
 	omphalos_cleanup(&pctx);
 	if(mandatory_cleanup(&pad)){
 		return EXIT_FAILURE;
