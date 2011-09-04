@@ -103,15 +103,9 @@ struct l3host *find_l3host(interface *i,int fam,const void *addr){
 	return NULL;
 }
 
-// This is for raw network addresses as seen on the wire, which may be from
-// outside the local network. We want only the local network address(es) of the
-// link (in a rare case, it might not have any). For unicast link addresses, a
-// route lookup will be performed using the wire network address. If the route
-// returned is different from the wire address, an ARP probe is directed to the
-// link-layer address (this is all handled by get_route()). ARP replies are
-// link-layer only, and thus processed directly (name_l2host_local()).
-struct l3host *lookup_l3host(const omphalos_iface *octx,interface *i,
-				struct l2host *l2,int fam,const void *addr){
+static l3host *
+lookup_l3host_common(const omphalos_iface *octx,interface *i,struct l2host *l2,
+			int fam,const void *addr,int knownlocal){
 	char *(*revstrfxn)(const void *);
         l3host *l3,**prev,**orig;
 	typeof(l3->addr) cmp;
@@ -144,16 +138,18 @@ struct l3host *lookup_l3host(const omphalos_iface *octx,interface *i,
 	}
 	if(routed_family_p(fam)){
 		if((cat = l2categorize(i,l2)) == RTN_UNICAST || cat == RTN_LOCAL){
-			struct sockaddr_storage ss;
-			hwaddrint hwaddr = get_hwaddr(l2);
-			// FIXME throwing out anything to which we have no
-			// route means we basically don't work pre-config.
-			// addresses pre-configuration have information, but
-			// are inferior to those post-configuration. we need a
-			// means of *updating* names whenever routes change,
-			// or as close to true route cache behavior as we like
-			if(get_unicast_address(octx,i,&hwaddr,fam,addr,&ss) == NULL){
-				return &external_l3; // FIXME terrible
+			if(!knownlocal){
+				struct sockaddr_storage ss;
+				hwaddrint hwaddr = get_hwaddr(l2);
+				// FIXME throwing out anything to which we have no
+				// route means we basically don't work pre-config.
+				// addresses pre-configuration have information, but
+				// are inferior to those post-configuration. we need a
+				// means of *updating* names whenever routes change,
+				// or as close to true route cache behavior as we like
+				if(get_unicast_address(octx,i,&hwaddr,fam,addr,&ss) == NULL){
+					return &external_l3; // FIXME terrible
+				}
 			}
 		}
 	}else{
@@ -199,6 +195,23 @@ struct l3host *lookup_l3host(const omphalos_iface *octx,interface *i,
 		}
         }
         return l3;
+}
+
+// This is for raw network addresses as seen on the wire, which may be from
+// outside the local network. We want only the local network address(es) of the
+// link (in a rare case, it might not have any). For unicast link addresses, a
+// route lookup will be performed using the wire network address. If the route
+// returned is different from the wire address, an ARP probe is directed to the
+// link-layer address (this is all handled by get_route()). ARP replies are
+// link-layer only, and thus processed directly (name_l2host_local()).
+l3host *lookup_l3host(const omphalos_iface *octx,interface *i,
+				struct l2host *l2,int fam,const void *addr){
+	return lookup_l3host_common(octx,i,l2,fam,addr,0);
+}
+
+l3host *lookup_local_l3host(const omphalos_iface *octx,interface *i,
+				struct l2host *l2,int fam,const void *addr){
+	return lookup_l3host_common(octx,i,l2,fam,addr,1);
 }
 
 void name_l3host_local(const omphalos_iface *octx,const interface *i,
