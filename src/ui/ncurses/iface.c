@@ -363,6 +363,7 @@ void iface_box(const interface *i,const iface_state *is,int active){
 	assert(wprintw(w,"]") != ERR);
 	if( (buslen = strlen(i->drv.bus_info)) ){
 		if(active){
+			// FIXME Want the text to be bold -- currently unreadable
 			assert(wattrset(w,A_REVERSE | COLOR_PAIR(bcolor)) != ERR);
 		}else{
 			assert(wattrset(w,COLOR_PAIR(bcolor) | A_BOLD) != ERR);
