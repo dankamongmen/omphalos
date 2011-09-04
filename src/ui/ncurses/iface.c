@@ -37,16 +37,17 @@ iface_state *create_interface_state(interface *i){
 	iface_state *ret;
 	const char *tstr;
 
-	if( (tstr = lookup_arptype(i->arptype,NULL)) ){
-		if( (ret = malloc(sizeof(*ret))) ){
-			ret->hosts = ret->nodes = 0;
-			ret->l2objs = NULL;
-			ret->devaction = 0;
-			ret->typestr = tstr;
-			ret->lastprinted.tv_sec = ret->lastprinted.tv_usec = 0;
-			ret->iface = i;
-			ret->expansion = EXPANSION_MAX;
-		}
+	if((tstr = lookup_arptype(i->arptype,NULL)) == NULL){
+		return NULL;
+	}
+	if( (ret = malloc(sizeof(*ret))) ){
+		ret->hosts = ret->nodes = 0;
+		ret->l2objs = NULL;
+		ret->devaction = 0;
+		ret->typestr = tstr;
+		ret->lastprinted.tv_sec = ret->lastprinted.tv_usec = 0;
+		ret->iface = i;
+		ret->expansion = EXPANSION_MAX;
 	}
 	return ret;
 }
@@ -186,6 +187,9 @@ print_iface_hosts(const interface *i,const iface_state *is,int rows,int cols){
 				attrs = COLOR_PAIR(BCAST_COLOR);
 				devname = get_devname(l->l2);
 				legend = 'B';
+				break;
+			default:
+				assert(0 && "Unknown l2 category");
 				break;
 		}
 		if(!interface_up_p(i)){
