@@ -75,7 +75,7 @@ create_resolvq(struct interface *i,struct l2host *l2,struct l3host *l3){
 int queue_for_naming(const struct omphalos_iface *octx,struct interface *i,
 			struct l2host *l2,struct l3host *l3,dnstxfxn dnsfxn,
 			const char *revstr){
-	int ret;
+	int ret = 0;
 
 	if(create_resolvq(i,l2,l3) == NULL){
 		return -1;
