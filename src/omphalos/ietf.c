@@ -14,6 +14,7 @@
 
 #define RFC1112_LOCAL_ALL_HOSTS		__constant_htonl(0xe0000001)
 #define RFC1112_LOCAL_ALL_ROUTERS	__constant_htonl(0xe0000002)
+#define RFC1112_LOCAL_IGMP3		__constant_htonl(0xe0000016)
 #define RFC1112_LOCAL_MDNS		__constant_htonl(0xe00000fb)
 
 #include <stdio.h>
@@ -29,6 +30,8 @@ ietf_multicast_ipv4(const uint32_t *ip){
 		return "All segment hosts (RFC 1112)";
 	}else if(*ip == RFC1112_LOCAL_ALL_ROUTERS){
 		return "All segment routers (RFC 1112)";
+	}else if(*ip == RFC1112_LOCAL_IGMP3){
+		return "IGMPv3 (RFC 1054)";
 	}else if(*ip == RFC1112_LOCAL_MDNS){
 		return "mDNS (IANA)";
 	}
