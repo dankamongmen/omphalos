@@ -467,7 +467,7 @@ char *rev_dns_a(const void *i4){
 	if( (buf = malloc(l)) ){
 		uint32_t mask;
 		unsigned shr;
-		int r;
+		int r = 0;
 
 		for(mask = 0xff000000u, shr = 24 ; mask ; mask >>= 8u, shr -= 8){
 			int r2;
