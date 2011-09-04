@@ -51,6 +51,8 @@ void handle_arp_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 			break;
 	}
 	saddr = (const char *)ap + sizeof(*ap) + ap->ar_hln;
+	// ARP probes as specified by RFC 5227 set the source address to
+	// 0.0.0.0; these oughtn't be linked to the hardware addresses...FIXME
 	op->l3s = lookup_local_l3host(octx,op->i,op->l2s,fam,saddr);
 	switch(ap->ar_op){
 	case __constant_ntohs(ARPOP_REQUEST):{ // FIXME reply with ARP spoof...

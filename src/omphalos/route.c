@@ -22,6 +22,7 @@ typedef struct route {
 } route;
 
 static route *ip_table4,*ip_table6;
+static pthread_mutex_t route_lock = PTHREAD_MUTEX_INITIALIZER;
 
 // To do longest-match routing, we need to keep:
 //  (a) a partition of the address space, pointing to the longest match for
@@ -186,25 +187,27 @@ int handle_rtm_newroute(const omphalos_iface *octx,const struct nlmsghdr *nl){
 		free_route(r);
 		return 0;
 	}
-	if(r->ssg.ss_family){
-		send_arp_probe(octx,r->iface,r->iface->bcast,ag,
-					r->iface->addrlen,as);
-
-	}
 	if(r->family == AF_INET){
 		if(add_route4(octx,r->iface,ad,r->ssg.ss_family ? ag : NULL,r->sss.ss_family ? as : NULL,r->maskbits,iif)){
 			octx->diagnostic("Couldn't add route to %s",r->iface->name);
 			goto err;
 		}
-		r->next = ip_table4;
-		ip_table4 = r;
+		if(r->ssg.ss_family){
+			send_arp_probe(octx,r->iface,r->iface->bcast,ag,flen,as);
+		}
+		pthread_mutex_lock(&route_lock);
+			r->next = ip_table4;
+			ip_table4 = r;
+		pthread_mutex_unlock(&route_lock);
 	}else if(r->family == AF_INET6){
 		if(add_route6(octx,r->iface,ad,r->ssg.ss_family ? ag : NULL,r->sss.ss_family ? as : NULL,r->maskbits,iif)){
 			octx->diagnostic("Couldn't add route to %s",r->iface->name);
 			goto err;
 		}
-		r->next = ip_table6;
-		ip_table6 = r;
+		pthread_mutex_lock(&route_lock);
+			r->next = ip_table6;
+			ip_table6 = r;
+		pthread_mutex_unlock(&route_lock);
 	}
 	// FIXME need a route callback in octx
 	/*{
@@ -250,6 +253,7 @@ int get_router(int fam,const void *addr,struct routepath *rp){
 	}else{
 		return -1;
 	}
+	pthread_mutex_lock(&route_lock);
 	while(rt){
 		uint128_t tmp; // FIXME so lame
 		unsigned z;
@@ -273,20 +277,20 @@ int get_router(int fam,const void *addr,struct routepath *rp){
 		}
 		rt = rt->next;
 	}
-	if(rt == NULL){
-		return -1;
+	if(rt){
+		rp->i = rt->iface;
+		memcpy(&rp->src,(const char *)&rt->sss + gwoffset,len);
+		memset(&gw,0,sizeof(gw));
+		memcpy(&gw,rt->ssg.ss_family ? (const char *)&rt->ssg + gwoffset : addr,len);
+		if( (rp->l3 = find_l3host(rp->i,fam,&gw)) ){
+			if( (rp->l2 = l3_getlastl2(rp->l3)) ){
+				pthread_mutex_unlock(&route_lock);
+				return 0;
+			}
+		}
 	}
-	rp->i = rt->iface;
-	memcpy(&rp->src,(const char *)&rt->sss + gwoffset,len);
-	memset(&gw,0,sizeof(gw));
-	memcpy(&gw,rt->ssg.ss_family ? (const char *)&rt->ssg + gwoffset : addr,len);
-	if((rp->l3 = find_l3host(rp->i,fam,&gw)) == NULL){
-		return -1;
-	}
-	if((rp->l2 = l3_getlastl2(rp->l3)) == NULL){
-		return -1;
-	}
-	return 0;
+	pthread_mutex_unlock(&route_lock);
+	return -1;
 }
 
 // Call get_router() on the address, acquire a TX frame from the discovered
@@ -314,4 +318,5 @@ void free_routes(void){
 		ip_table6 = rt->next;
 		free_route(rt);
 	}
+	pthread_mutex_destroy(&route_lock);
 }
