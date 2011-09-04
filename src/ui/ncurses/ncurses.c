@@ -222,30 +222,33 @@ resize_iface(const interface *i,iface_state *is){
 		if(nlines < subrows){
 			assert(werase(is->subwin) == OK);
 			screen_update();
-		}
-		// Try to expand down first. If that won't work, expand up.
-		if(nlines + is->scrline < rows){
-			int delta = nlines - subrows;
-
-			if(push_interfaces_below(is,rows,delta)){
-				return OK;
-			}
 			assert(wresize(is->subwin,nlines,PAD_COLS(cols)) != ERR);
 			assert(replace_panel(is->panel,is->subwin) != ERR);
-		}else if(is->scrline != 1){
-			int delta = nlines - subrows;
+		}else{
+			// Try to expand down first. If that won't work, expand up.
+			if(nlines + is->scrline < rows){
+				int delta = nlines - subrows;
 
-			if(delta > is->scrline - 1){
-				delta = is->scrline - 1;
+				if(push_interfaces_below(is,rows,delta)){
+					return OK;
+				}
+				assert(wresize(is->subwin,nlines,PAD_COLS(cols)) != ERR);
+				assert(replace_panel(is->panel,is->subwin) != ERR);
+			}else if(is->scrline != 1){
+				int delta = nlines - subrows;
+
+				if(delta > is->scrline - 1){
+					delta = is->scrline - 1;
+				}
+				is->scrline -= delta;
+				if(push_interfaces_above(is,rows,-delta)){
+					is->scrline += delta;
+					return OK;
+				}
+				assert(move_panel(is->panel,is->scrline,1) != ERR);
+				assert(wresize(is->subwin,iface_lines_bounded(i,is,rows),PAD_COLS(cols)) != ERR);
+				assert(replace_panel(is->panel,is->subwin) != ERR);
 			}
-			is->scrline -= delta;
-			if(push_interfaces_above(is,rows,-delta)){
-				is->scrline += delta;
-				return OK;
-			}
-			assert(move_panel(is->panel,is->scrline,1) != ERR);
-			assert(wresize(is->subwin,iface_lines_bounded(i,is,rows),PAD_COLS(cols)) != ERR);
-			assert(replace_panel(is->panel,is->subwin) != ERR);
 		}
 	}
 	redraw_iface_generic(is);
