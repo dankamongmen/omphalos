@@ -20,7 +20,7 @@ BIN:=$(addprefix $(OMPHALOS)-,$(UI))
 DFLAGS:=-D_FILE_OFFSET_BITS=64 -D_XOPEN_SOURCE_EXTENDED -D_GNU_SOURCE
 CFLAGS+=$(DFLAGS) -march=native -pthread -I$(SRC) -fpic -fstrict-aliasing -fvisibility=hidden -Wall -W -Wextra -Werror -O2
 DBCFLAGS+=$(DFLAGS) -march=native -pthread -I$(SRC) -fpic -fstrict-aliasing -fvisibility=hidden -Wall -W -Wextra -Werror -g -ggdb
-#CFLAGS:=$(DBCFLAGS)
+CFLAGS:=$(DBCFLAGS)
 # FIXME can't use --default-symver with GNU gold
 LFLAGS+=-Wl,-O2,--enable-new-dtags,--as-needed,--warn-common
 LFLAGS+=-lpcap -lcap -lpciaccess -lsysfs
