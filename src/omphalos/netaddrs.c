@@ -137,7 +137,8 @@ lookup_l3host_common(const omphalos_iface *octx,interface *i,struct l2host *l2,
 			return NULL; // FIXME
 	}
 	if(routed_family_p(fam)){
-		if((cat = l2categorize(i,l2)) == RTN_UNICAST || cat == RTN_LOCAL){
+		cat = l2categorize(i,l2);
+		if(cat == RTN_UNICAST || cat == RTN_LOCAL){
 			if(!knownlocal){
 				struct sockaddr_storage ss;
 				hwaddrint hwaddr = get_hwaddr(l2);

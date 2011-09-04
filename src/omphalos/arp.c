@@ -56,8 +56,17 @@ void handle_arp_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 	case __constant_ntohs(ARPOP_REQUEST):{ // FIXME reply with ARP spoof...
 		break;
 	}case __constant_ntohs(ARPOP_REPLY):{
-		daddr = (const char *)ap + sizeof(*ap) + ap->ar_hln * 2 + ap->ar_pln;
-		op->l3d = lookup_local_l3host(octx,op->i,op->l2d,fam,daddr);
+		int cat;
+
+		// Sometimes, arp replies will be sent to the medium's broadcast
+		// address, but a host's network address. Don't look up l3d for
+		// a broadcast address. Hack! FIXME what we really want to do
+		// is issue an ARP request for any address seen here...
+		cat = l2categorize(op->i,op->l2d);
+		if(cat == RTN_LOCAL || cat == RTN_UNICAST){
+			daddr = (const char *)ap + sizeof(*ap) + ap->ar_hln * 2 + ap->ar_pln;
+			op->l3d = lookup_local_l3host(octx,op->i,op->l2d,fam,daddr);
+		}
 		break;
 	}default:{
 		++op->i->noprotocol;
