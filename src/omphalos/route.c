@@ -109,12 +109,13 @@ int handle_rtm_newroute(const omphalos_iface *octx,const struct nlmsghdr *nl){
 		switch(ra->rta_type){
 		case RTA_DST:{
 			if(RTA_PAYLOAD(ra) != flen){
-				octx->diagnostic("Expected %zu src bytes, got %lu",
+				octx->diagnostic("Expected %zu dst bytes, got %lu",
 						flen,RTA_PAYLOAD(ra));
 				break;
 			}
 			memcpy(ad,RTA_DATA(ra),flen);
-		break;}case RTA_SRC:{
+		break;}case RTA_PREFSRC: case RTA_SRC:{
+			// FIXME do we not want to prefer PREFSRC?
 			if(RTA_PAYLOAD(ra) != flen){
 				octx->diagnostic("Expected %zu src bytes, got %lu",
 						flen,RTA_PAYLOAD(ra));
@@ -124,14 +125,14 @@ int handle_rtm_newroute(const omphalos_iface *octx,const struct nlmsghdr *nl){
 			r->sss.ss_family = r->family;
 		break;}case RTA_IIF:{
 			if(RTA_PAYLOAD(ra) != sizeof(int)){
-				octx->diagnostic("Expected %zu iface bytes, got %lu",
+				octx->diagnostic("Expected %zu iiface bytes, got %lu",
 						sizeof(int),RTA_PAYLOAD(ra));
 				break;
 			}
 			iif = *(int *)RTA_DATA(ra);
 		break;}case RTA_OIF:{
 			if(RTA_PAYLOAD(ra) != sizeof(int)){
-				octx->diagnostic("Expected %zu iface bytes, got %lu",
+				octx->diagnostic("Expected %zu oiface bytes, got %lu",
 						sizeof(int),RTA_PAYLOAD(ra));
 				break;
 			}
@@ -152,15 +153,6 @@ int handle_rtm_newroute(const omphalos_iface *octx,const struct nlmsghdr *nl){
 				r->ssg.ss_family = r->family;
 			}
 		break;}case RTA_PRIORITY:{
-		break;}case RTA_PREFSRC:{
-			// FIXME can be blown away by regular src item
-			if(RTA_PAYLOAD(ra) != flen){
-				octx->diagnostic("Expected %zu src bytes, got %lu",
-						flen,RTA_PAYLOAD(ra));
-				break;
-			}
-			memcpy(as,RTA_DATA(ra),flen);
-			r->sss.ss_family = r->family;
 		break;}case RTA_METRICS:{
 		break;}case RTA_MULTIPATH:{
 		// break;}case RTA_PROTOINFO:{ // unused
@@ -185,12 +177,14 @@ int handle_rtm_newroute(const omphalos_iface *octx,const struct nlmsghdr *nl){
 			octx->diagnostic("Unknown output interface %d on %s",oif,r->iface->name);
 			goto err;
 		}
-	}else{
-		// blackhole routes typically have no output interface
-		return 0;
 	}
-	if(!r->sss.ss_family){ // FIXME very dubious
-		goto err;
+	// We're not interest in blackholes, unreachables, prohibits, NATs yet
+	if(rt->rtm_type != RTN_UNICAST && rt->rtm_type != RTN_LOCAL
+			&& rt->rtm_type != RTN_BROADCAST
+			&& rt->rtm_type != RTN_ANYCAST
+			&& rt->rtm_type != RTN_MULTICAST){
+		free_route(r);
+		return 0;
 	}
 	if(r->ssg.ss_family){
 		send_arp_probe(octx,r->iface,r->iface->bcast,ag,
