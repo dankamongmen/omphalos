@@ -6,17 +6,32 @@
 #include <asm/byteorder.h>
 #include <omphalos/ietf.h>
 
+// IPv4 Multicast is currently defined by RFC 5771 and RFC 2780
+
+// The 224.0.0.0/4 multicast address space
 #define RFC1112_BASE __constant_htonl(0xe0000000)
 #define RFC1112_MASK __constant_htonl(0xe0000000)
 
+// The 224.0.0.0/24 Local Network Control Block
 #define RFC1112_LOCAL_BASE __constant_htonl(0xe0000000)
 #define RFC1112_LOCAL_MASK __constant_htonl(0xffffff00)
-
-// The 224.0.0.0/24 administered IPv4 multicast addresses
 #define RFC1112_LOCAL_ALL_HOSTS		__constant_htonl(0xe0000001)
 #define RFC1112_LOCAL_ALL_ROUTERS	__constant_htonl(0xe0000002)
+#define RFC1112_LOCAL_DVMRP		__constant_htonl(0xe0000004)
 #define RFC1112_LOCAL_IGMP3		__constant_htonl(0xe0000016)
 #define RFC1112_LOCAL_MDNS		__constant_htonl(0xe00000fb)
+
+// The 224.0.1.0/24 Internetwork Control Block
+#define IPV4_INTERNETWORK_BASE		__constant_htonl(0xe0000100)
+#define IPV4_INTERNETWORK_MASK		__constant_htonl(0xffffff00)
+#define IPV4_INTERNETWORK_NTP		__constant_htonl(0xe0000101)
+#define IPV4_INTERNETWORK_MDHCPDISC	__constant_htonl(0xe0000144)
+
+// The 239.255.255.0/24 Administratively Scoped Block
+#define IPV4_ADMINSCOPED_BASE		__constant_htonl(0xefffff00)
+#define IPV4_ADMINSCOPED_MASK		__constant_htonl(0xffffff00)
+#define IPV4_ADMINSCOPED_SSDP		__constant_htonl(0xeffffffa)
+#define IPV4_ADMINSCOPED_SLP		__constant_htonl(0xeffffffd)
 
 #include <stdio.h>
 static const char *
@@ -24,19 +39,35 @@ ietf_multicast_ipv4(const uint32_t *ip){
 	if((*ip & RFC1112_MASK) != RFC1112_BASE){
 		return NULL;
 	}
-	if((*ip & RFC1112_LOCAL_MASK) != RFC1112_LOCAL_BASE){
-		return "RFC 1112 multicast";
+	if((*ip & RFC1112_LOCAL_MASK) == RFC1112_LOCAL_BASE){
+		if(*ip == RFC1112_LOCAL_ALL_HOSTS){
+			return "All segment hosts (RFC 1112)";
+		}else if(*ip == RFC1112_LOCAL_ALL_ROUTERS){
+			return "All segment routers (RFC 1112)";
+		}else if(*ip == RFC1112_LOCAL_DVMRP){
+			return "DVMRP (RFC 1075)";
+		}else if(*ip == RFC1112_LOCAL_IGMP3){
+			return "IGMPv3 (RFC 1054)";
+		}else if(*ip == RFC1112_LOCAL_MDNS){
+			return "mDNS (IANA)";
+		}
+		return "RFC 5771 local network multicast";
+	}else if((*ip & IPV4_INTERNETWORK_MASK) == IPV4_INTERNETWORK_BASE){
+		if(*ip == IPV4_INTERNETWORK_NTP){
+			return "SNTPv4 (RFC 4330)";
+		}else if(*ip == IPV4_INTERNETWORK_MDHCPDISC){
+			return "mdhcpdiscover (RFC 2730)";
+		}
+		return "RFC 5771 internetwork multicast";
+	}else if((*ip & IPV4_ADMINSCOPED_MASK) == IPV4_ADMINSCOPED_BASE){
+		if(*ip == IPV4_ADMINSCOPED_SSDP){
+			return "SSDP (UPnP 1.1)";
+		}else if(*ip == IPV4_ADMINSCOPED_SLP){
+			return "Admin-scoped SLPv2 (RFC 2608)";
+		}
+		return "RFC 5771 admin-scoped multicast";
 	}
-	if(*ip == RFC1112_LOCAL_ALL_HOSTS){
-		return "All segment hosts (RFC 1112)";
-	}else if(*ip == RFC1112_LOCAL_ALL_ROUTERS){
-		return "All segment routers (RFC 1112)";
-	}else if(*ip == RFC1112_LOCAL_IGMP3){
-		return "IGMPv3 (RFC 1054)";
-	}else if(*ip == RFC1112_LOCAL_MDNS){
-		return "mDNS (IANA)";
-	}
-	return "RFC 1112 segment multicast";
+	return "RFC 5771 multicast";
 }
 
 static const struct {
