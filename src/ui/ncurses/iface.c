@@ -210,8 +210,13 @@ print_iface_hosts(const interface *i,const iface_state *is,int rows,int cols){
 		}
 		if(interface_up_p(i)){
 			char sbuf[PREFIXSTRLEN + 1],dbuf[PREFIXSTRLEN + 1];
-			mvwprintw(is->subwin,line,cols - PREFIXSTRLEN * 2 - 2,PREFIXFMT" "PREFIXFMT,prefix(get_srcpkts(l->l2),1,sbuf,sizeof(sbuf),1),
-					prefix(get_dstpkts(l->l2),1,dbuf,sizeof(dbuf),1));
+			if(get_srcpkts(l->l2) == 0 && (l->cat == RTN_MULTICAST || l->cat == RTN_BROADCAST)){
+				mvwprintw(is->subwin,line,cols - PREFIXSTRLEN * 1 - 1,PREFIXFMT,
+						prefix(get_dstpkts(l->l2),1,dbuf,sizeof(dbuf),1));
+			}else{
+				mvwprintw(is->subwin,line,cols - PREFIXSTRLEN * 2 - 2,PREFIXFMT" "PREFIXFMT,prefix(get_srcpkts(l->l2),1,sbuf,sizeof(sbuf),1),
+						prefix(get_dstpkts(l->l2),1,dbuf,sizeof(dbuf),1));
+			}
 		}
 		if(is->expansion >= EXPANSION_HOSTS){
 			for(l3 = l->l3objs ; l3 ; l3 = l3->next){
@@ -227,10 +232,16 @@ print_iface_hosts(const interface *i,const iface_state *is,int rows,int cols){
 				}
 				assert(mvwprintw(is->subwin,line,1,"    %s %s",nw,name) != ERR);
 				{
-					char sbuf[PREFIXSTRLEN + 1],dbuf[PREFIXSTRLEN + 1];
-					mvwprintw(is->subwin,line,cols - PREFIXSTRLEN * 2 - 2,PREFIXFMT" "PREFIXFMT,
-							prefix(l3_get_srcpkt(l3->l3),1,sbuf,sizeof(sbuf),1),
-							prefix(l3_get_dstpkt(l3->l3),1,dbuf,sizeof(dbuf),1));
+					char sbuf[PREFIXSTRLEN + 1];
+					char dbuf[PREFIXSTRLEN + 1];
+					if(l3_get_srcpkt(l3->l3) == 0 && (l->cat == RTN_MULTICAST || l->cat == RTN_BROADCAST)){
+						mvwprintw(is->subwin,line,cols - PREFIXSTRLEN * 1 - 1,PREFIXFMT,
+								prefix(l3_get_dstpkt(l3->l3),1,dbuf,sizeof(dbuf),1));
+					}else{
+						mvwprintw(is->subwin,line,cols - PREFIXSTRLEN * 2 - 2,PREFIXFMT" "PREFIXFMT,
+								prefix(l3_get_srcpkt(l3->l3),1,sbuf,sizeof(sbuf),1),
+								prefix(l3_get_dstpkt(l3->l3),1,dbuf,sizeof(dbuf),1));
+					}
 				}
 				assert(wattrset(is->subwin,attrs) != ERR);
 			}
