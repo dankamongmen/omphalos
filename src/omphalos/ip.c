@@ -34,6 +34,7 @@ void handle_ipv6_packet(const omphalos_iface *octx,omphalos_packet *op,
 	const struct ip6_hdr *ip = frame;
 	uint16_t plen;
 	unsigned ver;
+	uint8_t next;
 
 	if(len < sizeof(*ip)){
 		++op->i->malformed;
@@ -56,28 +57,53 @@ void handle_ipv6_packet(const omphalos_iface *octx,omphalos_packet *op,
 	op->l3s = lookup_l3host(octx,op->i,op->l2s,AF_INET6,&ip->ip6_src);
 	op->l3d = lookup_l3host(octx,op->i,op->l2d,AF_INET6,&ip->ip6_dst);
 	const void *nhdr = (const unsigned char *)frame + (len - plen);
+	next = ip->ip6_ctlun.ip6_un1.ip6_un1_nxt;
 
 	// FIXME don't call down if we're fragmented
-	switch(ip->ip6_ctlun.ip6_un1.ip6_un1_nxt){
-	case IPPROTO_TCP:{
-		handle_tcp_packet(octx,op,nhdr,plen);
-	break; }case IPPROTO_UDP:{
-		handle_udp_packet(octx,op,nhdr,plen);
-	break; }case IPPROTO_ICMP:{
-		handle_icmp_packet(octx,op,nhdr,plen);
-	break; }case IPPROTO_ICMP6:{
-		handle_icmp6_packet(octx,op,nhdr,plen);
-	break; }case IPPROTO_GRE:{
-		handle_gre_packet(octx,op,nhdr,plen);
-	break; }case IPPROTO_IGMP:{
-		handle_igmp_packet(octx,op,nhdr,plen);
-	break; }case IPPROTO_PIM:{
-		handle_pim_packet(octx,op,nhdr,plen);
-	break; }default:{
-		++op->i->noprotocol;
-		octx->diagnostic("%s %s noproto for %u",__func__,
-				op->i->name,ip->ip6_ctlun.ip6_un1.ip6_un1_nxt);
-	break; } }
+	while(nhdr){
+		switch(next){
+		case IPPROTO_TCP:{
+			handle_tcp_packet(octx,op,nhdr,plen);
+			nhdr = NULL;
+		break; }case IPPROTO_UDP:{
+			handle_udp_packet(octx,op,nhdr,plen);
+			nhdr = NULL;
+		break; }case IPPROTO_ICMP:{
+			handle_icmp_packet(octx,op,nhdr,plen);
+			nhdr = NULL;
+		break; }case IPPROTO_ICMP6:{
+			handle_icmp6_packet(octx,op,nhdr,plen);
+			nhdr = NULL;
+		break; }case IPPROTO_GRE:{
+			handle_gre_packet(octx,op,nhdr,plen);
+			nhdr = NULL;
+		break; }case IPPROTO_IGMP:{
+			handle_igmp_packet(octx,op,nhdr,plen);
+			nhdr = NULL;
+		break; }case IPPROTO_PIM:{
+			handle_pim_packet(octx,op,nhdr,plen);
+			nhdr = NULL;
+		break; }case IPPROTO_HOPOPTS:{
+			const struct ip6hbh {
+				uint8_t nexthdr;
+				uint8_t hdrlen;
+				// FIXME header data follows
+			} *hbh = nhdr;
+			if(plen < sizeof(*hbh) || plen < hbh->hdrlen){
+				++op->i->malformed;
+				octx->diagnostic("%s malformed with len %zu",__func__,plen);
+				return;
+			}
+			plen -= hbh->hdrlen;
+			nhdr = (const unsigned char *)nhdr + hbh->hdrlen;
+			next = hbh->nexthdr;
+		break; }default:{
+			++op->i->noprotocol;
+			octx->diagnostic("%s %s noproto for %u",__func__,
+					op->i->name,next);
+			return;
+		break; } }
+	}
 }
 
 void handle_ipv4_packet(const omphalos_iface *octx,omphalos_packet *op,
