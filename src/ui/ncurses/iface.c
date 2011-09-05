@@ -408,7 +408,7 @@ print_iface_state(const interface *i,const iface_state *is,int rows,int cols){
 		usecdomain / 1000000,
 		prefix(timestat_val(&i->bps) * CHAR_BIT * 1000000 * 100 / usecdomain,100,buf,sizeof(buf),0),
 		prefix(timestat_val(&i->fps),1,buf2,sizeof(buf2),1)) != ERR);
-	assert(mvwprintw(is->subwin,1,cols - PREFIXSTRLEN * 2 - 5,"Total: Src    Dest") != ERR);
+	assert(mvwprintw(is->subwin,1,cols - PREFIXSTRLEN * 2 - 5,"Total: Src     Dst") != ERR);
 }
 
 void free_iface_state(iface_state *is){
