@@ -17,6 +17,8 @@
 
 #define IP4_REVSTR_DECODED ".in-addr.arpa"
 #define IP4_REVSTR "\x07" "in-addr" "\x04" "arpa"
+#define IP6_REVSTR_DECODED ".ip6.arpa"
+#define IP6_REVSTR "\x03" "ip6" "\x04" "arpa"
 
 #define DNS_CLASS_IN	__constant_ntohs(1u)
 #define DNS_TYPE_A	__constant_ntohs(1u)
@@ -32,8 +34,39 @@ struct dnshdr {
 	// question, answer, authority, and additional sections follow
 };
 
+// Encoded as 32 nibbles. len is the length prior to the (already-verified)
+// instance of IP6_REVSTR, and thus ought be exactly 63 octets (32 nibbles and
+// 31 delimiters).
+static int
+process_reverse6_lookup(const char *buf,int *fam,void *addr,size_t len){
+	uint128_t addr6 = *(const uint128_t *)addr;
+	int wantdigit;
+
+	if(len != 63){
+		return -1;
+	}
+	memset(&addr6,0,sizeof(addr6));
+	wantdigit = 1;
+	while(len){
+		if(wantdigit){
+			if(!isxdigit(*buf)){
+				return -1;
+			}
+			// FIXME set it
+		}else{
+			if(*buf != '.'){
+				return -1;
+			}
+		}
+		++buf;
+		--len;
+		wantdigit = !wantdigit;
+	}
+	*fam = AF_INET6;
+	return 0;
+}
+
 // FIXME is it safe to be using (possibly signed) naked chars?
-// FIXME handle AAAA lookups (".ip6.arpa")!
 static int
 process_reverse_lookup(const char *buf,int *fam,void *addr){
 	const size_t len = strlen(buf);
@@ -42,6 +75,15 @@ process_reverse_lookup(const char *buf,int *fam,void *addr){
 	unsigned quad;
 	char q[4][5];
 
+	// Check the IPv6 string first (it's shorter)
+	if(len < __builtin_strlen(IP6_REVSTR_DECODED)){
+		return -1;
+	}
+	const size_t x6len = len - __builtin_strlen(IP6_REVSTR_DECODED);
+	if(strcmp(buf + x6len,IP6_REVSTR_DECODED) == 0){
+		return process_reverse6_lookup(buf,fam,addr,x6len);
+	}
+	// Look for the IPv4 string
 	if(len < __builtin_strlen(IP4_REVSTR_DECODED)){
 		return -1;
 	}
