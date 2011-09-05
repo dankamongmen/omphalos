@@ -14,7 +14,7 @@
 <!-- "&dhpackage; command-line reference" or similar (see e.g.	-->
 <!-- http://www.tldp.org/HOWTO/Man-Page/q2.html). But limit	-->
 <!-- it to 30    "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" chars.	-->
-<!ENTITY dhtitle "omphalos command-line reference">
+<!ENTITY dhtitle "omphalos reference">
   
 <!-- This is the application/package name.	-->
 <!ENTITY dhucpackage "OMPHALOS">
