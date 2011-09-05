@@ -66,6 +66,9 @@
 			<command>&dhpackage;</command>
 			<arg>-h</arg>
 			<arg>--version</arg>
+			<arg>-u username</arg>
+			<arg>-f filename</arg>
+			<arg>-i filename</arg>
 		</cmdsynopsis>
 	</refsynopsisdiv>
 	<refsect1 id="description">
@@ -89,6 +92,33 @@
 			<term><option>--version</option></term>
 			<listitem>
 			<para>Print version information and exit.</para>
+			</listitem>
+		</varlistentry>
+		<varlistentry>
+			<term><option>-u username</option></term>
+			<listitem>
+				<para>Omphalos will by default change to the user 'nobody' after
+				creating packet sockets. This requires the CAP_SETUID capability
+				or root privileges. To disable user switching, pass an empty string
+				to -u. To change to a different user, provide that username as the
+				argument to -u.</para>
+			</listitem>
+		</varlistentry>
+		<varlistentry>
+			<term><option>-f filename</option></term>
+			<listitem>
+				<para>Omphalos will by default listen (until shut down) to active network devices
+				using packet sockets. If -f is provided, omphalos will instead process the libpcap-format
+				file specified by filename.</para>
+			</listitem>
+		</varlistentry>
+		<varlistentry>
+			<term><option>-i filename</option></term>
+			<listitem>
+				<para>Omphalos will by default load the file 'ieee-oui.txt', use its
+				contents to map Ethernet hardware addresses to IANA OUIs, and
+				watch it for modifications. A different filename can be provided via
+				-i, and OUI mapping can be disabled entirely with an empty string.</para>
 			</listitem>
 		</varlistentry>
 	</refsect1>
