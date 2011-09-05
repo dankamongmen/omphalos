@@ -43,7 +43,7 @@ void handle_ipv6_packet(const omphalos_iface *octx,omphalos_packet *op,
 	ver = ntohl(ip->ip6_ctlun.ip6_un1.ip6_un1_flow) >> 28u;
 	if(ver != 6){
 		++op->i->noprotocol;
-		octx->diagnostic("%s noproto for %u",__func__,ver);
+		octx->diagnostic("%s noversion for %u",__func__,ver);
 		return;
 	}
 	plen = ntohs(ip->ip6_ctlun.ip6_un1.ip6_un1_plen);
