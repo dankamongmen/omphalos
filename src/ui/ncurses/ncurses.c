@@ -224,6 +224,8 @@ resize_iface(const interface *i,iface_state *is){
 			screen_update();
 			assert(wresize(is->subwin,nlines,PAD_COLS(cols)) != ERR);
 			assert(replace_panel(is->panel,is->subwin) != ERR);
+			// FIXME when we collapse, we need pull up other
+			// interfaces to fill the vacated space
 		}else{
 			// Try to expand down first. If that won't work, expand up.
 			if(nlines + is->scrline < rows){
