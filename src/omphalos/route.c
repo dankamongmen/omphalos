@@ -96,6 +96,10 @@ int handle_rtm_newroute(const omphalos_iface *octx,const struct nlmsghdr *nl){
 		as = &((struct sockaddr_in6 *)&r->sss)->sin6_addr;
 		ad = &((struct sockaddr_in6 *)&r->ssd)->sin6_addr;
 		ag = &((struct sockaddr_in6 *)&r->ssg)->sin6_addr;
+	break;}case AF_BRIDGE:{
+		// FIXME wtf is a bridge route
+		octx->diagnostic("got a bridge route hrmmm FIXME");
+		return -1; // FIXME
 	break;}default:{
 		flen = 0;
 	break;} }
