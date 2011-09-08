@@ -262,7 +262,8 @@ int handle_ring_packet(const omphalos_iface *octx,interface *iface,int fd,void *
 		if(packet.noproto){
 			++iface->noprotocol;
 		}
-		// FIXME need setup pcap_pkthdr
+		pcap.caplen = pcap.len = len;
+		pcap.ts = packet.tv;
 		log_pcap_packet(&pcap,frame);
 	}
 	if(octx->packet_read){

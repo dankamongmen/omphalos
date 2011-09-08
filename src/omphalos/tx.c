@@ -3,6 +3,7 @@
 #include <sys/socket.h>
 #include <omphalos/tx.h>
 #include <linux/if_arp.h>
+#include <omphalos/pcap.h>
 #include <linux/if_ether.h>
 #include <linux/if_packet.h>
 #include <omphalos/hwaddrs.h>
@@ -38,6 +39,13 @@ void send_tx_frame(const omphalos_iface *octx,interface *i,void *frame){
 	uint32_t tplen = thdr->tp_len;
 
 	thdr->tp_status = TP_STATUS_SEND_REQUEST;
+	{
+		struct pcap_pkthdr phdr;
+
+		phdr.caplen = phdr.len = thdr->tp_len;
+		gettimeofday(&phdr.ts,NULL);
+		log_pcap_packet(&phdr,frame);
+	}
 	if(send(i->fd,NULL,0,0) < 0){
 		octx->diagnostic("Error transmitting on %s",i->name);
 		++i->txerrors;
