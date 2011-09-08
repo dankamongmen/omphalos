@@ -133,7 +133,7 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 				fprintf(stderr,"Provided --ouis twice\n");
 				usage(argv[0],EXIT_FAILURE);
 			}
-			pctx->ianafn = argv[longidx];
+			pctx->ianafn = optarg;
 			break;
 		}case OPT_PLOG:{
 			if(pctx->plog){
@@ -144,11 +144,12 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 				fprintf(stderr,"Couldn't open pcap output file\n");
 				usage(argv[0],EXIT_FAILURE);
 			}
-			if((pctx->plog = pcap_dump_open(pctx->plogp,argv[longidx])) == NULL){
-				fprintf(stderr,"Couldn't write to %s (%s?)\n",argv[longidx],pcap_geterr(pctx->plogp));
+			if((pctx->plog = pcap_dump_open(pctx->plogp,optarg)) == NULL){
+				// pcap_geterr() sticks a friendly ": " in front of itself argh
+				fprintf(stderr,"Couldn't write to %s%s?\n",optarg,pcap_geterr(pctx->plogp));
 				usage(argv[0],EXIT_FAILURE);
 			}
-			fprintf(stdout,"Logging malformed packets to %s\n",argv[longidx]);
+			fprintf(stdout,"Logging malformed packets to %s\n",optarg);
 			break;
 		}case 'f':{
 			if(pctx->pcapfn){
