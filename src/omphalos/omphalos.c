@@ -7,6 +7,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <signal.h>
+#include <pcap/pcap.h>
 #include <sys/socket.h>
 #include <omphalos/usb.h>
 #include <omphalos/pci.h>
@@ -134,6 +135,21 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 			}
 			pctx->ianafn = argv[longidx];
 			break;
+		}case OPT_PLOG:{
+			if(pctx->plog){
+				fprintf(stderr,"Provided --plog twice\n");
+				usage(argv[0],EXIT_FAILURE);
+			}
+			if((pctx->plogp = pcap_open_dead(DLT_LINUX_SLL,0)) == NULL){
+				fprintf(stderr,"Couldn't open pcap output file\n");
+				usage(argv[0],EXIT_FAILURE);
+			}
+			if((pctx->plog = pcap_dump_open(pctx->plogp,argv[longidx])) == NULL){
+				fprintf(stderr,"Couldn't write to %s (%s?)\n",argv[longidx],pcap_geterr(pctx->plogp));
+				usage(argv[0],EXIT_FAILURE);
+			}
+			fprintf(stdout,"Logging malformed packets to %s\n",argv[longidx]);
+			break;
 		}case 'f':{
 			if(pctx->pcapfn){
 				fprintf(stderr,"Provided %c twice\n",opt);
@@ -149,11 +165,12 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 			user = optarg;
 			break;
 		}case ':':{
+			// FIXME need handle long options here
 			fprintf(stderr,"Option requires argument: '%c'\n",optopt);
 			usage(argv[0],EXIT_FAILURE);
 			break;
 		}case '?':{
-			fprintf(stderr,"Unknown option: '%s'\n",argv[optind]);
+			fprintf(stderr,"Unknown option: '%c'\n",optopt);
 			usage(argv[0],EXIT_FAILURE);
 			break;
 		}default:{
@@ -233,7 +250,7 @@ int omphalos_init(const omphalos_ctx *pctx){
 void omphalos_cleanup(const omphalos_ctx *pctx){
 	cleanup_interfaces(&pctx->iface);
 	free_routes();
-	cleanup_pcap(&pctx->iface);
+	cleanup_pcap(pctx);
 	cleanup_iana_naming();
 	stop_pci_support();
 	stop_usb_support();

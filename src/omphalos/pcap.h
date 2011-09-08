@@ -13,7 +13,7 @@ struct omphalos_iface;
 
 int handle_pcap_file(const struct omphalos_ctx *);
 int print_pcap_stats(FILE *fp,struct interface *);
-void cleanup_pcap(const struct omphalos_iface *);
+void cleanup_pcap(const struct omphalos_ctx *);
 
 #ifdef __cplusplus
 }

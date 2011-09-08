@@ -7,6 +7,7 @@ extern "C" {
 
 #include <stdint.h>
 #include <sys/time.h>
+#include <pcap/pcap.h>
 
 #define PROGNAME "omphalos"	// FIXME
 #define VERSION  "0.98-pre"	// FIXME
@@ -70,11 +71,12 @@ typedef struct omphalos_iface {
 // Process-scope settings, generally configured on startup based off
 // command-line options.
 typedef struct omphalos_ctx {
-	// PCAP-format filename FIXME support multiple?
-	const char *pcapfn;
+	const char *pcapfn;	// PCAP-format filename FIXME support multiple?
 	const char *ianafn;	// IANA's OUI mappings in get-oui(1) format
 	const char *resolvconf;	// resolver configuration file
 	omphalos_iface iface;
+	pcap_t *plogp;
+	pcap_dumper_t *plog;
 } omphalos_ctx;
 
 // Parse the command line for common arguments (a UI introducing its own

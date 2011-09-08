@@ -198,6 +198,9 @@ int print_pcap_stats(FILE *fp,interface *agg){
 	return 0;
 }
 
-void cleanup_pcap(const omphalos_iface *octx){
-	free_iface(octx,&pcap_file_interface);
+void cleanup_pcap(const omphalos_ctx *pctx){
+	free_iface(&pctx->iface,&pcap_file_interface);
+	if(pctx->plogp){
+		pcap_close(pctx->plogp);
+	}
 }
