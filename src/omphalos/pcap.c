@@ -1,7 +1,7 @@
-#include <pcap.h>
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <pcap/pcap.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <omphalos/ip.h>
@@ -15,6 +15,8 @@
 #include <omphalos/omphalos.h>
 #include <omphalos/netaddrs.h>
 #include <omphalos/interface.h>
+
+static pcap_dumper_t *dumper;
 
 static interface pcap_file_interface = {
 	.fd = -1,
@@ -198,9 +200,24 @@ int print_pcap_stats(FILE *fp,interface *agg){
 	return 0;
 }
 
+int init_pcap(const omphalos_ctx *pctx){
+	if(pctx->plog){
+		dumper = pctx->plog;
+	}
+	return 0;
+}
+
 void cleanup_pcap(const omphalos_ctx *pctx){
 	free_iface(&pctx->iface,&pcap_file_interface);
 	if(pctx->plogp){
 		pcap_close(pctx->plogp);
 	}
+}
+
+int log_pcap_packet(struct pcap_pkthdr *h,void *sp){
+	if(!dumper){
+		return 0;
+	}
+	pcap_dump((u_char *)dumper,h,sp);
+	return 0;
 }

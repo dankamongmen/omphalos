@@ -204,6 +204,9 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 			return -1;
 		}
 	}
+	if(init_pcap(pctx)){
+		return -1;
+	}
 	if(init_interfaces()){
 		return -1;
 	}
