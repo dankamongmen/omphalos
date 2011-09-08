@@ -147,6 +147,9 @@
 			<refentrytitle>arp-scan</refentrytitle>
 			<manvolnum>1</manvolnum>
 		</citerefentry>, <citerefentry>
+			<refentrytitle>capabilities</refentrytitle>
+			<manvolnum>7</manvolnum>
+		</citerefentry>, <citerefentry>
 			<refentrytitle>get-oui</refentrytitle>
 			<manvolnum>1</manvolnum>
 		</citerefentry>, <citerefentry>
