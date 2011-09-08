@@ -55,6 +55,7 @@ doc: $(MAN1OBJ)
 
 lib: $(LIB)
 
+OUTCAP:=$(OUT)/plog.pcap
 TESTPCAPS:=$(wildcard test/*)
 
 CSRCDIRS:=$(wildcard $(SRC)/*)
@@ -71,10 +72,10 @@ IANAOUI:=ieee-oui.txt
 
 # Requires CAP_NET_ADMIN privileges bestowed upon the binary
 livetest: sudobless $(IANAOUI)
-	$(OMPHALOS)-ncurses -u '' --plog plog.pcap
+	$(OMPHALOS)-ncurses -u '' --plog $(OUTCAP)
 
 test: all $(TESTPCAPS) $(IANAOUI)
-	for i in $(TESTPCAPS) ; do $(OMPHALOS)-tty --plog plog.pcap -f $$i -u "" || exit 1 ; done
+	for i in $(TESTPCAPS) ; do $(OMPHALOS)-tty --plog $(OUTCAP) -f $$i -u "" || exit 1 ; done
 
 valgrind: all $(TESTPCAPS) $(IANAOUI)
 	for i in $(TESTPCAPS) ; do valgrind --tool=memcheck --leak-check=full $(OMPHALOS)-tty -f $$i -u "" || exit 1 ; done
