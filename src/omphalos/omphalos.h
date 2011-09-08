@@ -8,6 +8,9 @@ extern "C" {
 #include <stdint.h>
 #include <sys/time.h>
 
+#define PROGNAME "omphalos"	// FIXME
+#define VERSION  "0.98-pre"	// FIXME
+
 struct l2host;
 struct l3host;
 struct iphost;

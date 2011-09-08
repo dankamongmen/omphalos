@@ -45,9 +45,6 @@
 extern int wprintw(WINDOW *,const char *,...) __attribute__ ((format (printf,2,3)));
 extern int mvwprintw(WINDOW *,int,int,const char *,...) __attribute__ ((format (printf,4,5)));
 
-#define PROGNAME "omphalos"	// FIXME
-#define VERSION  "0.98-pre"	// FIXME
-
 #define PAD_LINES 3
 #define START_COL 1
 #define PAD_COLS(cols) ((cols) - START_COL * 2)

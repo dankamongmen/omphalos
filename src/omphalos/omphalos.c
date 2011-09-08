@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <errno.h>
+#include <getopt.h>
 #include <stdarg.h>
 #include <limits.h>
 #include <stdlib.h>
@@ -27,19 +28,27 @@
 
 static void
 usage(const char *arg0,int ret){
-	fprintf(stderr,"usage: %s [ options... ]\n",basename(arg0));
-	fprintf(stderr,"\noptions:\n");
-	fprintf(stderr,"-h print this help, and exit\n");
-	fprintf(stderr,"--version print version info, and exit\n");
-	fprintf(stderr,"-u username: user name to take after creating packet socket.\n");
-	fprintf(stderr,"\t'%s' by default. provide empty string to disable.\n",DEFAULT_USERNAME);
-	fprintf(stderr,"-f filename: libpcap-format save file for input.\n");
-	fprintf(stderr,"--ouis filename: IANA's OUI mapping in get-oui(1) format.\n");
-	fprintf(stderr,"\t'%s' by default. provide empty string to disable.\n",DEFAULT_IANA_FILENAME);
-	fprintf(stderr,"--plog filename: Enable malformed packet logging to this file.\n");
+	FILE *fp = ret == EXIT_SUCCESS ? stdout : stderr;
+
+	fprintf(fp,"usage: %s [ options... ]\n",basename(arg0));
+	fprintf(fp,"\noptions:\n");
+	fprintf(fp,"-h print this help, and exit\n");
+	fprintf(fp,"--version print version info, and exit\n");
+	fprintf(fp,"-u username: user name to take after creating packet socket.\n");
+	fprintf(fp,"\t'%s' by default. provide empty string to disable.\n",DEFAULT_USERNAME);
+	fprintf(fp,"-f filename: libpcap-format save file for input.\n");
+	fprintf(fp,"--ouis filename: IANA's OUI mapping in get-oui(1) format.\n");
+	fprintf(fp,"\t'%s' by default. provide empty string to disable.\n",DEFAULT_IANA_FILENAME);
+	fprintf(fp,"--plog filename: Enable malformed packet logging to this file.\n");
 	exit(ret);
 }
 
+static void
+version(const char *arg0){
+	fprintf(stdout,"%s %s\n",PROGNAME,VERSION);
+	fprintf(stdout,"invoked as %s\n",arg0);
+	exit(EXIT_SUCCESS);
+}
 
 static void
 default_diagnostic(const char *fmt,...){
@@ -72,50 +81,86 @@ mask_cancel_sigs(sigset_t *oldsigs){
 	return 0;
 }
 
+enum {
+	OPT_OUIS = 'z' + 1,
+	OPT_VERSION,
+	OPT_PLOG,
+};
+
 int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
+	static const struct option ops[] = {
+		{
+			.name = "ouis",
+			.has_arg = 1,
+			.flag = NULL,
+			.val = OPT_OUIS,
+		},{
+			.name = "version",
+			.has_arg = 0,
+			.flag = NULL,
+			.val = OPT_VERSION,
+		},{
+			.name = "plog",
+			.has_arg = 1,
+			.flag = NULL,
+			.val = OPT_PLOG,
+		},
+		{
+			.name = NULL,
+			.has_arg = 0,
+			.flag = NULL,
+			.val = 0,
+		}
+	};
 	// FIXME maybe CAP_SETPCAP as well?
 	const cap_value_t caparray[] = { CAP_NET_RAW, };
 	const char *user = NULL;
-	int opt;
+	int opt,longidx;
 	
 	memset(pctx,0,sizeof(*pctx));
-	opterr = 0; // suppress getopt() diagnostic to stderr while((opt = getopt(argc,argv,":c:f:")) >= 0){ switch(opt){ case 'c':{
-	while((opt = getopt(argc,argv,":hf:u:")) >= 0){
+	opterr = 0; // suppress getopt() diagnostic to stderr
+	while((opt = getopt_long(argc,argv,":hf:u:",ops,&longidx)) >= 0){
 		switch(opt){ // FIXME need --plog
 		case 'h':{
 			usage(argv[0],EXIT_SUCCESS);
 			break;
-		}
-		case 'i':{ // FIXME --ouis
+		}case OPT_VERSION:{
+			version(argv[0]);
+			break;
+		}case OPT_OUIS:{
 			if(pctx->ianafn){
-				fprintf(stderr,"Provided %c twice\n",opt);
-				usage(argv[0],-1);
+				fprintf(stderr,"Provided --ouis twice\n");
+				usage(argv[0],EXIT_FAILURE);
 			}
-			pctx->ianafn = optarg;
+			pctx->ianafn = argv[longidx];
 			break;
 		}case 'f':{
 			if(pctx->pcapfn){
 				fprintf(stderr,"Provided %c twice\n",opt);
-				usage(argv[0],-1);
+				usage(argv[0],EXIT_FAILURE);
 			}
 			pctx->pcapfn = optarg;
 			break;
 		}case 'u':{
 			if(user){
 				fprintf(stderr,"Provided %c twice\n",opt);
-				usage(argv[0],-1);
+				usage(argv[0],EXIT_FAILURE);
 			}
 			user = optarg;
 			break;
 		}case ':':{
 			fprintf(stderr,"Option requires argument: '%c'\n",optopt);
-			usage(argv[0],-1);
+			usage(argv[0],EXIT_FAILURE);
 			break;
-		}default:
-			fprintf(stderr,"Unknown option: '%c'\n",optopt);
-			usage(argv[0],-1);
+		}case '?':{
+			fprintf(stderr,"Unknown option: '%s'\n",argv[optind]);
+			usage(argv[0],EXIT_FAILURE);
 			break;
-		}
+		}default:{
+			fprintf(stderr,"Getopt returned %d (%c)\n",opt,opt);
+			usage(argv[0],EXIT_FAILURE);
+			break;
+		} }
 	}
 	if(argv[optind]){ // don't allow trailing arguments
 		fprintf(stderr,"Trailing argument: %s\n",argv[optind]);
