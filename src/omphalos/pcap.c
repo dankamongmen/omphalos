@@ -209,6 +209,10 @@ int init_pcap(const omphalos_ctx *pctx){
 
 void cleanup_pcap(const omphalos_ctx *pctx){
 	free_iface(&pctx->iface,&pcap_file_interface);
+	if(dumper){
+		pcap_dump_flush(dumper);
+		dumper = NULL;
+	}
 	if(pctx->plogp){
 		pcap_close(pctx->plogp);
 	}
