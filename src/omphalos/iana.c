@@ -121,6 +121,7 @@ parse_file(const omphalos_iface *octx){
 		octx->diagnostic("Error reading %s",ianafn);
 	}
 	fclose(fp);
+	octx->diagnostic("Reloaded OUIs from %s",ianafn);
 }
 
 // A value can be passed which will be "broadcast" out to all children of this

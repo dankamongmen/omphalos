@@ -140,7 +140,7 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 				fprintf(stderr,"Provided --plog twice\n");
 				usage(argv[0],EXIT_FAILURE);
 			}
-			if((pctx->plogp = pcap_open_dead(DLT_LINUX_SLL,0)) == NULL){
+			if((pctx->plogp = pcap_open_dead(DLT_EN10MB,0)) == NULL){
 				fprintf(stderr,"Couldn't open pcap output file\n");
 				usage(argv[0],EXIT_FAILURE);
 			}
