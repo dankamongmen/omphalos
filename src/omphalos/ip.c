@@ -163,7 +163,9 @@ void handle_ipv4_packet(const omphalos_iface *octx,omphalos_packet *op,
 	break; } }
 }
 
-// Doesn't set ->tot_len; that must be done by the caller.
+// Doesn't set ->tot_len; that must be done by the caller. Prepare ->check for
+// checksum evaluation, but we cannot yet actually evaluate it (FIXME though we
+// could calculate differential).
 int prep_ipv4_header(void *frame,size_t flen,uint32_t src,uint32_t dst,uint16_t proto){
 	struct iphdr *ip;
 
@@ -179,12 +181,13 @@ int prep_ipv4_header(void *frame,size_t flen,uint32_t src,uint32_t dst,uint16_t 
 	ip->saddr = src;
 	ip->daddr = dst;
 	ip->protocol = proto;
+	ip->check = 0;
 	return ip->ihl << 2u;
 }
 
 uint16_t ipv4_csum(const void *hdr){
 	size_t len = ((const struct iphdr *)hdr)->ihl << 2u;
-	const uint16_t *cur,*hcur;
+	const uint16_t *cur;
 	uint16_t fold;
 	uint32_t sum;
 	unsigned z;
@@ -193,13 +196,6 @@ uint16_t ipv4_csum(const void *hdr){
 	cur = hdr;
 	for(z = 0 ; z < len / sizeof(*cur) ; ++z){
 		sum += cur[z];
-	}
-	hcur = (const uint16_t *)(cur + z);
-	for(z = 0 ; z < (len % sizeof(*cur)) / 2 ; ++z){
-		sum += hcur[z];
-	}
-	if(len % 2){
-		sum += ((const unsigned char *)hdr)[len - 1] << 8u;
 	}
 	fold = 0;
 	for(z = 0 ; z < sizeof(*cur) / 2 ; ++z){
