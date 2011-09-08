@@ -184,9 +184,9 @@ int prep_ipv4_header(void *frame,size_t flen,uint32_t src,uint32_t dst,uint16_t 
 
 uint16_t ipv4_csum(const void *hdr){
 	size_t len = ((const struct iphdr *)hdr)->ihl << 2u;
-	const uint16_t *cur;
-	uint16_t sum,fold;
-	const uint16_t *hcur;
+	const uint16_t *cur,*hcur;
+	uint16_t fold;
+	uint32_t sum;
 	unsigned z;
 
 	sum = 0;
