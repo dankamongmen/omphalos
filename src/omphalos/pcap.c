@@ -215,10 +215,10 @@ void cleanup_pcap(const omphalos_ctx *pctx){
 		pcap_dump_flush(dumper);
 		dumper = NULL;
 	}
-	pthread_mutex_unlock(&dumplock);
 	if(pctx->plogp){
 		pcap_close(pctx->plogp);
 	}
+	pthread_mutex_unlock(&dumplock);
 }
 
 int log_pcap_packet(struct pcap_pkthdr *h,void *sp){
