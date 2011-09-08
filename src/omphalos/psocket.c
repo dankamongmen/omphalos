@@ -10,6 +10,7 @@
 #include <sys/socket.h>
 #include <linux/if_arp.h>
 #include <omphalos/pci.h>
+#include <omphalos/pcap.h>
 #include <omphalos/privs.h>
 #include <linux/if_packet.h>
 #include <omphalos/netlink.h>
@@ -165,6 +166,8 @@ int handle_ring_packet(const omphalos_iface *octx,interface *iface,int fd,void *
 	struct tpacket_hdr *thdr = frame;
 	omphalos_packet packet = {
 		.i = iface,
+		.noproto = 0,
+		.malformed = 0,
 	};
 	int len;
 
@@ -249,6 +252,18 @@ int handle_ring_packet(const omphalos_iface *octx,interface *iface,int fd,void *
 	}
 	if(packet.l3d){
 		l3_dstpkt(packet.l3d);
+	}
+	if(packet.malformed || packet.noproto){
+		struct pcap_pkthdr pcap;
+
+		if(packet.malformed){
+			++iface->malformed;
+		}
+		if(packet.noproto){
+			++iface->noprotocol;
+		}
+		// FIXME need setup pcap_pkthdr
+		log_pcap_packet(&pcap,frame);
 	}
 	if(octx->packet_read){
 		octx->packet_read(&packet);

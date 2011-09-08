@@ -18,12 +18,15 @@ struct iphost;
 struct ipv6host;
 struct interface;
 
+// State for each packet
 typedef struct omphalos_packet {
 	struct timeval tv;
 	struct interface *i;
 	struct l2host *l2s,*l2d;
 	uint16_t l3proto;
 	struct l3host *l3s,*l3d;
+	unsigned malformed;
+	unsigned noproto;
 	/*union {
 		struct iphost *ip4;
 		struct ipv6host *ip6;

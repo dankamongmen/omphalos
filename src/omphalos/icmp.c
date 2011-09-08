@@ -8,7 +8,7 @@ void handle_icmp_packet(const omphalos_iface *octx,omphalos_packet *op,const voi
 
 	if(len < sizeof(*icmp)){
 		octx->diagnostic("%s malformed with %zu",__func__,len);
-		++op->i->malformed;
+		op->malformed = 1;
 		return;
 	}
 	// FIXME
@@ -19,7 +19,7 @@ void handle_icmp6_packet(const omphalos_iface *octx,omphalos_packet *op,const vo
 
 	if(len < sizeof(*icmp)){
 		octx->diagnostic("%s malformed with %zu",__func__,len);
-		++op->i->malformed;
+		op->malformed = 1;
 		return;
 	}
 	// FIXME

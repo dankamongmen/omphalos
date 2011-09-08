@@ -23,7 +23,7 @@ handle_igmp_packet(const omphalos_iface *octx,omphalos_packet *op,const void *fr
 
 	if(len < sizeof(*igmp)){
 		octx->diagnostic("%s malformed with %zu",__func__,len);
-		++op->i->malformed;
+		op->malformed = 1;
 		return;
 	}
 	// FIXME
@@ -37,19 +37,19 @@ void handle_ipv6_packet(const omphalos_iface *octx,omphalos_packet *op,
 	uint8_t next;
 
 	if(len < sizeof(*ip)){
-		++op->i->malformed;
+		op->malformed = 1;
 		octx->diagnostic("%s malformed with %zu",__func__,len);
 		return;
 	}
 	ver = ntohl(ip->ip6_ctlun.ip6_un1.ip6_un1_flow) >> 28u;
 	if(ver != 6){
-		++op->i->noprotocol;
+		op->noproto = 1;
 		octx->diagnostic("%s noversion for %u",__func__,ver);
 		return;
 	}
 	plen = ntohs(ip->ip6_ctlun.ip6_un1.ip6_un1_plen);
 	if(len < plen + sizeof(*ip)){
-		++op->i->malformed;
+		op->malformed = 1;
 		octx->diagnostic("%s malformed with %zu != %u",__func__,len,plen);
 		return;
 	}
@@ -90,7 +90,7 @@ void handle_ipv6_packet(const omphalos_iface *octx,omphalos_packet *op,
 				// FIXME header data follows
 			} *hbh = nhdr;
 			if(plen < sizeof(*hbh) || plen < hbh->hdrlen){
-				++op->i->malformed;
+				op->malformed = 1;
 				octx->diagnostic("%s malformed with len %zu",__func__,plen);
 				return;
 			}
@@ -98,7 +98,7 @@ void handle_ipv6_packet(const omphalos_iface *octx,omphalos_packet *op,
 			nhdr = (const unsigned char *)nhdr + hbh->hdrlen;
 			next = hbh->nexthdr;
 		break; }default:{
-			++op->i->noprotocol;
+			op->noproto = 1;
 			octx->diagnostic("%s %s noproto for %u",__func__,
 					op->i->name,next);
 			return;
@@ -112,26 +112,26 @@ void handle_ipv4_packet(const omphalos_iface *octx,omphalos_packet *op,
 	unsigned hlen;
 
 	if(len < sizeof(*ip)){
-		++op->i->malformed;
+		op->malformed = 1;
 		octx->diagnostic("%s %s malformed with %zu",__func__,
 				op->i->name,len);
 		return;
 	}
 	if(ip->version != 4){
-		++op->i->noprotocol;
+		op->noproto = 1;
 		octx->diagnostic("%s %s noversion for %u",__func__,
 				op->i->name,ip->version);
 		return;
 	}
 	hlen = ip->ihl << 2u;
 	if(len < hlen){
-		++op->i->malformed;
+		op->malformed = 1;
 		octx->diagnostic("%s %s malformed with %zu vs %u",__func__,
 				op->i->name,len,hlen);
 		return;
 	}
 	if(check_ethernet_padup(len,ntohs(ip->tot_len))){
-		++op->i->malformed;
+		op->malformed = 1;
 		octx->diagnostic("%s %s malformed with %zu vs %hu",__func__,
 				op->i->name,len,ntohs(ip->tot_len));
 		return;
@@ -157,7 +157,7 @@ void handle_ipv4_packet(const omphalos_iface *octx,omphalos_packet *op,
 	break; }case IPPROTO_PIM:{
 		handle_pim_packet(octx,op,nhdr,nlen);
 	break; }default:{
-		++op->i->noprotocol;
+		op->noproto = 1;
 		octx->diagnostic("%s %s noproto for %u",__func__,
 				op->i->name,ip->protocol);
 	break; } }

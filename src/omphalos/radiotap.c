@@ -100,7 +100,7 @@ handle_ieee80211_mgmtfix(const omphalos_iface *octx,omphalos_packet *op,
 	unsigned z;
 
 	if(len < sizeof(*imgmt)){
-		++op->i->malformed;
+		op->malformed = 1;
 		octx->diagnostic("%s mgmt frame too small (%zu) on %s",
 				__func__,len,op->i->name);
 		return;
@@ -134,7 +134,7 @@ handle_ieee80211_mgmtfix(const omphalos_iface *octx,omphalos_packet *op,
 			octx->diagnostic("%s bad mgmt tags (%zu) on %s",
 					__func__,len,op->i->name);
 		}
-		++op->i->malformed;
+		op->malformed = 1;
 		goto freetags;
 	}
 	if(tagtbl[IEEE80211_MGMT_TAG_SSID].ptr){
@@ -162,7 +162,7 @@ handle_ieee80211_mgmt(const omphalos_iface *octx,omphalos_packet *op,
 	const ieee80211mgmtdata *ibec = frame;
 
 	if(len < sizeof(*ibec)){
-		++op->i->malformed;
+		op->malformed = 1;
 		octx->diagnostic("%s Packet too small (%zu) on %s",
 				__func__,len,op->i->name);
 		return;
@@ -179,7 +179,7 @@ handle_ieee80211_ctrl(const omphalos_iface *octx,omphalos_packet *op,
 	const ieee80211ctrl *ictrl = frame;
 
 	if(len < sizeof(*ictrl)){
-		++op->i->malformed;
+		op->malformed = 1;
 		octx->diagnostic("%s Packet too small (%zu) on %s",
 				__func__,len,op->i->name);
 		return;
@@ -194,7 +194,7 @@ handle_ieee80211_data(const omphalos_iface *octx,omphalos_packet *op,
 	const ieee80211data *idata = frame;
 
 	if(len < sizeof(*idata)){
-		++op->i->malformed;
+		op->malformed = 1;
 		octx->diagnostic("%s Packet too small (%zu) on %s",
 				__func__,len,op->i->name);
 		return;
@@ -213,13 +213,13 @@ handle_ieee80211_packet(const omphalos_iface *octx,omphalos_packet *op,
 	// FIXME certain packets don't have the full 802.11 header (8 bytes,
 	// control/duration/h_dest, seems to be the minimum).
 	if(len < sizeof(ieee80211hdr)){
-		++op->i->malformed;
+		op->malformed = 1;
 		octx->diagnostic("%s Packet too small (%zu) on %s",
 				__func__,len,op->i->name);
 		return;
 	}
 	if(IEEE80211_VERSION(ihdr->control) != 0){
-		++op->i->noprotocol;
+		op->noproto = 1;
 		octx->diagnostic("%s Unknown version (%zu) on %s",__func__,
 				IEEE80211_VERSION(ihdr->control),op->i->name);
 		return;
@@ -239,7 +239,7 @@ handle_ieee80211_packet(const omphalos_iface *octx,omphalos_packet *op,
 			handle_ieee80211_data(octx,op,frame,len);
 		}break;
 		default:{
-			++op->i->noprotocol;
+			op->noproto = 1;
 			octx->diagnostic("%s Unknown type %zu on %s",__func__,
 					IEEE80211_TYPE(ihdr->control),op->i->name);
 			return;
@@ -300,20 +300,20 @@ void handle_radiotap_packet(const omphalos_iface *octx,omphalos_packet *op,
 	// FIXME certain packets don't have the full 802.11 header (8 bytes,
 	// control/duration/h_dest, seems to be the minimum).
 	if(len < sizeof(radiotaphdr)){
-		++op->i->malformed;
+		op->malformed = 1;
 		octx->diagnostic("%s Packet too small (%zu) on %s",
 				__func__,len,op->i->name);
 		return;
 	}
 	if(rhdr->version != 0){
-		++op->i->noprotocol;
+		op->noproto = 1;
 		octx->diagnostic("%s Unknown radiotap version %zu on %s",
 				__func__,rhdr->version,op->i->name);
 		return;
 	}
 	rlen = rhdr->len;
 	if(len < rlen){
-		++op->i->malformed;
+		op->malformed = 1;
 		octx->diagnostic("%s Radiotap too small (%zu < %zu) on %s",
 				__func__,len,rlen,op->i->name);
 		return;
@@ -383,7 +383,7 @@ void handle_radiotap_packet(const omphalos_iface *octx,omphalos_packet *op,
 	return;
 
 malformed:
-	++op->i->malformed;
+	op->malformed = 1;
 	octx->diagnostic("%s Packet too small (%zu) on %s",
 			__func__,len,op->i->name);
 }

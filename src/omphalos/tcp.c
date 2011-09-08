@@ -15,7 +15,7 @@ void handle_tcp_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 
 	if(len < sizeof(*tcp)){
 		octx->diagnostic("%s malformed with %zu",__func__,len);
-		++op->i->malformed;
+		op->malformed = 1;
 		return;
 	}
 	// FIXME check header len etc...

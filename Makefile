@@ -74,7 +74,7 @@ livetest: sudobless $(IANAOUI)
 	$(OMPHALOS)-ncurses -u '' --plog plog.pcap
 
 test: all $(TESTPCAPS) $(IANAOUI)
-	for i in $(TESTPCAPS) ; do $(OMPHALOS)-tty -f $$i -u "" || exit 1 ; done
+	for i in $(TESTPCAPS) ; do $(OMPHALOS)-tty --plog plog.pcap -f $$i -u "" || exit 1 ; done
 
 valgrind: all $(TESTPCAPS) $(IANAOUI)
 	for i in $(TESTPCAPS) ; do valgrind --tool=memcheck --leak-check=full $(OMPHALOS)-tty -f $$i -u "" || exit 1 ; done

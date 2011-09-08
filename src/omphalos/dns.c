@@ -299,7 +299,7 @@ void handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 	if(len < sizeof(*dns)){
 		octx->diagnostic("%s malformed with %zu on %s",
 				__func__,len,op->i->name);
-		++op->i->malformed;
+		op->malformed = 1;
 		return;
 	}
 	if(op->l3proto == ETH_P_IP){
@@ -310,7 +310,7 @@ void handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 		nsaddru.addr6 = get_l3addr_in6(op->l3s);
 	}else{
 		octx->diagnostic("DNS on %s:0x%x",op->i->name,op->l3proto);
-		++op->i->noprotocol;
+		op->noproto = 1;
 		return;
 	}
 	//opcode = (ntohs(dns->flags) & 0x7800) >> 11u;
@@ -393,7 +393,7 @@ void handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 malformed:
 	octx->diagnostic("%s malformed with %zu on %s",
 			__func__,len,op->i->name);
-	++op->i->malformed;
+	op->malformed = 1;
 	return;
 }
 

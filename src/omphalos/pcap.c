@@ -30,6 +30,38 @@ typedef struct pcap_marshal {
 	void (*handler)(const omphalos_iface *,omphalos_packet *,const void *,size_t);
 } pcap_marshal;
 
+static void
+postprocess(pcap_marshal *pm,omphalos_packet *packet,interface *iface,
+			const struct pcap_pkthdr *h,const void *bytes){
+	struct pcap_pkthdr phdr;
+
+	if(packet->l2s){
+		l2srcpkt(packet->l2s);
+	}
+	if(packet->l2d){
+		l2dstpkt(packet->l2d);
+	}
+	if(packet->l3s){
+		l3_srcpkt(packet->l3s);
+	}
+	if(packet->l3d){
+		l3_dstpkt(packet->l3d);
+	}
+	if(packet->noproto || packet->malformed){
+		memcpy(&phdr,h,sizeof(phdr));
+		if(packet->noproto){
+			++iface->noprotocol;
+		}
+		if(packet->malformed){
+			++iface->malformed;
+		}
+		log_pcap_packet(&phdr,(void *)bytes);
+	}
+	if(pm->octx->packet_read){
+		pm->octx->packet_read(packet);
+	}
+}
+
 // FIXME need to call back even on truncations etc. move function pointer
 // to pcap_marshal and unify call to redirect + packet_read().
 static void
@@ -47,21 +79,7 @@ handle_pcap_direct(u_char *gi,const struct pcap_pkthdr *h,const u_char *bytes){
 	memset(&packet,0,sizeof(packet));
 	packet.i = iface;
 	pm->handler(pm->octx,&packet,bytes,h->len);
-	if(packet.l2s){
-		l2srcpkt(packet.l2s);
-	}
-	if(packet.l2d){
-		l2dstpkt(packet.l2d);
-	}
-	if(packet.l3s){
-		l3_srcpkt(packet.l3s);
-	}
-	if(packet.l3d){
-		l3_dstpkt(packet.l3d);
-	}
-	if(pm->octx->packet_read){
-		pm->octx->packet_read(&packet);
-	}
+	postprocess(pm,&packet,iface,h,bytes);
 }
 
 static void
@@ -90,6 +108,7 @@ handle_pcap_cooked(u_char *gi,const struct pcap_pkthdr *h,const u_char *bytes){
 		++iface->malformed;
 		return;
 	}
+	memset(&packet,0,sizeof(packet));
 	packet.i = iface;
 	packet.i->addrlen = ntohs(sll->hwlen);
 	assert(packet.i->addrlen <= sizeof(addr));
@@ -113,23 +132,8 @@ handle_pcap_cooked(u_char *gi,const struct pcap_pkthdr *h,const u_char *bytes){
 			break;
 		}
 	}
-	if(packet.l2s){
-		l2srcpkt(packet.l2s);
-	}
-	if(packet.l2d){
-		l2dstpkt(packet.l2d);
-	}
-	if(packet.l3s){
-		l3_srcpkt(packet.l3s);
-	}
-	if(packet.l3d){
-		l3_dstpkt(packet.l3d);
-	}
-	if(pm->octx->packet_read){
-		pm->octx->packet_read(&packet);
-	}
-	packet.i->addr = NULL;
-	packet.i->bcast = NULL;
+	postprocess(pm,&packet,iface,h,bytes);
+	iface->addr = iface->bcast = NULL;
 }
 
 int handle_pcap_file(const omphalos_ctx *pctx){

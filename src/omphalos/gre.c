@@ -24,7 +24,7 @@ void handle_gre_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 
 	if(len < sizeof(*gre)){
 		octx->diagnostic("%s malformed with %zu on %s",__func__,len,op->i->name);
-		++op->i->malformed;
+		op->malformed = 1;
 		return;
 	}
 	glen = 0;
@@ -43,12 +43,12 @@ void handle_gre_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 	}
 	if(len < sizeof(*gre) + glen){
 		octx->diagnostic("%s malformed with %zu on %s",__func__,len,op->i->name);
-		++op->i->malformed;
+		op->malformed = 1;
 		return;
 	}
 	if(gre->version != GRE_VERSION_NORMAL && gre->version != GRE_VERSION_PPTP){
 		octx->diagnostic("%s noproto for %zu on %s",__func__,gre->version,op->i->name);
-		++op->i->malformed;
+		op->malformed = 1;
 		return;
 	}
 	// FIXME handle encapsulated protocol interpreting protocol as Ethernet

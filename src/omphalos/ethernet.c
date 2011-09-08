@@ -66,7 +66,7 @@ handle_8021q(const omphalos_iface *octx,omphalos_packet *op,const void *frame,
 	size_t dlen;
 	
 	if(len < IEEE8021QHDRLEN){
-		++op->i->malformed;
+		op->malformed = 1;
 		octx->diagnostic("%s malformed with %zu",__func__,len);
 		return;
 	}
@@ -94,7 +94,7 @@ handle_8021q(const omphalos_iface *octx,omphalos_packet *op,const void *frame,
 		if(allowllc && op->l3proto < LLC_MAX_LEN){
 			handle_8022(octx,op,frame,len);
 		}else{
-			++op->i->noprotocol;
+			op->noproto = 1;
 			octx->diagnostic("%s %s noproto for 0x%x",__func__,
 					op->i->name,op->l3proto);
 		}
@@ -109,13 +109,13 @@ handle_snap(const omphalos_iface *octx,omphalos_packet *op,const void *frame,siz
 	size_t dlen;
 
 	if(len < sizeof(*snap)){
-		++op->i->malformed;
+		op->malformed = 1;
 		octx->diagnostic("%s malformed with %zu",__func__,len);
 		return;
 	}
 	dgram = (const char *)frame + sizeof(*snap);
 	if(snap->ssap != LLC_SAP_SNAP || snap->ctrl != 0x03){
-		++op->i->malformed;
+		op->malformed = 1;
 		octx->diagnostic("%s malformed ssap/ctrl %zu/%zu",__func__,snap->ssap,snap->ctrl);
 		return;
 	}
@@ -145,7 +145,7 @@ handle_snap(const omphalos_iface *octx,omphalos_packet *op,const void *frame,siz
 			handle_ectp_packet(octx,op->i,dgram,dlen);
 			break;
 		}default:{
-			++op->i->noprotocol;
+			op->noproto = 1;
 			octx->diagnostic("%s %s noproto for 0x%x",__func__,
 					op->i->name,proto);
 			break;
@@ -159,7 +159,7 @@ handle_8022(const omphalos_iface *octx,omphalos_packet *op,const void *frame,siz
 	uint8_t sap;
 
 	if(len < sizeof(*llc)){
-		++op->i->malformed;
+		op->malformed = 1;
 		octx->diagnostic("%s malformed with %zu",__func__,len);
 		return;
 	}
@@ -175,7 +175,7 @@ handle_8022(const omphalos_iface *octx,omphalos_packet *op,const void *frame,siz
 		// Information: 0xxxxxxx
 		if(((llc->ctrl & 0x3u) == 0x1u) || ((llc->ctrl & 0x3u) == 0x0)){
 			if(dlen == 0){
-				++op->i->malformed;
+				op->malformed = 1;
 				octx->diagnostic("%s malformed with %zu",__func__,len);
 				return;
 			}
@@ -200,7 +200,7 @@ handle_8022(const omphalos_iface *octx,omphalos_packet *op,const void *frame,siz
 				handle_ipx_packet(octx,op,dgram,dlen);
 				break;
 			}default:{ // IPv6 always uses SNAP per RFC2019
-				++op->i->noprotocol;
+				op->noproto = 1;
 				octx->diagnostic("%s %s noproto for 0x%x",__func__,
 						op->i->name,sap);
 				break;
@@ -217,7 +217,7 @@ void handle_ethernet_packet(const omphalos_iface *octx,omphalos_packet *op,
 	size_t dlen;
 
 	if(len < sizeof(*hdr)){
-		++op->i->malformed;
+		op->malformed = 1;
 		octx->diagnostic("%s malformed with %zu",__func__,len);
 		return;
 	}
@@ -257,7 +257,7 @@ void handle_ethernet_packet(const omphalos_iface *octx,omphalos_packet *op,
 				// FIXME check the proto (LLC length) field against framelen!
 				handle_8022(octx,op,(const char *)dgram,dlen); // modifies op->l3proto
 			}else{
-				++op->i->noprotocol;
+				op->noproto = 1;
 				octx->diagnostic("%s %s noproto for 0x%x",__func__,
 						op->i->name,proto);
 			}
