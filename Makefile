@@ -71,7 +71,7 @@ IANAOUI:=ieee-oui.txt
 
 # Requires CAP_NET_ADMIN privileges bestowed upon the binary
 livetest: sudobless $(IANAOUI)
-	$(OMPHALOS)-ncurses -u ''
+	$(OMPHALOS)-ncurses -u '' --plog plog.pcap
 
 test: all $(TESTPCAPS) $(IANAOUI)
 	for i in $(TESTPCAPS) ; do $(OMPHALOS)-tty -f $$i -u "" || exit 1 ; done
