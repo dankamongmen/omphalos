@@ -27,14 +27,16 @@
 
 static void
 usage(const char *arg0,int ret){
-	fprintf(stderr,"usage: %s [ -u username ] [ -f filename ] [ -i filename ]\n",
-			basename(arg0));
-	fprintf(stderr,"options:\n");
+	fprintf(stderr,"usage: %s [ options... ]\n",basename(arg0));
+	fprintf(stderr,"\noptions:\n");
+	fprintf(stderr,"-h print this help, and exit\n");
+	fprintf(stderr,"--version print version info, and exit\n");
 	fprintf(stderr,"-u username: user name to take after creating packet socket.\n");
 	fprintf(stderr,"\t'%s' by default. provide empty string to disable.\n",DEFAULT_USERNAME);
 	fprintf(stderr,"-f filename: libpcap-format save file for input.\n");
-	fprintf(stderr,"-i filename: IANA's OUI mapping in get-oui(1) format.\n");
+	fprintf(stderr,"--ouis filename: IANA's OUI mapping in get-oui(1) format.\n");
 	fprintf(stderr,"\t'%s' by default. provide empty string to disable.\n",DEFAULT_IANA_FILENAME);
+	fprintf(stderr,"--plog filename: Enable malformed packet logging to this file.\n");
 	exit(ret);
 }
 
@@ -78,9 +80,13 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 	
 	memset(pctx,0,sizeof(*pctx));
 	opterr = 0; // suppress getopt() diagnostic to stderr while((opt = getopt(argc,argv,":c:f:")) >= 0){ switch(opt){ case 'c':{
-	while((opt = getopt(argc,argv,":f:i:u:")) >= 0){
-		switch(opt){
-		case 'i':{
+	while((opt = getopt(argc,argv,":hf:u:")) >= 0){
+		switch(opt){ // FIXME need --plog
+		case 'h':{
+			usage(argv[0],EXIT_SUCCESS);
+			break;
+		}
+		case 'i':{ // FIXME --ouis
 			if(pctx->ianafn){
 				fprintf(stderr,"Provided %c twice\n",opt);
 				usage(argv[0],-1);
