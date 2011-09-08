@@ -17,6 +17,7 @@
 #include <omphalos/interface.h>
 
 static pcap_dumper_t *dumper;
+static pthread_mutex_t dumplock = PTHREAD_MUTEX_INITIALIZER;
 
 static interface pcap_file_interface = {
 	.fd = -1,
@@ -209,10 +210,12 @@ int init_pcap(const omphalos_ctx *pctx){
 
 void cleanup_pcap(const omphalos_ctx *pctx){
 	free_iface(&pctx->iface,&pcap_file_interface);
+	pthread_mutex_lock(&dumplock);
 	if(dumper){
 		pcap_dump_flush(dumper);
 		dumper = NULL;
 	}
+	pthread_mutex_unlock(&dumplock);
 	if(pctx->plogp){
 		pcap_close(pctx->plogp);
 	}
@@ -222,6 +225,12 @@ int log_pcap_packet(struct pcap_pkthdr *h,void *sp){
 	if(!dumper){
 		return 0;
 	}
+	if(pthread_mutex_lock(&dumplock)){
+		return -1;
+	}
 	pcap_dump((u_char *)dumper,h,sp);
+	if(pthread_mutex_unlock(&dumplock)){
+		return -1;
+	}
 	return 0;
 }
