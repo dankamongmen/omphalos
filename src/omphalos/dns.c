@@ -3,12 +3,13 @@
 #include <stdint.h>
 #include <linux/ip.h>
 #include <linux/udp.h>
-#include <omphalos/tx.h>
 #include <omphalos/ip.h>
+#include <omphalos/tx.h>
 #include <omphalos/dns.h>
 #include <omphalos/udp.h>
 #include <omphalos/util.h>
 #include <asm/byteorder.h>
+#include <omphalos/csum.h>
 #include <omphalos/route.h>
 #include <omphalos/resolv.h>
 #include <omphalos/ethernet.h>
