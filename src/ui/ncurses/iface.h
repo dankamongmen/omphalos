@@ -34,6 +34,11 @@ typedef struct iface_state {
 	struct l2obj *l2objs;		// l2 entity list
 	unsigned expansion;		// degree of expansion/collapse
 	struct iface_state *next,*prev;
+
+	// It is possible that an interface can be split across the bottom
+	// boundary when we have only a little more than a single screen of
+	// data available.
+	PANEL *split;			// topside panel when split across screen
 } iface_state;
 
 // FIXME also try to move this
@@ -43,6 +48,7 @@ void redraw_iface(const struct iface_state *,int);
 struct iface_state *create_interface_state(struct interface *);
 void free_iface_state(struct iface_state *);
 
+int iface_visible_p(int,const iface_state *);
 int iface_wholly_visible_p(int,const struct iface_state *);
 int lines_for_interface(const struct iface_state *);
 int move_interface(struct iface_state *,int,int,int);
@@ -52,6 +58,11 @@ struct l3obj *add_l3_to_iface(struct iface_state *,struct l2obj *,struct l3host 
 
 void expand_interface(struct iface_state *);
 void collapse_interface(struct iface_state *);
+
+static inline int
+iface_split_p(const iface_state *is){
+	return !!is->split;
+}
 
 #ifdef __cplusplus
 }

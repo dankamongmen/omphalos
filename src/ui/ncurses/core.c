@@ -278,6 +278,7 @@ push_interfaces_above(iface_state *pusher,int rows,int delta){
 static int
 resize_iface(const interface *i,iface_state *is){
 	const int nlines = iface_lines_unbounded(i,is);
+	const interface *curi = get_current_iface();
 	int rows,cols,subrows,subcols;
 
 	if(panel_hidden(is->panel)){ // resize upon becoming visible
@@ -286,37 +287,42 @@ resize_iface(const interface *i,iface_state *is){
 	getmaxyx(stdscr,rows,cols);
 	getmaxyx(is->subwin,subrows,subcols);
 	assert(subcols); // FIXME
-	if(nlines < subrows){
+	if(nlines < subrows){ // Shrink the interface
 		assert(werase(is->subwin) == OK);
 		screen_update();
 		assert(wresize(is->subwin,nlines,PAD_COLS(cols)) != ERR);
 		assert(replace_panel(is->panel,is->subwin) != ERR);
-		// FIXME when we collapse, we need pull up other
-		// interfaces to fill the vacated space
-	}else if(nlines > subrows){
-		// Try to expand down first. If that won't work, expand up.
-		if(nlines + is->scrline < rows){
-			int delta = nlines - subrows;
+		// FIXME move up interfaces below
+	}else if(nlines > subrows){ // Expand the interface
+		if(i == curi){
+			// The current interface can grow in either direction.
+			if(nlines + is->scrline < rows){ // Try down first.
+				int delta = nlines - subrows;
 
-			if(push_interfaces_below(is,rows,delta)){
-				return OK;
-			}
-			assert(wresize(is->subwin,nlines,PAD_COLS(cols)) != ERR);
-			assert(replace_panel(is->panel,is->subwin) != ERR);
-		}else if(is->scrline != 1){
-			int delta = nlines - subrows;
+				if(push_interfaces_below(is,rows,delta)){
+					return OK;
+				}
+				assert(wresize(is->subwin,nlines,PAD_COLS(cols)) != ERR);
+				assert(replace_panel(is->panel,is->subwin) != ERR);
+			}else if(is->scrline != 1){ // Otherwise try up
+				int delta = nlines - subrows;
 
-			if(delta > is->scrline - 1){
-				delta = is->scrline - 1;
+				if(delta > is->scrline - 1){
+					delta = is->scrline - 1;
+				}
+				is->scrline -= delta;
+				if(push_interfaces_above(is,rows,-delta)){
+					is->scrline += delta;
+					return OK;
+				}
+				assert(move_panel(is->panel,is->scrline,1) != ERR);
+				assert(wresize(is->subwin,iface_lines_bounded(i,is,rows),PAD_COLS(cols)) != ERR);
+				assert(replace_panel(is->panel,is->subwin) != ERR);
 			}
-			is->scrline -= delta;
-			if(push_interfaces_above(is,rows,-delta)){
-				is->scrline += delta;
-				return OK;
-			}
-			assert(move_panel(is->panel,is->scrline,1) != ERR);
-			assert(wresize(is->subwin,iface_lines_bounded(i,is,rows),PAD_COLS(cols)) != ERR);
-			assert(replace_panel(is->panel,is->subwin) != ERR);
+		}else if(is->scrline > current_iface->scrline){
+			// FIXME we can only grow down
+		}else{
+			// FIXME we can only grow up
 		}
 	}
 	redraw_iface_generic(is);
@@ -510,7 +516,7 @@ void *interface_cb_locked(interface *i,iface_state *ret,struct panel_state *ps){
 			// Want the subdisplay left above this new iface,
 			// should they intersect.
 			assert(bottom_panel(ret->panel) == OK);
-			if(!iface_wholly_visible_p(rows,ret)){
+			if(!iface_visible_p(rows,ret)){
 				assert(hide_panel(ret->panel) != ERR);
 			}
 			draw_main_window(stdscr); // update iface count

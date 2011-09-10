@@ -48,6 +48,7 @@ iface_state *create_interface_state(interface *i){
 		ret->lastprinted.tv_sec = ret->lastprinted.tv_usec = 0;
 		ret->iface = i;
 		ret->expansion = EXPANSION_MAX;
+		ret->split = NULL;
 	}
 	return ret;
 }
@@ -436,8 +437,7 @@ void redraw_iface(const iface_state *is,int active){
 
 // Is even a line of the interface visible? If so, draw it, as otherwise we
 // have useless, disconcerting blank space.
-static int
-iface_visible_p(int rows,const iface_state *is){
+int iface_visible_p(int rows,const iface_state *is){
 	if(is->scrline + 1 >= rows){
 		return 0;
 	}else if(is->scrline + lines_for_interface(is) < 1){
