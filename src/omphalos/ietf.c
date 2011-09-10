@@ -15,11 +15,18 @@
 // The 224.0.0.0/24 Local Network Control Block
 #define RFC1112_LOCAL_BASE __constant_htonl(0xe0000000)
 #define RFC1112_LOCAL_MASK __constant_htonl(0xffffff00)
-#define RFC1112_LOCAL_ALL_HOSTS		__constant_htonl(0xe0000001)
-#define RFC1112_LOCAL_ALL_ROUTERS	__constant_htonl(0xe0000002)
-#define RFC1112_LOCAL_DVMRP		__constant_htonl(0xe0000004)
-#define RFC1112_LOCAL_IGMP3		__constant_htonl(0xe0000016)
-#define RFC1112_LOCAL_MDNS		__constant_htonl(0xe00000fb)
+#define RFC1112_LOCAL_ALL_HOSTS			__constant_htonl(0xe0000001)
+#define RFC1112_LOCAL_ALL_ROUTERS		__constant_htonl(0xe0000002)
+#define RFC1112_LOCAL_DVMRP			__constant_htonl(0xe0000004)
+#define RFC1112_LOCAL_OSPFIGP_ROUTERS		__constant_htonl(0xe0000005)
+#define RFC1112_LOCAL_OSPFIGP_DESIGNATED	__constant_htonl(0xe0000006)
+#define RFC1112_LOCAL_ST_ROUTERS		__constant_htonl(0xe0000007)
+#define RFC1112_LOCAL_ST_HOSTS			__constant_htonl(0xe0000008)
+#define RFC1112_LOCAL_IGRP_ROUTERS		__constant_htonl(0xe000000a)
+#define RFC1112_LOCAL_DHCP_REPLAY		__constant_htonl(0xe000000c)
+#define RFC1112_LOCAL_IGMP3			__constant_htonl(0xe0000016)
+#define RFC1112_LOCAL_MDNS			__constant_htonl(0xe00000fb)
+#define RFC1112_LOCAL_LLMNR			__constant_htonl(0xe00000fc)
 
 // The 224.0.1.0/24 Internetwork Control Block
 #define IPV4_INTERNETWORK_BASE		__constant_htonl(0xe0000100)
@@ -46,10 +53,24 @@ ietf_multicast_ipv4(const uint32_t *ip){
 			return "All segment routers (RFC 1112)";
 		}else if(*ip == RFC1112_LOCAL_DVMRP){
 			return "DVMRP (RFC 1075)";
+		}else if(*ip == RFC1112_LOCAL_OSPFIGP_ROUTERS){
+			return "OSPFIGP all routers (RFC 1583)";
+		}else if(*ip == RFC1112_LOCAL_OSPFIGP_DESIGNATED){
+			return "OSPFIGP designated routers (RFC 1583)";
+		}else if(*ip == RFC1112_LOCAL_ST_ROUTERS){
+			return "ST2 routers (RFC 1190)";
+		}else if(*ip == RFC1112_LOCAL_ST_HOSTS){
+			return "ST2 hosts (RFC 1190)";
+		}else if(*ip == RFC1112_LOCAL_IGRP_ROUTERS){
+			return "[E]IGRP routers (Cisco)";
+		}else if(*ip == RFC1112_LOCAL_DHCP_REPLAY){
+			return "DHCP relay (RFC 1884)";
 		}else if(*ip == RFC1112_LOCAL_IGMP3){
 			return "IGMPv3 (RFC 1054)";
 		}else if(*ip == RFC1112_LOCAL_MDNS){
 			return "mDNS (IANA)";
+		}else if(*ip == RFC1112_LOCAL_LLMNR){
+			return "LLMNR (RFC 4795)";
 		}
 		return "RFC 5771 local network multicast";
 	}else if((*ip & IPV4_INTERNETWORK_MASK) == IPV4_INTERNETWORK_BASE){
@@ -93,6 +114,11 @@ static const struct {
 		.ip = { __constant_htonl(0xff020000), __constant_htonl(0x00000000),
 			__constant_htonl(0x00000000), __constant_htonl(0x000000fb), },
 		.name = "mDNS (IANA)",
+	},
+	{ // ff02::1:3
+		.ip = { __constant_htonl(0xff020000), __constant_htonl(0x00000000),
+			__constant_htonl(0x00000000), __constant_htonl(0x00010003), },
+		.name = "LLMNR (RFC 4795)",
 	},
 	{ // ff05::2
 		.ip = { __constant_htonl(0xff050000), __constant_htonl(0x00000000),
