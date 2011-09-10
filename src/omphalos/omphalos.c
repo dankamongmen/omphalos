@@ -40,6 +40,8 @@ usage(const char *arg0,int ret){
 	fprintf(fp,"-f filename: libpcap-format save file for input.\n");
 	fprintf(fp,"--ouis filename: IANA's OUI mapping in get-oui(1) format.\n");
 	fprintf(fp,"\t'%s' by default. provide empty string to disable.\n",DEFAULT_IANA_FILENAME);
+	fprintf(fp,"--resolv filename: resolv.conf-format nameserver list.\n");
+	fprintf(fp,"\t'%s' by default. provide empty string to disable.\n",DEFAULT_RESOLVCONF_FILENAME);
 	fprintf(fp,"--plog filename: Enable malformed packet logging to this file.\n");
 	exit(ret);
 }
@@ -86,6 +88,7 @@ enum {
 	OPT_OUIS = 'z' + 1,
 	OPT_VERSION,
 	OPT_PLOG,
+	OPT_RESOLV,
 };
 
 int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
@@ -105,6 +108,11 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 			.has_arg = 1,
 			.flag = NULL,
 			.val = OPT_PLOG,
+		},{
+			.name = "resolv",
+			.has_arg = 1,
+			.flag = NULL,
+			.val = OPT_RESOLV,
 		},
 		{
 			.name = NULL,
@@ -134,6 +142,13 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 				usage(argv[0],EXIT_FAILURE);
 			}
 			pctx->ianafn = optarg;
+			break;
+		}case OPT_RESOLV:{
+			if(pctx->resolvconf){
+				fprintf(stderr,"Provided --resolv twice\n");
+				usage(argv[0],EXIT_FAILURE);
+			}
+			pctx->resolvconf = optarg;
 			break;
 		}case OPT_PLOG:{
 			if(pctx->plog){
