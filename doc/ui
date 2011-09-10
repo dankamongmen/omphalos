@@ -104,3 +104,95 @@ other interfaces will:
     push the current interface partially offscreen (better to move the current
     interface than to possibly hide the new data).
  - otherwise, partially push themselves offscreen.
+
+IV. Summary
+
+The case of more vertical space than information to display is conceptually
+trivial, and we don't generally consider its details below.
+
+Everything pivots on the current interface, which has special properties:
+
+ - It directs changes of other interfaces (preference is given to
+    expanding/shrinking so that the current interface does not move)
+ - It is given preferential access to all display real estate, and is thus
+    always visible.
+ - It cannot be split across screen boundaries (this emerges from the model).
+
+The current interface can change due to four events:
+
+ - the user moves up
+ - the user moves down
+ - the number of interfaces changes from zero to one
+ - the current interface is removed from the system
+
+Event-handling matrix: { Event-Effect, Relation-to-Current }
+
+Event-Effect is one of: Shrink (use fewer lines, but do not eliminate the
+interface entirely), Remove (purge the interface), Add (create a new interface,
+though it might not yet be visible), Expand (try to use more lines), and Select
+(the interface becomes the current).
+
+Relation-to-Current is a tetrastate: { Above, Equal, Below, Offscreen }. An
+interface split across the screen boundary, unless it is Equal, is defined to
+be Above -- this reflects our preference for blank space at the screen's
+bottom over blank space at its top (and such an interface clearly cannot be
+Offscreen). Add events are almost always Below -- reflecting our preference for
+adding at the screen's bottom rather than top -- or Offscreen (it can be Above
+when there happened to be an interface crossing the screen boundary below the
+current interface). An Add with Equal indicates transition from zero
+interfaces to one. A Select event which is Equal is a no-op.
+
+In addition, we define MakeCurrent(), a function called whenever the action
+results in a new current interface.
+
+REMOVE: The interface must unconditionally be removed, yielding blank space.
+ Above: All interfaces preceding the removed interface up to but not including
+        the current are candidates to fill the created space. Move them into
+        the space until it is filled, or no more interfaces can be moved. If
+        space remains, meaning we must have less than a screen's worth of data,
+        move the entire display up to coincide with the screen's first line.
+ Below: All interfaces following the removed interface up to but not including
+        any data visible across the bottom screen boundary are candidates to
+        fill the created space. Move them into the space until it is filled; if
+        we reach data visible at the top of the screen, we have less than a
+        screen's worth of data, and are properly positioned.
+ Equal: If there is no other interface, the current interface becomes null.
+        Otherwise, the next interface becomes current. Move it up to fill the
+        created space; if it was split, this might create blank space at the
+        top; move up all interfaces in such a case until the blank space is
+        filled. Run MakeCurrent() on it.
+ Offscreen: No action need be taken.
+
+ADD:
+ Equal: Can't occur; see above.
+ Below: There must have been some empty space on the screen. Draw the interface
+        there through the bottom of the screen. If it cannot be wholly
+        displayed, we must have a full screen, so there's no reason to split it
+        over the interface boundary.
+ Above: This is the rare case of an interface below the current one being split
+        across the screen boundary. Logically, we would replace the bottommost
+        portion of the split interface -- the portion at the top of the screen
+        -- with the equivalent bottommost portion of the new interface,
+        possibly retaining some suffix of the previous split interface. This
+        can be confusing -- there's be no indicator, given less space than
+        optimal for the new interface, that the data observed suddenly belongs
+        to a new interface. This could be mitigated by making new interfaces
+        visually distinct, temporarily, from existing ones.
+ Offscreen: No action need be taken.
+
+EXPAND:
+ Equal: If we have not reached the bottom screen boundary, expand down.
+        Otherwise, if we have not reached the top screen boundary, expand up.
+        Push everything between us and the screen boundary in the direction of
+        the expansion, possibly offscreen (splitting an interface in this
+        manner is not possible -- if we push something off the bottom, we had a
+        full screen; if we push something off the top, we couldn't push down,
+        and thus also had a full screen, since we prefer space at the bottom).
+ Above: If we have not yet reached the top screen boundary, expand up, pushing
+        everything between us and the screen boundary up.
+ Below: If we have not yet reached the bottom screen boundary, expand down,
+        pushing everything between us and the screen boundary down.
+ Offscreen: No action need be taken.
+
+SHRINK:
+ Equal: Always shrink towards the topmost portion of the interface.
