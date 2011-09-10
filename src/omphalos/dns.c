@@ -418,7 +418,7 @@ int tx_dns_a(const omphalos_iface *octx,int fam,const void *addr,
 	}
 	hw = get_hwaddr(rp.l2);
 	thdr = frame;
-	tlen = sizeof(*thdr);
+	tlen = thdr->tp_mac;
 	if((r = prep_eth_header(frame + tlen,flen - tlen,rp.i,&hw,ETH_P_IP)) < 0){
 		abort_tx_frame(rp.i,frame);
 		return -1;;
@@ -480,6 +480,7 @@ int tx_dns_a(const omphalos_iface *octx,int fam,const void *addr,
 	iphdr->check = ipv4_csum(iphdr);
 	udp->check = udp4_csum(iphdr);
 	send_tx_frame(octx,rp.i,frame);
+	octx->diagnostic("Transmitted DNS lookup");
 	return 0;
 }
 

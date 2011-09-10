@@ -12,7 +12,8 @@
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
 
-// Acquire a frame from the ringbuffer
+// Acquire a frame from the ringbuffer. Start writing, given return value
+// 'frame', at: (char *)frame + ((struct tpacket_hdr *)frame)->tp_mac.
 void *get_tx_frame(const omphalos_iface *octx,interface *i,size_t *fsize){
 	struct tpacket_hdr *thdr = i->curtxm;
 	void *ret;
@@ -26,6 +27,8 @@ void *get_tx_frame(const omphalos_iface *octx,interface *i,size_t *fsize){
 		octx->diagnostic("No available TX frames on %s",i->name);
 		return NULL;
 	}
+	// FIXME we ought be able to set this once for each packet, and be done
+	thdr->tp_net = thdr->tp_mac = TPACKET_ALIGN(sizeof(struct tpacket_hdr));
 	ret = i->curtxm;
 	i->curtxm += inclen(&i->txidx,&i->ttpr);
 	*fsize = i->ttpr.tp_frame_size;
