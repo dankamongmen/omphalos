@@ -1293,7 +1293,7 @@ interface_cb_locked(interface *i,iface_state *ret){
 		wstatus_locked(pad,"");
 		ret->devaction = 0;
 	}
-	return ret;
+	return ret; // callers are responsible for screen_update()
 }
 
 static void *

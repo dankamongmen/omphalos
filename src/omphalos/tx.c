@@ -44,7 +44,7 @@ void send_tx_frame(const omphalos_iface *octx,interface *i,void *frame){
 
 		phdr.caplen = phdr.len = thdr->tp_len;
 		gettimeofday(&phdr.ts,NULL);
-		log_pcap_packet(&phdr,frame);
+		log_pcap_packet(&phdr,(char *)frame + thdr->tp_mac);
 	}
 	if(send(i->fd,NULL,0,0) < 0){
 		octx->diagnostic("Error transmitting on %s",i->name);
