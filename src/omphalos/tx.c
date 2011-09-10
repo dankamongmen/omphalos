@@ -80,17 +80,21 @@ void prepare_arp_probe(const omphalos_iface *octx,const interface *i,
 	struct arphdr *ahdr;
 	size_t tlen;
 
-	tlen = sizeof(*thdr) + sizeof(*ehdr) + sizeof(*ahdr)
+	thdr = frame;
+	if(*flen < sizeof(*thdr)){
+		octx->diagnostic("%s %s frame too small for tx",__func__,i->name);
+		return;
+	}
+	tlen = thdr->tp_mac + sizeof(*ehdr) + sizeof(*ahdr)
 			+ 2 * hln + 2 * pln;
 	if(*flen < tlen){
 		octx->diagnostic("%s %s frame too small for tx",__func__,i->name);
 		return;
 	}
 	assert(hln == i->addrlen); // FIXME handle this case
-	thdr = frame;
 	// FIXME what about non-ethernet
-	ehdr = (struct ethhdr *)((char *)frame + sizeof(*thdr));
-	assert(prep_eth_header(ehdr,*flen - sizeof(*thdr),i,haddr,ETH_P_ARP) == sizeof(struct ethhdr));
+	ehdr = (struct ethhdr *)((char *)frame + thdr->tp_mac);
+	assert(prep_eth_header(ehdr,*flen - thdr->tp_mac,i,haddr,ETH_P_ARP) == sizeof(struct ethhdr));
 	thdr->tp_len = sizeof(struct ethhdr) + sizeof(struct arphdr)
 		+ hln * 2 + pln * 2;
 	ahdr = (struct arphdr *)((char *)ehdr + sizeof(*ehdr));
