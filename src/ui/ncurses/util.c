@@ -3,7 +3,43 @@
 #include <ui/ncurses/util.h>
 #include <ncursesw/ncurses.h>
 
-int bevel(WINDOW *w,int nobottom){
+int bevel_notop(WINDOW *w){
+	static const cchar_t bchr[] = {
+		{ .attr = 0, .chars = L"╰", },
+		{ .attr = 0, .chars = L"╯", },
+	};
+	int rows,cols;
+
+	getmaxyx(w,rows,cols);
+	if(rows > 1){
+		assert(mvwvline(w,0,0,ACS_VLINE,rows - 1) != ERR);
+		assert(mvwvline(w,0,cols - 1,ACS_VLINE,rows - 1) != ERR);
+	}
+	assert(mvwadd_wch(w,0,0,&bchr[0]) != ERR);
+	assert(mvwhline(w,0,1,ACS_HLINE,cols - 2) != ERR);
+	assert(mvwins_wch(w,0,cols - 1,&bchr[1]) != ERR);
+	return OK;
+}
+
+int bevel_nobottom(WINDOW *w){
+	static const cchar_t bchr[] = {
+		{ .attr = 0, .chars = L"╭", },
+		{ .attr = 0, .chars = L"╮", },
+	};
+	int rows,cols;
+
+	getmaxyx(w,rows,cols);
+	assert(mvwadd_wch(w,0,0,&bchr[0]) != ERR);
+	assert(mvwins_wch(w,0,cols - 1,&bchr[1]) != ERR);
+	assert(mvwhline(w,0,1,ACS_HLINE,cols - 2) != ERR);
+	if(rows > 1){
+		assert(mvwvline(w,1,0,ACS_VLINE,rows - 1) != ERR);
+		assert(mvwvline(w,1,cols - 1,ACS_VLINE,rows - 1) != ERR);
+	}
+	return OK;
+}
+
+int bevel(WINDOW *w){
 	static const cchar_t bchr[] = {
 		{ .attr = 0, .chars = L"╭", },
 		{ .attr = 0, .chars = L"╮", },
@@ -20,13 +56,8 @@ int bevel(WINDOW *w,int nobottom){
 	// see http://lists.gnu.org/archive/html/bug-ncurses/2007-09/msg00001.html
 	assert(mvwadd_wch(w,0,0,&bchr[0]) != ERR);
 	assert(mvwins_wch(w,0,cols - 1,&bchr[1]) != ERR);
-	if(!nobottom){
-		assert(mvwadd_wch(w,rows - 1,0,&bchr[2]) != ERR);
-		assert(mvwins_wch(w,rows - 1,cols - 1,&bchr[3]) != ERR);
-	}else{
-		assert(mvwadd_wch(w,rows - 1,0,WACS_VLINE) != ERR);
-		assert(mvwins_wch(w,rows - 1,cols - 1,WACS_VLINE) != ERR);
-	}
+	assert(mvwadd_wch(w,rows - 1,0,&bchr[2]) != ERR);
+	assert(mvwins_wch(w,rows - 1,cols - 1,&bchr[3]) != ERR);
 	return OK;
 }
 

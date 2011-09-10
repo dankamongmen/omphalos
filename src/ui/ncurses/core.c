@@ -119,7 +119,7 @@ int new_display_panel(WINDOW *w,struct panel_state *ps,int rows,int cols,const w
 	// memory leaks follow if we're compiled with NDEBUG! FIXME
 	assert(wattron(psw,A_BOLD) != ERR);
 	assert(wcolor_set(psw,PBORDER_COLOR,NULL) == OK);
-	assert(bevel(psw,0) == OK);
+	assert(bevel(psw) == OK);
 	assert(wattroff(psw,A_BOLD) != ERR);
 	assert(wcolor_set(psw,PHEADING_COLOR,NULL) == OK);
 	assert(mvwaddwstr(psw,0,START_COL * 2,hstr) != ERR);
@@ -286,43 +286,37 @@ resize_iface(const interface *i,iface_state *is){
 	getmaxyx(stdscr,rows,cols);
 	getmaxyx(is->subwin,subrows,subcols);
 	assert(subcols); // FIXME
-	if(nlines != subrows){
-		// FIXME don't allow interfaces other than those selected to
-		// push other interfaces offscreen, or at least the selected ones
-		// on grow down, check if we're selected; if not, check to
-		// ensure none get pushed off down. vice versa.
-		if(nlines < subrows){
-			assert(werase(is->subwin) == OK);
-			screen_update();
+	if(nlines < subrows){
+		assert(werase(is->subwin) == OK);
+		screen_update();
+		assert(wresize(is->subwin,nlines,PAD_COLS(cols)) != ERR);
+		assert(replace_panel(is->panel,is->subwin) != ERR);
+		// FIXME when we collapse, we need pull up other
+		// interfaces to fill the vacated space
+	}else if(nlines > subrows){
+		// Try to expand down first. If that won't work, expand up.
+		if(nlines + is->scrline < rows){
+			int delta = nlines - subrows;
+
+			if(push_interfaces_below(is,rows,delta)){
+				return OK;
+			}
 			assert(wresize(is->subwin,nlines,PAD_COLS(cols)) != ERR);
 			assert(replace_panel(is->panel,is->subwin) != ERR);
-			// FIXME when we collapse, we need pull up other
-			// interfaces to fill the vacated space
-		}else{
-			// Try to expand down first. If that won't work, expand up.
-			if(nlines + is->scrline < rows){
-				int delta = nlines - subrows;
+		}else if(is->scrline != 1){
+			int delta = nlines - subrows;
 
-				if(push_interfaces_below(is,rows,delta)){
-					return OK;
-				}
-				assert(wresize(is->subwin,nlines,PAD_COLS(cols)) != ERR);
-				assert(replace_panel(is->panel,is->subwin) != ERR);
-			}else if(is->scrline != 1){
-				int delta = nlines - subrows;
-
-				if(delta > is->scrline - 1){
-					delta = is->scrline - 1;
-				}
-				is->scrline -= delta;
-				if(push_interfaces_above(is,rows,-delta)){
-					is->scrline += delta;
-					return OK;
-				}
-				assert(move_panel(is->panel,is->scrline,1) != ERR);
-				assert(wresize(is->subwin,iface_lines_bounded(i,is,rows),PAD_COLS(cols)) != ERR);
-				assert(replace_panel(is->panel,is->subwin) != ERR);
+			if(delta > is->scrline - 1){
+				delta = is->scrline - 1;
 			}
+			is->scrline -= delta;
+			if(push_interfaces_above(is,rows,-delta)){
+				is->scrline += delta;
+				return OK;
+			}
+			assert(move_panel(is->panel,is->scrline,1) != ERR);
+			assert(wresize(is->subwin,iface_lines_bounded(i,is,rows),PAD_COLS(cols)) != ERR);
+			assert(replace_panel(is->panel,is->subwin) != ERR);
 		}
 	}
 	redraw_iface_generic(is);
@@ -633,7 +627,7 @@ int draw_main_window(WINDOW *w){
 	// POSIX.1-2001 doesn't guarantee a terminating null on truncation
 	hostname[sizeof(hostname) - 1] = '\0';
 	assert(wattrset(w,A_DIM | COLOR_PAIR(BORDER_COLOR)) != ERR);
-	if(bevel(w,0) != OK){
+	if(bevel(w) != OK){
 		goto err;
 	}
 	if(setup_statusbar(cols)){

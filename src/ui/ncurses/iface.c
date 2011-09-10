@@ -288,7 +288,7 @@ void iface_box(const interface *i,const iface_state *is,int active){
 	hcolor = interface_up_p(i) ? UHEADING_COLOR : DHEADING_COLOR;
 	attrs = active ? A_REVERSE : A_BOLD;
 	assert(wattrset(w,attrs | COLOR_PAIR(bcolor)) == OK);
-	assert(bevel(w,0) == OK);
+	assert(bevel(w) == OK);
 	assert(wattroff(w,A_REVERSE) == OK);
 	if(active){
 		assert(wattron(w,A_BOLD) == OK);

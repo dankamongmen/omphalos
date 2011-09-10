@@ -52,7 +52,9 @@ screen_update(void){
 	return ret;
 }
 
-int bevel(WINDOW *,int);
+int bevel(WINDOW *);
+int bevel_notop(WINDOW *);
+int bevel_nobottom(WINDOW *);
 
 char *genprefix(uintmax_t,unsigned,char *,size_t,int,unsigned,int);
 
