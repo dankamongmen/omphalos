@@ -76,8 +76,8 @@ redraw_iface_generic(const struct iface_state *is){
 }
 
 static inline int
-move_interface_generic(struct iface_state *is,int rows,int delta){
-	return move_interface(is,rows,delta,is == current_iface);
+move_interface_generic(struct iface_state *is,int rows,int cols,int delta){
+	return move_interface(is,rows,cols,delta,is == current_iface);
 }
 
 static int
@@ -221,7 +221,7 @@ iface_details(WINDOW *hw,const interface *i,int rows){
 // (all those up until those actually displayed above it on the screen). Should
 // be called before pusher->scrline has been updated.
 static int
-push_interfaces_below(iface_state *pusher,int rows,int delta){
+push_interfaces_below(iface_state *pusher,int rows,int cols,int delta){
 	iface_state *is = pusher->next;
 
 	
@@ -231,7 +231,7 @@ push_interfaces_below(iface_state *pusher,int rows,int delta){
 	while((is = is->prev) != pusher){
 		int i;
 
-		if( (i = move_interface_generic(is,rows,delta)) ){
+		if( (i = move_interface_generic(is,rows,cols,delta)) ){
 			return i;
 		}
 	}
@@ -248,7 +248,7 @@ push_interfaces_below(iface_state *pusher,int rows,int delta){
 // (all those up until those actually displayed below it on the screen). Should
 // be called before pusher->scrline has been updated.
 static int
-push_interfaces_above(iface_state *pusher,int rows,int delta){
+push_interfaces_above(iface_state *pusher,int rows,int cols,int delta){
 	iface_state *is = pusher->prev;
 
 
@@ -258,7 +258,7 @@ push_interfaces_above(iface_state *pusher,int rows,int delta){
 	while((is = is->next) != pusher){
 		int i;
 
-		if( (i = move_interface_generic(is,rows,delta)) ){
+		if( (i = move_interface_generic(is,rows,cols,delta)) ){
 			return i;
 		}
 	}
@@ -274,7 +274,9 @@ push_interfaces_above(iface_state *pusher,int rows,int delta){
 // the interface's data. If so, the interface panel is resized (subject to the
 // containing window's constraints) and other panels are moved as necessary.
 // The interface's display is synchronized via redraw_iface() whether a resize
-// is performed or not (unless it's invisible).
+// is performed or not (unless it's invisible). The display ought be partially
+// visible -- ie, if we ought be invisible, we ought be already and this is not
+// going to make us so.
 int resize_iface(const interface *i,iface_state *is){
 	const int nlines = iface_lines_unbounded(i,is);
 	const interface *curi = get_current_iface();
@@ -303,7 +305,7 @@ int resize_iface(const interface *i,iface_state *is){
 			if(nlines + is->scrline < rows){ // Try down first.
 				int delta = nlines - subrows;
 
-				if(push_interfaces_below(is,rows,delta)){
+				if(push_interfaces_below(is,rows,cols,delta)){
 					return OK;
 				}
 				assert(wresize(is->subwin,nlines,PAD_COLS(cols)) != ERR);
@@ -315,7 +317,7 @@ int resize_iface(const interface *i,iface_state *is){
 					delta = is->scrline - 1;
 				}
 				is->scrline -= delta;
-				if(push_interfaces_above(is,rows,-delta)){
+				if(push_interfaces_above(is,rows,cols,-delta)){
 					is->scrline += delta;
 					return OK;
 				}
@@ -327,7 +329,7 @@ int resize_iface(const interface *i,iface_state *is){
 			if(nlines + is->scrline < rows){ // we can only go down
 				int delta = nlines - subrows;
 
-				if(push_interfaces_below(is,rows,delta)){
+				if(push_interfaces_below(is,rows,cols,delta)){
 					return OK;
 				}
 				assert(wresize(is->subwin,nlines,PAD_COLS(cols)) != ERR);
@@ -343,7 +345,7 @@ int resize_iface(const interface *i,iface_state *is){
 					delta = is->scrline - 1;
 				}
 				is->scrline -= delta;
-				if(push_interfaces_above(is,rows,-delta)){
+				if(push_interfaces_above(is,rows,cols,-delta)){
 					is->scrline += delta;
 					return OK;
 				}
@@ -598,7 +600,7 @@ void interface_removed_locked(iface_state *is,struct panel_state *ps){
 			assert(cols);
 			if(visible){
 				for(ci = is->next ; ci->scrline > is->scrline ; ci = ci->next){
-					move_interface_generic(ci,scrrows,-(rows + 1));
+					move_interface_generic(ci,scrrows,PAD_COLS(scrcols),-(rows + 1));
 				}
 			}
 		}else{
@@ -734,7 +736,7 @@ void use_next_iface_locked(WINDOW *w,struct panel_state *ps){
 			is->scrline = rows - iface_lines_bounded(i,is,rows) - 1;
 			up = oldis->scrline + iface_lines_bounded(oldis->iface,oldis,rows) + 1 - is->scrline;
 			if(up > 0){
-				push_interfaces_above(is,rows,-up);
+				push_interfaces_above(is,rows,cols,-up);
 			}
 			assert(wresize(is->subwin,iface_lines_bounded(i,is,rows),PAD_COLS(cols)) != ERR);
 			assert(replace_panel(is->panel,is->subwin) != ERR);
@@ -743,7 +745,7 @@ void use_next_iface_locked(WINDOW *w,struct panel_state *ps){
 			assert(show_panel(is->panel) != ERR);
 		}else if(is->scrline < oldis->scrline){
 			is->scrline = oldis->scrline + (iface_lines_bounded(oldis->iface,oldis,rows) - iface_lines_bounded(i,is,rows));
-			push_interfaces_above(is,rows,-(iface_lines_bounded(i,is,rows) + 1));
+			push_interfaces_above(is,rows,cols,-(iface_lines_bounded(i,is,rows) + 1));
 			assert(move_panel(is->panel,is->scrline,START_COL) != ERR);
 			redraw_iface_generic(is);
 		}else{
@@ -780,7 +782,7 @@ void use_prev_iface_locked(WINDOW *w,struct panel_state *ps){
 			if(iface_lines_bounded(i,is,rows) != iface_lines_unbounded(i,is)){
 				--shift; // no blank line will follow
 			}
-			push_interfaces_below(is,rows,shift);
+			push_interfaces_below(is,rows,cols,shift);
 			assert(wresize(is->subwin,iface_lines_bounded(i,is,rows),PAD_COLS(cols)) != ERR);
 			assert(replace_panel(is->panel,is->subwin) != ERR);
 			assert(move_panel(is->panel,is->scrline,START_COL) != ERR);
@@ -788,7 +790,7 @@ void use_prev_iface_locked(WINDOW *w,struct panel_state *ps){
 			assert(show_panel(is->panel) != ERR);
 		}else if(is->scrline > oldis->scrline){
 			is->scrline = 1;
-			push_interfaces_below(is,rows,iface_lines_bounded(i,is,rows) + 1);
+			push_interfaces_below(is,rows,cols,iface_lines_bounded(i,is,rows) + 1);
 			assert(move_panel(is->panel,is->scrline,START_COL) != ERR);
 			redraw_iface_generic(is);
 		}else{

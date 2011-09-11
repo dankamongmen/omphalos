@@ -43,7 +43,7 @@ typedef struct iface_state {
 
 // FIXME also try to move this
 void iface_box(const struct interface *,const struct iface_state *,int);
-void redraw_iface(const struct iface_state *,int);
+int redraw_iface(const struct iface_state *,int);
 
 struct iface_state *create_interface_state(struct interface *);
 void free_iface_state(struct iface_state *);
@@ -51,7 +51,7 @@ void free_iface_state(struct iface_state *);
 int iface_visible_p(int,const iface_state *);
 int iface_wholly_visible_p(int,const struct iface_state *);
 int lines_for_interface(const struct iface_state *);
-int move_interface(struct iface_state *,int,int,int);
+int move_interface(struct iface_state *,int,int,int,int);
 
 struct l2obj *add_l2_to_iface(const struct interface *,struct iface_state *,struct l2host *);
 struct l3obj *add_l3_to_iface(struct iface_state *,struct l2obj *,struct l3host *);

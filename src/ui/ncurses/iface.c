@@ -423,7 +423,7 @@ void free_iface_state(iface_state *is){
 	}
 }
 
-void redraw_iface(const iface_state *is,int active){
+int redraw_iface(const iface_state *is,int active){
 	const interface *i = is->iface;
 	int rows,cols;
 
@@ -434,6 +434,7 @@ void redraw_iface(const iface_state *is,int active){
 		print_iface_state(i,is,rows,cols);
 	}
 	print_iface_hosts(i,is,rows,cols);
+	return OK;
 }
 
 // Is even a line of the interface visible? If so, draw it, as otherwise we
@@ -452,20 +453,28 @@ int iface_visible_p(int rows,const iface_state *is){
 // Move this interface, possibly hiding it or bringing it onscreen. Negative
 // delta indicates movement up, positive delta moves down. Returns a non-zero
 // if the interface is active and would be pushed offscreen.
-int move_interface(iface_state *is,int rows,int delta,int active){
+int move_interface(iface_state *is,int rows,int cols,int delta,int active){
 	is->scrline += delta;
 	if(iface_wholly_visible_p(rows,is)){
 		assert(move_panel(is->panel,is->scrline,1) != ERR);
 		redraw_iface(is,active);
 	}else if(iface_visible_p(rows,is)){
+		int nlines;
+
 		// If we're active, resist the attempt to move us offscreen.
 		if(active){
 			is->scrline -= delta;
 			return -1;
 		}
-		if(resize_iface(is->iface,is)){ // become a partial interface
-			return -1;
+		if(delta > 0){
+			nlines = rows - is->scrline - 1;
+		}else{
+			// FIXME handle partial push up
+			assert(!"can't handle partial up yet");
 		}
+		assert(wresize(is->subwin,nlines,PAD_COLS(cols)) == OK);
+		assert(move_panel(is->panel,is->scrline,1) == OK);
+		assert(redraw_iface(is,active) == OK);
 	}else if(!panel_hidden(is->panel)){
 		if(active){
 			is->scrline -= delta;
