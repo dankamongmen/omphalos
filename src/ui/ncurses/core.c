@@ -286,10 +286,8 @@ resize_iface(const interface *i,iface_state *is){
 	}
 	getmaxyx(stdscr,rows,cols);
 	getmaxyx(is->subwin,subrows,subcols);
-	wstatus_locked(stdscr,"nlines: %d subrows: %d",nlines,subrows);
 	assert(subcols); // FIXME
 	if(nlines < subrows){ // Shrink the interface
-		wstatus_locked(stdscr,"Shrinking!");
 		assert(werase(is->subwin) == OK);
 		screen_update();
 		assert(wresize(is->subwin,nlines,PAD_COLS(cols)) != ERR);
