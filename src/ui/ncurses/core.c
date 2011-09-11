@@ -286,8 +286,10 @@ resize_iface(const interface *i,iface_state *is){
 	}
 	getmaxyx(stdscr,rows,cols);
 	getmaxyx(is->subwin,subrows,subcols);
+	wstatus_locked(stdscr,"nlines: %d subrows: %d",nlines,subrows);
 	assert(subcols); // FIXME
 	if(nlines < subrows){ // Shrink the interface
+		wstatus_locked(stdscr,"Shrinking!");
 		assert(werase(is->subwin) == OK);
 		screen_update();
 		assert(wresize(is->subwin,nlines,PAD_COLS(cols)) != ERR);
@@ -320,9 +322,31 @@ resize_iface(const interface *i,iface_state *is){
 				assert(replace_panel(is->panel,is->subwin) != ERR);
 			}
 		}else if(is->scrline > current_iface->scrline){
-			// FIXME we can only grow down
+			if(nlines + is->scrline < rows){ // Try down first.
+				int delta = nlines - subrows;
+
+				if(push_interfaces_below(is,rows,delta)){
+					return OK;
+				}
+				assert(wresize(is->subwin,nlines,PAD_COLS(cols)) != ERR);
+				assert(replace_panel(is->panel,is->subwin) != ERR);
+			}
 		}else{
-			// FIXME we can only grow up
+			if(is->scrline != 1){ // Otherwise try up
+				int delta = nlines - subrows;
+
+				if(delta > is->scrline - 1){
+					delta = is->scrline - 1;
+				}
+				is->scrline -= delta;
+				if(push_interfaces_above(is,rows,-delta)){
+					is->scrline += delta;
+					return OK;
+				}
+				assert(move_panel(is->panel,is->scrline,1) != ERR);
+				assert(wresize(is->subwin,iface_lines_bounded(i,is,rows),PAD_COLS(cols)) != ERR);
+				assert(replace_panel(is->panel,is->subwin) != ERR);
+			}
 		}
 	}
 	redraw_iface_generic(is);
@@ -499,6 +523,7 @@ void *interface_cb_locked(interface *i,iface_state *ret,struct panel_state *ps){
 			}
 			// we're not yet in the list -- nothing points to us --
 			// though ret->prev is valid.
+			wstatus_locked(stdscr,"Want %u",lines_for_interface(ret));
 			if((ret->subwin = newwin(lines_for_interface(ret),PAD_COLS(cols),ret->scrline,START_COL)) == NULL ||
 					(ret->panel = new_panel(ret->subwin)) == NULL){
 				delwin(ret->subwin);

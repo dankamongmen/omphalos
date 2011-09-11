@@ -101,6 +101,5 @@ void send_arp_probe(const omphalos_iface *octx,interface *i,const void *hwaddr,
 		prepare_arp_probe(octx,i,frame,&flen,hwaddr,i->addrlen,
 					addr,addrlen,saddr);
 		send_tx_frame(octx,i,frame);
-		octx->diagnostic("Sent ARP probe");
 	}
 }

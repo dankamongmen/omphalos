@@ -481,7 +481,6 @@ int tx_dns_a(const omphalos_iface *octx,int fam,const void *addr,
 	iphdr->check = ipv4_csum(iphdr);
 	udp->check = udp4_csum(iphdr);
 	send_tx_frame(octx,rp.i,frame);
-	octx->diagnostic("Transmitted DNS lookup");
 	return 0;
 }
 
