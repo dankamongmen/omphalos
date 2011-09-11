@@ -521,7 +521,6 @@ void *interface_cb_locked(interface *i,iface_state *ret,struct panel_state *ps){
 			}
 			// we're not yet in the list -- nothing points to us --
 			// though ret->prev is valid.
-			wstatus_locked(stdscr,"Want %u",lines_for_interface(ret));
 			if((ret->subwin = newwin(lines_for_interface(ret),PAD_COLS(cols),ret->scrline,START_COL)) == NULL ||
 					(ret->panel = new_panel(ret->subwin)) == NULL){
 				delwin(ret->subwin);
