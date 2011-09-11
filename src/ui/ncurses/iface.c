@@ -5,6 +5,7 @@
 #include <linux/version.h>
 #include <linux/nl80211.h>
 #include <linux/rtnetlink.h>
+#include <ui/ncurses/core.h>
 #include <ui/ncurses/util.h>
 #include <omphalos/hwaddrs.h>
 #include <ncursesw/ncurses.h>
@@ -462,9 +463,9 @@ int move_interface(iface_state *is,int rows,int delta,int active){
 			is->scrline -= delta;
 			return -1;
 		}
-		// FIXME old pre-partial behavior
-		assert(werase(is->subwin) != ERR);
-		assert(hide_panel(is->panel) != ERR);
+		if(resize_iface(is->iface,is)){ // become a partial interface
+			return -1;
+		}
 	}else if(!panel_hidden(is->panel)){
 		if(active){
 			is->scrline -= delta;

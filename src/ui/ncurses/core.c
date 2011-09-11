@@ -275,8 +275,7 @@ push_interfaces_above(iface_state *pusher,int rows,int delta){
 // containing window's constraints) and other panels are moved as necessary.
 // The interface's display is synchronized via redraw_iface() whether a resize
 // is performed or not (unless it's invisible).
-static int
-resize_iface(const interface *i,iface_state *is){
+int resize_iface(const interface *i,iface_state *is){
 	const int nlines = iface_lines_unbounded(i,is);
 	const interface *curi = get_current_iface();
 	int rows,cols,subrows,subcols;
@@ -328,6 +327,8 @@ resize_iface(const interface *i,iface_state *is){
 				}
 				assert(wresize(is->subwin,nlines,PAD_COLS(cols)) != ERR);
 				assert(replace_panel(is->panel,is->subwin) != ERR);
+			}else{
+				// becomes a partial interface FIXME
 			}
 		}else{
 			if(is->scrline != 1){ // Otherwise try up
@@ -344,6 +345,8 @@ resize_iface(const interface *i,iface_state *is){
 				assert(move_panel(is->panel,is->scrline,1) != ERR);
 				assert(wresize(is->subwin,iface_lines_bounded(i,is,rows),PAD_COLS(cols)) != ERR);
 				assert(replace_panel(is->panel,is->subwin) != ERR);
+			}else{
+				// becomes a partial interface FIXME
 			}
 		}
 	}

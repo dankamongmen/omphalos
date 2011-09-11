@@ -24,6 +24,11 @@ struct panel_state {
 	int ysize;			// number of lines of *text* (not win)
 };
 
+// These functions may only be called while the ncurses lock is held. They
+// themselves will not attempt to do any locking. Furthermore, they will not
+// call screen_update() -- that is the caller's responsibility (in this way,
+// multiple operations can be chained without screen updates, for flicker-free
+// graphics).
 int draw_main_window(WINDOW *);
 int setup_statusbar(int);
 int wstatus_locked(WINDOW *,const char *fmt,...);
@@ -44,6 +49,7 @@ void reset_all_interface_stats(WINDOW *);
 void reset_current_interface_stats(WINDOW *);
 void use_next_iface_locked(WINDOW *,struct panel_state *);
 void use_prev_iface_locked(WINDOW *,struct panel_state *);
+int resize_iface(const struct interface *,struct iface_state *);
 int expand_iface_locked(void);
 int collapse_iface_locked(void);
 
