@@ -293,8 +293,13 @@ int resize_iface(const interface *i,iface_state *is){
 		assert(replace_panel(is->panel,is->subwin) != ERR);
 		// FIXME move up interfaces below
 	}else if(nlines > subrows){ // Expand the interface
+		// The current interface never becomes a partial interface. We
+		// don't try to make it one here, and move_interface() will
+		// refuse to perform a move resulting in one.
 		if(i == curi){
 			// The current interface can grow in either direction.
+			// FIXME take what space is available even if we can't
+			// grow all the way!
 			if(nlines + is->scrline < rows){ // Try down first.
 				int delta = nlines - subrows;
 
@@ -319,7 +324,7 @@ int resize_iface(const interface *i,iface_state *is){
 				assert(replace_panel(is->panel,is->subwin) != ERR);
 			}
 		}else if(is->scrline > current_iface->scrline){
-			if(nlines + is->scrline < rows){ // Try down first.
+			if(nlines + is->scrline < rows){ // we can only go down
 				int delta = nlines - subrows;
 
 				if(push_interfaces_below(is,rows,delta)){
@@ -327,11 +332,11 @@ int resize_iface(const interface *i,iface_state *is){
 				}
 				assert(wresize(is->subwin,nlines,PAD_COLS(cols)) != ERR);
 				assert(replace_panel(is->panel,is->subwin) != ERR);
-			}else{
-				// becomes a partial interface FIXME
+			}else{ // else becomes a partial interface
+				// FIXME take any available space!
 			}
 		}else{
-			if(is->scrline != 1){ // Otherwise try up
+			if(is->scrline != 1){ // we can only go up
 				int delta = nlines - subrows;
 
 				if(delta > is->scrline - 1){
@@ -345,8 +350,8 @@ int resize_iface(const interface *i,iface_state *is){
 				assert(move_panel(is->panel,is->scrline,1) != ERR);
 				assert(wresize(is->subwin,iface_lines_bounded(i,is,rows),PAD_COLS(cols)) != ERR);
 				assert(replace_panel(is->panel,is->subwin) != ERR);
-			}else{
-				// becomes a partial interface FIXME
+			}else{ // else becomes a partial interface
+				// FIXME take any available space!
 			}
 		}
 	}
