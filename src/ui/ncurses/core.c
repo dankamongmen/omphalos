@@ -66,11 +66,6 @@ iface_lines_unbounded(const interface *i,const struct iface_state *is){
 }
 
 static inline void
-iface_box_generic(const interface *i,const struct iface_state *is){
-	iface_box(i,is,is == current_iface);
-}
-
-static inline void
 redraw_iface_generic(const struct iface_state *is){
 	redraw_iface(is,is == current_iface);
 }
@@ -749,7 +744,7 @@ void use_next_iface_locked(WINDOW *w,struct panel_state *ps){
 			assert(move_panel(is->panel,is->scrline,START_COL) != ERR);
 			redraw_iface_generic(is);
 		}else{
-			iface_box_generic(oldis->iface,oldis);
+			redraw_iface_generic(oldis);
 			resize_iface(i,is);
 		}
 		if(panel_hidden(oldis->panel)){
@@ -794,7 +789,7 @@ void use_prev_iface_locked(WINDOW *w,struct panel_state *ps){
 			assert(move_panel(is->panel,is->scrline,START_COL) != ERR);
 			redraw_iface_generic(is);
 		}else{
-			iface_box_generic(oldis->iface,oldis);
+			redraw_iface_generic(oldis);
 			resize_iface(i,is);
 		}
 		if(panel_hidden(oldis->panel)){
