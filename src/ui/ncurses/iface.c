@@ -149,14 +149,18 @@ l3obj *add_l3_to_iface(iface_state *is,l2obj *l2,struct l3host *l3h){
 static void
 print_iface_hosts(const interface *i,const iface_state *is,int rows,int cols,
 				int partial){
-	int line,vlines = 0;
 	const l2obj *l;
+	int line;
 
 	if(is->expansion < EXPANSION_NODES){
 		return;
 	}
 	// If the interface is down, we don't lead with the summary line
-	line = !!interface_up_p(i);
+	if(partial <= -1){ // didn't print summary line due to space
+		line = partial + !!interface_up_p(i);
+	}else{
+		line = 1 + !!interface_up_p(i);
+	}
 	for(l = is->l2objs ; l ; l = l->next){
 		char hw[HWADDRSTRLEN(i->addrlen)];
 		const char *devname;
@@ -164,13 +168,10 @@ print_iface_hosts(const interface *i,const iface_state *is,int rows,int cols,
 		int attrs;
 		l3obj *l3;
 		
-		if(++line >= rows + (partial <= 0)){
+		if(line >= rows - (partial <= 0)){
 			break;
 		}
-		if(vlines < -partial){
-			--line;
-			++vlines;
-		}else{
+		if(line >= 0){
 			switch(l->cat){
 				case RTN_UNICAST:
 					attrs = COLOR_PAIR(UCAST_COLOR);
@@ -226,37 +227,36 @@ print_iface_hosts(const interface *i,const iface_state *is,int rows,int cols,
 				}
 			}
 		}
+		++line;
 		if(is->expansion >= EXPANSION_HOSTS){
 			for(l3 = l->l3objs ; l3 ; l3 = l3->next){
 				char nw[INET6_ADDRSTRLEN + 1]; // FIXME
 				const char *name;
 
-				if(++line >= rows + (partial <= 0)){
+				if(line >= rows - (partial <= 0)){
 					break;
 				}
-				if(vlines < -partial){
-					--line;
-					++vlines;
-					continue;
-				}
-				l3ntop(l3->l3,nw,sizeof(nw));
-				if((name = get_l3name(l3->l3)) == NULL){
-					name = "";
-				}
-				assert(mvwprintw(is->subwin,line,5,"%s %s",nw,name) != ERR);
-				{
-					char sbuf[PREFIXSTRLEN + 1];
-					char dbuf[PREFIXSTRLEN + 1];
-					if(l3_get_srcpkt(l3->l3) == 0 && (l->cat == RTN_MULTICAST || l->cat == RTN_BROADCAST)){
-						mvwprintw(is->subwin,line,cols - PREFIXSTRLEN * 1 - 1,PREFIXFMT,
-								prefix(l3_get_dstpkt(l3->l3),1,dbuf,sizeof(dbuf),1));
-					}else{
-						mvwprintw(is->subwin,line,cols - PREFIXSTRLEN * 2 - 2,PREFIXFMT" "PREFIXFMT,
-								prefix(l3_get_srcpkt(l3->l3),1,sbuf,sizeof(sbuf),1),
-								prefix(l3_get_dstpkt(l3->l3),1,dbuf,sizeof(dbuf),1));
+				if(line >= 0){
+					l3ntop(l3->l3,nw,sizeof(nw));
+					if((name = get_l3name(l3->l3)) == NULL){
+						name = "";
 					}
+					assert(mvwprintw(is->subwin,line,5,"%s %s",nw,name) != ERR);
+					{
+						char sbuf[PREFIXSTRLEN + 1];
+						char dbuf[PREFIXSTRLEN + 1];
+						if(l3_get_srcpkt(l3->l3) == 0 && (l->cat == RTN_MULTICAST || l->cat == RTN_BROADCAST)){
+							mvwprintw(is->subwin,line,cols - PREFIXSTRLEN * 1 - 1,PREFIXFMT,
+									prefix(l3_get_dstpkt(l3->l3),1,dbuf,sizeof(dbuf),1));
+						}else{
+							mvwprintw(is->subwin,line,cols - PREFIXSTRLEN * 2 - 2,PREFIXFMT" "PREFIXFMT,
+									prefix(l3_get_srcpkt(l3->l3),1,sbuf,sizeof(sbuf),1),
+									prefix(l3_get_dstpkt(l3->l3),1,dbuf,sizeof(dbuf),1));
+						}
+					}
+					assert(wattrset(is->subwin,attrs) != ERR);
 				}
-				assert(wattrset(is->subwin,attrs) != ERR);
+				++line;
 			}
 		}
 	}
@@ -446,16 +446,18 @@ void free_iface_state(iface_state *is){
 	}
 }
 
-// Must not be passed a hidden interface
 int redraw_iface(const iface_state *is,int active){
 	int rows,cols,partial,scrrows,scrcols;
 	const interface *i = is->iface;
 
+	if(panel_hidden(is->panel)){
+		return OK;
+	}
 	getmaxyx(stdscr,scrrows,scrcols);
-	if(iface_wholly_visible_p(scrrows,is)){ // completely visible
-		partial = 0;
-	}else if(is->scrline < 1){ // no top
+	if(is->scrline < 1){ // no top
 		partial = is->scrline - 1;
+	}else if(iface_wholly_visible_p(scrrows,is) || active){ // completely visible
+		partial = 0;
 	}else{
 		partial = 1; // no bottom
 	}
@@ -477,8 +479,6 @@ int iface_visible_p(int rows,const iface_state *is){
 		return 0;
 	}else if(is->scrline + lines_for_interface(is) < 1){
 		return 0;
-	}else if(is->scrline < 1){
-		return 0;
 	}
 	return 1;
 }
@@ -492,7 +492,7 @@ int move_interface(iface_state *is,int rows,int cols,int delta,int active){
 		assert(move_panel(is->panel,is->scrline,1) != ERR);
 		redraw_iface(is,active);
 	}else if(iface_visible_p(rows,is)){
-		int nlines;
+		int nlines,targ;
 
 		// If we're active, resist the attempt to move us offscreen.
 		if(active){
@@ -500,13 +500,15 @@ int move_interface(iface_state *is,int rows,int cols,int delta,int active){
 			return -1;
 		}
 		if(delta > 0){
-			nlines = rows - is->scrline - 1;
+			nlines = rows - is->scrline - 1; // sans-bottom partial
 		}else{
-			nlines = rows - (1 - is->scrline);
+			nlines = rows - (1 - is->scrline); // sans-top partial
 		}
 		assert(wresize(is->subwin,nlines,PAD_COLS(cols)) == OK);
+		targ = is->scrline < 1 ? 1 : is->scrline;
+		wstatus_locked(stdscr,"moving %d to %d",rows,targ);
 		update_panels(); doupdate();
-		assert(move_panel(is->panel,is->scrline,1) == OK);
+		assert(move_panel(is->panel,targ,1) == OK);
 		assert(redraw_iface(is,active) == OK);
 	}else if(!panel_hidden(is->panel)){
 		if(active){
