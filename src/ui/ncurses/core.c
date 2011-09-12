@@ -738,7 +738,7 @@ void use_next_iface_locked(WINDOW *w,struct panel_state *ps){
 		assert(cols);
 		is = current_iface = current_iface->next;
 		i = is->iface;
-		if(panel_hidden(is->panel)){
+		if(!iface_wholly_visible_p(rows,is)){
 			int up;
 
 			is->scrline = rows - iface_lines_bounded(i,is,rows) - 1;
@@ -782,7 +782,7 @@ void use_prev_iface_locked(WINDOW *w,struct panel_state *ps){
 		assert(cols);
 		is = current_iface = current_iface->prev;
 		i = is->iface;
-		if(panel_hidden(is->panel)){
+		if(!iface_wholly_visible_p(rows,is)){
 			int shift;
 
 			is->scrline = 1;

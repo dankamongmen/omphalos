@@ -526,7 +526,7 @@ int iface_wholly_visible_p(int rows,const iface_state *is){
 		getmaxyx(stdscr,rows,cols);
 		assert(cols >= 0);
 	}
-	if(is->scrline + lines_for_interface(is) + 1 >= rows){
+	if(is->scrline + lines_for_interface(is) >= rows){
 		return 0;
 	}else if(is->scrline < 1){
 		return 0;
