@@ -494,7 +494,6 @@ int move_interface(iface_state *is,int rows,int cols,int delta,int active){
 			nlines = rows - (1 - is->scrline);
 		}
 		assert(wresize(is->subwin,nlines,PAD_COLS(cols)) == OK);
-		wstatus_locked(stdscr,"Moving %d to %d",rows,is->scrline);
 		update_panels(); doupdate();
 		assert(move_panel(is->panel,is->scrline,1) == OK);
 		assert(redraw_iface(is,active) == OK);
