@@ -227,7 +227,6 @@ print_iface_hosts(const interface *i,const iface_state *is,int rows,int cols,
 			}
 		}
 		if(is->expansion >= EXPANSION_HOSTS){
-			update_panels(); doupdate();
 			for(l3 = l->l3objs ; l3 ; l3 = l3->next){
 				char nw[INET6_ADDRSTRLEN + 1]; // FIXME
 				const char *name;
