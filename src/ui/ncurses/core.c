@@ -62,9 +62,9 @@ iface_lines_unbounded(const struct iface_state *is){
 	return iface_lines_bounded(is,INT_MAX);
 }
 
-static inline void
+static inline int
 redraw_iface_generic(const struct iface_state *is){
-	redraw_iface(is,is == current_iface);
+	return redraw_iface(is,is == current_iface);
 }
 
 static inline int
@@ -237,7 +237,9 @@ pull_interfaces_up(iface_state *puller,int rows,int cols,int delta){
 	iface_state *is = puller->next;
 	int expected;
 
-	assert(delta < 0);
+	if(delta){
+		return OK; // FIXME
+	}
 	expected = puller->scrline + rows + 1;
 	while(is != puller && is->scrline > expected){
 		// FIXME move it up
@@ -277,7 +279,8 @@ push_interfaces_above(iface_state *pusher,int rows,int cols,int delta){
 // The interface's display is synchronized via redraw_iface() whether a resize
 // is performed or not (unless it's invisible). The display ought be partially
 // visible -- ie, if we ought be invisible, we ought be already and this is not
-// going to make us so.
+// going to make us so. We do not redraw -- that's the callers job (we
+// can't redraw, since we might not yet have been moved).
 int resize_iface(const interface *i,iface_state *is){
 	const interface *curi = get_current_iface();
 	int rows,cols,subrows,subcols;
@@ -325,6 +328,7 @@ int resize_iface(const interface *i,iface_state *is){
 					is->scrline += delta;
 					return OK;
 				}
+				// assert(move_interface_generic(is,rows,cols,-delta) == OK);
 				assert(move_panel(is->panel,is->scrline,1) != ERR);
 				assert(wresize(is->subwin,iface_lines_bounded(is,rows),PAD_COLS(cols)) != ERR);
 				assert(replace_panel(is->panel,is->subwin) != ERR);
@@ -353,6 +357,7 @@ int resize_iface(const interface *i,iface_state *is){
 					is->scrline += delta;
 					return OK;
 				}
+				// assert(move_interface_generic(is,rows,cols,-delta) == OK);
 				assert(move_panel(is->panel,is->scrline,1) != ERR);
 				assert(wresize(is->subwin,iface_lines_bounded(is,rows),PAD_COLS(cols)) != ERR);
 				assert(replace_panel(is->panel,is->subwin) != ERR);
@@ -361,7 +366,6 @@ int resize_iface(const interface *i,iface_state *is){
 			}
 		}
 	}
-	redraw_iface_generic(is);
 	return OK;
 }
 
@@ -510,7 +514,7 @@ int packet_cb_locked(const interface *i,omphalos_packet *op,struct panel_state *
 		if(is == current_iface && ps->p){
 			iface_details(panel_window(ps->p),i,ps->ysize);
 		}
-		redraw_iface_generic(is);
+		assert(redraw_iface_generic(is) == OK);
 		return 1;
 	}
 	return 0;
@@ -562,13 +566,14 @@ void *interface_cb_locked(interface *i,iface_state *ret,struct panel_state *ps){
 		iface_details(panel_window(ps->p),i,ps->ysize);
 	}
 	resize_iface(i,ret);
+	redraw_iface_generic(ret);
 	if(interface_up_p(i)){
 		if(ret->devaction < 0){
-			wstatus_locked(stdscr,"");
+			wstatus_locked(stdscr,"%s","");
 			ret->devaction = 0;
 		}
 	}else if(ret->devaction > 0){
-		wstatus_locked(stdscr,"");
+		wstatus_locked(stdscr,"%s","");
 		ret->devaction = 0;
 	}
 	return ret; // callers are responsible for screen_update()
@@ -634,6 +639,7 @@ struct l2obj *neighbor_callback_locked(const interface *i,struct l2host *l2){
 		}
 	}
 	resize_iface(i,is);
+	redraw_iface_generic(is);
 	return ret;
 }
 
@@ -654,6 +660,7 @@ struct l3obj *host_callback_locked(const interface *i,struct l2host *l2,struct l
 		}
 	}
 	resize_iface(i,is);
+	redraw_iface_generic(is);
 	return ret;
 }
 
@@ -745,16 +752,20 @@ void use_next_iface_locked(WINDOW *w,struct panel_state *ps){
 			assert(move_panel(is->panel,is->scrline,START_COL) != ERR);
 			assert(resize_iface(i,is) == OK);
 			assert(replace_panel(is->panel,is->subwin) != ERR);
-			redraw_iface_generic(is);
-			assert(show_panel(is->panel) != ERR);
+			assert(redraw_iface_generic(is) == OK);
+			if(panel_hidden(is->panel)){
+				assert(show_panel(is->panel) != ERR);
+			}
+			assert(redraw_iface_generic(is) == OK);
 		}else if(is->scrline < oldis->scrline){
 			is->scrline = oldis->scrline + (iface_lines_bounded(oldis,rows) - iface_lines_bounded(is,rows));
 			push_interfaces_above(is,rows,cols,-(iface_lines_bounded(is,rows) + 1));
 			assert(move_panel(is->panel,is->scrline,START_COL) != ERR);
-			redraw_iface_generic(is);
-		}else{
-			redraw_iface_generic(oldis);
-			resize_iface(i,is);
+			assert(redraw_iface_generic(is) == OK);
+		}else{ // it was wholly visible, and below
+			assert(redraw_iface_generic(oldis) == OK);
+			assert(resize_iface(i,is) == OK);
+			assert(redraw_iface_generic(is) == OK);
 		}
 		if(panel_hidden(oldis->panel)){
 			// we hid the entire panel, and thus might have space
