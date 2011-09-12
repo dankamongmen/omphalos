@@ -320,6 +320,7 @@ int resize_iface(const interface *i,iface_state *is){
 					delta = is->scrline - 1;
 				}
 				is->scrline -= delta;
+				assert(is->scrline >= 1);
 				if(push_interfaces_above(is,rows,cols,-delta)){
 					is->scrline += delta;
 					return OK;
