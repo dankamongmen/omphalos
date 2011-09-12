@@ -149,8 +149,8 @@ l3obj *add_l3_to_iface(iface_state *is,l2obj *l2,struct l3host *l3h){
 static void
 print_iface_hosts(const interface *i,const iface_state *is,int rows,int cols,
 				int partial){
+	int line,vlines = 0;
 	const l2obj *l;
-	int line;
 
 	if(is->expansion < EXPANSION_NODES){
 		return;
@@ -167,67 +167,78 @@ print_iface_hosts(const interface *i,const iface_state *is,int rows,int cols,
 		if(++line >= rows + (partial <= 0)){
 			break;
 		}
-		switch(l->cat){
-			case RTN_UNICAST:
-				attrs = COLOR_PAIR(UCAST_COLOR);
-				devname = get_devname(l->l2);
-				legend = 'U';
-				break;
-			case RTN_LOCAL:
-				attrs = A_BOLD | COLOR_PAIR(LCAST_COLOR);
-				if(interface_virtual_p(i) ||
-					(devname = get_devname(l->l2)) == NULL){
-					devname = i->topinfo.devname;
-				}
-				legend = 'L';
-				break;
-			case RTN_MULTICAST:
-				attrs = A_BOLD | COLOR_PAIR(MCAST_COLOR);
-				devname = get_devname(l->l2);
-				legend = 'M';
-				break;
-			case RTN_BROADCAST:
-				attrs = COLOR_PAIR(BCAST_COLOR);
-				devname = get_devname(l->l2);
-				legend = 'B';
-				break;
-			default:
-				assert(0 && "Unknown l2 category");
-				break;
-		}
-		if(!interface_up_p(i)){
-			attrs = (attrs & A_BOLD) | COLOR_PAIR(DBORDER_COLOR);
-		}
-		assert(wattrset(is->subwin,attrs) != ERR);
-		l2ntop(l->l2,i->addrlen,hw);
-		if(devname){
-			size_t len = strlen(devname);
-
-			if(len > cols - 5 - HWADDRSTRLEN(i->addrlen)){
-				len = cols - 5 - HWADDRSTRLEN(i->addrlen);
-			}
-			assert(mvwprintw(is->subwin,line,1," %c %s %.*s",
-				legend,hw,cols - 1,devname) != ERR);
+		if(vlines < -partial){
+			--line;
+			++vlines;
 		}else{
-			assert(mvwprintw(is->subwin,line,1," %c %s",legend,hw) != ERR);
-		}
-		if(interface_up_p(i)){
-			char sbuf[PREFIXSTRLEN + 1],dbuf[PREFIXSTRLEN + 1];
-			if(get_srcpkts(l->l2) == 0 && (l->cat == RTN_MULTICAST || l->cat == RTN_BROADCAST)){
-				mvwprintw(is->subwin,line,cols - PREFIXSTRLEN * 1 - 1,PREFIXFMT,
-						prefix(get_dstpkts(l->l2),1,dbuf,sizeof(dbuf),1));
+			switch(l->cat){
+				case RTN_UNICAST:
+					attrs = COLOR_PAIR(UCAST_COLOR);
+					devname = get_devname(l->l2);
+					legend = 'U';
+					break;
+				case RTN_LOCAL:
+					attrs = A_BOLD | COLOR_PAIR(LCAST_COLOR);
+					if(interface_virtual_p(i) ||
+						(devname = get_devname(l->l2)) == NULL){
+						devname = i->topinfo.devname;
+					}
+					legend = 'L';
+					break;
+				case RTN_MULTICAST:
+					attrs = A_BOLD | COLOR_PAIR(MCAST_COLOR);
+					devname = get_devname(l->l2);
+					legend = 'M';
+					break;
+				case RTN_BROADCAST:
+					attrs = COLOR_PAIR(BCAST_COLOR);
+					devname = get_devname(l->l2);
+					legend = 'B';
+					break;
+				default:
+					assert(0 && "Unknown l2 category");
+					break;
+			}
+			if(!interface_up_p(i)){
+				attrs = (attrs & A_BOLD) | COLOR_PAIR(DBORDER_COLOR);
+			}
+			assert(wattrset(is->subwin,attrs) != ERR);
+			l2ntop(l->l2,i->addrlen,hw);
+			if(devname){
+				size_t len = strlen(devname);
+
+				if(len > cols - 5 - HWADDRSTRLEN(i->addrlen)){
+					len = cols - 5 - HWADDRSTRLEN(i->addrlen);
+				}
+				assert(mvwprintw(is->subwin,line,1," %c %s %.*s",
+					legend,hw,cols - 1,devname) != ERR);
 			}else{
-				mvwprintw(is->subwin,line,cols - PREFIXSTRLEN * 2 - 2,PREFIXFMT" "PREFIXFMT,prefix(get_srcpkts(l->l2),1,sbuf,sizeof(sbuf),1),
-						prefix(get_dstpkts(l->l2),1,dbuf,sizeof(dbuf),1));
+				assert(mvwprintw(is->subwin,line,1," %c %s",legend,hw) != ERR);
+			}
+			if(interface_up_p(i)){
+				char sbuf[PREFIXSTRLEN + 1],dbuf[PREFIXSTRLEN + 1];
+				if(get_srcpkts(l->l2) == 0 && (l->cat == RTN_MULTICAST || l->cat == RTN_BROADCAST)){
+					mvwprintw(is->subwin,line,cols - PREFIXSTRLEN * 1 - 1,PREFIXFMT,
+							prefix(get_dstpkts(l->l2),1,dbuf,sizeof(dbuf),1));
+				}else{
+					mvwprintw(is->subwin,line,cols - PREFIXSTRLEN * 2 - 2,PREFIXFMT" "PREFIXFMT,prefix(get_srcpkts(l->l2),1,sbuf,sizeof(sbuf),1),
+							prefix(get_dstpkts(l->l2),1,dbuf,sizeof(dbuf),1));
+				}
 			}
 		}
 		if(is->expansion >= EXPANSION_HOSTS){
+			update_panels(); doupdate();
 			for(l3 = l->l3objs ; l3 ; l3 = l3->next){
 				char nw[INET6_ADDRSTRLEN + 1]; // FIXME
 				const char *name;
 
 				if(++line >= rows + (partial <= 0)){
 					break;
+				}
+				if(vlines < -partial){
+					--line;
+					++vlines;
+					continue;
 				}
 				l3ntop(l3->l3,nw,sizeof(nw));
 				if((name = get_l3name(l3->l3)) == NULL){
@@ -405,11 +416,12 @@ iface_box(const interface *i,const iface_state *is,int active,int partial){
 }
 
 static void
-print_iface_state(const interface *i,const iface_state *is,int rows,int cols){
+print_iface_state(const interface *i,const iface_state *is,int rows,int cols,
+							int partial){
 	char buf[U64STRLEN + 1],buf2[U64STRLEN + 1];
 	unsigned long usecdomain;
 
-	if(rows < 3){
+	if(partial < -1 || rows < 2){
 		return;
 	}
 	assert(wattrset(is->subwin,A_BOLD | COLOR_PAIR(IFACE_COLOR)) != ERR);
@@ -443,8 +455,8 @@ int redraw_iface(const iface_state *is,int active){
 	getmaxyx(stdscr,scrrows,scrcols);
 	if(iface_wholly_visible_p(scrrows,is)){ // completely visible
 		partial = 0;
-	}else if(is->scrline <= 1){ // no top
-		partial = -1;
+	}else if(is->scrline < 1){ // no top
+		partial = is->scrline - 1;
 	}else{
 		partial = 1; // no bottom
 	}
@@ -453,7 +465,7 @@ int redraw_iface(const iface_state *is,int active){
 	assert(werase(is->subwin) != ERR);
 	iface_box(i,is,active,partial);
 	if(interface_up_p(i)){
-		print_iface_state(i,is,rows,cols);
+		print_iface_state(i,is,rows,cols,partial);
 	}
 	print_iface_hosts(i,is,rows,cols,partial);
 	return OK;
