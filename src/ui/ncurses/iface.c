@@ -210,10 +210,10 @@ print_iface_hosts(const interface *i,const iface_state *is,int rows,int cols,
 				if(len > cols - 5 - HWADDRSTRLEN(i->addrlen)){
 					len = cols - 5 - HWADDRSTRLEN(i->addrlen);
 				}
-				assert(mvwprintw(is->subwin,line,1," %c %s %.*s",
+				assert(mvwprintw(is->subwin,line,2,"%c %s %.*s",
 					legend,hw,cols - 1,devname) != ERR);
 			}else{
-				assert(mvwprintw(is->subwin,line,1," %c %s",legend,hw) != ERR);
+				assert(mvwprintw(is->subwin,line,2,"%c %s",legend,hw) != ERR);
 			}
 			if(interface_up_p(i)){
 				char sbuf[PREFIXSTRLEN + 1],dbuf[PREFIXSTRLEN + 1];
@@ -243,7 +243,7 @@ print_iface_hosts(const interface *i,const iface_state *is,int rows,int cols,
 				if((name = get_l3name(l3->l3)) == NULL){
 					name = "";
 				}
-				assert(mvwprintw(is->subwin,line,1,"    %s %s",nw,name) != ERR);
+				assert(mvwprintw(is->subwin,line,5,"%s %s",nw,name) != ERR);
 				{
 					char sbuf[PREFIXSTRLEN + 1];
 					char dbuf[PREFIXSTRLEN + 1];
