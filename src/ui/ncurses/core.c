@@ -279,7 +279,6 @@ push_interfaces_above(iface_state *pusher,int rows,int cols,int delta){
 // visible -- ie, if we ought be invisible, we ought be already and this is not
 // going to make us so.
 int resize_iface(const interface *i,iface_state *is){
-	const int nlines = iface_lines_unbounded(is);
 	const interface *curi = get_current_iface();
 	int rows,cols,subrows,subcols;
 
@@ -287,6 +286,7 @@ int resize_iface(const interface *i,iface_state *is){
 		return OK;
 	}
 	getmaxyx(stdscr,rows,cols);
+	const int nlines = iface_lines_bounded(is,rows);
 	getmaxyx(is->subwin,subrows,subcols);
 	assert(subcols); // FIXME
 	if(nlines < subrows){ // Shrink the interface
