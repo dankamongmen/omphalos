@@ -31,7 +31,7 @@ struct panel_state {
 // graphics).
 int draw_main_window(WINDOW *);
 int setup_statusbar(int);
-int wstatus_locked(WINDOW *,const char *fmt,...);
+int wstatus_locked(WINDOW *,const char *fmt,...) __attribute__ ((format (printf,2,3)));
 int wvstatus_locked(WINDOW *w,const char *,va_list);
 struct l3obj *host_callback_locked(const struct interface *,struct l2host *,struct l3host *);
 struct l2obj *neighbor_callback_locked(const struct interface *,struct l2host *);
