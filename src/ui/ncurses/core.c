@@ -741,9 +741,10 @@ void use_next_iface_locked(WINDOW *w,struct panel_state *ps){
 			if(up > 0){
 				push_interfaces_above(is,rows,cols,-up);
 			}
+			assert(move_panel(is->panel,is->scrline,START_COL) != ERR);
+			//assert(resize_iface(i,is) == OK);
 			assert(wresize(is->subwin,iface_lines_bounded(is,rows),PAD_COLS(cols)) != ERR);
 			assert(replace_panel(is->panel,is->subwin) != ERR);
-			assert(move_panel(is->panel,is->scrline,START_COL) != ERR);
 			redraw_iface_generic(is);
 			assert(show_panel(is->panel) != ERR);
 		}else if(is->scrline < oldis->scrline){
