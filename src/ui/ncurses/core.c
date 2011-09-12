@@ -310,17 +310,15 @@ int resize_iface(const interface *i,iface_state *is){
 			// The current interface can grow in either direction.
 			// FIXME take what space is available even if we can't
 			// grow all the way!
-			if(nlines + is->scrline < rows){ // Try down first.
-				int delta = nlines - subrows;
+			int delta = nlines - subrows;
 
+			if(nlines + is->scrline < rows){ // Try down first.
 				if(push_interfaces_below(is,rows,cols,delta)){
 					return OK;
 				}
 				assert(wresize(is->subwin,nlines,PAD_COLS(cols)) != ERR);
 				assert(replace_panel(is->panel,is->subwin) != ERR);
-			}else if(is->scrline != 1){ // Otherwise try up
-				int delta = nlines - subrows;
-
+			}else if(is->scrline > delta){ // Otherwise try up
 				if(delta > is->scrline - 1){
 					delta = is->scrline - 1;
 				}
