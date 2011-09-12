@@ -506,8 +506,6 @@ int move_interface(iface_state *is,int rows,int cols,int delta,int active){
 		}
 		assert(wresize(is->subwin,nlines,PAD_COLS(cols)) == OK);
 		targ = is->scrline < 1 ? 1 : is->scrline;
-		wstatus_locked(stdscr,"moving %d to %d",rows,targ);
-		update_panels(); doupdate();
 		assert(move_panel(is->panel,targ,1) == OK);
 		assert(redraw_iface(is,active) == OK);
 	}else if(!panel_hidden(is->panel)){
