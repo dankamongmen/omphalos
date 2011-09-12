@@ -231,10 +231,23 @@ push_interfaces_below(iface_state *pusher,int rows,int cols,int delta){
 		}
 	}
 	// Now, if our delta was negative, see if we pulled any down below us
-	// FIXME
-	/* while(is->scrline < 0){
-		is = is->next;
-	}*/
+	// FIXME pull_interfaces_down();
+	return OK;
+}
+
+static int
+pull_interfaces_up(iface_state *puller,int rows,int cols,int delta){
+	iface_state *is = puller->next;
+	int expected;
+
+	assert(delta < 0);
+	expected = puller->scrline + rows + 1;
+	while(is != puller && is->scrline > expected){
+		// FIXME move it up
+		// FIXME update expected
+		is = is->prev;
+	}
+	assert(cols); // FIXME
 	return OK;
 }
 
@@ -245,7 +258,6 @@ push_interfaces_below(iface_state *pusher,int rows,int cols,int delta){
 static int
 push_interfaces_above(iface_state *pusher,int rows,int cols,int delta){
 	iface_state *is = pusher->prev;
-
 
 	while(is != pusher && is->scrline + iface_lines_bounded(is->iface,is,rows) <= pusher->scrline + iface_lines_bounded(pusher->iface,pusher,rows)){
 		is = is->prev;
@@ -258,10 +270,7 @@ push_interfaces_above(iface_state *pusher,int rows,int cols,int delta){
 		}
 	}
 	// Now, if our delta was negative, see if we pulled any down below us
-	// FIXME
-	/* while(is->scrline < 0){
-		is = is->next;
-	}*/
+	pull_interfaces_up(pusher,rows,cols,delta);
 	return OK;
 }
 
@@ -284,10 +293,14 @@ int resize_iface(const interface *i,iface_state *is){
 	getmaxyx(is->subwin,subrows,subcols);
 	assert(subcols); // FIXME
 	if(nlines < subrows){ // Shrink the interface
+		int delta = subrows - nlines;
+		// FIXME if we're above the current interface, we shrink and
+		// then move down, pulling things from above
 		assert(werase(is->subwin) == OK);
 		screen_update();
 		assert(wresize(is->subwin,nlines,PAD_COLS(cols)) != ERR);
 		assert(replace_panel(is->panel,is->subwin) != ERR);
+		pull_interfaces_up(is,rows,cols,delta);
 		// FIXME move up interfaces below
 	}else if(nlines > subrows){ // Expand the interface
 		// The current interface never becomes a partial interface. We

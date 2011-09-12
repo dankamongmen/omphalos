@@ -164,7 +164,7 @@ print_iface_hosts(const interface *i,const iface_state *is,int rows,int cols,
 		int attrs;
 		l3obj *l3;
 		
-		if(++line + (partial <= 0) >= rows){
+		if(++line >= rows + (partial <= 0)){
 			break;
 		}
 		switch(l->cat){
@@ -491,10 +491,11 @@ int move_interface(iface_state *is,int rows,int cols,int delta,int active){
 		if(delta > 0){
 			nlines = rows - is->scrline - 1;
 		}else{
-			// FIXME handle partial push up
-			assert(!"can't handle partial up yet");
+			nlines = rows - (1 - is->scrline);
 		}
 		assert(wresize(is->subwin,nlines,PAD_COLS(cols)) == OK);
+		wstatus_locked(stdscr,"Moving %d to %d",rows,is->scrline);
+		update_panels(); doupdate();
 		assert(move_panel(is->panel,is->scrline,1) == OK);
 		assert(redraw_iface(is,active) == OK);
 	}else if(!panel_hidden(is->panel)){
