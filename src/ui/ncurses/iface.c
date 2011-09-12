@@ -164,7 +164,7 @@ print_iface_hosts(const interface *i,const iface_state *is,int rows,int cols,
 		int attrs;
 		l3obj *l3;
 		
-		if(++line >= rows + (partial <= 0)){
+		if(++line >= rows - (partial <= 0)){
 			break;
 		}
 		if(vlines < -partial){
@@ -231,7 +231,7 @@ print_iface_hosts(const interface *i,const iface_state *is,int rows,int cols,
 				char nw[INET6_ADDRSTRLEN + 1]; // FIXME
 				const char *name;
 
-				if(++line >= rows + (partial <= 0)){
+				if(++line >= rows - (partial <= 0)){
 					break;
 				}
 				if(vlines < -partial){
