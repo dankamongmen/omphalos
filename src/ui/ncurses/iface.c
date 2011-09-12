@@ -446,11 +446,13 @@ void free_iface_state(iface_state *is){
 	}
 }
 
-// Must not be passed a hidden interface
 int redraw_iface(const iface_state *is,int active){
 	int rows,cols,partial,scrrows,scrcols;
 	const interface *i = is->iface;
 
+	if(panel_hidden(is->panel)){
+		return OK;
+	}
 	getmaxyx(stdscr,scrrows,scrcols);
 	if(iface_wholly_visible_p(scrrows,is)){ // completely visible
 		partial = 0;
@@ -476,8 +478,6 @@ int iface_visible_p(int rows,const iface_state *is){
 	if(is->scrline + 1 >= rows){
 		return 0;
 	}else if(is->scrline + lines_for_interface(is) < 1){
-		return 0;
-	}else if(is->scrline < 1){
 		return 0;
 	}
 	return 1;
