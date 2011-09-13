@@ -453,8 +453,8 @@ int redraw_iface(const iface_state *is,const reelbox *rb,int active){
 		return OK;
 	}
 	getmaxyx(stdscr,scrrows,scrcols);
-	if(rb->scrline < 1){ // no top
-		partial = rb->scrline - 1;
+	if(rb->scrline >= scrrows){ // no top
+		partial = -1;
 	}else if(iface_wholly_visible_p(scrrows,is,rb) || active){ // completely visible
 		partial = 0;
 	}else{
@@ -498,7 +498,7 @@ void move_interface(iface_state *is,reelbox *rb,int rows,int cols,int truerow,
 	rb->scrline = truerow;
 	partiallyvis = iface_visible_p(rows,rb);
 	whollyvis = iface_wholly_visible_p(rows,is,rb);
-	if((rb->scrline = oldscrline) <= 1){
+	if((rb->scrline = oldscrline) < 1){
 		rb->scrline = rows; // invalidate it
 	}
 	if(iface_wholly_visible_p(rows,is,rb)){
