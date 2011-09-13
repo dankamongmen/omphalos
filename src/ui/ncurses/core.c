@@ -286,7 +286,6 @@ int resize_iface(const interface *i,reelbox *rb){
 		return OK;
 	}
        	is = rb->is;
-	fprintf(stderr,"RESIZING %s\n",is->iface->name);
 	getmaxyx(stdscr,rows,cols);
 	const int nlines = iface_lines_bounded(is,rows);
 	getmaxyx(rb->subwin,subrows,subcols);
@@ -811,7 +810,6 @@ void use_prev_iface_locked(WINDOW *w,struct panel_state *ps){
 
 			rb->scrline = 1;
 			shift = iface_lines_bounded(is,rows) + 1 - (oldrb->scrline - 1);
-			fprintf(stderr,"\n\n\nnew one %s is %d\n\n\n\n",is->iface->name,iface_lines_bounded(is,rows));
 			if(iface_lines_bounded(is,rows) != iface_lines_unbounded(is)){
 				--shift; // no blank line will follow
 			}
@@ -819,8 +817,7 @@ void use_prev_iface_locked(WINDOW *w,struct panel_state *ps){
 			if(panel_hidden(rb->panel)){
 				assert(show_panel(rb->panel) == OK);
 			}
-			assert(show_panel(rb->panel) != ERR);
-			assert(resize_iface(i,rb) == OK);
+			assert(wresize(rb->subwin,iface_lines_bounded(rb->is,rows),PAD_COLS(cols)) == OK);
 			assert(replace_panel(rb->panel,rb->subwin) != ERR);
 			assert(move_panel(rb->panel,rb->scrline,START_COL) != ERR);
 			redraw_iface_generic(rb);
