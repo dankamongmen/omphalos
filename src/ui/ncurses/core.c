@@ -67,10 +67,10 @@ redraw_iface_generic(const reelbox *rb){
 	return redraw_iface(rb->is,rb,rb == current_iface);
 }
 
-static inline int
+static inline void
 move_interface_generic(reelbox *rb,int rows,int cols,int delta){
 	assert(rb != current_iface);
-	return move_interface(rb->is,rb,rows,cols,getbegy(rb->subwin),
+	move_interface(rb->is,rb,rows,cols,getbegy(rb->subwin),
 			delta,rb == current_iface);
 }
 
@@ -214,7 +214,7 @@ iface_details(WINDOW *hw,const interface *i,int rows){
 // negative delta, respectively). Update the interfaces below it on the screen
 // (all those up until those actually displayed above it on the screen). Should
 // be called before pusher->scrline has been updated.
-static int
+static void
 push_interfaces_below(reelbox *pusher,int rows,int cols,int delta){
 	reelbox *rb = pusher->next;
 	
@@ -223,15 +223,10 @@ push_interfaces_below(reelbox *pusher,int rows,int cols,int delta){
 		rb = rb->next;
 	}
 	while((rb = rb->prev) != pusher){
-		int i;
-
-		if( (i = move_interface_generic(rb,rows,cols,delta)) ){
-			return i;
-		}
+		move_interface_generic(rb,rows,cols,delta);
 	}
 	// Now, if our delta was negative, see if we pulled any down below us
 	// FIXME pull_interfaces_down();
-	return OK;
 }
 
 static int
@@ -256,7 +251,7 @@ pull_interfaces_up(reelbox *puller,int rows,int cols,int delta){
 // negative delta, respectively). Update the interfaces above it on the screen
 // (all those up until those actually displayed below it on the screen). Should
 // be called before pusher->scrline has been updated.
-static int
+static void
 push_interfaces_above(reelbox *pusher,int rows,int cols,int delta){
 	reelbox *rb = pusher->prev;
 
@@ -266,17 +261,12 @@ push_interfaces_above(reelbox *pusher,int rows,int cols,int delta){
 		rb = rb->prev;
 	}
 	while((rb = rb->next) != pusher){
-		int i;
-
 		//fprintf(stderr,"MOVING ONE (%s) UP %d\n",rb->is->iface->name,delta);
 		// On error, our ->scrline will have been properly reset.
-		if( (i = move_interface_generic(rb,rows,cols,delta)) ){
-			return i;
-		}
+		move_interface_generic(rb,rows,cols,delta);
 	}
 	// Now, if our delta was negative, see if we pulled any down below us
 	pull_interfaces_up(pusher,rows,cols,delta);
-	return OK;
 }
 
 // Upon entry, the display might not have been updated to reflect a change in
@@ -321,9 +311,7 @@ int resize_iface(const interface *i,reelbox *rb){
 			int delta = nlines - subrows;
 
 			if(nlines + rb->scrline < rows){ // Try down first.
-				if(push_interfaces_below(rb,rows,cols,delta)){
-					return OK;
-				}
+				push_interfaces_below(rb,rows,cols,delta);
 				assert(wresize(rb->subwin,nlines,PAD_COLS(cols)) != ERR);
 				assert(replace_panel(rb->panel,rb->subwin) != ERR);
 			}else if(rb->scrline > delta){ // Otherwise try up
@@ -332,10 +320,7 @@ int resize_iface(const interface *i,reelbox *rb){
 				}
 				rb->scrline -= delta;
 				assert(rb->scrline >= 1);
-				if(push_interfaces_above(rb,rows,cols,-delta)){
-					rb->scrline += delta;
-					return OK;
-				}
+				push_interfaces_above(rb,rows,cols,-delta);
 				// assert(move_interface_generic(is,rows,cols,-delta) == OK);
 				assert(move_panel(rb->panel,rb->scrline,1) != ERR);
 				assert(wresize(rb->subwin,iface_lines_bounded(is,rows),PAD_COLS(cols)) != ERR);
@@ -345,9 +330,7 @@ int resize_iface(const interface *i,reelbox *rb){
 			if(nlines + rb->scrline < rows){ // we can only go down
 				int delta = nlines - subrows;
 
-				if(push_interfaces_below(rb,rows,cols,delta)){
-					return OK;
-				}
+				push_interfaces_below(rb,rows,cols,delta);
 				assert(wresize(rb->subwin,nlines,PAD_COLS(cols)) != ERR);
 				assert(replace_panel(rb->panel,rb->subwin) != ERR);
 			}else{ // else becomes a partial interface
@@ -361,10 +344,7 @@ int resize_iface(const interface *i,reelbox *rb){
 					delta = rb->scrline - 1;
 				}
 				rb->scrline -= delta;
-				if(push_interfaces_above(rb,rows,cols,-delta)){
-					rb->scrline += delta;
-					return OK;
-				}
+				push_interfaces_above(rb,rows,cols,-delta);
 				// assert(move_interface_generic(is,rows,cols,-delta) == OK);
 				assert(move_panel(rb->panel,rb->scrline,1) != ERR);
 				assert(wresize(rb->subwin,iface_lines_bounded(is,rows),PAD_COLS(cols)) != ERR);

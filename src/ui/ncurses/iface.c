@@ -489,7 +489,7 @@ int iface_visible_p(int rows,const reelbox *rb){
 // Move this interface, possibly hiding it or bringing it onscreen. Negative
 // delta indicates movement up, positive delta moves down. Returns a non-zero
 // if the interface is active and would be pushed offscreen.
-int move_interface(iface_state *is,reelbox *rb,int rows,int cols,int truerow,
+void move_interface(iface_state *is,reelbox *rb,int rows,int cols,int truerow,
 						int delta,int active){
 	int partiallyvis,whollyvis,oldscrline;
        
@@ -514,11 +514,6 @@ int move_interface(iface_state *is,reelbox *rb,int rows,int cols,int truerow,
 		int nlines,rr,targ;
 
 		rr = getmaxy(rb->subwin);
-		// If we're active, resist the attempt to move us offscreen.
-		if(active){
-			rb->scrline = truerow;
-			return -1;
-		}
 		if(delta > 0){
 			targ = rb->scrline;
 			nlines = rows - rb->scrline - 1; // sans-bottom partial
@@ -541,14 +536,10 @@ int move_interface(iface_state *is,reelbox *rb,int rows,int cols,int truerow,
 		}
 		assert(redraw_iface(is,rb,active) == OK);
 	}else if(!panel_hidden(rb->panel)){
-		if(active){
-			rb->scrline = truerow;
-			return -1;
-		}
 		assert(werase(rb->subwin) != ERR);
 		assert(hide_panel(rb->panel) != ERR);
 	}
-	return 0;
+	return;
 }
 
 // This is the number of lines we'd have in an optimal world; we might have
