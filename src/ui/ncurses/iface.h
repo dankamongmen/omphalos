@@ -13,6 +13,7 @@ struct l2obj;
 struct l3obj;
 struct l2host;
 struct l3host;
+struct reelbox;
 struct interface;
 struct iface_state;
 
@@ -21,9 +22,6 @@ struct iface_state;
 // and also associate an iface with them via *iface (for UI actions).
 typedef struct iface_state {
 	struct interface *iface;	// corresponding omphalos iface struct
-	int scrline;			// line within the containing pad
-	WINDOW *subwin;			// subwin
-	PANEL *panel;			// panel
 	const char *typestr;		// looked up using iface->arptype
 	struct timeval lastprinted;	// last time we printed the iface
 	int devaction;			// 1 == down, -1 == up, 0 == nothing
@@ -33,19 +31,18 @@ typedef struct iface_state {
 					//  or more nodes)
 	struct l2obj *l2objs;		// l2 entity list
 	unsigned expansion;		// degree of expansion/collapse
-	struct iface_state *next,*prev;
+	struct reelbox *rb;		// our reelbox (UI elements)
 } iface_state;
 
-// FIXME try to move this?
-int redraw_iface(const struct iface_state *,int);
+int redraw_iface(const struct iface_state *,const struct reelbox *,int);
 
 struct iface_state *create_interface_state(struct interface *);
 void free_iface_state(struct iface_state *);
 
-int iface_visible_p(int,const iface_state *);
-int iface_wholly_visible_p(int,const struct iface_state *);
+int iface_visible_p(int rows,const struct reelbox *rb);
+int iface_wholly_visible_p(int,const struct iface_state *,const struct reelbox *);
 int lines_for_interface(const struct iface_state *);
-int move_interface(struct iface_state *,int,int,int,int);
+int move_interface(struct iface_state *,struct reelbox *,int,int,int,int);
 
 struct l2obj *add_l2_to_iface(const struct interface *,struct iface_state *,struct l2host *);
 struct l3obj *add_l3_to_iface(struct iface_state *,struct l2obj *,struct l3host *);

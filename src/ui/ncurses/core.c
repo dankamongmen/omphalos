@@ -9,8 +9,8 @@
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
 
+static reelbox *current_iface;
 static unsigned count_interface;
-static struct iface_state *current_iface;
 
 // Status bar at the bottom of the screen. Must be reallocated upon screen
 // resize and allocated based on initial screen at startup. Don't shrink
@@ -18,10 +18,20 @@ static struct iface_state *current_iface;
 static char *statusmsg;
 static int statuschars;	// True size, not necessarily what's available
 
+static reelbox *
+create_reelbox(void){
+	reelbox *ret;
+
+	if( (ret = malloc(sizeof(*ret))) ){
+		memset(ret,0,sizeof(*ret));
+	}
+	return ret;
+}
+
 static const interface *
 get_current_iface(void){
 	if(current_iface){
-		return current_iface->iface;
+		return current_iface->is->iface;
 	}
 	return NULL;
 }
@@ -63,13 +73,13 @@ iface_lines_unbounded(const struct iface_state *is){
 }
 
 static inline int
-redraw_iface_generic(const struct iface_state *is){
-	return redraw_iface(is,is == current_iface);
+redraw_iface_generic(const reelbox *rb){
+	return redraw_iface(rb->is,rb,rb == current_iface);
 }
 
 static inline int
-move_interface_generic(struct iface_state *is,int rows,int cols,int delta){
-	return move_interface(is,rows,cols,delta,is == current_iface);
+move_interface_generic(reelbox *rb,int rows,int cols,int delta){
+	return move_interface(rb->is,rb,rows,cols,delta,rb == current_iface);
 }
 
 static int
@@ -213,17 +223,16 @@ iface_details(WINDOW *hw,const interface *i,int rows){
 // (all those up until those actually displayed above it on the screen). Should
 // be called before pusher->scrline has been updated.
 static int
-push_interfaces_below(iface_state *pusher,int rows,int cols,int delta){
-	iface_state *is = pusher->next;
-
+push_interfaces_below(reelbox *pusher,int rows,int cols,int delta){
+	reelbox *rb = pusher->next;
 	
-	while(is != pusher && is->scrline >= pusher->scrline){
-		is = is->next;
+	while(rb != pusher && rb->scrline >= pusher->scrline){
+		rb = rb->next;
 	}
-	while((is = is->prev) != pusher){
+	while((rb = rb->prev) != pusher){
 		int i;
 
-		if( (i = move_interface_generic(is,rows,cols,delta)) ){
+		if( (i = move_interface_generic(rb,rows,cols,delta)) ){
 			return i;
 		}
 	}
@@ -233,18 +242,18 @@ push_interfaces_below(iface_state *pusher,int rows,int cols,int delta){
 }
 
 static int
-pull_interfaces_up(iface_state *puller,int rows,int cols,int delta){
-	iface_state *is = puller->next;
+pull_interfaces_up(reelbox *puller,int rows,int cols,int delta){
+	reelbox *rb = puller->next;
 	int expected;
 
 	if(delta){
 		return OK; // FIXME
 	}
 	expected = puller->scrline + rows + 1;
-	while(is != puller && is->scrline > expected){
+	while(rb != puller && rb->scrline > expected){
 		// FIXME move it up
 		// FIXME update expected
-		is = is->prev;
+		rb = rb->prev;
 	}
 	assert(cols); // FIXME
 	return OK;
@@ -255,16 +264,17 @@ pull_interfaces_up(iface_state *puller,int rows,int cols,int delta){
 // (all those up until those actually displayed below it on the screen). Should
 // be called before pusher->scrline has been updated.
 static int
-push_interfaces_above(iface_state *pusher,int rows,int cols,int delta){
-	iface_state *is = pusher->prev;
+push_interfaces_above(reelbox *pusher,int rows,int cols,int delta){
+	reelbox *rb = pusher->prev;
 
-	while(is != pusher && is->scrline + iface_lines_bounded(is,rows) <= pusher->scrline + iface_lines_bounded(pusher,rows)){
-		is = is->prev;
+	while(rb != pusher && rb->scrline + iface_lines_bounded(rb->is,rows) <=
+			pusher->scrline + iface_lines_bounded(pusher->is,rows)){
+		rb = rb->prev;
 	}
-	while((is = is->next) != pusher){
+	while((rb = rb->next) != pusher){
 		int i;
 
-		if( (i = move_interface_generic(is,rows,cols,delta)) ){
+		if( (i = move_interface_generic(rb,rows,cols,delta)) ){
 			return i;
 		}
 	}
@@ -281,26 +291,28 @@ push_interfaces_above(iface_state *pusher,int rows,int cols,int delta){
 // visible -- ie, if we ought be invisible, we ought be already and this is not
 // going to make us so. We do not redraw -- that's the callers job (we
 // can't redraw, since we might not yet have been moved).
-int resize_iface(const interface *i,iface_state *is){
+int resize_iface(const interface *i,reelbox *rb){
 	const interface *curi = get_current_iface();
 	int rows,cols,subrows,subcols;
+	iface_state *is;
 
-	if(panel_hidden(is->panel)){ // resize upon becoming visible
+	if(panel_hidden(rb->panel)){ // resize upon becoming visible
 		return OK;
 	}
+       	is = rb->is;
 	getmaxyx(stdscr,rows,cols);
 	const int nlines = iface_lines_bounded(is,rows);
-	getmaxyx(is->subwin,subrows,subcols);
+	getmaxyx(rb->subwin,subrows,subcols);
 	assert(subcols); // FIXME
 	if(nlines < subrows){ // Shrink the interface
 		int delta = subrows - nlines;
 		// FIXME if we're above the current interface, we shrink and
 		// then move down, pulling things from above
-		assert(werase(is->subwin) == OK);
+		assert(werase(rb->subwin) == OK);
 		screen_update();
-		assert(wresize(is->subwin,nlines,PAD_COLS(cols)) != ERR);
-		assert(replace_panel(is->panel,is->subwin) != ERR);
-		pull_interfaces_up(is,rows,cols,delta);
+		assert(wresize(rb->subwin,nlines,PAD_COLS(cols)) != ERR);
+		assert(replace_panel(rb->panel,rb->subwin) != ERR);
+		pull_interfaces_up(rb,rows,cols,delta);
 		// FIXME move up interfaces below
 	}else if(nlines > subrows){ // Expand the interface
 		// The current interface never becomes a partial interface. We
@@ -312,55 +324,55 @@ int resize_iface(const interface *i,iface_state *is){
 			// grow all the way!
 			int delta = nlines - subrows;
 
-			if(nlines + is->scrline < rows){ // Try down first.
-				if(push_interfaces_below(is,rows,cols,delta)){
+			if(nlines + rb->scrline < rows){ // Try down first.
+				if(push_interfaces_below(rb,rows,cols,delta)){
 					return OK;
 				}
-				assert(wresize(is->subwin,nlines,PAD_COLS(cols)) != ERR);
-				assert(replace_panel(is->panel,is->subwin) != ERR);
-			}else if(is->scrline > delta){ // Otherwise try up
-				if(delta > is->scrline - 1){
-					delta = is->scrline - 1;
+				assert(wresize(rb->subwin,nlines,PAD_COLS(cols)) != ERR);
+				assert(replace_panel(rb->panel,rb->subwin) != ERR);
+			}else if(rb->scrline > delta){ // Otherwise try up
+				if(delta > rb->scrline - 1){
+					delta = rb->scrline - 1;
 				}
-				is->scrline -= delta;
-				assert(is->scrline >= 1);
-				if(push_interfaces_above(is,rows,cols,-delta)){
-					is->scrline += delta;
+				rb->scrline -= delta;
+				assert(rb->scrline >= 1);
+				if(push_interfaces_above(rb,rows,cols,-delta)){
+					rb->scrline += delta;
 					return OK;
 				}
 				// assert(move_interface_generic(is,rows,cols,-delta) == OK);
-				assert(move_panel(is->panel,is->scrline,1) != ERR);
-				assert(wresize(is->subwin,iface_lines_bounded(is,rows),PAD_COLS(cols)) != ERR);
-				assert(replace_panel(is->panel,is->subwin) != ERR);
+				assert(move_panel(rb->panel,rb->scrline,1) != ERR);
+				assert(wresize(rb->subwin,iface_lines_bounded(is,rows),PAD_COLS(cols)) != ERR);
+				assert(replace_panel(rb->panel,rb->subwin) != ERR);
 			}
-		}else if(is->scrline > current_iface->scrline){
-			if(nlines + is->scrline < rows){ // we can only go down
+		}else if(rb->scrline > current_iface->scrline){
+			if(nlines + rb->scrline < rows){ // we can only go down
 				int delta = nlines - subrows;
 
-				if(push_interfaces_below(is,rows,cols,delta)){
+				if(push_interfaces_below(rb,rows,cols,delta)){
 					return OK;
 				}
-				assert(wresize(is->subwin,nlines,PAD_COLS(cols)) != ERR);
-				assert(replace_panel(is->panel,is->subwin) != ERR);
+				assert(wresize(rb->subwin,nlines,PAD_COLS(cols)) != ERR);
+				assert(replace_panel(rb->panel,rb->subwin) != ERR);
 			}else{ // else becomes a partial interface
 				// FIXME take any available space!
 			}
 		}else{
-			if(is->scrline != 1){ // we can only go up
+			if(rb->scrline != 1){ // we can only go up
 				int delta = nlines - subrows;
 
-				if(delta > is->scrline - 1){
-					delta = is->scrline - 1;
+				if(delta > rb->scrline - 1){
+					delta = rb->scrline - 1;
 				}
-				is->scrline -= delta;
-				if(push_interfaces_above(is,rows,cols,-delta)){
-					is->scrline += delta;
+				rb->scrline -= delta;
+				if(push_interfaces_above(rb,rows,cols,-delta)){
+					rb->scrline += delta;
 					return OK;
 				}
 				// assert(move_interface_generic(is,rows,cols,-delta) == OK);
-				assert(move_panel(is->panel,is->scrline,1) != ERR);
-				assert(wresize(is->subwin,iface_lines_bounded(is,rows),PAD_COLS(cols)) != ERR);
-				assert(replace_panel(is->panel,is->subwin) != ERR);
+				assert(move_panel(rb->panel,rb->scrline,1) != ERR);
+				assert(wresize(rb->subwin,iface_lines_bounded(is,rows),PAD_COLS(cols)) != ERR);
+				assert(replace_panel(rb->panel,rb->subwin) != ERR);
 			}else{ // else becomes a partial interface
 				// FIXME take any available space!
 			}
@@ -425,7 +437,7 @@ int display_details_locked(WINDOW *mainw,struct panel_state *ps){
 		goto err;
 	}
 	if(current_iface){
-		if(iface_details(panel_window(ps->p),current_iface->iface,ps->ysize)){
+		if(iface_details(panel_window(ps->p),current_iface->is->iface,ps->ysize)){
 			goto err;
 		}
 	}
@@ -464,7 +476,7 @@ void sniff_interface_locked(const omphalos_iface *octx,WINDOW *w){
 		if(!interface_sniffing_p(i)){
 			if(!interface_up_p(i)){
 				wstatus_locked(w,"Bringing up %s...",i->name);
-				current_iface->devaction = -1;
+				current_iface->is->devaction = -1;
 				up_interface(octx,i);
 			}
 		}else{
@@ -479,7 +491,7 @@ void down_interface_locked(const omphalos_iface *octx,WINDOW *w){
 	if(i){
 		if(interface_up_p(i)){
 			wstatus_locked(w,"Bringing down %s...",i->name);
-			current_iface->devaction = 1;
+			current_iface->is->devaction = 1;
 			down_interface(octx,i);
 		}
 	}
@@ -502,6 +514,7 @@ int packet_cb_locked(const interface *i,omphalos_packet *op,struct panel_state *
 	iface_state *is = op->i->opaque;
 
 	if(is){
+		reelbox *rb = is->rb;
 		struct timeval tdiff;
 		unsigned long udiff;
 
@@ -511,62 +524,74 @@ int packet_cb_locked(const interface *i,omphalos_packet *op,struct panel_state *
 			return 0;
 		}
 		is->lastprinted = op->tv;
-		if(is == current_iface && ps->p){
+		if(rb == current_iface && ps->p){
 			iface_details(panel_window(ps->p),i,ps->ysize);
 		}
-		assert(redraw_iface_generic(is) == OK);
+		assert(redraw_iface_generic(rb) == OK);
 		return 1;
 	}
 	return 0;
 }
 
 void *interface_cb_locked(interface *i,iface_state *ret,struct panel_state *ps){
+	reelbox *rb;
+
 	if(ret == NULL){
 		if( (ret = create_interface_state(i)) ){
 			int rows,cols;
 
+			if((rb = create_reelbox()) == NULL){
+				free_iface_state(ret);
+				free(ret);
+				return NULL;
+			}
+			ret->rb = rb;
+			rb->is = ret;
+			// FIXME CREATE REELBOX, ATTACH TO IFACE_STATE
 			getmaxyx(stdscr,rows,cols);
 			// need find our location on the screen before newwin()
-			if((ret->prev = current_iface) == NULL){
-				ret->scrline = START_LINE;
+			if((rb->prev = current_iface) == NULL){
+				rb->scrline = START_LINE;
 			}else{
 				// The order on screen must match the list order, so splice it onto
 				// the end. We might be anywhere, so use absolute coords (scrline).
-				while(ret->prev->next->scrline > ret->prev->scrline){
-					ret->prev = ret->prev->next;
+				while(rb->prev->next->scrline > rb->prev->scrline){
+					rb->prev = rb->prev->next;
 				}
-				ret->scrline = iface_lines_bounded(ret->prev,rows) + ret->prev->scrline + 1;
+				rb->scrline = iface_lines_bounded(rb->prev->is,rows) + rb->prev->scrline + 1;
 			}
 			// we're not yet in the list -- nothing points to us --
 			// though ret->prev is valid.
-			if((ret->subwin = newwin(lines_for_interface(ret),PAD_COLS(cols),ret->scrline,START_COL)) == NULL ||
-					(ret->panel = new_panel(ret->subwin)) == NULL){
-				delwin(ret->subwin);
+			if((rb->subwin = newwin(lines_for_interface(ret),PAD_COLS(cols),rb->scrline,START_COL)) == NULL ||
+					(rb->panel = new_panel(rb->subwin)) == NULL){
+				delwin(rb->subwin);
 				free(ret);
 				return NULL;
 			}
 			if(current_iface == NULL){
-				current_iface = ret->prev = ret->next = ret;
+				current_iface = rb->prev = rb->next = rb;
 			}else{
-				ret->next = ret->prev->next;
-				ret->next->prev = ret;
-				ret->prev->next = ret;
+				rb->next = rb->prev->next;
+				rb->next->prev = rb;
+				rb->prev->next = rb;
 			}
 			++count_interface;
 			// Want the subdisplay left above this new iface,
 			// should they intersect.
-			assert(bottom_panel(ret->panel) == OK);
-			if(!iface_visible_p(rows,ret)){
-				assert(hide_panel(ret->panel) != ERR);
+			assert(bottom_panel(rb->panel) == OK);
+			if(!iface_visible_p(rows,rb)){
+				assert(hide_panel(rb->panel) != ERR);
 			}
 			draw_main_window(stdscr); // update iface count
 		}
+	}else{
+		rb = ret->rb;
 	}
-	if(ret == current_iface && ps->p){
+	if(rb == current_iface && ps->p){
 		iface_details(panel_window(ps->p),i,ps->ysize);
 	}
-	resize_iface(i,ret);
-	redraw_iface_generic(ret);
+	resize_iface(i,rb);
+	redraw_iface_generic(rb);
 	if(interface_up_p(i)){
 		if(ret->devaction < 0){
 			wstatus_locked(stdscr,"%s","");
@@ -581,24 +606,25 @@ void *interface_cb_locked(interface *i,iface_state *ret,struct panel_state *ps){
 
 void interface_removed_locked(iface_state *is,struct panel_state *ps){
 	if(is){
-		const int visible = !panel_hidden(is->panel);
+		reelbox *rb = is->rb;
+		const int visible = !panel_hidden(rb->panel);
 		int rows,cols;
 
-		free_iface_state(is);
+		free_iface_state(is); // clears l2/l3 nodes
 		--count_interface;
-		wclear(is->subwin);
-		del_panel(is->panel);
-		getmaxyx(is->subwin,rows,cols);
-		delwin(is->subwin);
-		if(is->next != is){
+		wclear(rb->subwin);
+		del_panel(rb->panel);
+		getmaxyx(rb->subwin,rows,cols);
+		delwin(rb->subwin);
+		if(rb->next != rb){
 			int scrrows,scrcols;
-			iface_state *ci;
+			reelbox *ci;
 
 			// First, splice it out of the list
-			is->next->prev = is->prev;
-			is->prev->next = is->next;
-			if(is == current_iface){
-				current_iface = is->prev;
+			rb->next->prev = rb->prev;
+			rb->prev->next = rb->next;
+			if(rb == current_iface){
+				current_iface = rb->prev;
 				// give the details window to new current_iface
 				if(ps->p){
 					iface_details(panel_window(ps->p),get_current_iface(),ps->ysize);
@@ -608,7 +634,7 @@ void interface_removed_locked(iface_state *is,struct panel_state *ps){
 			assert(scrcols);
 			assert(cols);
 			if(visible){
-				for(ci = is->next ; ci->scrline > is->scrline ; ci = ci->next){
+				for(ci = rb->next ; ci->scrline > rb->scrline ; ci = ci->next){
 					move_interface_generic(ci,scrrows,PAD_COLS(scrcols),-(rows + 1));
 				}
 			}
@@ -619,12 +645,14 @@ void interface_removed_locked(iface_state *is,struct panel_state *ps){
 		// Calls draw_main_window(), which will update iface count
 		wstatus_locked(stdscr,"%s went away",is->iface->name);
 		free(is);
+		free(rb);
 	}
 }
 
 struct l2obj *neighbor_callback_locked(const interface *i,struct l2host *l2){
 	struct l2obj *ret;
 	iface_state *is;
+	reelbox *rb;
 
 	// Guaranteed by callback properties -- we don't get neighbor callbacks
 	// until there's been a successful device callback.
@@ -638,8 +666,9 @@ struct l2obj *neighbor_callback_locked(const interface *i,struct l2host *l2){
 			return NULL;
 		}
 	}
-	resize_iface(i,is);
-	redraw_iface_generic(is);
+	rb = is->rb;
+	resize_iface(i,rb);
+	redraw_iface_generic(rb);
 	return ret;
 }
 
@@ -647,6 +676,7 @@ struct l3obj *host_callback_locked(const interface *i,struct l2host *l2,struct l
 	struct l2obj *l2o;
 	struct l3obj *ret;
 	iface_state *is;
+	reelbox *rb;
 
 	if(((is = i->opaque) == NULL) || !l2){
 		return NULL;
@@ -659,8 +689,9 @@ struct l3obj *host_callback_locked(const interface *i,struct l2host *l2,struct l
 			return NULL;
 		}
 	}
-	resize_iface(i,is);
-	redraw_iface_generic(is);
+	rb = is->rb;
+	resize_iface(i,rb);
+	redraw_iface_generic(rb);
 	return ret;
 }
 
@@ -712,14 +743,14 @@ reset_interface_stats(WINDOW *w,const interface *i){
 }
 
 void reset_all_interface_stats(WINDOW *w){
-	iface_state *is;
+	reelbox *rb;
 
-	if( (is = current_iface) ){
+	if( (rb = current_iface) ){
 		do{
-			const interface *i = get_current_iface(); // FIXME get_iface(is);
+			const interface *i = rb->is->iface;
 
 			reset_interface_stats(w,i);
-		}while((is = is->next) != current_iface);
+		}while((rb = rb->next) != current_iface);
 	}
 }
 
@@ -733,41 +764,44 @@ void reset_current_interface_stats(WINDOW *w){
 
 void use_next_iface_locked(WINDOW *w,struct panel_state *ps){
 	if(current_iface && current_iface->next != current_iface){
-		iface_state *is,*oldis = current_iface;
+		reelbox *oldrb = current_iface;
+		iface_state *is;
 		int rows,cols;
 		interface *i;
+		reelbox *rb;
 
 		getmaxyx(w,rows,cols);
 		assert(cols);
-		is = current_iface = current_iface->next;
+		rb = current_iface = current_iface->next;
+		is = rb->is;
 		i = is->iface;
-		if(!iface_wholly_visible_p(rows,is)){
+		if(!iface_wholly_visible_p(rows,is,rb)){
 			int up;
 
-			is->scrline = rows - iface_lines_bounded(is,rows) - 1;
-			up = oldis->scrline + iface_lines_bounded(oldis,rows) + 1 - is->scrline;
+			rb->scrline = rows - iface_lines_bounded(is,rows) - 1;
+			up = oldrb->scrline + iface_lines_bounded(oldrb->is,rows) + 1 - rb->scrline;
 			if(up > 0){
-				push_interfaces_above(is,rows,cols,-up);
+				push_interfaces_above(rb,rows,cols,-up);
 			}
-			assert(move_panel(is->panel,is->scrline,START_COL) != ERR);
-			assert(resize_iface(i,is) == OK);
-			assert(replace_panel(is->panel,is->subwin) != ERR);
-			assert(redraw_iface_generic(oldis) == OK);
-			if(panel_hidden(is->panel)){
-				assert(show_panel(is->panel) != ERR);
+			assert(move_panel(rb->panel,rb->scrline,START_COL) != ERR);
+			assert(resize_iface(i,rb) == OK);
+			assert(replace_panel(rb->panel,rb->subwin) != ERR);
+			assert(redraw_iface_generic(oldrb) == OK);
+			if(panel_hidden(rb->panel)){
+				assert(show_panel(rb->panel) != ERR);
 			}
-			assert(redraw_iface_generic(is) == OK);
-		}else if(is->scrline < oldis->scrline){
-			is->scrline = oldis->scrline + (iface_lines_bounded(oldis,rows) - iface_lines_bounded(is,rows));
-			push_interfaces_above(is,rows,cols,-(iface_lines_bounded(is,rows) + 1));
-			assert(move_panel(is->panel,is->scrline,START_COL) != ERR);
-			assert(redraw_iface_generic(is) == OK);
+			assert(redraw_iface_generic(rb) == OK);
+		}else if(rb->scrline < oldrb->scrline){
+			rb->scrline = oldrb->scrline + (iface_lines_bounded(oldrb->is,rows) - iface_lines_bounded(is,rows));
+			push_interfaces_above(rb,rows,cols,-(iface_lines_bounded(is,rows) + 1));
+			assert(move_panel(rb->panel,rb->scrline,START_COL) != ERR);
+			assert(redraw_iface_generic(rb) == OK);
 		}else{ // it was wholly visible, and below
-			assert(redraw_iface_generic(oldis) == OK);
-			assert(resize_iface(i,is) == OK);
-			assert(redraw_iface_generic(is) == OK);
+			assert(redraw_iface_generic(oldrb) == OK);
+			assert(resize_iface(i,rb) == OK);
+			assert(redraw_iface_generic(rb) == OK);
 		}
-		if(panel_hidden(oldis->panel)){
+		if(panel_hidden(oldrb->panel)){
 			// we hid the entire panel, and thus might have space
 			// to move up into. move as many interfaces as we can
 			// onscreen FIXME
@@ -781,38 +815,41 @@ void use_next_iface_locked(WINDOW *w,struct panel_state *ps){
 
 void use_prev_iface_locked(WINDOW *w,struct panel_state *ps){
 	if(current_iface && current_iface->prev != current_iface){
-		iface_state *is,*oldis = current_iface;
+		reelbox *oldrb = current_iface;
+		iface_state *is;
 		int rows,cols;
 		interface *i;
+		reelbox *rb;
 
 		getmaxyx(w,rows,cols);
 		assert(cols);
-		is = current_iface = current_iface->prev;
+		rb = current_iface = current_iface->prev;
+		is = rb->is;
 		i = is->iface;
-		if(!iface_wholly_visible_p(rows,is)){
+		if(!iface_wholly_visible_p(rows,is,rb)){
 			int shift;
 
-			is->scrline = 1;
-			shift = iface_lines_bounded(is,rows) + 1 - (oldis->scrline - 1);
+			rb->scrline = 1;
+			shift = iface_lines_bounded(is,rows) + 1 - (oldrb->scrline - 1);
 			if(iface_lines_bounded(is,rows) != iface_lines_unbounded(is)){
 				--shift; // no blank line will follow
 			}
-			push_interfaces_below(is,rows,cols,shift);
-			assert(resize_iface(i,is) == OK);
-			assert(replace_panel(is->panel,is->subwin) != ERR);
-			assert(move_panel(is->panel,is->scrline,START_COL) != ERR);
-			redraw_iface_generic(is);
-			assert(show_panel(is->panel) != ERR);
-		}else if(is->scrline > oldis->scrline){
-			is->scrline = 1;
-			push_interfaces_below(is,rows,cols,iface_lines_bounded(is,rows) + 1);
-			assert(move_panel(is->panel,is->scrline,START_COL) != ERR);
-			redraw_iface_generic(is);
+			push_interfaces_below(rb,rows,cols,shift);
+			assert(resize_iface(i,rb) == OK);
+			assert(replace_panel(rb->panel,rb->subwin) != ERR);
+			assert(move_panel(rb->panel,rb->scrline,START_COL) != ERR);
+			redraw_iface_generic(rb);
+			assert(show_panel(rb->panel) != ERR);
+		}else if(rb->scrline > oldrb->scrline){
+			rb->scrline = 1;
+			push_interfaces_below(rb,rows,cols,iface_lines_bounded(is,rows) + 1);
+			assert(move_panel(rb->panel,rb->scrline,START_COL) != ERR);
+			redraw_iface_generic(rb);
 		}else{
-			redraw_iface_generic(oldis);
-			resize_iface(i,is);
+			redraw_iface_generic(oldrb);
+			resize_iface(i,rb);
 		}
-		if(panel_hidden(oldis->panel)){
+		if(panel_hidden(oldrb->panel)){
 			// we hid the entire panel, and thus might have space
 			// to move down into. move as many interfaces as we can
 			// onscreen FIXME
@@ -828,14 +865,14 @@ int expand_iface_locked(void){
 	if(!current_iface){
 		return 0;
 	}
-	expand_interface(current_iface);
-	return resize_iface(current_iface->iface,current_iface);
+	expand_interface(current_iface->is);
+	return resize_iface(current_iface->is->iface,current_iface);
 }
 
 int collapse_iface_locked(void){
 	if(!current_iface){
 		return 0;
 	}
-	collapse_interface(current_iface);
-	return resize_iface(current_iface->iface,current_iface);
+	collapse_interface(current_iface->is);
+	return resize_iface(current_iface->is->iface,current_iface);
 }

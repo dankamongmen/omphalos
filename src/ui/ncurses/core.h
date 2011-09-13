@@ -17,6 +17,50 @@ struct panel_state;
 struct omphalos_iface;
 struct omphalos_packet;
 
+// A box on the display reel. A box might be wholly visible, partially visible  endif
+// but missing its bottom portion (bottom of the screen only), partially
+// visible but missing its top portion (top of the screen only), wholly
+// visible but split across the top/bottom sides, partially visible split across
+// the top/bottom, and wholly invisible. A box is never drawn as larger than
+// the main screen (ie, it will not appear partial while occupying the entirety
+// of the main screen, even if it is logically larger).
+//
+// We never allow more than one line of blank space at the top of the screen,
+// assuming there is data to be displayed. Blank space can never be at the top
+// of the screen if there is less than one total screen of information.
+//
+// scrline is the logical location of the box's topmost line (border with name)
+// on the containing pad (reel), taking positive values only. values larger
+// than the screen's number of rows are meaningless for comparison purposes;
+// ordering is then defined by the next and prev pointers alone (thus a
+// possibly large number of offscreen interfaces needn't all be updated
+// whenever locations change onscreen).
+//
+// If the first visible (lowest 'scrline' value) box has a scrline value
+// greater than 1, then:
+//
+//  - if the value is 2 and the screen is full, things are fine.
+//  - otherwise, make invisible boxes from the list visible in the blank space.
+//  - if there is still space, use any invisible portions of the last box in
+//     the list. if there is *still* space...
+//  - there is less than a screen's worth of info. move all boxes up.
+//
+// Then display the boxes until scrline exceeds the number of rows in the
+// containing screen, or we reach the end of the list.
+//
+// Get a reelbox's dimensions by calling getmaxyx() on its subwin member. These
+// are the dimensions on the real screen, not the desirable dimensions on an
+// infinitely large screen.
+//
+// Split interfaces will require a second panel/window. FIXME
+typedef struct reelbox {
+	int scrline;
+	WINDOW *subwin;			// subwin
+	PANEL *panel;			// panel
+	struct reelbox *next,*prev;	// circular list
+	struct iface_state *is;		// backing interface state
+} reelbox;
+
 // FIXME we ought precreate the subwindows, and show/hide them rather than
 // creating and destroying them every time.
 struct panel_state {
@@ -49,7 +93,7 @@ void reset_all_interface_stats(WINDOW *);
 void reset_current_interface_stats(WINDOW *);
 void use_next_iface_locked(WINDOW *,struct panel_state *);
 void use_prev_iface_locked(WINDOW *,struct panel_state *);
-int resize_iface(const struct interface *,struct iface_state *);
+int resize_iface(const struct interface *,reelbox *);
 int expand_iface_locked(void);
 int collapse_iface_locked(void);
 

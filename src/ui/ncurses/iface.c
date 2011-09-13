@@ -146,8 +146,8 @@ l3obj *add_l3_to_iface(iface_state *is,l2obj *l2,struct l3host *l3h){
 }
 
 static void
-print_iface_hosts(const interface *i,const iface_state *is,int rows,int cols,
-				int partial){
+print_iface_hosts(const interface *i,const iface_state *is,WINDOW *w,
+			int rows,int cols,int partial){
 	const l2obj *l;
 	int line;
 
@@ -202,7 +202,7 @@ print_iface_hosts(const interface *i,const iface_state *is,int rows,int cols,
 			if(!interface_up_p(i)){
 				attrs = (attrs & A_BOLD) | COLOR_PAIR(DBORDER_COLOR);
 			}
-			assert(wattrset(is->subwin,attrs) != ERR);
+			assert(wattrset(w,attrs) != ERR);
 			l2ntop(l->l2,i->addrlen,hw);
 			if(devname){
 				size_t len = strlen(devname);
@@ -210,18 +210,18 @@ print_iface_hosts(const interface *i,const iface_state *is,int rows,int cols,
 				if(len > cols - 5 - HWADDRSTRLEN(i->addrlen)){
 					len = cols - 5 - HWADDRSTRLEN(i->addrlen);
 				}
-				assert(mvwprintw(is->subwin,line,2,"%c %s %.*s",
+				assert(mvwprintw(w,line,2,"%c %s %.*s",
 					legend,hw,cols - 1,devname) != ERR);
 			}else{
-				assert(mvwprintw(is->subwin,line,2,"%c %s",legend,hw) != ERR);
+				assert(mvwprintw(w,line,2,"%c %s",legend,hw) != ERR);
 			}
 			if(interface_up_p(i)){
 				char sbuf[PREFIXSTRLEN + 1],dbuf[PREFIXSTRLEN + 1];
 				if(get_srcpkts(l->l2) == 0 && (l->cat == RTN_MULTICAST || l->cat == RTN_BROADCAST)){
-					mvwprintw(is->subwin,line,cols - PREFIXSTRLEN * 1 - 1,PREFIXFMT,
+					mvwprintw(w,line,cols - PREFIXSTRLEN * 1 - 1,PREFIXFMT,
 							prefix(get_dstpkts(l->l2),1,dbuf,sizeof(dbuf),1));
 				}else{
-					mvwprintw(is->subwin,line,cols - PREFIXSTRLEN * 2 - 2,PREFIXFMT" "PREFIXFMT,prefix(get_srcpkts(l->l2),1,sbuf,sizeof(sbuf),1),
+					mvwprintw(w,line,cols - PREFIXSTRLEN * 2 - 2,PREFIXFMT" "PREFIXFMT,prefix(get_srcpkts(l->l2),1,sbuf,sizeof(sbuf),1),
 							prefix(get_dstpkts(l->l2),1,dbuf,sizeof(dbuf),1));
 				}
 			}
@@ -240,20 +240,20 @@ print_iface_hosts(const interface *i,const iface_state *is,int rows,int cols,
 					if((name = get_l3name(l3->l3)) == NULL){
 						name = "";
 					}
-					assert(mvwprintw(is->subwin,line,5,"%s %s",nw,name) != ERR);
+					assert(mvwprintw(w,line,5,"%s %s",nw,name) != ERR);
 					{
 						char sbuf[PREFIXSTRLEN + 1];
 						char dbuf[PREFIXSTRLEN + 1];
 						if(l3_get_srcpkt(l3->l3) == 0 && (l->cat == RTN_MULTICAST || l->cat == RTN_BROADCAST)){
-							mvwprintw(is->subwin,line,cols - PREFIXSTRLEN * 1 - 1,PREFIXFMT,
+							mvwprintw(w,line,cols - PREFIXSTRLEN * 1 - 1,PREFIXFMT,
 									prefix(l3_get_dstpkt(l3->l3),1,dbuf,sizeof(dbuf),1));
 						}else{
-							mvwprintw(is->subwin,line,cols - PREFIXSTRLEN * 2 - 2,PREFIXFMT" "PREFIXFMT,
+							mvwprintw(w,line,cols - PREFIXSTRLEN * 2 - 2,PREFIXFMT" "PREFIXFMT,
 									prefix(l3_get_srcpkt(l3->l3),1,sbuf,sizeof(sbuf),1),
 									prefix(l3_get_dstpkt(l3->l3),1,dbuf,sizeof(dbuf),1));
 						}
 					}
-					assert(wattrset(is->subwin,attrs) != ERR);
+					assert(wattrset(w,attrs) != ERR);
 				}
 				++line;
 			}
@@ -289,8 +289,8 @@ duplexstr(unsigned dplx){
 }
 
 static void
-iface_box(const interface *i,const iface_state *is,int active,int partial){
-	WINDOW * const w = is->subwin;
+iface_box(const interface *i,const iface_state *is,WINDOW *w,int active,
+						int partial){
 	int bcolor,hcolor,rows,cols;
 	size_t buslen;
 	int attrs;
@@ -414,25 +414,25 @@ iface_box(const interface *i,const iface_state *is,int active,int partial){
 }
 
 static void
-print_iface_state(const interface *i,const iface_state *is,int rows,int cols,
-							int partial){
+print_iface_state(const interface *i,const iface_state *is,WINDOW *w,
+				int rows,int cols,int partial){
 	char buf[U64STRLEN + 1],buf2[U64STRLEN + 1];
 	unsigned long usecdomain;
 
 	if(partial < -1 || rows < 2){
 		return;
 	}
-	assert(wattrset(is->subwin,A_BOLD | COLOR_PAIR(IFACE_COLOR)) != ERR);
+	assert(wattrset(w,A_BOLD | COLOR_PAIR(IFACE_COLOR)) != ERR);
 	// FIXME broken if bps domain ever != fps domain. need unite those
 	// into one FTD stat by letting it take an object...
 	// FIXME this leads to a "ramp-up" period where we approach steady state
 	usecdomain = i->bps.usec * i->bps.total;
-	assert(mvwprintw(is->subwin,1,1,"%u node%s. Last %lus: %7sb/s (%sp)",
+	assert(mvwprintw(w,1,1,"%u node%s. Last %lus: %7sb/s (%sp)",
 		is->nodes,is->nodes == 1 ? "" : "s",
 		usecdomain / 1000000,
 		prefix(timestat_val(&i->bps) * CHAR_BIT * 1000000 * 100 / usecdomain,100,buf,sizeof(buf),0),
 		prefix(timestat_val(&i->fps),1,buf2,sizeof(buf2),1)) != ERR);
-	assert(mvwprintw(is->subwin,1,cols - PREFIXSTRLEN * 2 - 5,"Total: Src     Dst") != ERR);
+	assert(mvwprintw(w,1,cols - PREFIXSTRLEN * 2 - 5,"Total: Src     Dst") != ERR);
 }
 
 void free_iface_state(iface_state *is){
@@ -445,77 +445,78 @@ void free_iface_state(iface_state *is){
 	}
 }
 
-int redraw_iface(const iface_state *is,int active){
+int redraw_iface(const iface_state *is,const reelbox *rb,int active){
 	int rows,cols,partial,scrrows,scrcols;
 	const interface *i = is->iface;
 
-	if(panel_hidden(is->panel)){
+	if(panel_hidden(rb->panel)){
 		return OK;
 	}
 	getmaxyx(stdscr,scrrows,scrcols);
-	if(is->scrline < 1){ // no top
-		partial = is->scrline - 1;
-	}else if(iface_wholly_visible_p(scrrows,is) || active){ // completely visible
+	if(rb->scrline < 1){ // no top
+		partial = rb->scrline - 1;
+	}else if(iface_wholly_visible_p(scrrows,is,rb) || active){ // completely visible
 		partial = 0;
 	}else{
 		partial = 1; // no bottom
 	}
-	getmaxyx(is->subwin,rows,cols);
+	getmaxyx(rb->subwin,rows,cols);
 	assert(cols <= scrcols); // FIXME
-	assert(werase(is->subwin) != ERR);
+	assert(werase(rb->subwin) != ERR);
 	if(partial >= 0){
-		iface_box(i,is,active,partial);
+		iface_box(i,is,rb->subwin,active,partial);
 		if(interface_up_p(i)){
-			print_iface_state(i,is,rows,cols,partial);
+			print_iface_state(i,is,rb->subwin,rows,cols,partial);
 		}
-		print_iface_hosts(i,is,0/*rows*/,cols,partial);
+		print_iface_hosts(i,is,rb->subwin,rows,cols,partial);
 	}
 	return OK;
 }
 
-// Is even a line of the interface visible? If so, draw it, as otherwise we
-// have useless, disconcerting blank space.
-int iface_visible_p(int rows,const iface_state *is){
-	if(is->scrline + 1 >= rows){
-		return 0;
-	}else if(is->scrline + lines_for_interface(is) < 1){
-		return 0;
+// Will even a line of the interface be visible as stands?
+int iface_visible_p(int rows,const reelbox *rb){
+	if(rb->scrline < rows){
+		return 1; // at least partially visible at the bottom
+	}else if(rb->next->scrline < rb->scrline){
+		if(rb->next->scrline > 1){
+			return 1; // we're partially visible at the top
+		}
 	}
-	return 1;
+	return 0;
 }
 
 // Move this interface, possibly hiding it or bringing it onscreen. Negative
 // delta indicates movement up, positive delta moves down. Returns a non-zero
 // if the interface is active and would be pushed offscreen.
-int move_interface(iface_state *is,int rows,int cols,int delta,int active){
-	is->scrline += delta;
-	if(iface_wholly_visible_p(rows,is)){
-		assert(move_panel(is->panel,is->scrline,1) != ERR);
-		redraw_iface(is,active);
-	}else if(iface_visible_p(rows,is)){
+int move_interface(iface_state *is,reelbox *rb,int rows,int cols,int delta,int active){
+	rb->scrline += delta;
+	if(iface_wholly_visible_p(rows,is,rb)){
+		assert(move_panel(rb->panel,rb->scrline,1) != ERR);
+		redraw_iface(is,rb,active);
+	}else if(iface_visible_p(rows,rb)){
 		int nlines,targ;
 
 		// If we're active, resist the attempt to move us offscreen.
 		if(active){
-			is->scrline -= delta;
+			rb->scrline -= delta;
 			return -1;
 		}
 		if(delta > 0){
-			nlines = rows - is->scrline - 1; // sans-bottom partial
+			nlines = rows - rb->scrline - 1; // sans-bottom partial
 		}else{
-			nlines = rows - (1 - is->scrline); // sans-top partial
+			nlines = rows - (1 - rb->scrline); // sans-top partial
 		}
-		assert(wresize(is->subwin,nlines,PAD_COLS(cols)) == OK);
-		targ = is->scrline < 1 ? 1 : is->scrline;
-		assert(move_panel(is->panel,targ,1) == OK);
-		assert(redraw_iface(is,active) == OK);
-	}else if(!panel_hidden(is->panel)){
+		assert(wresize(rb->subwin,nlines,PAD_COLS(cols)) == OK);
+		targ = rb->scrline < 1 ? 1 : rb->scrline;
+		assert(move_panel(rb->panel,targ,1) == OK);
+		assert(redraw_iface(is,rb,active) == OK);
+	}else if(!panel_hidden(rb->panel)){
 		if(active){
-			is->scrline -= delta;
+			rb->scrline -= delta;
 			return -1;
 		}
-		assert(werase(is->subwin) != ERR);
-		assert(hide_panel(is->panel) != ERR);
+		assert(werase(rb->subwin) != ERR);
+		assert(hide_panel(rb->panel) != ERR);
 	}
 	return 0;
 }
@@ -530,16 +531,16 @@ int lines_for_interface(const iface_state *is){
 
 // Is the interface window entirely visible? We can't draw it otherwise, as it
 // will obliterate the global bounding box.
-int iface_wholly_visible_p(int rows,const iface_state *is){
+int iface_wholly_visible_p(int rows,const iface_state *is,const reelbox *rb){
 	if(rows < 0){
 		int cols;
 
 		getmaxyx(stdscr,rows,cols);
 		assert(cols >= 0);
 	}
-	if(is->scrline + lines_for_interface(is) >= rows){
+	if(rb->scrline + lines_for_interface(is) >= rows){
 		return 0;
-	}else if(is->scrline < 1){
+	}else if(rb->scrline < 1){
 		return 0;
 	}
 	return 1;
