@@ -256,8 +256,7 @@ push_interfaces_above(reelbox *pusher,int rows,int cols,int delta){
 
 	assert(pusher->scrline >= 1);
 	// FIXME also handle sanstop partials!
-	while(rb != pusher && rb->scrline + getmaxy(rb->subwin) <=
-			pusher->scrline + iface_lines_bounded(pusher->is,rows)){
+	while(rb != pusher && rb->scrline < rows){
 		rb->scrline += delta;
 		rb = rb->prev;
 	}
@@ -763,12 +762,12 @@ void use_next_iface_locked(WINDOW *w,struct panel_state *ps){
 				push_interfaces_above(rb,rows,cols,-up);
 			}
 			assert(move_panel(rb->panel,rb->scrline,START_COL) != ERR);
-			assert(wresize(rb->subwin,iface_lines_bounded(rb->is,rows),PAD_COLS(cols)) == OK);
-			assert(replace_panel(rb->panel,rb->subwin) != ERR);
-			assert(redraw_iface_generic(oldrb) == OK);
 			if(panel_hidden(rb->panel)){
 				assert(show_panel(rb->panel) != ERR);
 			}
+			assert(wresize(rb->subwin,iface_lines_bounded(rb->is,rows),PAD_COLS(cols)) == OK);
+			assert(replace_panel(rb->panel,rb->subwin) != ERR);
+			assert(redraw_iface_generic(oldrb) == OK);
 			assert(redraw_iface_generic(rb) == OK);
 		}else if(rb->scrline < oldrb->scrline){
 			rb->scrline = oldrb->scrline + (iface_lines_bounded(oldrb->is,rows) - iface_lines_bounded(is,rows));
