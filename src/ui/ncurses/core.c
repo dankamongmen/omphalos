@@ -69,7 +69,9 @@ redraw_iface_generic(const reelbox *rb){
 
 static inline int
 move_interface_generic(reelbox *rb,int rows,int cols,int delta){
-	return move_interface(rb->is,rb,rows,cols,delta,rb == current_iface);
+	assert(rb != current_iface);
+	return move_interface(rb->is,rb,rows,cols,getbegy(rb->subwin),
+			delta,rb == current_iface);
 }
 
 static int
@@ -217,6 +219,7 @@ push_interfaces_below(reelbox *pusher,int rows,int cols,int delta){
 	reelbox *rb = pusher->next;
 	
 	while(rb != pusher && rb->scrline >= pusher->scrline){
+		rb->scrline += delta;
 		rb = rb->next;
 	}
 	while((rb = rb->prev) != pusher){
@@ -259,12 +262,14 @@ push_interfaces_above(reelbox *pusher,int rows,int cols,int delta){
 
 	while(rb != pusher && rb->scrline + iface_lines_bounded(rb->is,rows) <=
 			pusher->scrline + iface_lines_bounded(pusher->is,rows)){
+		rb->scrline += delta;
 		rb = rb->prev;
 	}
 	while((rb = rb->next) != pusher){
 		int i;
 
 		//fprintf(stderr,"MOVING ONE (%s) UP %d\n",rb->is->iface->name,delta);
+		// On error, our ->scrline will have been properly reset.
 		if( (i = move_interface_generic(rb,rows,cols,delta)) ){
 			return i;
 		}
