@@ -69,7 +69,6 @@ redraw_iface_generic(const reelbox *rb){
 
 static inline void
 move_interface_generic(reelbox *rb,int rows,int cols,int delta){
-	assert(rb != current_iface);
 	move_interface(rb->is,rb,rows,cols,getbegy(rb->subwin),
 			delta,rb == current_iface);
 }
