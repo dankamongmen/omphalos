@@ -752,7 +752,7 @@ void use_next_iface_locked(WINDOW *w,struct panel_state *ps){
 			assert(move_panel(is->panel,is->scrline,START_COL) != ERR);
 			assert(resize_iface(i,is) == OK);
 			assert(replace_panel(is->panel,is->subwin) != ERR);
-			assert(redraw_iface_generic(is) == OK);
+			assert(redraw_iface_generic(oldis) == OK);
 			if(panel_hidden(is->panel)){
 				assert(show_panel(is->panel) != ERR);
 			}

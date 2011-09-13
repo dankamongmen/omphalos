@@ -49,7 +49,6 @@ iface_state *create_interface_state(interface *i){
 		ret->lastprinted.tv_sec = ret->lastprinted.tv_usec = 0;
 		ret->iface = i;
 		ret->expansion = EXPANSION_MAX;
-		ret->split = NULL;
 	}
 	return ret;
 }
@@ -464,11 +463,13 @@ int redraw_iface(const iface_state *is,int active){
 	getmaxyx(is->subwin,rows,cols);
 	assert(cols <= scrcols); // FIXME
 	assert(werase(is->subwin) != ERR);
-	iface_box(i,is,active,partial);
-	if(interface_up_p(i)){
-		print_iface_state(i,is,rows,cols,partial);
+	if(partial >= 0){
+		iface_box(i,is,active,partial);
+		if(interface_up_p(i)){
+			print_iface_state(i,is,rows,cols,partial);
+		}
+		print_iface_hosts(i,is,0/*rows*/,cols,partial);
 	}
-	print_iface_hosts(i,is,rows,cols,partial);
 	return OK;
 }
 
