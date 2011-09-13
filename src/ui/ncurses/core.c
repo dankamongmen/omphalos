@@ -779,7 +779,7 @@ void use_next_iface_locked(WINDOW *w,struct panel_state *ps){
 				push_interfaces_above(rb,rows,cols,-up);
 			}
 			assert(move_panel(rb->panel,rb->scrline,START_COL) != ERR);
-			assert(resize_iface(i,rb) == OK);
+			assert(wresize(rb->subwin,iface_lines_bounded(rb->is,rows),PAD_COLS(cols)) == OK);
 			assert(replace_panel(rb->panel,rb->subwin) != ERR);
 			assert(redraw_iface_generic(oldrb) == OK);
 			if(panel_hidden(rb->panel)){
