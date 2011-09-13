@@ -475,7 +475,8 @@ int redraw_iface(const iface_state *is,const reelbox *rb,int active){
 
 // Will even a line of the interface be visible as stands?
 int iface_visible_p(int rows,const reelbox *rb){
-	if(rb->scrline < rows){
+	assert(rb->scrline >= 1);
+	if(rb->scrline < rows - 1){
 		return 1; // at least partially visible at the bottom
 	}else if(rb->next->scrline < rb->scrline){
 		if(rb->next->scrline > 1){
@@ -506,6 +507,7 @@ int move_interface(iface_state *is,reelbox *rb,int rows,int cols,int delta,int a
 		}else{
 			nlines = rows - (1 - rb->scrline); // sans-top partial
 		}
+		assert(nlines);
 		assert(wresize(rb->subwin,nlines,PAD_COLS(cols)) == OK);
 		targ = rb->scrline < 1 ? 1 : rb->scrline;
 		assert(move_panel(rb->panel,targ,1) == OK);
