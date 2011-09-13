@@ -217,7 +217,7 @@ static void
 push_interfaces_below(reelbox *pusher,int rows,int cols,int delta){
 	reelbox *rb = pusher->next;
 	
-	while(rb != pusher && rb->scrline >= pusher->scrline){
+	while(rb != pusher && rb->scrline >= pusher->scrline && rb->scrline < rows - 1){
 		rb->scrline += delta;
 		rb = rb->next;
 	}
@@ -254,7 +254,9 @@ static void
 push_interfaces_above(reelbox *pusher,int rows,int cols,int delta){
 	reelbox *rb = pusher->prev;
 
-	while(rb != pusher && rb->scrline + iface_lines_bounded(rb->is,rows) <=
+	assert(pusher->scrline >= 1);
+	// FIXME also handle sanstop partials!
+	while(rb != pusher && rb->scrline + getmaxy(rb->subwin) <=
 			pusher->scrline + iface_lines_bounded(pusher->is,rows)){
 		rb->scrline += delta;
 		rb = rb->prev;
@@ -317,7 +319,6 @@ int resize_iface(const interface *i,reelbox *rb){
 					delta = rb->scrline - 1;
 				}
 				rb->scrline -= delta;
-				assert(rb->scrline >= 1);
 				push_interfaces_above(rb,rows,cols,-delta);
 				// assert(move_interface_generic(is,rows,cols,-delta) == OK);
 				assert(move_panel(rb->panel,rb->scrline,1) != ERR);
