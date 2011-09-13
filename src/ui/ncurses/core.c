@@ -9,8 +9,9 @@
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
 
-static reelbox *current_iface;
 static unsigned count_interface;
+// dequeue + single selection
+static reelbox *current_iface,*top_reelbox,*last_reelbox;
 
 // Status bar at the bottom of the screen. Must be reallocated upon screen
 // resize and allocated based on initial screen at startup. Don't shrink
@@ -18,12 +19,21 @@ static unsigned count_interface;
 static char *statusmsg;
 static int statuschars;	// True size, not necessarily what's available
 
+// Caller needs set up: next, prev
 static reelbox *
-create_reelbox(void){
+create_reelbox(iface_state *is,int scrline,int cols){
 	reelbox *ret;
 
 	if( (ret = malloc(sizeof(*ret))) ){
-		memset(ret,0,sizeof(*ret));
+		if((ret->subwin = newwin(lines_for_interface(is),PAD_COLS(cols),scrline,START_COL)) == NULL ||
+				(ret->panel = new_panel(ret->subwin)) == NULL){
+			delwin(ret->subwin);
+			free(ret);
+			return NULL;
+		}
+		ret->scrline = scrline;
+		ret->is = is;
+		is->rb = ret;
 	}
 	return ret;
 }
@@ -281,6 +291,8 @@ int resize_iface(const interface *i,reelbox *rb){
 	int rows,cols,subrows,subcols;
 	iface_state *is;
 
+	assert(rb);
+	assert(i);
 	if(panel_hidden(rb->panel)){ // resize upon becoming visible
 		return OK;
 	}
@@ -507,65 +519,77 @@ int packet_cb_locked(const interface *i,omphalos_packet *op,struct panel_state *
 	return 0;
 }
 
+static inline int
+room_for_newbox(int rows){
+	if(last_reelbox){
+		int r = last_reelbox->scrline + getmaxy(last_reelbox->subwin) + 1;
+
+		if(r >= rows - 1){
+			return 0;
+		}
+		return r;
+	}
+	return 1;
+}
+
 void *interface_cb_locked(interface *i,iface_state *ret,struct panel_state *ps){
 	reelbox *rb;
 
 	if(ret == NULL){
 		if( (ret = create_interface_state(i)) ){
-			int rows,cols;
+			int newrb,rows,cols;
 
-			if((rb = create_reelbox()) == NULL){
-				free_iface_state(ret);
-				free(ret);
-				return NULL;
-			}
-			ret->rb = rb;
-			rb->is = ret;
-			// FIXME CREATE REELBOX, ATTACH TO IFACE_STATE
 			getmaxyx(stdscr,rows,cols);
-			// need find our location on the screen before newwin()
-			if((rb->prev = current_iface) == NULL){
-				rb->scrline = START_LINE;
-			}else{
-				// The order on screen must match the list order, so splice it onto
-				// the end. We might be anywhere, so use absolute coords (scrline).
-				while(rb->prev->next->scrline > rb->prev->scrline){
-					rb->prev = rb->prev->next;
+			if( (newrb = room_for_newbox(rows)) ){
+				if((rb = create_reelbox(ret,newrb,cols)) == NULL){
+					free_iface_state(ret);
+					free(ret);
+					return NULL;
 				}
-				rb->scrline = iface_lines_bounded(rb->prev->is,rows) + rb->prev->scrline + 1;
-			}
-			// we're not yet in the list -- nothing points to us --
-			// though ret->prev is valid.
-			if((rb->subwin = newwin(lines_for_interface(ret),PAD_COLS(cols),rb->scrline,START_COL)) == NULL ||
-					(rb->panel = new_panel(rb->subwin)) == NULL){
-				delwin(rb->subwin);
-				free(ret);
-				return NULL;
-			}
-			if(current_iface == NULL){
-				current_iface = rb->prev = rb->next = rb;
-			}else{
-				rb->next = rb->prev->next;
-				rb->next->prev = rb;
-				rb->prev->next = rb;
+				wstatus_locked(stdscr,"adding %s",i->name);
+				doupdate();
+				if(last_reelbox){
+					// set up the iface list entries
+					ret->next = last_reelbox->is->next;
+					ret->next->prev = ret;
+					ret->prev = last_reelbox->is;
+					last_reelbox->is->next = ret;
+					// and also the rb list entries
+					rb->next = last_reelbox->next;
+					rb->next->prev = rb;
+					rb->prev = last_reelbox;
+					last_reelbox->next = rb;
+				}else{
+					ret->prev = ret->next = ret;
+					rb->next = rb->prev = rb;
+					top_reelbox = rb;
+					current_iface = rb;
+				}
+				last_reelbox = rb;
+				// Want the subdisplay left above this new iface,
+				// should they intersect.
+				assert(bottom_panel(rb->panel) == OK);
+			}else{ // insert it after the last visible one, no rb
+				ret->prev = last_reelbox->is;
+				last_reelbox->is->next->prev = ret;
+				ret->next = last_reelbox->is->next;
+				last_reelbox->is->next = ret;
+				rb = NULL;
 			}
 			++count_interface;
-			// Want the subdisplay left above this new iface,
-			// should they intersect.
-			assert(bottom_panel(rb->panel) == OK);
-			if(!iface_visible_p(rows,rb)){
-				assert(hide_panel(rb->panel) != ERR);
-			}
-			draw_main_window(stdscr); // update iface count
+			// calls draw_main_window(), updating iface count
+			wstatus_locked(stdscr,"Set up new interface %s",i->name);
 		}
 	}else{
 		rb = ret->rb;
 	}
-	if(rb == current_iface && ps->p){
-		iface_details(panel_window(ps->p),i,ps->ysize);
+	if(rb){
+		if(rb == current_iface && ps->p){
+			iface_details(panel_window(ps->p),i,ps->ysize);
+		}
+		resize_iface(i,rb);
+		redraw_iface_generic(rb);
 	}
-	resize_iface(i,rb);
-	redraw_iface_generic(rb);
 	if(interface_up_p(i)){
 		if(ret->devaction < 0){
 			wstatus_locked(stdscr,"%s","");
@@ -640,9 +664,10 @@ struct l2obj *neighbor_callback_locked(const interface *i,struct l2host *l2){
 			return NULL;
 		}
 	}
-	rb = is->rb;
-	resize_iface(i,rb);
-	redraw_iface_generic(rb);
+	if( (rb = is->rb) ){
+		resize_iface(i,rb);
+		redraw_iface_generic(rb);
+	}
 	return ret;
 }
 
@@ -663,9 +688,10 @@ struct l3obj *host_callback_locked(const interface *i,struct l2host *l2,struct l
 			return NULL;
 		}
 	}
-	rb = is->rb;
-	resize_iface(i,rb);
-	redraw_iface_generic(rb);
+	if( (rb = is->rb) ){
+		resize_iface(i,rb);
+		redraw_iface_generic(rb);
+	}
 	return ret;
 }
 

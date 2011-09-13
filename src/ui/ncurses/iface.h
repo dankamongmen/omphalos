@@ -31,7 +31,9 @@ typedef struct iface_state {
 					//  or more nodes)
 	struct l2obj *l2objs;		// l2 entity list
 	unsigned expansion;		// degree of expansion/collapse
-	struct reelbox *rb;		// our reelbox (UI elements)
+	struct iface_state *next,*prev;	// circular list; all ifaces are here
+	struct reelbox *rb;		// our reelbox (UI elements). if we're
+					// entirely offscreen, this is NULL.
 } iface_state;
 
 int redraw_iface(const struct iface_state *,const struct reelbox *,int);
