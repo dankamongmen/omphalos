@@ -58,16 +58,6 @@ int wstatus_locked(WINDOW *w,const char *fmt,...){
 }
 
 static inline int
-iface_lines_bounded(const struct iface_state *is,int rows){
-	int lines = lines_for_interface(is);
-
-	if(lines > rows - 2){ // top and bottom border
-		lines = rows - 2;
-	}
-	return lines;
-}
-
-static inline int
 iface_lines_unbounded(const struct iface_state *is){
 	return iface_lines_bounded(is,INT_MAX);
 }
@@ -274,6 +264,7 @@ push_interfaces_above(reelbox *pusher,int rows,int cols,int delta){
 	while((rb = rb->next) != pusher){
 		int i;
 
+		//fprintf(stderr,"MOVING ONE (%s) UP %d\n",rb->is->iface->name,delta);
 		if( (i = move_interface_generic(rb,rows,cols,delta)) ){
 			return i;
 		}
@@ -779,6 +770,10 @@ void use_next_iface_locked(WINDOW *w,struct panel_state *ps){
 			int up;
 
 			rb->scrline = rows - iface_lines_bounded(is,rows) - 1;
+			// We need them to move up however many spaces we need
+			// to move in. We'll need one per line not currently
+			// visible, plus a boundary line if applicable (there
+			// isn't one currently, and we don't fill the screen).
 			up = oldrb->scrline + iface_lines_bounded(oldrb->is,rows) + 1 - rb->scrline;
 			if(up > 0){
 				push_interfaces_above(rb,rows,cols,-up);

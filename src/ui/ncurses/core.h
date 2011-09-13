@@ -8,11 +8,11 @@ extern "C" {
 #include <stdarg.h>
 #include <ncursesw/panel.h>
 #include <ncursesw/ncurses.h>
+#include <ui/ncurses/iface.h>
 
 struct l2host;
 struct l3host;
 struct interface;
-struct iface_state;
 struct panel_state;
 struct omphalos_iface;
 struct omphalos_packet;
@@ -58,7 +58,7 @@ typedef struct reelbox {
 	WINDOW *subwin;			// subwin
 	PANEL *panel;			// panel
 	struct reelbox *next,*prev;	// circular list
-	struct iface_state *is;		// backing interface state
+	iface_state *is;		// backing interface state
 } reelbox;
 
 // FIXME we ought precreate the subwindows, and show/hide them rather than
@@ -67,6 +67,16 @@ struct panel_state {
 	PANEL *p;
 	int ysize;			// number of lines of *text* (not win)
 };
+
+static inline int
+iface_lines_bounded(const iface_state *is,int rows){
+	int lines = lines_for_interface(is);
+
+	if(lines > rows - 2){ // top and bottom border
+		lines = rows - 2;
+	}
+	return lines;
+}
 
 // These functions may only be called while the ncurses lock is held. They
 // themselves will not attempt to do any locking. Furthermore, they will not
@@ -79,8 +89,8 @@ int wstatus_locked(WINDOW *,const char *fmt,...) __attribute__ ((format (printf,
 int wvstatus_locked(WINDOW *w,const char *,va_list);
 struct l3obj *host_callback_locked(const struct interface *,struct l2host *,struct l3host *);
 struct l2obj *neighbor_callback_locked(const struct interface *,struct l2host *);
-void interface_removed_locked(struct iface_state *,struct panel_state *);
-void *interface_cb_locked(struct interface *,struct iface_state *,struct panel_state *);
+void interface_removed_locked(iface_state *,struct panel_state *);
+void *interface_cb_locked(struct interface *,iface_state *,struct panel_state *);
 int packet_cb_locked(const struct interface *,struct omphalos_packet *,struct panel_state *);
 void toggle_promisc_locked(const struct omphalos_iface *,WINDOW *w);
 void sniff_interface_locked(const struct omphalos_iface *,WINDOW *w);
