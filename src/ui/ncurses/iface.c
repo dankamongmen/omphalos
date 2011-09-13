@@ -493,7 +493,7 @@ void move_interface(iface_state *is,reelbox *rb,int rows,int cols,int truerow,
 						int delta,int active){
 	int partiallyvis,whollyvis,oldscrline;
        
-	//fprintf(stderr,"moving %s %d from %d to %d\n",is->iface->name,delta,truerow,rb->scrline);
+	fprintf(stderr,"moving %s %d from %d to %d\n",is->iface->name,delta,truerow,rb->scrline);
 	// Determine the state prior to the move, as these depend on ->scrline
 	oldscrline = rb->scrline;
 	rb->scrline = truerow;
