@@ -261,7 +261,6 @@ push_interfaces_above(reelbox *pusher,int rows,int cols,int delta){
 		rb = rb->prev;
 	}
 	while((rb = rb->next) != pusher){
-		//fprintf(stderr,"MOVING ONE (%s) UP %d\n",rb->is->iface->name,delta);
 		// On error, our ->scrline will have been properly reset.
 		move_interface_generic(rb,rows,cols,delta);
 	}
@@ -828,6 +827,7 @@ void use_prev_iface_locked(WINDOW *w,struct panel_state *ps){
 		}else{
 			redraw_iface_generic(oldrb);
 			resize_iface(i,rb);
+			redraw_iface_generic(rb);
 		}
 		if(panel_hidden(oldrb->panel)){
 			// we hid the entire panel, and thus might have space
@@ -846,7 +846,9 @@ int expand_iface_locked(void){
 		return 0;
 	}
 	expand_interface(current_iface->is);
-	return resize_iface(current_iface->is->iface,current_iface);
+	assert(resize_iface(current_iface->is->iface,current_iface) == OK);
+	redraw_iface_generic(current_iface);
+	return 0;
 }
 
 int collapse_iface_locked(void){
@@ -854,5 +856,7 @@ int collapse_iface_locked(void){
 		return 0;
 	}
 	collapse_interface(current_iface->is);
-	return resize_iface(current_iface->is->iface,current_iface);
+	assert(resize_iface(current_iface->is->iface,current_iface) == OK);
+	redraw_iface_generic(current_iface);
+	return 0;
 }
