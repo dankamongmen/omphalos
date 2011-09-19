@@ -475,32 +475,25 @@ int redraw_iface(const iface_state *is,const reelbox *rb,int active){
 
 // Will even a line of the interface be visible as stands?
 int iface_visible_p(int rows,const reelbox *rb){
-	assert(rb->scrline >= 1);
-	if(rb->scrline < rows - 1){
-		return 1; // at least partially visible at the bottom
-	}else if(rb->next->scrline < rb->scrline){
-		if(rb->next->scrline < rows - 1 && rb->next->scrline > 2){
-			return 1; // we're partially visible at the top
+	if(rb->scrline < 1){
+		if(rb->scrline + getmaxy(rb->subwin) >= 1){
+			return 1;
 		}
+	}else if(rb->scrline < rows - 1){
+		return 1;
 	}
 	return 0;
 }
 
 // Move this interface, possibly hiding it or bringing it onscreen. Negative
-// delta indicates movement up, positive delta moves down. Returns a non-zero
-// if the interface is active and would be pushed offscreen.
-void move_interface(iface_state *is,reelbox *rb,int rows,int cols,int truerow,
-						int delta,int active){
-	int partiallyvis,whollyvis,oldscrline;
+// delta indicates movement up, positive delta moves down.
+void move_interface(iface_state *is,reelbox *rb,int rows,int cols,
+				int delta,int active){
+	int partiallyvis,whollyvis;
        
-	// Determine the state prior to the move, as these depend on ->scrline
-	oldscrline = rb->scrline;
-	rb->scrline = truerow;
+	rb->scrline += delta;
 	partiallyvis = iface_visible_p(rows,rb);
 	whollyvis = iface_wholly_visible_p(rows,is,rb);
-	if((rb->scrline = oldscrline) < 1){
-		rb->scrline = rows; // invalidate it
-	}
 	if(iface_wholly_visible_p(rows,is,rb)){
 		assert(move_panel(rb->panel,rb->scrline,1) != ERR);
 		if(!whollyvis){
@@ -510,16 +503,18 @@ void move_interface(iface_state *is,reelbox *rb,int rows,int cols,int truerow,
 			}
 		}
 		assert(redraw_iface(is,rb,active) == OK);
+	wstatus_locked(stdscr,"1} moving %s by %d",rb->is->iface->name,delta);
 	}else if(iface_visible_p(rows,rb)){
 		int nlines,rr,targ;
 
+	wstatus_locked(stdscr,"2} moving %s by %d",rb->is->iface->name,delta);
 		rr = getmaxy(rb->subwin);
 		if(delta > 0){
 			targ = rb->scrline;
 			nlines = rows - rb->scrline - 1; // sans-bottom partial
 		}else{
 			targ = 1;
-			nlines = rb->next->scrline - 1;
+			nlines = getmaxy(rb->subwin) + delta;
 		}
 		assert(nlines > 0);
 		if(nlines > rr){
@@ -536,6 +531,7 @@ void move_interface(iface_state *is,reelbox *rb,int rows,int cols,int truerow,
 		}
 		assert(redraw_iface(is,rb,active) == OK);
 	}else if(!panel_hidden(rb->panel)){
+	wstatus_locked(stdscr,"3} moving %s by %d",rb->is->iface->name,delta);
 		assert(werase(rb->subwin) != ERR);
 		assert(hide_panel(rb->panel) != ERR);
 	}

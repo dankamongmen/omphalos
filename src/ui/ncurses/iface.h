@@ -44,7 +44,7 @@ void free_iface_state(struct iface_state *);
 int iface_visible_p(int rows,const struct reelbox *rb);
 int iface_wholly_visible_p(int,const struct iface_state *,const struct reelbox *);
 int lines_for_interface(const struct iface_state *);
-void move_interface(struct iface_state *,struct reelbox *,int,int,int,int,int);
+void move_interface(struct iface_state *,struct reelbox *,int,int,int,int);
 
 struct l2obj *add_l2_to_iface(const struct interface *,struct iface_state *,struct l2host *);
 struct l3obj *add_l3_to_iface(struct iface_state *,struct l2obj *,struct l3host *);
