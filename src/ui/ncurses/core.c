@@ -591,13 +591,14 @@ void *interface_cb_locked(interface *i,iface_state *ret,struct panel_state *ps){
 					ret->prev = last_reelbox->is;
 					last_reelbox->is->next = ret;
 					// and also the rb list entries
-					rb->next = last_reelbox->next;
-					rb->next->prev = rb;
+					if( (rb->next = last_reelbox->next) ){
+						rb->next->prev = rb;
+					}
 					rb->prev = last_reelbox;
 					last_reelbox->next = rb;
 				}else{
 					ret->prev = ret->next = ret;
-					rb->next = rb->prev = rb;
+					rb->next = rb->prev = NULL;
 					top_reelbox = rb;
 					current_iface = rb;
 				}
@@ -818,6 +819,7 @@ void use_next_iface_locked(WINDOW *w,struct panel_state *ps){
 	oldrb = current_iface;
 	// Don't redraw the old inteface yet; it might have been moved/hidden
 	rb = current_iface = current_iface->next;
+	assert(rb);
 	// If the newly-selected interface is wholly visible, we'll not need
 	// change visibility of any interfaces. If it's above us, we'll need
 	// rotate the interfaces 1 unit, moving all. Otherwise, none need change
@@ -840,12 +842,13 @@ void use_next_iface_locked(WINDOW *w,struct panel_state *ps){
 	}else{ // We'll need change visibilities
 		int up;
 
-		rb->scrline = rows - iface_lines_bounded(rb->is,rows) - 1;
 		// We need them to move up however many spaces we need
 		// to move in. We'll need one per line not currently
 		// visible, plus a boundary line if applicable (there
 		// isn't one currently, and we don't fill the screen).
-		up = oldrb->scrline + iface_lines_bounded(oldrb->is,rows) + 1 - rb->scrline;
+		rb->scrline = rows - iface_lines_bounded(rb->is,rows) - 1;
+		up = oldrb->scrline + iface_lines_bounded(oldrb->is,rows)
+			+ 1 - rb->scrline;
 		assert(up > 0);
 		push_interfaces_above(rb,rows,cols,-up);
 		assert(move_panel(rb->panel,rb->scrline,START_COL) != ERR);
@@ -881,6 +884,7 @@ void use_prev_iface_locked(WINDOW *w,struct panel_state *ps){
 	// Don't redraw the old inteface yet; it might have been moved/hidden
 	// FIXME current_iface->prev could be NULL
 	rb = current_iface = current_iface->prev;
+	assert(rb);
 	// If the newly-selected interface is wholly visible, we'll not need
 	// change visibility of any interfaces. If it's below us, we'll need
 	// rotate the interfaces 1 unit, moving all. Otherwise, none need change
