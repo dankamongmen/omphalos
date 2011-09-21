@@ -221,6 +221,7 @@ iface_details(WINDOW *hw,const interface *i,int rows){
 static void
 free_reelbox(reelbox *rb){
 	if(rb){
+		rb->is->rb = NULL;
 		assert(delwin(rb->subwin) == OK);
 		assert(del_panel(rb->panel) == OK);
 		free(rb);
@@ -241,16 +242,15 @@ push_interfaces_below(reelbox *pusher,int rows,int cols,int delta){
 		}
 		rb->scrline += delta;
 		move_interface_generic(rb,rows,cols,delta);
-		if(!iface_visible_p(rows,rb)){
-			reelbox *t;
+	}
+	while(panel_hidden(last_reelbox->panel)){
+		reelbox *t;
 
-			assert(rb == last_reelbox);
-			t = rb->prev;
-			free_reelbox(rb);
-			if((last_reelbox = t) == NULL){
-				top_reelbox = NULL;
-				break;
-			}
+		t = last_reelbox->prev;
+		free_reelbox(last_reelbox);
+		if((last_reelbox = t) == NULL){
+			top_reelbox = NULL;
+			break;
 		}
 	}
 	// Now, if our delta was negative, see if we pulled any down below us
@@ -297,16 +297,15 @@ push_interfaces_above(reelbox *pusher,int rows,int cols,int delta){
 		}
 		rb->scrline += delta;
 		move_interface_generic(rb,rows,cols,delta);
-		if(!iface_visible_p(rows,rb)){
-			reelbox *t;
+	}
+	while(panel_hidden(top_reelbox->panel)){
+		reelbox *t;
 
-			assert(rb == top_reelbox);
-			t = rb->next;
-			free_reelbox(rb);
-			if((top_reelbox = t) == NULL){
-				last_reelbox = NULL;
-				break;
-			}
+		t = top_reelbox->next;
+		free_reelbox(top_reelbox);
+		if((top_reelbox = t) == NULL){
+			last_reelbox = NULL;
+			break;
 		}
 	}
 	// Now, if our delta was negative, see if we pulled any down below us
@@ -533,25 +532,27 @@ void hide_panel_locked(struct panel_state *ps){
 
 int packet_cb_locked(const interface *i,omphalos_packet *op,struct panel_state *ps){
 	iface_state *is = op->i->opaque;
+	struct timeval tdiff;
+	unsigned long udiff;
+	reelbox *rb;
 
-	if(is){
-		reelbox *rb = is->rb;
-		struct timeval tdiff;
-		unsigned long udiff;
-
-		timersub(&op->tv,&is->lastprinted,&tdiff);
-		udiff = timerusec(&tdiff);
-		if(udiff < 500000){ // At most one update every 1/2s
-			return 0;
-		}
-		is->lastprinted = op->tv;
-		if(rb == current_iface && ps->p){
-			iface_details(panel_window(ps->p),i,ps->ysize);
-		}
-		assert(redraw_iface_generic(rb) == OK);
-		return 1;
+	if(!is){
+		return 0;
 	}
-	return 0;
+       	if((rb = is->rb) == NULL){
+		return 0;
+	}
+	timersub(&op->tv,&is->lastprinted,&tdiff);
+	udiff = timerusec(&tdiff);
+	if(udiff < 500000){ // At most one update every 1/2s
+		return 0;
+	}
+	is->lastprinted = op->tv;
+	if(rb == current_iface && ps->p){
+		iface_details(panel_window(ps->p),i,ps->ysize);
+	}
+	assert(redraw_iface_generic(rb) == OK);
+	return 1;
 }
 
 static inline int
