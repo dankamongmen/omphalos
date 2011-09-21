@@ -455,7 +455,7 @@ int redraw_iface(const iface_state *is,const reelbox *rb,int active){
 	getmaxyx(stdscr,scrrows,scrcols);
 	if(rb->scrline >= scrrows){ // no top
 		partial = -1;
-	}else if(iface_wholly_visible_p(scrrows,is,rb) || active){ // completely visible
+	}else if(iface_wholly_visible_p(scrrows,rb) || active){ // completely visible
 		partial = 0;
 	}else{
 		partial = 1; // no bottom
@@ -475,26 +475,31 @@ int redraw_iface(const iface_state *is,const reelbox *rb,int active){
 
 // Will even a line of the interface be visible as stands?
 int iface_visible_p(int rows,const reelbox *rb){
-	if(rb->scrline < 1){
-		if(rb->scrline + getmaxy(rb->subwin) >= 1){
-			return 1;
+	assert(rb->scrline >= 1);
+	if(rb->scrline < rows - 1){
+		return 1; // at least partially visible at the bottom
+	}else if(rb->next->scrline < rb->scrline){
+		if(rb->next->scrline < rows - 1 && rb->next->scrline > 2){
+			return 1; // we're partially visible at the top
 		}
-	}else if(rb->scrline < rows - 1){
-		return 1;
 	}
 	return 0;
 }
 
 // Move this interface, possibly hiding it or bringing it onscreen. Negative
-// delta indicates movement up, positive delta moves down.
+// delta indicates movement up, positive delta moves down. Returns a non-zero
+// if the interface is active and would be pushed offscreen.
 void move_interface(iface_state *is,reelbox *rb,int rows,int cols,
-				int delta,int active){
-	int partiallyvis,whollyvis;
+					int delta,int active){
+	int partiallyvis,whollyvis,oldscrline;
        
-	rb->scrline += delta;
+	oldscrline = getbegy(rb->subwin);
 	partiallyvis = iface_visible_p(rows,rb);
-	whollyvis = iface_wholly_visible_p(rows,is,rb);
-	if(iface_wholly_visible_p(rows,is,rb)){
+	whollyvis = iface_wholly_visible_p(rows,rb);
+	if((rb->scrline = oldscrline) < 1){
+		rb->scrline = rows; // invalidate it
+	}
+	if(iface_wholly_visible_p(rows,rb)){
 		assert(move_panel(rb->panel,rb->scrline,1) != ERR);
 		if(!whollyvis){
 			assert(wresize(rb->subwin,iface_lines_bounded(is,rows),PAD_COLS(cols)) == OK);
@@ -503,18 +508,16 @@ void move_interface(iface_state *is,reelbox *rb,int rows,int cols,
 			}
 		}
 		assert(redraw_iface(is,rb,active) == OK);
-	wstatus_locked(stdscr,"1} moving %s by %d",rb->is->iface->name,delta);
 	}else if(iface_visible_p(rows,rb)){
 		int nlines,rr,targ;
 
-	wstatus_locked(stdscr,"2} moving %s by %d",rb->is->iface->name,delta);
 		rr = getmaxy(rb->subwin);
 		if(delta > 0){
 			targ = rb->scrline;
 			nlines = rows - rb->scrline - 1; // sans-bottom partial
 		}else{
 			targ = 1;
-			nlines = getmaxy(rb->subwin) + delta;
+			nlines = rb->next->scrline - 1;
 		}
 		assert(nlines > 0);
 		if(nlines > rr){
@@ -531,7 +534,6 @@ void move_interface(iface_state *is,reelbox *rb,int rows,int cols,
 		}
 		assert(redraw_iface(is,rb,active) == OK);
 	}else if(!panel_hidden(rb->panel)){
-	wstatus_locked(stdscr,"3} moving %s by %d",rb->is->iface->name,delta);
 		assert(werase(rb->subwin) != ERR);
 		assert(hide_panel(rb->panel) != ERR);
 	}
@@ -548,7 +550,9 @@ int lines_for_interface(const iface_state *is){
 
 // Is the interface window entirely visible? We can't draw it otherwise, as it
 // will obliterate the global bounding box.
-int iface_wholly_visible_p(int rows,const iface_state *is,const reelbox *rb){
+int iface_wholly_visible_p(int rows,const reelbox *rb){
+	const iface_state *is = rb->is;
+
 	if(rows < 0){
 		int cols;
 
