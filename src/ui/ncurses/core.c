@@ -371,8 +371,8 @@ int resize_iface(const interface *i,reelbox *rb){
 				assert(wresize(rb->subwin,iface_lines_bounded(is,rows),PAD_COLS(cols)) != ERR);
 				assert(replace_panel(rb->panel,rb->subwin) != ERR);
 			}
-		}else if(rb->scrline > current_iface->scrline){
-			if(nlines + rb->scrline < rows){ // we can only go down
+		}else if(rb->scrline > current_iface->scrline){ // go down
+			if(nlines + rb->scrline < rows){
 				int delta = nlines - subrows;
 
 				push_interfaces_below(rb,rows,cols,delta);
@@ -380,8 +380,10 @@ int resize_iface(const interface *i,reelbox *rb){
 				assert(replace_panel(rb->panel,rb->subwin) != ERR);
 			}else{ // else becomes a partial interface
 				// FIXME take any available space!
+			assert(0);
 			}
 		}else{
+			assert(0);
 			if(rb->scrline != 1){ // we can only go up
 				int delta = nlines - subrows;
 

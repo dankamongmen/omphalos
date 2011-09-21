@@ -491,13 +491,11 @@ int iface_visible_p(int rows,const reelbox *rb){
 // if the interface is active and would be pushed offscreen.
 void move_interface(iface_state *is,reelbox *rb,int rows,int cols,
 					int delta,int active){
-	int partiallyvis,whollyvis,oldscrline;
+	int partiallyvis,whollyvis;
        
-	oldscrline = getbegy(rb->subwin);
 	partiallyvis = iface_visible_p(rows,rb);
 	whollyvis = iface_wholly_visible_p(rows,rb);
-	fprintf(stderr,"moving %s from %d by %d",is->iface->name,getbegy(rb->subwin),delta);
-	if((rb->scrline = oldscrline) < 1){
+	if(rb->scrline < 1){
 		rb->scrline = rows; // invalidate it
 	}
 	if(iface_wholly_visible_p(rows,rb)){
