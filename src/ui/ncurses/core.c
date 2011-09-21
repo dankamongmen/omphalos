@@ -251,6 +251,8 @@ push_interfaces_below(reelbox *pusher,int rows,int cols,int delta){
 		if((last_reelbox = t) == NULL){
 			top_reelbox = NULL;
 			break;
+		}else{
+			t->next = NULL;
 		}
 	}
 	// Now, if our delta was negative, see if we pulled any down below us
@@ -306,6 +308,8 @@ push_interfaces_above(reelbox *pusher,int rows,int cols,int delta){
 		if((top_reelbox = t) == NULL){
 			last_reelbox = NULL;
 			break;
+		}else{
+			t->prev = NULL;
 		}
 	}
 	// Now, if our delta was negative, see if we pulled any down below us
@@ -640,48 +644,59 @@ void *interface_cb_locked(interface *i,iface_state *ret,struct panel_state *ps){
 }
 
 void interface_removed_locked(iface_state *is,struct panel_state *ps){
-	if(is){
-		reelbox *rb = is->rb;
-		//const int visible = !panel_hidden(rb->panel);
-		//int rows,cols;
-
-		free_iface_state(is); // clears l2/l3 nodes
-		--count_interface;
-		wclear(rb->subwin);
-		del_panel(rb->panel);
-		//getmaxyx(rb->subwin,rows,cols);
-		delwin(rb->subwin);
-		if(rb->next != rb){
-			//int scrrows,scrcols;
-			//reelbox *ci;
-
-			// First, splice it out of the list
-			rb->next->prev = rb->prev;
-			rb->prev->next = rb->next;
-			if(rb == current_iface){
-				current_iface = rb->prev;
-				// give the details window to new current_iface
-				if(ps->p){
-					iface_details(panel_window(ps->p),get_current_iface(),ps->ysize);
-				}
-			}
-			/*getmaxyx(stdscr,scrrows,scrcols);
-			assert(scrcols);
-			assert(cols);
-			if(visible){
-				for(ci = rb->next ; ci->scrline > rb->scrline ; ci = ci->next){
-					move_interface_generic(ci,scrrows,PAD_COLS(scrcols),-(rows + 1));
-				}
-			}*/
-		}else{
-			// If details window exists, destroy it FIXME
-			current_iface = NULL;
-		}
-		// Calls draw_main_window(), which will update iface count
-		wstatus_locked(stdscr,"%s went away",is->iface->name);
-		free(is);
-		free(rb);
+	reelbox *rb;
+	
+	if(!is){
+		return;
 	}
+	rb = is->rb;
+	free(is);
+	is->next->prev = is->prev;
+	is->prev->next = is->next;
+	if(!rb){
+		return;
+	}
+	//const int visible = !panel_hidden(rb->panel);
+	//int rows,cols;
+
+	free_iface_state(is); // clears l2/l3 nodes
+	--count_interface;
+	wclear(rb->subwin);
+	del_panel(rb->panel);
+	//getmaxyx(rb->subwin,rows,cols);
+	delwin(rb->subwin);
+	if(rb->next != rb){
+		//int scrrows,scrcols;
+		//reelbox *ci;
+
+		// First, splice it out of the list
+		if(rb->next){
+			rb->next->prev = rb->prev;
+		}
+		if(rb->prev){
+			rb->prev->next = rb->next;
+		}
+		if(rb == current_iface){
+			current_iface = rb->prev;
+			// give the details window to new current_iface
+			if(ps->p){
+				iface_details(panel_window(ps->p),get_current_iface(),ps->ysize);
+			}
+		}
+		/*getmaxyx(stdscr,scrrows,scrcols);
+		assert(scrcols);
+		assert(cols);
+		if(visible){
+			for(ci = rb->next ; ci->scrline > rb->scrline ; ci = ci->next){
+				move_interface_generic(ci,scrrows,PAD_COLS(scrcols),-(rows + 1));
+			}
+		}*/
+	}else{
+		// If details window exists, destroy it FIXME
+		current_iface = NULL;
+	}
+	draw_main_window(stdscr); // Update the device count
+	free(rb);
 }
 
 struct l2obj *neighbor_callback_locked(const interface *i,struct l2host *l2){
@@ -812,7 +827,7 @@ void use_next_iface_locked(WINDOW *w,struct panel_state *ps){
 	int rows,cols;
 	reelbox *rb;
 
-	if(!current_iface || current_iface->next == current_iface){
+	if(!current_iface || current_iface->next == NULL){
 		return;
 	}
 	getmaxyx(w,rows,cols);
@@ -875,8 +890,7 @@ void use_prev_iface_locked(WINDOW *w,struct panel_state *ps){
 	int rows,cols;
 	reelbox *rb;
 
-	// FIXME latter case never happens with reelboxes
-	if(!current_iface || current_iface->prev == current_iface){
+	if(!current_iface || current_iface->prev == NULL){
 		return;
 	}
 	getmaxyx(w,rows,cols);
@@ -909,11 +923,7 @@ void use_prev_iface_locked(WINDOW *w,struct panel_state *ps){
 		// to move in. We'll need one per line not currently
 		// visible, plus a boundary line if applicable (there
 		// isn't one currently, and we don't fill the screen).
-		if(rb->subwin){
-			down = iface_lines_bounded(rb->is,rows) - getmaxy(rb->subwin);
-		}else{
-			down = iface_lines_bounded(rb->is,rows) + 1;
-		}
+		down = iface_lines_bounded(rb->is,rows) - getmaxy(rb->subwin);
 		assert(down > 0);
 		push_interfaces_above(rb,rows,cols,-down);
 		assert(move_panel(rb->panel,rb->scrline,START_COL) != ERR);

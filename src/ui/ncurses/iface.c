@@ -483,7 +483,7 @@ int iface_visible_p(int rows,const reelbox *rb){
 	}
 	if(rb->scrline < rows - 1){
 		return 1; // at least partially visible at the bottom
-	}else if(rb->next->scrline < rb->scrline){
+	}else if(rb->next && rb->next->scrline < rb->scrline){
 		if(rb->next->scrline < rows - 1 && rb->next->scrline > 2){
 			return 1; // we're partially visible at the top
 		}
@@ -500,7 +500,7 @@ void move_interface(iface_state *is,reelbox *rb,int rows,int cols,
        
 	partiallyvis = iface_visible_p(rows,rb);
 	whollyvis = iface_wholly_visible_p(rows,rb);
-	if(rb->scrline < 1){
+	if(rb->scrline < 0){
 		rb->scrline = rows; // invalidate it
 	}
 	if(iface_wholly_visible_p(rows,rb)){
@@ -523,8 +523,12 @@ void move_interface(iface_state *is,reelbox *rb,int rows,int cols,
 			targ = 1;
 			nlines = rb->next->scrline - 1;
 		}
-		assert(nlines > 0);
-		if(nlines > rr){
+		// FIXME this shouldn't be necessary. replace with assert(nlines >= 1);
+		if(nlines < 1){
+			assert(werase(rb->subwin) != ERR);
+			assert(hide_panel(rb->panel) != ERR);
+			return;
+		}else if(nlines > rr){
 			assert(move_panel(rb->panel,targ,1) == OK);
 			assert(wresize(rb->subwin,nlines,PAD_COLS(cols)) == OK);
 		}else if(nlines < rr){
