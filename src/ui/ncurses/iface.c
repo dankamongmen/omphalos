@@ -496,6 +496,7 @@ void move_interface(iface_state *is,reelbox *rb,int rows,int cols,
 	oldscrline = getbegy(rb->subwin);
 	partiallyvis = iface_visible_p(rows,rb);
 	whollyvis = iface_wholly_visible_p(rows,rb);
+	fprintf(stderr,"moving %s from %d by %d",is->iface->name,getbegy(rb->subwin),delta);
 	if((rb->scrline = oldscrline) < 1){
 		rb->scrline = rows; // invalidate it
 	}

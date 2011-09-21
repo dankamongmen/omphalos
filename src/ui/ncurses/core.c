@@ -640,18 +640,18 @@ void *interface_cb_locked(interface *i,iface_state *ret,struct panel_state *ps){
 void interface_removed_locked(iface_state *is,struct panel_state *ps){
 	if(is){
 		reelbox *rb = is->rb;
-		const int visible = !panel_hidden(rb->panel);
-		int rows,cols;
+		//const int visible = !panel_hidden(rb->panel);
+		//int rows,cols;
 
 		free_iface_state(is); // clears l2/l3 nodes
 		--count_interface;
 		wclear(rb->subwin);
 		del_panel(rb->panel);
-		getmaxyx(rb->subwin,rows,cols);
+		//getmaxyx(rb->subwin,rows,cols);
 		delwin(rb->subwin);
 		if(rb->next != rb){
-			int scrrows,scrcols;
-			reelbox *ci;
+			//int scrrows,scrcols;
+			//reelbox *ci;
 
 			// First, splice it out of the list
 			rb->next->prev = rb->prev;
@@ -663,14 +663,14 @@ void interface_removed_locked(iface_state *is,struct panel_state *ps){
 					iface_details(panel_window(ps->p),get_current_iface(),ps->ysize);
 				}
 			}
-			getmaxyx(stdscr,scrrows,scrcols);
+			/*getmaxyx(stdscr,scrrows,scrcols);
 			assert(scrcols);
 			assert(cols);
 			if(visible){
 				for(ci = rb->next ; ci->scrline > rb->scrline ; ci = ci->next){
 					move_interface_generic(ci,scrrows,PAD_COLS(scrcols),-(rows + 1));
 				}
-			}
+			}*/
 		}else{
 			// If details window exists, destroy it FIXME
 			current_iface = NULL;
