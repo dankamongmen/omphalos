@@ -473,9 +473,14 @@ int redraw_iface(const iface_state *is,const reelbox *rb,int active){
 	return OK;
 }
 
-// Will even a line of the interface be visible as stands?
+// Will even a line of the interface be visible as stands, post-move?
 int iface_visible_p(int rows,const reelbox *rb){
-	assert(rb->scrline >= 1);
+	if(rb->scrline < 1){
+		if(rb->next && rb->next->scrline > 2){
+			return 1;
+		}
+		return 0;
+	}
 	if(rb->scrline < rows - 1){
 		return 1; // at least partially visible at the bottom
 	}else if(rb->next->scrline < rb->scrline){

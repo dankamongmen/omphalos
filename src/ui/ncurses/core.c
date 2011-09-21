@@ -380,10 +380,8 @@ int resize_iface(const interface *i,reelbox *rb){
 				assert(replace_panel(rb->panel,rb->subwin) != ERR);
 			}else{ // else becomes a partial interface
 				// FIXME take any available space!
-			assert(0);
 			}
 		}else{
-			assert(0);
 			if(rb->scrline != 1){ // we can only go up
 				int delta = nlines - subrows;
 
