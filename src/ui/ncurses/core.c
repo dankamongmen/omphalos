@@ -683,7 +683,9 @@ void interface_removed_locked(iface_state *is,struct panel_state *ps){
 			last_reelbox = rb->prev;
 		}
 		if(rb == current_iface){
-			current_iface = rb->prev;
+			if((current_iface = rb->prev) == NULL){
+				current_iface = rb->next;
+			}
 			// give the details window to new current_iface
 			if(ps->p){
 				iface_details(panel_window(ps->p),get_current_iface(),ps->ysize);
@@ -975,8 +977,6 @@ void check_consistency(void){
 	const reelbox *rb,*prev = NULL;
 	int sawcur = 0;
 
-	assert((top_reelbox && last_reelbox && current_iface) ||
-			(!top_reelbox && !last_reelbox && !current_iface));
 	for(rb = top_reelbox ; rb ; rb = rb->next){
 		assert(!sawcur || rb != current_iface);
 		if(rb == current_iface){
@@ -986,4 +986,6 @@ void check_consistency(void){
 		prev = rb;
 	}
 	assert(prev == last_reelbox);
+	assert((top_reelbox && last_reelbox && current_iface) ||
+			(!top_reelbox && !last_reelbox && !current_iface));
 }
