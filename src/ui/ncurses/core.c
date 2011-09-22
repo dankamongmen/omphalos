@@ -931,6 +931,7 @@ void use_prev_iface_locked(WINDOW *w,struct panel_state *ps){
 		// to move in. We'll need one per line not currently
 		// visible, plus a boundary line if applicable (there
 		// isn't one currently, and we don't fill the screen).
+		assert(getmaxy(rb->subwin) > 0);
 		down = iface_lines_bounded(rb->is,rows) - getmaxy(rb->subwin);
 		assert(down > 0);
 		push_interfaces_above(rb,rows,cols,-down);
@@ -982,6 +983,8 @@ void check_consistency(void){
 		if(rb == current_iface){
 			sawcur = 1;
 		}
+		assert(rb->subwin);
+		assert(!panel_hidden(rb->panel));
 		assert(prev == rb->prev);
 		prev = rb;
 	}
