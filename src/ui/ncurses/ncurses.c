@@ -63,16 +63,29 @@ static pthread_t inputtid;
 static const char *glibc_version,*glibc_release; // Currently unused
 static struct utsname sysuts; // Currently unused
 
+static inline void
+lock_ncurses(void){
+	assert(pthread_mutex_lock(&bfl) == 0);
+	check_consistency();
+}
+
+static inline void
+unlock_ncurses(void){
+	check_consistency();
+	screen_update();
+	assert(pthread_mutex_unlock(&bfl) == 0);
+}
+
 // NULL fmt clears the status bar. wvstatus is an unlocked entry point, and
 // thus calls screen_update() on exit.
 static int
 wvstatus(WINDOW *w,const char *fmt,va_list va){
 	int ret;
 
-	pthread_mutex_lock(&bfl);
+	lock_ncurses();
 	ret = wvstatus_locked(w,fmt,va);
 	screen_update();
-	pthread_mutex_unlock(&bfl);
+	unlock_ncurses();
 	return ret;
 }
 
@@ -218,93 +231,94 @@ ncurses_input_thread(void *unsafe_marsh){
 	while((ch = getch()) != 'q' && ch != 'Q'){
 	switch(ch){
 		case KEY_UP: case 'k':
-			pthread_mutex_lock(&bfl);
+			lock_ncurses();
 				use_prev_iface_locked(w,&details);
 				screen_update();
-			pthread_mutex_unlock(&bfl);
+			unlock_ncurses();
 			break;
 		case KEY_DOWN: case 'j':
-			pthread_mutex_lock(&bfl);
+			lock_ncurses();
 				use_next_iface_locked(w,&details);
 				screen_update();
-			pthread_mutex_unlock(&bfl);
+			unlock_ncurses();
 			break;
 		case KEY_RESIZE:
-			pthread_mutex_lock(&bfl);{
+			lock_ncurses();{
 				resize_screen_locked(w);
 				screen_update();
-			}pthread_mutex_unlock(&bfl);
+			}unlock_ncurses();
 			break;
 		case 12: // Ctrl-L FIXME
-			pthread_mutex_lock(&bfl);{
+			lock_ncurses();{
 				redraw_screen_locked();
 				screen_update();
-			}pthread_mutex_unlock(&bfl);
+			}unlock_ncurses();
 			break;
 		case 'C':
-			pthread_mutex_lock(&bfl);
+			lock_ncurses();
 				configure_prefs(w);
 				screen_update();
-			pthread_mutex_unlock(&bfl);
+			unlock_ncurses();
 			break;
 		case 'R':
-			pthread_mutex_lock(&bfl);
+			lock_ncurses();
 				reset_all_interface_stats(w);
 				screen_update();
-			pthread_mutex_unlock(&bfl);
+			unlock_ncurses();
 			break;
 		case 'r':
-			pthread_mutex_lock(&bfl);
+			lock_ncurses();
 				reset_current_interface_stats(w);
 				screen_update();
-			pthread_mutex_unlock(&bfl);
+			unlock_ncurses();
 			break;
 		case 'p':
-			pthread_mutex_lock(&bfl);
+			lock_ncurses();
 				toggle_promisc_locked(octx,w);
 				screen_update();
-			pthread_mutex_unlock(&bfl);
+			unlock_ncurses();
 			break;
 		case 'd':
-			pthread_mutex_lock(&bfl);
+			lock_ncurses();
 				down_interface_locked(octx,w);
+				check_consistency();
 				screen_update();
-			pthread_mutex_unlock(&bfl);
+			unlock_ncurses();
 			break;
 		case 's':
-			pthread_mutex_lock(&bfl);
+			lock_ncurses();
 				sniff_interface_locked(octx,w);
 				screen_update();
-			pthread_mutex_unlock(&bfl);
+			unlock_ncurses();
 			break;
 		case 'u':
-			pthread_mutex_lock(&bfl);
+			lock_ncurses();
 				change_mtu(w);
 				screen_update();
-			pthread_mutex_unlock(&bfl);
+			unlock_ncurses();
 			break;
 		case '+':
 		case KEY_RIGHT:
-			pthread_mutex_lock(&bfl);
+			lock_ncurses();
 			expand_iface_locked();
 			screen_update();
-			pthread_mutex_unlock(&bfl);
+			unlock_ncurses();
 			break;
 		case '-':
 		case KEY_LEFT:
-			pthread_mutex_lock(&bfl);
+			lock_ncurses();
 			collapse_iface_locked();
 			screen_update();
-			pthread_mutex_unlock(&bfl);
+			unlock_ncurses();
 			break;
 		case 'm':
-			pthread_mutex_lock(&bfl);
+			lock_ncurses();
 				change_mac(w);
 				screen_update();
-			pthread_mutex_unlock(&bfl);
+			unlock_ncurses();
 			break;
 		case 'v':{
-			pthread_mutex_lock(&bfl);
+			lock_ncurses();
 			if(details.p){
 				hide_panel_locked(&details);
 				active = NULL;
@@ -314,10 +328,10 @@ ncurses_input_thread(void *unsafe_marsh){
 					? &details : NULL;
 			}
 			screen_update();
-			pthread_mutex_unlock(&bfl);
+			unlock_ncurses();
 			break;
 		}case 'n':{
-			pthread_mutex_lock(&bfl);
+			lock_ncurses();
 			if(network.p){
 				hide_panel_locked(&network);
 				active = NULL;
@@ -327,10 +341,10 @@ ncurses_input_thread(void *unsafe_marsh){
 					? &details : NULL;
 			}
 			screen_update();
-			pthread_mutex_unlock(&bfl);
+			unlock_ncurses();
 			break;
 		}case 'h':{
-			pthread_mutex_lock(&bfl);
+			lock_ncurses();
 			if(help.p){
 				hide_panel_locked(&help);
 				active = NULL;
@@ -340,7 +354,7 @@ ncurses_input_thread(void *unsafe_marsh){
 					? &help : NULL;
 			}
 			screen_update();
-			pthread_mutex_unlock(&bfl);
+			unlock_ncurses();
 			break;
 		}default:{
 			const char *hstr = !help.p ? " ('h' for help)" : "";
@@ -367,7 +381,7 @@ static int
 mandatory_cleanup(WINDOW **w){
 	int ret = 0;
 
-	pthread_mutex_lock(&bfl);
+	lock_ncurses();
 	if(*w){
 		if(delwin(*w) != OK){
 			ret = -1;
@@ -383,7 +397,7 @@ mandatory_cleanup(WINDOW **w){
 	if(endwin() != OK){
 		ret = -3;
 	}
-	pthread_mutex_unlock(&bfl);
+	unlock_ncurses();
 	switch(ret){
 	case -3: fprintf(stderr,"Couldn't end main window\n"); break;
 	case -2: fprintf(stderr,"Couldn't delete main window\n"); break;
@@ -530,21 +544,21 @@ err:
 
 static void
 packet_callback(omphalos_packet *op){
-	pthread_mutex_lock(&bfl);
+	lock_ncurses();
 	if(packet_cb_locked(op->i,op,&details)){
 		screen_update();
 	}
-	pthread_mutex_unlock(&bfl);
+	unlock_ncurses();
 }
 
 static void *
 interface_callback(interface *i,void *unsafe){
 	void *r;
 
-	pthread_mutex_lock(&bfl);
+	lock_ncurses();
 	r = interface_cb_locked(i,unsafe,&details);
 	screen_update();
-	pthread_mutex_unlock(&bfl);
+	unlock_ncurses();
 	return r;
 }
 
@@ -552,10 +566,10 @@ static void *
 wireless_callback(interface *i,unsigned wcmd __attribute__ ((unused)),void *unsafe){
 	void *r;
 
-	pthread_mutex_lock(&bfl);
+	lock_ncurses();
 	r = interface_cb_locked(i,unsafe,&details);
 	screen_update();
-	pthread_mutex_unlock(&bfl);
+	unlock_ncurses();
 	return r;
 }
 
@@ -563,11 +577,11 @@ static void *
 host_callback(const interface *i,struct l2host *l2,struct l3host *l3){
 	void *ret;
 
-	pthread_mutex_lock(&bfl);
+	lock_ncurses();
 	if( (ret = host_callback_locked(i,l2,l3)) ){
 		screen_update();
 	}
-	pthread_mutex_unlock(&bfl);
+	unlock_ncurses();
 	return ret;
 }
 
@@ -575,20 +589,20 @@ static void *
 neighbor_callback(const interface *i,struct l2host *l2){
 	void *ret;
 
-	pthread_mutex_lock(&bfl);
+	lock_ncurses();
 	if( (ret = neighbor_callback_locked(i,l2)) ){
 		screen_update();
 	}
-	pthread_mutex_unlock(&bfl);
+	unlock_ncurses();
 	return ret;
 }
 
 static void
 interface_removed_callback(const interface *i __attribute__ ((unused)),void *unsafe){
-	pthread_mutex_lock(&bfl);
+	lock_ncurses();
 	interface_removed_locked(unsafe,&details);
 	screen_update();
-	pthread_mutex_unlock(&bfl);
+	unlock_ncurses();
 }
 
 static void
@@ -638,9 +652,9 @@ int main(int argc,char * const *argv){
 		fprintf(stderr,"Error in omphalos_init() (%s?)\n",strerror(err));
 		return EXIT_FAILURE;
 	}
-	/*pthread_mutex_lock(&bfl);
+	/*lock_ncurses();
 	fade(1);
-	pthread_mutex_unlock(&bfl);*/
+	unlock_ncurses();*/
 	omphalos_cleanup(&pctx);
 	if(mandatory_cleanup(&stdscr)){
 		return EXIT_FAILURE;

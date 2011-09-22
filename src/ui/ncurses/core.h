@@ -108,6 +108,8 @@ int resize_iface(const struct interface *,struct reelbox *);
 int expand_iface_locked(void);
 int collapse_iface_locked(void);
 
+void check_consistency(void); // Debugging -- all assert()s
+
 #ifdef __cplusplus
 }
 #endif

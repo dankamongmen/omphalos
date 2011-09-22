@@ -964,3 +964,20 @@ int collapse_iface_locked(void){
 	redraw_iface_generic(current_iface);
 	return 0;
 }
+
+void check_consistency(void){
+	const reelbox *rb,*prev = NULL;
+	int sawcur = 0;
+
+	assert((top_reelbox && last_reelbox && current_iface) ||
+			(!top_reelbox && !last_reelbox && !current_iface));
+	for(rb = top_reelbox ; rb ; rb = rb->next){
+		assert(!sawcur || rb != current_iface);
+		if(rb == current_iface){
+			sawcur = 1;
+		}
+		assert(prev == rb->prev);
+		prev = rb;
+	}
+	assert(rb == last_reelbox);
+}
