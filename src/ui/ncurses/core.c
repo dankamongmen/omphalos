@@ -676,6 +676,12 @@ void interface_removed_locked(iface_state *is,struct panel_state *ps){
 		if(rb->prev){
 			rb->prev->next = rb->next;
 		}
+		if(top_reelbox == rb){
+			top_reelbox = rb->next;
+		}
+		if(last_reelbox == rb){
+			last_reelbox = rb->prev;
+		}
 		if(rb == current_iface){
 			current_iface = rb->prev;
 			// give the details window to new current_iface
