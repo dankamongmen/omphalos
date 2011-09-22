@@ -364,7 +364,7 @@ static int
 mandatory_cleanup(WINDOW **w){
 	int ret = 0;
 
-	lock_ncurses();
+	pthread_mutex_lock(&bfl);
 	if(*w){
 		if(delwin(*w) != OK){
 			ret = -1;
@@ -380,7 +380,7 @@ mandatory_cleanup(WINDOW **w){
 	if(endwin() != OK){
 		ret = -3;
 	}
-	unlock_ncurses();
+	pthread_mutex_unlock(&bfl);
 	switch(ret){
 	case -3: fprintf(stderr,"Couldn't end main window\n"); break;
 	case -2: fprintf(stderr,"Couldn't delete main window\n"); break;
