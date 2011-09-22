@@ -979,5 +979,5 @@ void check_consistency(void){
 		assert(prev == rb->prev);
 		prev = rb;
 	}
-	assert(rb == last_reelbox);
+	assert(prev == last_reelbox);
 }
