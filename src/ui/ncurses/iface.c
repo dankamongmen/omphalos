@@ -303,6 +303,7 @@ iface_box(const interface *i,const iface_state *is,WINDOW *w,int active,
 	if(partial == 0){
 		assert(bevel(w) == OK);
 	}else if(partial < 0){
+		assert(0);
 		assert(bevel_notop(w) == OK);
 	}else{
 		assert(bevel_nobottom(w) == OK);

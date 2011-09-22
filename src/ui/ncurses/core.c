@@ -19,6 +19,8 @@ static reelbox *current_iface,*top_reelbox,*last_reelbox;
 static char *statusmsg;
 static int statuschars;	// True size, not necessarily what's available
 
+static int resize_iface(reelbox *);
+
 // Caller needs set up: next, prev
 static reelbox *
 create_reelbox(iface_state *is,int scrline,int cols){
@@ -259,24 +261,6 @@ push_interfaces_below(reelbox *pusher,int rows,int cols,int delta){
 	// FIXME pull_interfaces_down();
 }
 
-static int
-pull_interfaces_up(reelbox *puller,int rows,int cols,int delta){
-	reelbox *rb = puller->next;
-	int expected;
-
-	if(delta){
-		return OK; // FIXME
-	}
-	expected = puller->scrline + rows + 1;
-	while(rb != puller && rb->scrline > expected){
-		// FIXME move it up
-		// FIXME update expected
-		rb = rb->prev;
-	}
-	assert(cols); // FIXME
-	return OK;
-}
-
 // An interface (pusher) has had its top border moved up or down (positive or
 // negative delta, respectively). Update the interfaces above it on the screen
 // (all those up until those actually displayed below it on the screen).
@@ -313,7 +297,7 @@ push_interfaces_above(reelbox *pusher,int rows,int cols,int delta){
 		}
 	}
 	// Now, if our delta was negative, see if we pulled any down below us
-	pull_interfaces_up(pusher,rows,cols,delta);
+	// FIXME pull_interfaces_up(pusher,rows,cols,delta);
 }
 
 // Upon entry, the display might not have been updated to reflect a change in
@@ -324,12 +308,14 @@ push_interfaces_above(reelbox *pusher,int rows,int cols,int delta){
 // visible -- ie, if we ought be invisible, we ought be already and this is not
 // going to make us so. We do not redraw -- that's the callers job (we
 // can't redraw, since we might not yet have been moved).
-int resize_iface(const interface *i,reelbox *rb){
-	const interface *curi = get_current_iface();
+static int
+resize_iface(reelbox *rb){
+	const interface *i,*curi = get_current_iface();
 	int rows,cols,subrows,subcols;
 	iface_state *is;
 
-	assert(rb);
+	assert(rb && rb->is);
+	i = rb->is->iface;
 	assert(i);
 	if(panel_hidden(rb->panel)){ // resize upon becoming visible
 		return OK;
@@ -340,15 +326,14 @@ int resize_iface(const interface *i,reelbox *rb){
 	getmaxyx(rb->subwin,subrows,subcols);
 	assert(subcols); // FIXME
 	if(nlines < subrows){ // Shrink the interface
-		int delta = subrows - nlines;
+		//int delta = subrows - nlines;
 		// FIXME if we're above the current interface, we shrink and
 		// then move down, pulling things from above
 		assert(werase(rb->subwin) == OK);
 		screen_update();
 		assert(wresize(rb->subwin,nlines,PAD_COLS(cols)) != ERR);
 		assert(replace_panel(rb->panel,rb->subwin) != ERR);
-		pull_interfaces_up(rb,rows,cols,delta);
-		// FIXME move up interfaces below
+		// FIXME pull_interfaces_up(rb,rows,cols,delta);
 	}else if(nlines > subrows){ // Expand the interface
 		// The current interface never becomes a partial interface. We
 		// don't try to make it one here, and move_interface() will
@@ -628,7 +613,7 @@ void *interface_cb_locked(interface *i,iface_state *ret,struct panel_state *ps){
 		if(rb == current_iface && ps->p){
 			iface_details(panel_window(ps->p),i,ps->ysize);
 		}
-		resize_iface(i,rb);
+		resize_iface(rb);
 		redraw_iface_generic(rb);
 	}
 	if(interface_up_p(i)){
@@ -725,7 +710,7 @@ struct l2obj *neighbor_callback_locked(const interface *i,struct l2host *l2){
 		}
 	}
 	if( (rb = is->rb) ){
-		resize_iface(i,rb);
+		resize_iface(rb);
 		redraw_iface_generic(rb);
 	}
 	return ret;
@@ -749,7 +734,7 @@ struct l3obj *host_callback_locked(const interface *i,struct l2host *l2,struct l
 		}
 	}
 	if( (rb = is->rb) ){
-		resize_iface(i,rb);
+		resize_iface(rb);
 		redraw_iface_generic(rb);
 	}
 	return ret;
@@ -835,13 +820,16 @@ void use_next_iface_locked(WINDOW *w,struct panel_state *ps){
 	int rows,cols;
 	reelbox *rb;
 
-	if(!current_iface || current_iface->next == NULL){
+	if(!current_iface){
 		return;
 	}
 	getmaxyx(w,rows,cols);
 	oldrb = current_iface;
 	// Don't redraw the old inteface yet; it might have been moved/hidden
-	rb = current_iface = current_iface->next;
+	if((current_iface = current_iface->next) == NULL){
+		current_iface = top_reelbox;
+	}
+	rb = current_iface;
 	assert(rb);
 	// If the newly-selected interface is wholly visible, we'll not need
 	// change visibility of any interfaces. If it's above us, we'll need
@@ -898,14 +886,17 @@ void use_prev_iface_locked(WINDOW *w,struct panel_state *ps){
 	int rows,cols;
 	reelbox *rb;
 
-	if(!current_iface || current_iface->prev == NULL){
+	if(!current_iface){
 		return;
 	}
 	getmaxyx(w,rows,cols);
 	oldrb = current_iface;
 	// Don't redraw the old inteface yet; it might have been moved/hidden
 	// FIXME current_iface->prev could be NULL
-	rb = current_iface = current_iface->prev;
+	if((current_iface = current_iface->prev) == NULL){
+		current_iface = last_reelbox;
+	}
+	rb = current_iface;
 	assert(rb);
 	// If the newly-selected interface is wholly visible, we'll not need
 	// change visibility of any interfaces. If it's below us, we'll need
@@ -959,7 +950,7 @@ int expand_iface_locked(void){
 		return 0;
 	}
 	expand_interface(current_iface->is);
-	assert(resize_iface(current_iface->is->iface,current_iface) == OK);
+	assert(resize_iface(current_iface) == OK);
 	redraw_iface_generic(current_iface);
 	return 0;
 }
@@ -969,7 +960,7 @@ int collapse_iface_locked(void){
 		return 0;
 	}
 	collapse_interface(current_iface->is);
-	assert(resize_iface(current_iface->is->iface,current_iface) == OK);
+	assert(resize_iface(current_iface) == OK);
 	redraw_iface_generic(current_iface);
 	return 0;
 }
