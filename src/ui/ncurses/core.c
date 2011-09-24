@@ -967,7 +967,7 @@ int collapse_iface_locked(void){
 
 void check_consistency(void){
 	const reelbox *rb,*prev = NULL;
-	int sawcur = 0;
+	int sawcur = 0,expect = 1;
 
 	for(rb = top_reelbox ; rb ; rb = rb->next){
 		assert(!sawcur || rb != current_iface);
@@ -975,6 +975,8 @@ void check_consistency(void){
 			sawcur = 1;
 		}
 		assert(rb->subwin);
+		assert(getbegy(rb->subwin) == expect);
+		expect += getmaxy(rb->subwin) + 1;
 		assert(!panel_hidden(rb->panel));
 		assert(prev == rb->prev);
 		prev = rb;
