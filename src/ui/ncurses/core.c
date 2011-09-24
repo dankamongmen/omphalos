@@ -230,6 +230,46 @@ free_reelbox(reelbox *rb){
 	}
 }
 
+// Pull the interfaces above the puller down to fill unused space. Move from
+// the puller out, as we might need make visible some unknown number of
+// interfaces (and the space has already been made).
+//
+// If the puller is being removed, it ought already have been spliced out of
+// the reelbox list, and all reelbox state updated, but it obviously must not
+// yet have been freed. Its ->is pointer must still be valid (though
+// ->is->iface is no longer valid).
+static void
+pull_interfaces_down(reelbox *puller,int rows,int cols,int delta){
+	reelbox *rb;
+
+	for(rb = puller->prev ; rb ; rb = rb->prev){
+		rb->scrline += delta;
+		move_interface_generic(rb,rows,cols,delta);
+	}
+	if(top_reelbox){
+		if(top_reelbox->scrline <= 1){
+			return;
+		}
+	}
+	// FIXME make more visible
+}
+
+static void
+pull_interfaces_up(reelbox *puller,int rows,int cols,int delta){
+	reelbox *rb;
+
+	for(rb = puller->next ; rb ; rb = rb->next){
+		rb->scrline -= delta;
+		move_interface_generic(rb,rows,cols,-delta);
+	}
+	if(last_reelbox){
+		if(last_reelbox->scrline + getmaxy(last_reelbox->subwin) >= rows - 1){
+			return;
+		}
+	}
+	// FIXME make more visible
+}
+
 // An interface (pusher) has had its bottom border moved up or down (positive or
 // negative delta, respectively). Update the interfaces below it on the screen
 // (all those up until those actually displayed above it on the screen). Should
@@ -650,8 +690,8 @@ void interface_removed_locked(iface_state *is,struct panel_state *ps){
 	del_panel(rb->panel);
 	//getmaxyx(rb->subwin,rows,cols);
 	delwin(rb->subwin);
-	if(rb->next != rb){
-		//int scrrows,scrcols;
+	if(rb->next || rb->prev){
+		int scrrows,scrcols;
 		//reelbox *ci;
 
 		// First, splice it out of the list
@@ -667,6 +707,18 @@ void interface_removed_locked(iface_state *is,struct panel_state *ps){
 		if(last_reelbox == rb){
 			last_reelbox = rb->prev;
 		}
+		getmaxyx(stdscr,scrrows,scrcols);
+		// we'll need pull other interfaces up or down
+		if(rb == current_iface || rb->scrline > current_iface->scrline){
+			// FIXME don't count the +1 when we extend to the bottom
+			// of the screen!
+			pull_interfaces_up(rb,scrrows,scrcols,getmaxy(rb->subwin) + 1);
+		}else{ // pull them down; we're above current_iface
+			pull_interfaces_down(rb,scrrows,scrcols,getmaxy(rb->subwin));
+			// There might not be sufficient data to pull them down
+			// in which case pull down what we can, then pull up,
+			// then possibly move everything up. FIXME
+		}
 		if(rb == current_iface){
 			if((current_iface = rb->prev) == NULL){
 				current_iface = rb->next;
@@ -676,8 +728,7 @@ void interface_removed_locked(iface_state *is,struct panel_state *ps){
 				iface_details(panel_window(ps->p),get_current_iface(),ps->ysize);
 			}
 		}
-		/*getmaxyx(stdscr,scrrows,scrcols);
-		assert(scrcols);
+		/*
 		assert(cols);
 		if(visible){
 			for(ci = rb->next ; ci->scrline > rb->scrline ; ci = ci->next){
@@ -686,7 +737,7 @@ void interface_removed_locked(iface_state *is,struct panel_state *ps){
 		}*/
 	}else{
 		// If details window exists, destroy it FIXME
-		current_iface = NULL;
+		top_reelbox = last_reelbox = current_iface = NULL;
 	}
 	draw_main_window(stdscr); // Update the device count
 	free(rb);
@@ -969,6 +1020,9 @@ void check_consistency(void){
 	const reelbox *rb,*prev = NULL;
 	int sawcur = 0,expect = 1;
 
+	if(top_reelbox){
+		assert(!top_reelbox->is->prev->rb || top_reelbox->is->prev->rb == last_reelbox);
+	}
 	for(rb = top_reelbox ; rb ; rb = rb->next){
 		assert(!sawcur || rb != current_iface);
 		if(rb == current_iface){

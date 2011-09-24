@@ -462,6 +462,7 @@ int redraw_iface(const iface_state *is,const reelbox *rb,int active){
 		partial = 1; // no bottom
 	}
 	getmaxyx(rb->subwin,rows,cols);
+	assert(cols < scrcols); // FIXME
 	assert(werase(rb->subwin) != ERR);
 	if(partial >= 0){
 		iface_box(i,is,rb->subwin,active,partial);
