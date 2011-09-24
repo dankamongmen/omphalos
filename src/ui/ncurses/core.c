@@ -49,6 +49,17 @@ get_current_iface(void){
 }
 
 static inline int
+top_space_p(void){
+	if(!top_reelbox){
+		return 1;
+	}
+	if(getbegy(top_reelbox->subwin) <= 1){
+		return 0;
+	}
+	return 1;
+}
+
+static inline int
 bottom_space_p(int rows){
 	if(!last_reelbox){
 		return 1;
@@ -266,11 +277,12 @@ pull_interfaces_down(reelbox *puller,int rows,int cols,int delta){
 	// FIXME make more visible
 }
 
+// Pass a NULL puller to move all interfaces up
 static void
 pull_interfaces_up(reelbox *puller,int rows,int cols,int delta){
 	reelbox *rb;
 
-	for(rb = puller->next ; rb ; rb = rb->next){
+	for(rb = puller ? puller->next : top_reelbox ; rb ; rb = rb->next){
 		rb->scrline -= delta;
 		move_interface_generic(rb,rows,cols,-delta);
 	}
@@ -732,10 +744,12 @@ void interface_removed_locked(iface_state *is,struct panel_state *ps){
 			// of the screen!
 			pull_interfaces_up(rb,scrrows,scrcols,getmaxy(rb->subwin) + 1);
 		}else{ // pull them down; we're above current_iface
+			int delta;
+
 			pull_interfaces_down(rb,scrrows,scrcols,getmaxy(rb->subwin));
-			// There might not be sufficient data to pull them down
-			// in which case pull down what we can, then pull up,
-			// then possibly move everything up. FIXME
+			if( (delta = top_space_p()) ){
+				pull_interfaces_up(NULL,scrrows,scrcols,delta);
+			}
 		}
 		if(rb == current_iface){
 			if((current_iface = rb->prev) == NULL){

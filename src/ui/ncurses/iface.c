@@ -522,7 +522,11 @@ void move_interface(iface_state *is,reelbox *rb,int rows,int cols,
 			nlines = rows - rb->scrline - 1; // sans-bottom partial
 		}else{
 			targ = 1;
-			nlines = rb->next->scrline - 1;
+			if(rb->next){
+				nlines = rb->next->scrline - 1;
+			}else{
+				nlines = iface_lines_bounded(is,rows);
+			}
 		}
 		// FIXME this shouldn't be necessary. replace with assert(nlines >= 1);
 		if(nlines < 1){
