@@ -48,6 +48,17 @@ get_current_iface(void){
 	return NULL;
 }
 
+static inline int
+bottom_space_p(int rows){
+	if(!last_reelbox){
+		return 1;
+	}
+	if(getmaxy(last_reelbox->subwin) + getbegy(last_reelbox->subwin) >= rows - 1){
+		return 0;
+	}
+	return 1;
+}
+
 int wvstatus_locked(WINDOW *w,const char *fmt,va_list va){
 	assert(statuschars > 0);
 	if(fmt == NULL){
@@ -406,11 +417,19 @@ resize_iface(reelbox *rb){
 				push_interfaces_below(rb,rows,cols,delta);
 				assert(wresize(rb->subwin,nlines,PAD_COLS(cols)) != ERR);
 				assert(replace_panel(rb->panel,rb->subwin) != ERR);
-			}else{ // else becomes a partial interface
-				// FIXME take any available space!
-			}
+			} // else becomes a partial interface?
 		}else{
-			if(rb->scrline != 1){ // we can only go up
+			if(bottom_space_p(rows)){ // fill in space below
+				int delta = nlines - subrows;
+
+				if(nlines + rb->scrline >= rows){
+					delta = rows - rb->scrline;
+				}
+				push_interfaces_below(rb,rows,cols,delta);
+				assert(wresize(rb->subwin,nlines,PAD_COLS(cols)) != ERR);
+				assert(replace_panel(rb->panel,rb->subwin) != ERR);
+				// FIXME might still need go up!
+			}else if(rb->scrline != 1){ // we can only go up
 				int delta = nlines - subrows;
 
 				if(delta > rb->scrline - 1){
@@ -422,9 +441,7 @@ resize_iface(reelbox *rb){
 				assert(move_panel(rb->panel,rb->scrline,1) != ERR);
 				assert(wresize(rb->subwin,iface_lines_bounded(is,rows),PAD_COLS(cols)) != ERR);
 				assert(replace_panel(rb->panel,rb->subwin) != ERR);
-			}else{ // else becomes a partial interface
-				// FIXME take any available space!
-			}
+			} // else becomes a partial interface?
 		}
 	}
 	return OK;
@@ -1029,6 +1046,10 @@ void check_consistency(void){
 			sawcur = 1;
 		}
 		assert(rb->subwin);
+		if(getbegy(rb->subwin) != expect){
+			fprintf(stderr,"\n\n\n\n UH-OH had %d/%d wanted %d\n",
+					getbegy(rb->subwin),rb->scrline,expect);
+		}
 		assert(getbegy(rb->subwin) == expect);
 		expect += getmaxy(rb->subwin) + 1;
 		assert(!panel_hidden(rb->panel));
