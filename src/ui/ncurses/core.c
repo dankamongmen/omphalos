@@ -49,25 +49,25 @@ get_current_iface(void){
 }
 
 static inline int
-top_space_p(void){
+top_space_p(int rows){
 	if(!top_reelbox){
-		return 1;
+		return rows - 2;
 	}
 	if(getbegy(top_reelbox->subwin) <= 1){
 		return 0;
 	}
-	return 1;
+	return getbegy(top_reelbox->subwin) - 1;
 }
 
 static inline int
 bottom_space_p(int rows){
 	if(!last_reelbox){
-		return 1;
+		return rows - 2;
 	}
 	if(getmaxy(last_reelbox->subwin) + getbegy(last_reelbox->subwin) >= rows - 1){
 		return 0;
 	}
-	return 1;
+	return (rows - 1) - (getmaxy(last_reelbox->subwin) + getbegy(last_reelbox->subwin));
 }
 
 int wvstatus_locked(WINDOW *w,const char *fmt,va_list va){
@@ -394,68 +394,77 @@ resize_iface(reelbox *rb){
 		// FIXME if we're above the current interface, we shrink and
 		// then move down, pulling things from above
 		assert(werase(rb->subwin) == OK);
-		screen_update();
+		screen_update(); // FIXME surely unnecessary?
 		assert(wresize(rb->subwin,nlines,PAD_COLS(cols)) != ERR);
 		assert(replace_panel(rb->panel,rb->subwin) != ERR);
 		// FIXME pull_interfaces_up(rb,rows,cols,delta);
-	}else if(nlines > subrows){ // Expand the interface
-		// The current interface never becomes a partial interface. We
-		// don't try to make it one here, and move_interface() will
-		// refuse to perform a move resulting in one.
-		if(i == curi){
-			// The current interface can grow in either direction.
-			// FIXME take what space is available even if we can't
-			// grow all the way!
-			int delta = nlines - subrows;
+		return OK;
+	}else if(nlines == subrows){ // otherwise, expansion
+		return OK;
+	}
+	// The current interface grows in both directions and never becomes a
+	// partial interface. We don't try to make it one here, and
+	// move_interface() will refuse to perform a move resulting in one.
+	if(i == curi){
+		// We can't already occupy the screen, or the nlines == subrows
+		// check would have thrown us out. There *is* space to grow.
+		if(rb->scrline + subrows < rows - 1){ // can we grow down?
+			int delta = (rows - 1) - (rb->scrline + subrows);
 
-			if(nlines + rb->scrline < rows){ // Try down first.
-				push_interfaces_below(rb,rows,cols,delta);
-				assert(wresize(rb->subwin,nlines,PAD_COLS(cols)) != ERR);
-				assert(replace_panel(rb->panel,rb->subwin) != ERR);
-			}else if(rb->scrline > delta){ // Otherwise try up
-				if(delta > rb->scrline - 1){
-					delta = rb->scrline - 1;
-				}
-				rb->scrline -= delta;
-				push_interfaces_above(rb,rows,cols,-delta);
-				// assert(move_interface_generic(is,rows,cols,-delta) == OK);
-				assert(move_panel(rb->panel,rb->scrline,1) != ERR);
-				assert(wresize(rb->subwin,iface_lines_bounded(is,rows),PAD_COLS(cols)) != ERR);
-				assert(replace_panel(rb->panel,rb->subwin) != ERR);
+			if(delta + subrows > nlines){
+				delta = nlines - subrows;
 			}
-		}else if(rb->scrline > current_iface->scrline){ // go down
-			if(nlines + rb->scrline < rows){
-				int delta = nlines - subrows;
-
-				push_interfaces_below(rb,rows,cols,delta);
-				assert(wresize(rb->subwin,nlines,PAD_COLS(cols)) != ERR);
-				assert(replace_panel(rb->panel,rb->subwin) != ERR);
-			} // else becomes a partial interface?
-		}else{
-			if(bottom_space_p(rows)){ // fill in space below
-				int delta = nlines - subrows;
-
-				if(nlines + rb->scrline >= rows){
-					delta = rows - rb->scrline;
-				}
-				push_interfaces_below(rb,rows,cols,delta);
-				assert(wresize(rb->subwin,nlines,PAD_COLS(cols)) != ERR);
-				assert(replace_panel(rb->panel,rb->subwin) != ERR);
-				// FIXME might still need go up!
-			}else if(rb->scrline != 1){ // we can only go up
-				int delta = nlines - subrows;
-
-				if(delta > rb->scrline - 1){
-					delta = rb->scrline - 1;
-				}
-				rb->scrline -= delta;
-				push_interfaces_above(rb,rows,cols,-delta);
-				// assert(move_interface_generic(is,rows,cols,-delta) == OK);
-				assert(move_panel(rb->panel,rb->scrline,1) != ERR);
-				assert(wresize(rb->subwin,iface_lines_bounded(is,rows),PAD_COLS(cols)) != ERR);
-				assert(replace_panel(rb->panel,rb->subwin) != ERR);
-			} // else becomes a partial interface?
+			push_interfaces_below(rb,rows,cols,delta);
+			subrows += delta;
 		}
+		if(nlines > subrows){ // can we grow up?
+			int delta = rb->scrline - 1;
+
+			if(delta + subrows > nlines){
+				delta = nlines - subrows;
+			}
+			delta = -delta;
+			rb->scrline += delta;
+			push_interfaces_above(rb,rows,cols,delta);
+			// assert(move_interface_generic(is,rows,cols,-delta) == OK);
+			assert(move_panel(rb->panel,rb->scrline,1) != ERR);
+		}
+		assert(wresize(rb->subwin,nlines,PAD_COLS(cols)) != ERR);
+		assert(replace_panel(rb->panel,rb->subwin) != ERR);
+	}else{ // we're not the current interface
+		int delta;
+
+		if( (delta = bottom_space_p(rows)) ){ // always occupy free rows
+			if(delta > nlines - subrows){
+				delta = nlines - subrows;
+			}
+			push_interfaces_below(rb,rows,cols,delta);
+			subrows += delta;
+		}
+		if(nlines > subrows){
+			if(rb->scrline > current_iface->scrline){ // only down
+				delta = (rows - 1) - (rb->scrline + subrows);
+				if(delta > nlines - subrows){
+					delta = nlines - subrows;
+				}
+				if(delta > 0){
+					push_interfaces_below(rb,rows,cols,delta);
+				}
+			}else{ // only up
+				delta = rb->scrline - 1;
+				if(delta > nlines - subrows){
+					delta = nlines - subrows;
+				}
+				if(delta){
+					push_interfaces_above(rb,rows,cols,-delta);
+					rb->scrline -= delta;
+					assert(move_panel(rb->panel,rb->scrline,1) != ERR);
+				}
+			}
+			subrows += delta;
+		}
+		assert(wresize(rb->subwin,subrows,PAD_COLS(cols)) != ERR);
+		assert(replace_panel(rb->panel,rb->subwin) != ERR);
 	}
 	return OK;
 }
@@ -722,7 +731,6 @@ void interface_removed_locked(iface_state *is,struct panel_state *ps){
 	delwin(rb->subwin);
 	if(rb->next || rb->prev){
 		int scrrows,scrcols;
-		//reelbox *ci;
 
 		// First, splice it out of the list
 		if(rb->next){
@@ -747,7 +755,7 @@ void interface_removed_locked(iface_state *is,struct panel_state *ps){
 			int delta;
 
 			pull_interfaces_down(rb,scrrows,scrcols,getmaxy(rb->subwin));
-			if( (delta = top_space_p()) ){
+			if( (delta = top_space_p(scrrows)) ){
 				pull_interfaces_up(NULL,scrrows,scrcols,delta);
 			}
 		}
@@ -760,13 +768,6 @@ void interface_removed_locked(iface_state *is,struct panel_state *ps){
 				iface_details(panel_window(ps->p),get_current_iface(),ps->ysize);
 			}
 		}
-		/*
-		assert(cols);
-		if(visible){
-			for(ci = rb->next ; ci->scrline > rb->scrline ; ci = ci->next){
-				move_interface_generic(ci,scrrows,PAD_COLS(scrcols),-(rows + 1));
-			}
-		}*/
 	}else{
 		// If details window exists, destroy it FIXME
 		top_reelbox = last_reelbox = current_iface = NULL;
