@@ -497,59 +497,54 @@ int iface_visible_p(int rows,const reelbox *rb){
 // if the interface is active and would be pushed offscreen.
 void move_interface(iface_state *is,reelbox *rb,int rows,int cols,
 					int delta,int active){
-	int partiallyvis,whollyvis;
+	int nlines,rr,targ;
        
-	partiallyvis = iface_visible_p(rows,rb);
-	whollyvis = iface_wholly_visible_p(rows,rb);
-	if(rb->scrline < 0){
-		rb->scrline = rows; // invalidate it
-	}
 	if(iface_wholly_visible_p(rows,rb)){
 		assert(move_panel(rb->panel,rb->scrline,1) != ERR);
-		if(!whollyvis){
+		if(getmaxy(rb->subwin) != iface_lines_bounded(is,rows)){
 			assert(wresize(rb->subwin,iface_lines_bounded(is,rows),PAD_COLS(cols)) == OK);
-			if(!partiallyvis){
+			if(panel_hidden(rb->panel)){
 				assert(show_panel(rb->panel) == OK);
 			}
 		}
 		assert(redraw_iface(is,rb,active) == OK);
-	}else if(iface_visible_p(rows,rb)){
-		int nlines,rr,targ;
-
-		rr = getmaxy(rb->subwin);
-		if(delta > 0){
-			targ = rb->scrline;
-			nlines = rows - rb->scrline - 1; // sans-bottom partial
-		}else{
-			targ = 1;
-			if(rb->next){
-				nlines = rb->next->scrline - 1;
-			}else{
-				nlines = iface_lines_bounded(is,rows);
-			}
-		}
-		// FIXME this shouldn't be necessary. replace with assert(nlines >= 1);
-		if(nlines < 1){
+		return;
+	}
+	rr = getmaxy(rb->subwin);
+	if(delta > 0){
+		if(rb->scrline >= rows - 1){
 			assert(werase(rb->subwin) != ERR);
 			assert(hide_panel(rb->panel) != ERR);
 			return;
-		}else if(nlines > rr){
-			assert(move_panel(rb->panel,targ,1) == OK);
-			assert(wresize(rb->subwin,nlines,PAD_COLS(cols)) == OK);
-		}else if(nlines < rr){
-			assert(wresize(rb->subwin,nlines,PAD_COLS(cols)) == OK);
-			assert(move_panel(rb->panel,targ,1) == OK);
-		}else{
-			assert(move_panel(rb->panel,targ,1) == OK);
 		}
-		if(!partiallyvis){
-			assert(show_panel(rb->panel) == OK);
+		targ = rb->scrline;
+		nlines = rows - rb->scrline - 1; // sans-bottom partial
+	}else{
+		if(rr <= -delta){
+			assert(werase(rb->subwin) != ERR);
+			assert(hide_panel(rb->panel) != ERR);
+			return;
 		}
-		assert(redraw_iface(is,rb,active) == OK);
-	}else if(!panel_hidden(rb->panel)){
+		targ = 1;
+		rb->scrline = 1;
+		nlines = rr + delta;
+	}
+	// FIXME this shouldn't be necessary. replace with assert(nlines >= 1);
+	if(nlines < 1){
 		assert(werase(rb->subwin) != ERR);
 		assert(hide_panel(rb->panel) != ERR);
+		return;
+	}else if(nlines > rr){
+		assert(move_panel(rb->panel,targ,1) == OK);
+		assert(wresize(rb->subwin,nlines,PAD_COLS(cols)) == OK);
+	}else if(nlines < rr){
+		assert(wresize(rb->subwin,nlines,PAD_COLS(cols)) == OK);
+		assert(move_panel(rb->panel,targ,1) == OK);
+	}else{
+		assert(move_panel(rb->panel,targ,1) == OK);
 	}
+	assert(redraw_iface(is,rb,active) == OK);
+	assert(show_panel(rb->panel) == OK);
 	return;
 }
 

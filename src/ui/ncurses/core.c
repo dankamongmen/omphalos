@@ -302,6 +302,7 @@ static void
 push_interfaces_below(reelbox *pusher,int rows,int cols,int delta){
 	reelbox *rb;
 
+	assert(delta > 0);
 	for(rb = last_reelbox ; rb ; rb = rb->prev){
 		if(rb == pusher){
 			break;
@@ -341,23 +342,20 @@ static void
 push_interfaces_above(reelbox *pusher,int rows,int cols,int delta){
 	reelbox *rb;
 
+	assert(delta < 0);
 	for(rb = top_reelbox ; rb ; rb = rb->next){
 		if(rb == pusher){
 			break;
 		}
 		rb->scrline += delta;
 		move_interface_generic(rb,rows,cols,delta);
-	}
-	while(panel_hidden(top_reelbox->panel)){
-		reelbox *t;
-
-		t = top_reelbox->next;
-		free_reelbox(top_reelbox);
-		if((top_reelbox = t) == NULL){
-			last_reelbox = NULL;
-			break;
-		}else{
-			t->prev = NULL;
+		if(panel_hidden(rb->panel)){
+			if((top_reelbox = rb->next) == NULL){
+				last_reelbox = NULL;
+			}else{
+				top_reelbox->prev = NULL;
+			}
+			free_reelbox(rb);
 		}
 	}
 	// Now, if our delta was negative, see if we pulled any down below us
