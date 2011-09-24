@@ -248,7 +248,8 @@ free_reelbox(reelbox *rb){
 // If the puller is being removed, it ought already have been spliced out of
 // the reelbox list, and all reelbox state updated, but it obviously must not
 // yet have been freed. Its ->is pointer must still be valid (though
-// ->is->iface is no longer valid).
+// ->is->iface is no longer valid). Its ->next and ->prev pointers ought not
+// have been altered.
 static void
 pull_interfaces_down(reelbox *puller,int rows,int cols,int delta){
 	reelbox *rb;
@@ -888,7 +889,7 @@ void use_next_iface_locked(WINDOW *w,struct panel_state *ps){
 	int rows,cols;
 	reelbox *rb;
 
-	if(!current_iface){
+	if(!current_iface || top_reelbox == last_reelbox){
 		return;
 	}
 	getmaxyx(w,rows,cols);
@@ -954,13 +955,12 @@ void use_prev_iface_locked(WINDOW *w,struct panel_state *ps){
 	int rows,cols;
 	reelbox *rb;
 
-	if(!current_iface){
+	if(!current_iface || top_reelbox == last_reelbox){
 		return;
 	}
 	getmaxyx(w,rows,cols);
 	oldrb = current_iface;
-	// Don't redraw the old inteface yet; it might have been moved/hidden
-	// FIXME current_iface->prev could be NULL
+	// Don't redraw the old interface yet; it might have been moved/hidden
 	if((current_iface = current_iface->prev) == NULL){
 		current_iface = last_reelbox;
 	}
@@ -974,13 +974,18 @@ void use_prev_iface_locked(WINDOW *w,struct panel_state *ps){
 		if(rb->scrline < oldrb->scrline){ // new is above old
 			assert(redraw_iface_generic(oldrb) == OK);
 			assert(redraw_iface_generic(rb) == OK);
-		}else{
+		}else{ // we were at the top
 			// Selecting the previous interface is simpler -- we
 			// take one from the bottom, and stick it in row 1.
-			push_interfaces_below(oldrb,rows,cols,getmaxy(rb->subwin));
+			last_reelbox->prev->next = NULL;
+			last_reelbox = last_reelbox->prev;
+			pull_interfaces_down(rb,rows,cols,getmaxy(rb->subwin) + 1);
 			rb->scrline = 1;
-			assert(move_panel(rb->panel,rb->scrline,START_COL) != ERR);
-			assert(redraw_iface_generic(rb) == OK);
+			rb->next = top_reelbox;
+			top_reelbox->prev = rb;
+			rb->prev = NULL;
+			top_reelbox = rb;
+			move_interface_generic(rb,rows,cols,getbegy(rb->subwin) - rb->scrline);
 		}
 	}else{ // We'll need change visibilities
 		int down;
