@@ -908,16 +908,21 @@ void use_next_iface_locked(WINDOW *w,struct panel_state *ps){
 		if(rb->scrline > oldrb->scrline){ // new is below old
 			assert(redraw_iface_generic(oldrb) == OK);
 			assert(redraw_iface_generic(rb) == OK);
-		}else{
+		}else{ // we're at the bottom
 			// We might not have a full screen -- base the new
 			// location off the old one's, which must have been the
 			// last interface in the display if we're rotating.
 			//
 			// Both have up-to-date sizes -- those aren't changing.
-			push_interfaces_above(oldrb,rows,cols,-(getmaxy(rb->subwin)));
-			rb->scrline = oldrb->scrline + getmaxy(oldrb->subwin) - getmaxy(rb->subwin);
-			assert(move_panel(rb->panel,rb->scrline,START_COL) != ERR);
-			assert(redraw_iface_generic(rb) == OK);
+			top_reelbox->next->prev = NULL;
+			top_reelbox = top_reelbox->next;
+			pull_interfaces_up(rb,rows,cols,getmaxy(rb->subwin) + 1);
+			rb->scrline = getbegy(oldrb->subwin) + getmaxy(oldrb->subwin) + 1;
+			rb->prev = last_reelbox;
+			last_reelbox->next = rb;
+			rb->next = NULL;
+			last_reelbox = rb;
+			move_interface_generic(rb,rows,cols,rb->scrline - 1);
 		}
 	}else{ // We'll need change visibilities
 		int up;
