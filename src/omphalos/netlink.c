@@ -643,8 +643,16 @@ handle_newlink_locked(const omphalos_iface *octx,interface *iface,
 	// Bring down or set up the packet sockets and thread, as appropriate
 	if(iface->fd < 0 && (iface->flags & IFF_UP)){
 		iface->opaque = octx->iface_event(iface,iface->opaque);
+		if(iface->addr){
+			lookup_l2host(octx,iface,iface->addr);
+		}
+		if(iface->bcast && (iface->flags & IFF_BROADCAST)){
+			lookup_l2host(octx,iface,iface->bcast);
+		}
 		prepare_packet_sockets(octx,iface,ii->ifi_index);
 	}else{
+		// Ensure there's L2 host entries for the device's address and any
+		// appropriate link broadcast adddress.
 		if(iface->pmarsh && !(iface->flags & IFF_UP)){
 			// See note in free_iface() about operation ordering here.
 			reap_thread(octx,iface);
@@ -657,16 +665,6 @@ handle_newlink_locked(const omphalos_iface *octx,interface *iface,
 		}
 		iface->opaque = octx->iface_event(iface,iface->opaque);
 	}
-
-	// Ensure there's L2 host entries for the device's address and any
-	// appropriate link broadcast adddress.
-	if(iface->addr){
-		lookup_l2host(octx,iface,iface->addr);
-	}
-	if(iface->bcast && (iface->flags & IFF_BROADCAST)){
-		lookup_l2host(octx,iface,iface->bcast);
-	}
-
 	return 0;
 }
 
