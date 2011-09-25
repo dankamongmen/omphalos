@@ -909,7 +909,7 @@ void use_next_iface_locked(WINDOW *w,struct panel_state *ps){
 		if(is->rb){
 			current_iface = is->rb;
 		}else{
-			if((is->rb = create_reelbox(is,rows - iface_lines_bounded(is,rows),cols)) == NULL){
+			if((is->rb = create_reelbox(is,(rows - 1) - iface_lines_bounded(is,rows),cols)) == NULL){
 				return; // FIXME
 			}
 			current_iface = is->rb;
