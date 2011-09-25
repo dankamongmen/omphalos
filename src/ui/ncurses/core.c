@@ -988,7 +988,7 @@ void use_prev_iface_locked(WINDOW *w,struct panel_state *ps){
 				return; // FIXME
 			}
 			current_iface = is->rb;
-			push_interfaces_below(NULL,rows,cols,iface_lines_bounded(is,rows));
+			push_interfaces_below(NULL,rows,cols,iface_lines_bounded(is,rows) + 1);
 			if((current_iface->next = top_reelbox) == NULL){
 				last_reelbox = current_iface;
 			}
@@ -1024,24 +1024,21 @@ void use_prev_iface_locked(WINDOW *w,struct panel_state *ps){
 			move_interface_generic(rb,rows,cols,getbegy(rb->subwin) - rb->scrline);
 		}
 	}else{ // We'll need change visibilities
-		int down;
-
-		rb->scrline = 1;
-		// We need them to move up however many spaces we need
-		// to move in. We'll need one per line not currently
-		// visible, plus a boundary line if applicable (there
-		// isn't one currently, and we don't fill the screen).
-		assert(getmaxy(rb->subwin) > 0);
-		down = iface_lines_bounded(rb->is,rows) - getmaxy(rb->subwin);
-		assert(down > 0);
-		push_interfaces_above(rb,rows,cols,-down);
-		assert(move_panel(rb->panel,rb->scrline,START_COL) != ERR);
-		if(panel_hidden(rb->panel)){
-			assert(show_panel(rb->panel) != ERR);
+		if(last_reelbox->prev){
+			last_reelbox->prev->next = NULL;
+			last_reelbox = last_reelbox->prev;
+		}else{
+			last_reelbox = top_reelbox;
 		}
+		pull_interfaces_down(rb,rows,cols,getmaxy(rb->subwin) + 1);
+		rb->scrline = 1;
+		rb->next = top_reelbox;
+		top_reelbox->prev = rb;
+		rb->prev = NULL;
+		top_reelbox = rb;
+		move_interface_generic(rb,rows,cols,getbegy(rb->subwin) - rb->scrline);
 		assert(wresize(rb->subwin,iface_lines_bounded(rb->is,rows),PAD_COLS(cols)) == OK);
 		assert(replace_panel(rb->panel,rb->subwin) != ERR);
-		assert(redraw_iface_generic(oldrb) == OK);
 	}
 	if(panel_hidden(oldrb->panel)){
 		// we hid the entire panel, and thus might have space

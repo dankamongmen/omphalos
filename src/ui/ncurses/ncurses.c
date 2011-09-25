@@ -71,8 +71,8 @@ lock_ncurses(void){
 
 static inline void
 unlock_ncurses(void){
-	check_consistency();
 	screen_update();
+	check_consistency();
 	assert(pthread_mutex_unlock(&bfl) == 0);
 }
 
@@ -273,7 +273,6 @@ ncurses_input_thread(void *unsafe_marsh){
 		case 'd':
 			lock_ncurses();
 				down_interface_locked(octx,w);
-				check_consistency();
 			unlock_ncurses();
 			break;
 		case 's':
