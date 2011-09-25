@@ -104,7 +104,7 @@ redraw_iface_generic(const reelbox *rb){
 
 static inline void
 move_interface_generic(reelbox *rb,int rows,int cols,int delta){
-	move_interface(rb->is,rb,rows,cols,delta,rb == current_iface);
+	move_interface(rb,rows,cols,delta,rb == current_iface);
 }
 
 static int
@@ -304,7 +304,8 @@ push_interfaces_below(reelbox *pusher,int rows,int cols,int delta){
 	reelbox *rb;
 
 	assert(delta > 0);
-	for(rb = last_reelbox ; rb ; rb = rb->prev){
+	rb = last_reelbox;
+	while(rb){
 		if(rb == pusher){
 			break;
 		}
@@ -316,7 +317,10 @@ push_interfaces_below(reelbox *pusher,int rows,int cols,int delta){
 			}else{
 				last_reelbox->next = NULL;
 			}
-			free_reelbox(last_reelbox);
+			free_reelbox(rb);
+			rb = last_reelbox;
+		}else{
+			rb = rb->prev;
 		}
 	}
 	// Now, if our delta was negative, see if we pulled any down below us
@@ -340,7 +344,8 @@ push_interfaces_above(reelbox *pusher,int rows,int cols,int delta){
 	reelbox *rb;
 
 	assert(delta < 0);
-	for(rb = top_reelbox ; rb ; rb = rb->next){
+	rb = top_reelbox;
+	while(rb){
 		if(rb == pusher){
 			break;
 		}
@@ -353,6 +358,9 @@ push_interfaces_above(reelbox *pusher,int rows,int cols,int delta){
 				top_reelbox->prev = NULL;
 			}
 			free_reelbox(rb);
+			top_reelbox = rb;
+		}else{
+			rb = rb->next;
 		}
 	}
 	// Now, if our delta was negative, see if we pulled any down below us

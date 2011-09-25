@@ -492,14 +492,16 @@ int iface_visible_p(int rows,const reelbox *rb){
 	return 0;
 }
 
-// Move this interface, possibly hiding it or bringing it onscreen. Negative
-// delta indicates movement up, positive delta moves down. Returns a non-zero
-// if the interface is active and would be pushed offscreen.
-void move_interface(iface_state *is,reelbox *rb,int rows,int cols,
-					int delta,int active){
+// Move this interface, possibly hiding it. Negative delta indicates movement
+// up, positive delta moves down. rows and cols describe the containing window.
+void move_interface(reelbox *rb,int rows,int cols,int delta,int active){
+	const iface_state *is;
 	int nlines,rr,targ;
        
+	is = rb->is;
+	assert(rb->is && rb->is->rb == rb);
 	if(iface_wholly_visible_p(rows,rb)){
+		assert(strcmp("tap0",is->iface->name) || rb->scrline < rows - 1);
 		assert(move_panel(rb->panel,rb->scrline,1) != ERR);
 		if(getmaxy(rb->subwin) != iface_lines_bounded(is,rows)){
 			assert(wresize(rb->subwin,iface_lines_bounded(is,rows),PAD_COLS(cols)) == OK);
