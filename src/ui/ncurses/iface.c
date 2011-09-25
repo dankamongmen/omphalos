@@ -500,9 +500,8 @@ void move_interface(reelbox *rb,int rows,int cols,int delta,int active){
        
 	is = rb->is;
 	assert(rb->is);
-       assert(rb->is->rb == rb);
+	assert(rb->is->rb == rb);
 	if(iface_wholly_visible_p(rows,rb)){
-		assert(strcmp("tap0",is->iface->name) || rb->scrline < rows - 1);
 		assert(move_panel(rb->panel,rb->scrline,1) != ERR);
 		if(getmaxy(rb->subwin) != iface_lines_bounded(is,rows)){
 			assert(wresize(rb->subwin,iface_lines_bounded(is,rows),PAD_COLS(cols)) == OK);
@@ -514,9 +513,9 @@ void move_interface(reelbox *rb,int rows,int cols,int delta,int active){
 		return;
 	}
 	rr = getmaxy(rb->subwin);
+	assert(werase(rb->subwin) != ERR);
 	if(delta > 0){
 		if(rb->scrline >= rows - 1){
-			assert(werase(rb->subwin) != ERR);
 			assert(hide_panel(rb->panel) != ERR);
 			return;
 		}
@@ -524,7 +523,6 @@ void move_interface(reelbox *rb,int rows,int cols,int delta,int active){
 		nlines = rows - rb->scrline - 1; // sans-bottom partial
 	}else{
 		if(rr <= -delta){
-			assert(werase(rb->subwin) != ERR);
 			assert(hide_panel(rb->panel) != ERR);
 			return;
 		}
@@ -534,7 +532,6 @@ void move_interface(reelbox *rb,int rows,int cols,int delta,int active){
 	}
 	// FIXME this shouldn't be necessary. replace with assert(nlines >= 1);
 	if(nlines < 1){
-		assert(werase(rb->subwin) != ERR);
 		assert(hide_panel(rb->panel) != ERR);
 		return;
 	}else if(nlines > rr){
