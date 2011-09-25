@@ -15,9 +15,9 @@ int bevel_notop(WINDOW *w){
 		assert(mvwvline(w,0,0,ACS_VLINE,rows - 1) != ERR);
 		assert(mvwvline(w,0,cols - 1,ACS_VLINE,rows - 1) != ERR);
 	}
-	assert(mvwadd_wch(w,0,0,&bchr[0]) != ERR);
-	assert(mvwhline(w,0,1,ACS_HLINE,cols - 2) != ERR);
-	assert(mvwins_wch(w,0,cols - 1,&bchr[1]) != ERR);
+	assert(mvwadd_wch(w,rows - 1,0,&bchr[0]) != ERR);
+	assert(mvwhline(w,rows - 1,1,ACS_HLINE,cols - 2) != ERR);
+	assert(mvwins_wch(w,rows - 1,cols - 1,&bchr[1]) != ERR);
 	return OK;
 }
 
