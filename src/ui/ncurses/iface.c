@@ -564,7 +564,7 @@ int iface_wholly_visible_p(int rows,const reelbox *rb){
 	// return iface_lines_bounded(is,rows) <= getmaxy(rb->subwin);
 	if(rb->scrline + iface_lines_bounded(is,rows) >= rows){
 		return 0;
-	}else if(rb->scrline <= 1 && iface_lines_bounded(is,rows) != getmaxy(){
+	}else if(rb->scrline <= 1 && iface_lines_bounded(is,rows) != getmaxy(rb->subwin)){
 		return 0;
 	}
 	return 1;
