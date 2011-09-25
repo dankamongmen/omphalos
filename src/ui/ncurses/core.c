@@ -387,7 +387,7 @@ resize_iface(reelbox *rb){
 	if(panel_hidden(rb->panel)){ // resize upon becoming visible
 		return OK;
 	}
-       	is = rb->is;
+	is = rb->is;
 	getmaxyx(stdscr,rows,cols);
 	const int nlines = iface_lines_bounded(is,rows);
 	getmaxyx(rb->subwin,subrows,subcols);
@@ -610,7 +610,7 @@ int packet_cb_locked(const interface *i,omphalos_packet *op,struct panel_state *
 	if(!is){
 		return 0;
 	}
-       	if((rb = is->rb) == NULL){
+	if((rb = is->rb) == NULL){
 		return 0;
 	}
 	timersub(&op->tv,&is->lastprinted,&tdiff);
@@ -1025,16 +1025,21 @@ void use_prev_iface_locked(WINDOW *w,struct panel_state *ps){
 			move_interface_generic(rb,rows,cols,getbegy(rb->subwin) - rb->scrline);
 		}
 	}else{ // We'll need change visibilities
+		iface_state *is = current_iface->is;
+
 		if(last_reelbox->prev){
 			last_reelbox->prev->next = NULL;
 			last_reelbox = last_reelbox->prev;
 		}else{
 			last_reelbox = top_reelbox;
 		}
-		pull_interfaces_down(rb,rows,cols,getmaxy(rb->subwin) + 1);
+		push_interfaces_below(NULL,rows,cols,iface_lines_bounded(is,rows) + 1);
 		rb->scrline = 1;
-		rb->next = top_reelbox;
-		top_reelbox->prev = rb;
+		if( (rb->next = top_reelbox) ){
+			top_reelbox->prev = rb;
+		}else{
+			last_reelbox = rb;
+		}
 		rb->prev = NULL;
 		top_reelbox = rb;
 		move_interface_generic(rb,rows,cols,getbegy(rb->subwin) - rb->scrline);
