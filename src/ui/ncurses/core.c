@@ -993,6 +993,7 @@ void use_prev_iface_locked(WINDOW *w,struct panel_state *ps){
 				last_reelbox = current_iface;
 			}
 			current_iface->prev = NULL;
+			top_reelbox->prev = current_iface;
 			top_reelbox = current_iface;
 			return;
 		}
