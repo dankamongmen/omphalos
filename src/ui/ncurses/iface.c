@@ -558,12 +558,6 @@ int lines_for_interface(const iface_state *is){
 int iface_wholly_visible_p(int rows,const reelbox *rb){
 	const iface_state *is = rb->is;
 
-	if(rows < 0){
-		int cols;
-
-		getmaxyx(stdscr,rows,cols);
-		assert(cols >= 0);
-	}
 	if(rb->scrline + iface_lines_bounded(is,rows) >= rows){
 		return 0;
 	}else if(rb->scrline < 1){
