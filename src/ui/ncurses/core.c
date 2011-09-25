@@ -358,7 +358,7 @@ push_interfaces_above(reelbox *pusher,int rows,int cols,int delta){
 				top_reelbox->prev = NULL;
 			}
 			free_reelbox(rb);
-			top_reelbox = rb;
+			rb = top_reelbox;
 		}else{
 			rb = rb->next;
 		}
@@ -461,6 +461,7 @@ resize_iface(reelbox *rb){
 				if(delta){
 					push_interfaces_above(rb,rows,cols,-delta);
 					rb->scrline -= delta;
+					move_interface_generic(rb,rows,cols,-delta);
 					assert(move_panel(rb->panel,rb->scrline,1) != ERR);
 				}
 			}
@@ -900,26 +901,38 @@ void use_next_iface_locked(WINDOW *w,struct panel_state *ps){
 	getmaxyx(w,rows,cols);
 	oldrb = current_iface;
 	// Don't redraw the old inteface yet; it might have been moved/hidden
-	// FIXME need replace all this -- see use_prev_iface_locked();
-	if((current_iface = current_iface->next) == NULL){
-		current_iface = top_reelbox;
+	if(current_iface->next){
+		current_iface = current_iface->next;
+	}else{
+		iface_state *is = current_iface->is->next;
+
+		if(is->rb){
+			current_iface = is->rb;
+		}else{
+			if((is->rb = create_reelbox(is,rows - iface_lines_bounded(is,rows),cols)) == NULL){
+				return; // FIXME
+			}
+			current_iface = is->rb;
+			push_interfaces_above(NULL,rows,cols,iface_lines_bounded(is,rows) + 1);
+			if((current_iface->prev = last_reelbox) == NULL){
+				top_reelbox = current_iface;
+			}
+			current_iface->next = NULL;
+			last_reelbox->next = current_iface;
+			last_reelbox = current_iface;
+			return;
+		}
 	}
 	rb = current_iface;
-	assert(rb);
 	// If the newly-selected interface is wholly visible, we'll not need
 	// change visibility of any interfaces. If it's above us, we'll need
-	// rotate the interfaces 1 unit, moving all. Otherwise, none need change
+	// rotate the interfaces 1 unit, moving all. Otherwise, none change
 	// position. Redraw all affected interfaces.
 	if(iface_wholly_visible_p(rows,rb)){
 		if(rb->scrline > oldrb->scrline){ // new is below old
 			assert(redraw_iface_generic(oldrb) == OK);
 			assert(redraw_iface_generic(rb) == OK);
-		}else{ // we're at the bottom
-			// We might not have a full screen -- base the new
-			// location off the old one's, which must have been the
-			// last interface in the display if we're rotating.
-			//
-			// Both have up-to-date sizes -- those aren't changing.
+		}else{ // we were at the bottom
 			if(top_reelbox->next){
 				top_reelbox->next->prev = NULL;
 				top_reelbox = top_reelbox->next;
@@ -927,32 +940,42 @@ void use_next_iface_locked(WINDOW *w,struct panel_state *ps){
 				top_reelbox = last_reelbox;
 			}
 			pull_interfaces_up(rb,rows,cols,getmaxy(rb->subwin) + 1);
-			rb->scrline = getbegy(oldrb->subwin) + getmaxy(oldrb->subwin) + 1;
+			if(last_reelbox){
+				rb->scrline = last_reelbox->scrline + getmaxy(last_reelbox->subwin) + 1;
+			}else{
+				rb->scrline = 1;
+			}
 			rb->prev = last_reelbox;
 			last_reelbox->next = rb;
 			rb->next = NULL;
 			last_reelbox = rb;
-			move_interface_generic(rb,rows,cols,rb->scrline - 1);
+			move_interface_generic(rb,rows,cols,rb->scrline - getbegy(rb->subwin));
 		}
 	}else{ // We'll need change visibilities
-		int up;
+		iface_state *is = current_iface->is;
 
-		// We need them to move up however many spaces we need
-		// to move in. We'll need one per line not currently
-		// visible, plus a boundary line if applicable (there
-		// isn't one currently, and we don't fill the screen).
-		rb->scrline = rows - iface_lines_bounded(rb->is,rows) - 1;
-		up = oldrb->scrline + iface_lines_bounded(oldrb->is,rows)
-			+ 1 - rb->scrline;
-		assert(up > 0);
-		push_interfaces_above(rb,rows,cols,-up);
-		assert(move_panel(rb->panel,rb->scrline,START_COL) != ERR);
-		if(panel_hidden(rb->panel)){
-			assert(show_panel(rb->panel) != ERR);
+		if(top_reelbox->next){
+			top_reelbox->next->prev = NULL;
+			top_reelbox = top_reelbox->next;
+		}else{
+			top_reelbox = last_reelbox;
 		}
+		push_interfaces_above(NULL,rows,cols,iface_lines_bounded(is,rows) + 1);
+		if(last_reelbox){
+			rb->scrline = last_reelbox->scrline + getmaxy(last_reelbox->subwin) + 1;
+		}else{
+			rb->scrline = 1;
+		}
+		if( (rb->prev = last_reelbox) ){
+			last_reelbox->prev = rb;
+		}else{
+			top_reelbox = rb;
+		}
+		rb->next = NULL;
+		last_reelbox = rb;
+		move_interface_generic(rb,rows,cols,rb->scrline - getbegy(rb->subwin));
 		assert(wresize(rb->subwin,iface_lines_bounded(rb->is,rows),PAD_COLS(cols)) == OK);
 		assert(replace_panel(rb->panel,rb->subwin) != ERR);
-		assert(redraw_iface_generic(oldrb) == OK);
 	}
 	if(panel_hidden(oldrb->panel)){
 		// we hid the entire panel, and thus might have space

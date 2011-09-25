@@ -499,7 +499,8 @@ void move_interface(reelbox *rb,int rows,int cols,int delta,int active){
 	int nlines,rr,targ;
        
 	is = rb->is;
-	assert(rb->is && rb->is->rb == rb);
+	assert(rb->is);
+       assert(rb->is->rb == rb);
 	if(iface_wholly_visible_p(rows,rb)){
 		assert(strcmp("tap0",is->iface->name) || rb->scrline < rows - 1);
 		assert(move_panel(rb->panel,rb->scrline,1) != ERR);
