@@ -949,28 +949,11 @@ void use_next_iface_locked(WINDOW *w,struct panel_state *ps){
 			last_reelbox = rb;
 			move_interface_generic(rb,rows,cols,rb->scrline - getbegy(rb->subwin));
 		}
-	}else{ // partially visible at the top
+	}else{ // partially visible at the bottom
 		iface_state *is = current_iface->is;
 
-		if(top_reelbox->next){
-			top_reelbox->next->prev = NULL;
-			top_reelbox = top_reelbox->next;
-		}else{
-			top_reelbox = last_reelbox;
-		}
-		push_interfaces_above(NULL,rows,cols,-iface_lines_bounded(is,rows) - 1);
-		if(last_reelbox){
-			rb->scrline = last_reelbox->scrline + getmaxy(last_reelbox->subwin) + 1;
-		}else{
-			rb->scrline = 1;
-		}
-		if( (rb->prev = last_reelbox) ){
-			last_reelbox->prev = rb;
-		}else{
-			top_reelbox = rb;
-		}
-		rb->next = NULL;
-		last_reelbox = rb;
+		rb->scrline = (rows - 1) - iface_lines_bounded(is,rows);
+		push_interfaces_above(NULL,rows,cols,getmaxy(rb->subwin) - iface_lines_bounded(is,rows));
 		move_interface_generic(rb,rows,cols,rb->scrline - getbegy(rb->subwin));
 		assert(wresize(rb->subwin,iface_lines_bounded(rb->is,rows),PAD_COLS(cols)) == OK);
 		assert(replace_panel(rb->panel,rb->subwin) != ERR);
@@ -1106,11 +1089,14 @@ void check_consistency(void){
 		assert(!top_reelbox->is->prev->rb || top_reelbox->is->prev->rb == last_reelbox);
 	}
 	for(rb = top_reelbox ; rb ; rb = rb->next){
+		assert(rb->is);
+		assert(rb->is->rb == rb);
 		assert(!sawcur || rb != current_iface);
 		if(rb == current_iface){
 			sawcur = 1;
 		}
 		assert(rb->subwin);
+		assert(getbegy(rb->subwin) == rb->scrline);
 		if(getbegy(rb->subwin) != expect){
 			fprintf(stderr,"\n\n\n\n UH-OH had %d/%d wanted %d\n",
 					getbegy(rb->subwin),rb->scrline,expect);
