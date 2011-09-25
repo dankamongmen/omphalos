@@ -266,6 +266,8 @@ static void
 pull_interfaces_down(reelbox *puller,int rows,int cols,int delta){
 	reelbox *rb;
 
+	fprintf(stderr,"pulling down %d from %s@%d\n",delta,puller ? puller->is->iface->name : "all",
+			puller ? puller->scrline : rows);
 	for(rb = puller->prev ; rb ; rb = rb->prev){
 		rb->scrline += delta;
 		move_interface_generic(rb,rows,cols,delta);
@@ -283,6 +285,8 @@ static void
 pull_interfaces_up(reelbox *puller,int rows,int cols,int delta){
 	reelbox *rb;
 
+	fprintf(stderr,"pulling up %d from %s@%d\n",delta,puller ? puller->is->iface->name : "all",
+			puller ? puller->scrline : rows);
 	for(rb = puller ? puller->next : top_reelbox ; rb ; rb = rb->next){
 		rb->scrline -= delta;
 		move_interface_generic(rb,rows,cols,-delta);
@@ -304,6 +308,8 @@ push_interfaces_below(reelbox *pusher,int rows,int cols,int delta){
 	reelbox *rb;
 
 	assert(delta > 0);
+	fprintf(stderr,"pushing down %d from %s@%d\n",delta,pusher ? pusher->is->iface->name : "all",
+			pusher ? pusher->scrline : 0);
 	rb = last_reelbox;
 	while(rb){
 		if(rb == pusher){
@@ -312,6 +318,7 @@ push_interfaces_below(reelbox *pusher,int rows,int cols,int delta){
 		rb->scrline += delta;
 		move_interface_generic(rb,rows,cols,delta);
 		if(panel_hidden(rb->panel)){
+			fprintf(stderr,"HID THE LAST!\n");
 			if((last_reelbox = rb->prev) == NULL){
 				top_reelbox = NULL;
 			}else{
@@ -344,6 +351,8 @@ push_interfaces_above(reelbox *pusher,int rows,int cols,int delta){
 	reelbox *rb;
 
 	assert(delta < 0);
+	fprintf(stderr,"pushing up %d from %s@%d\n",delta,pusher ? pusher->is->iface->name : "all",
+			pusher ? pusher->scrline : rows);
 	rb = top_reelbox;
 	while(rb){
 		if(rb == pusher){
@@ -352,6 +361,7 @@ push_interfaces_above(reelbox *pusher,int rows,int cols,int delta){
 		rb->scrline += delta;
 		move_interface_generic(rb,rows,cols,delta);
 		if(panel_hidden(rb->panel)){
+			fprintf(stderr,"HID THE TOP!\n");
 			if((top_reelbox = rb->next) == NULL){
 				last_reelbox = NULL;
 			}else{
@@ -390,6 +400,7 @@ resize_iface(reelbox *rb){
 	is = rb->is;
 	getmaxyx(stdscr,rows,cols);
 	const int nlines = iface_lines_bounded(is,rows);
+	fprintf(stderr,"resizing %s@%d from %d to %d\n",is->iface->name,rb->scrline,getmaxy(rb->subwin),nlines);
 	getmaxyx(rb->subwin,subrows,subcols);
 	assert(subcols); // FIXME
 	if(nlines < subrows){ // Shrink the interface
@@ -462,13 +473,15 @@ resize_iface(reelbox *rb){
 					push_interfaces_above(rb,rows,cols,-delta);
 					rb->scrline -= delta;
 					move_interface_generic(rb,rows,cols,-delta);
-					assert(move_panel(rb->panel,rb->scrline,1) != ERR);
 				}
 			}
 			subrows += delta;
 		}
-		assert(wresize(rb->subwin,subrows,PAD_COLS(cols)) != ERR);
-		assert(replace_panel(rb->panel,rb->subwin) != ERR);
+		if(subrows != getmaxy(rb->subwin)){
+			assert(wresize(rb->subwin,subrows,PAD_COLS(cols)) != ERR);
+			assert(replace_panel(rb->panel,rb->subwin) != ERR);
+		}
+		redraw_iface_generic(rb);
 	}
 	return OK;
 }
@@ -709,11 +722,13 @@ void interface_removed_locked(iface_state *is,struct panel_state *ps){
 	is->next->prev = is->prev;
 	is->prev->next = is->next;
 	if(!rb){
+		fprintf(stderr,"Removed hidden interface\n");
 		return;
 	}
 	//const int visible = !panel_hidden(rb->panel);
 	//int rows,cols;
 
+	fprintf(stderr,"Removing iface at %d\n",rb->scrline);
 	free_iface_state(is); // clears l2/l3 nodes
 	--count_interface;
 	wclear(rb->subwin);
@@ -896,6 +911,8 @@ void use_next_iface_locked(WINDOW *w,struct panel_state *ps){
 	if(!current_iface || current_iface->is->next == current_iface->is){
 		return;
 	}
+	fprintf(stderr,"Want next interface (%s->%s)\n",current_iface->is->iface->name,
+			current_iface->is->next->iface->name);
 	getmaxyx(w,rows,cols);
 	oldrb = current_iface;
 	// Don't redraw the old inteface yet; it might have been moved/hidden
@@ -907,6 +924,9 @@ void use_next_iface_locked(WINDOW *w,struct panel_state *ps){
 		if(is->rb){
 			current_iface = is->rb;
 		}else{
+			int spacebot = rows - (current_iface->scrline + getmaxy(current_iface->subwin));
+			assert(spacebot >= 0);
+			assert(spacebot < 2);
 			if((is->rb = create_reelbox(is,rows,(rows - 1) - iface_lines_bounded(is,rows),cols)) == NULL){
 				return; // FIXME
 			}
@@ -957,11 +977,12 @@ void use_next_iface_locked(WINDOW *w,struct panel_state *ps){
 		if(rb->scrline > oldrb->scrline){
 			iface_state *is = current_iface->is;
 
-			rb->scrline = rows - iface_lines_bounded(is,rows) + 1;
-			push_interfaces_above(NULL,rows,cols,getmaxy(rb->subwin) - iface_lines_bounded(is,rows));
+			rb->scrline = rows - (iface_lines_bounded(is,rows) + 1);
+			push_interfaces_above(rb,rows,cols,getmaxy(rb->subwin) - iface_lines_bounded(is,rows));
 			move_interface_generic(rb,rows,cols,getbegy(rb->subwin) - rb->scrline);
 			assert(wresize(rb->subwin,iface_lines_bounded(rb->is,rows),PAD_COLS(cols)) == OK);
 			assert(replace_panel(rb->panel,rb->subwin) != ERR);
+			assert(redraw_iface_generic(rb) == OK);
 		}else{
 			assert(0);
 		}
@@ -988,6 +1009,8 @@ void use_prev_iface_locked(WINDOW *w,struct panel_state *ps){
 	if(!current_iface || current_iface->is->next == current_iface->is){
 		return;
 	}
+	fprintf(stderr,"Want previous interface (%s->%s)\n",current_iface->is->iface->name,
+			current_iface->is->prev->iface->name);
 	getmaxyx(w,rows,cols);
 	oldrb = current_iface;
 	// Don't redraw the old interface yet; it might have been moved/hidden
@@ -1063,6 +1086,7 @@ void use_prev_iface_locked(WINDOW *w,struct panel_state *ps){
 			move_interface_generic(rb,rows,cols,getbegy(rb->subwin) - rb->scrline);
 			assert(wresize(rb->subwin,iface_lines_bounded(rb->is,rows),PAD_COLS(cols)) == OK);
 			assert(replace_panel(rb->panel,rb->subwin) != ERR);
+			assert(redraw_iface_generic(rb) == OK);
 		}
 	}
 	if(panel_hidden(oldrb->panel)){
@@ -1113,13 +1137,13 @@ void check_consistency(void){
 		assert(rb->subwin);
 		assert(getbegy(rb->subwin) == rb->scrline);
 		if(getbegy(rb->subwin) != expect){
-			fprintf(stderr,"\n\n\n\n UH-OH had %d/%d wanted %d\n",
-					getbegy(rb->subwin),rb->scrline,expect);
-		}
-		if(getbegy(rb->subwin) != expect){
 			if(expect == 1){
 				expect = 2;
 			}
+		}
+		if(getbegy(rb->subwin) != expect){
+			fprintf(stderr,"\n\n\n\n UH-OH had %d/%d wanted %d\n",
+					getbegy(rb->subwin),rb->scrline,expect);
 		}
 		assert(getbegy(rb->subwin) == expect);
 		expect += getmaxy(rb->subwin) + 1;

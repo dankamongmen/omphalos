@@ -419,7 +419,7 @@ print_iface_state(const interface *i,const iface_state *is,WINDOW *w,
 	char buf[U64STRLEN + 1],buf2[U64STRLEN + 1];
 	unsigned long usecdomain;
 
-	if(partial < -1 || rows < 2){
+	if(rows < 2 || partial < -1){
 		return;
 	}
 	assert(wattrset(w,A_BOLD | COLOR_PAIR(IFACE_COLOR)) != ERR);
@@ -453,8 +453,9 @@ int redraw_iface(const iface_state *is,const reelbox *rb,int active){
 		return OK;
 	}
 	getmaxyx(stdscr,scrrows,scrcols);
-	if(rb->scrline <= 1 && iface_lines_bounded(is,scrrows) > getmaxy(rb->subwin)){ // no top
-		partial = -1;
+	assert(rb->scrline >= 1);
+	if(rb->scrline == 1 && iface_lines_bounded(is,scrrows) > getmaxy(rb->subwin)){ // no top
+		partial = getmaxy(rb->subwin) - iface_lines_bounded(is,scrrows);
 	}else if(iface_wholly_visible_p(scrrows,rb) || active){ // completely visible
 		partial = 0;
 	}else{
@@ -496,8 +497,11 @@ void move_interface(reelbox *rb,int rows,int cols,int delta,int active){
 	int nlines,rr,targ;
        
 	is = rb->is;
+	fprintf(stderr,"  moving %s from %d to %d (%d)\n",is->iface->name,
+			getbegy(rb->subwin),rb->scrline,delta);
 	assert(rb->is);
 	assert(rb->is->rb == rb);
+	assert(werase(rb->subwin) != ERR);
 	if(iface_wholly_visible_p(rows,rb)){
 		assert(move_panel(rb->panel,rb->scrline,1) != ERR);
 		if(getmaxy(rb->subwin) != iface_lines_bounded(is,rows)){
@@ -510,7 +514,6 @@ void move_interface(reelbox *rb,int rows,int cols,int delta,int active){
 		return;
 	}
 	rr = getmaxy(rb->subwin);
-	assert(werase(rb->subwin) != ERR);
 	if(delta > 0){
 		if(rb->scrline >= rows - 1){
 			assert(hide_panel(rb->panel) != ERR);
@@ -558,9 +561,10 @@ int lines_for_interface(const iface_state *is){
 int iface_wholly_visible_p(int rows,const reelbox *rb){
 	const iface_state *is = rb->is;
 
+	// return iface_lines_bounded(is,rows) <= getmaxy(rb->subwin);
 	if(rb->scrline + iface_lines_bounded(is,rows) >= rows){
 		return 0;
-	}else if(rb->scrline < 1){
+	}else if(rb->scrline <= 1 && iface_lines_bounded(is,rows) != getmaxy(){
 		return 0;
 	}
 	return 1;
