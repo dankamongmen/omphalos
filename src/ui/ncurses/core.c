@@ -957,12 +957,13 @@ void use_next_iface_locked(WINDOW *w,struct panel_state *ps){
 		if(rb->scrline > oldrb->scrline){
 			iface_state *is = current_iface->is;
 
-			rb->scrline = (rows - 1) - iface_lines_bounded(is,rows);
+			rb->scrline = rows - iface_lines_bounded(is,rows) + 1;
 			push_interfaces_above(NULL,rows,cols,getmaxy(rb->subwin) - iface_lines_bounded(is,rows));
-			move_interface_generic(rb,rows,cols,rb->scrline - getbegy(rb->subwin));
+			move_interface_generic(rb,rows,cols,getbegy(rb->subwin) - rb->scrline);
 			assert(wresize(rb->subwin,iface_lines_bounded(rb->is,rows),PAD_COLS(cols)) == OK);
 			assert(replace_panel(rb->panel,rb->subwin) != ERR);
 		}else{
+			assert(0);
 		}
 	}
 	if( (delta = top_space_p(rows)) ){
@@ -1114,6 +1115,11 @@ void check_consistency(void){
 		if(getbegy(rb->subwin) != expect){
 			fprintf(stderr,"\n\n\n\n UH-OH had %d/%d wanted %d\n",
 					getbegy(rb->subwin),rb->scrline,expect);
+		}
+		if(getbegy(rb->subwin) != expect){
+			if(expect == 1){
+				expect = 2;
+			}
 		}
 		assert(getbegy(rb->subwin) == expect);
 		expect += getmaxy(rb->subwin) + 1;
