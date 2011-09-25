@@ -59,10 +59,11 @@ top_space_p(int rows){
 	return getbegy(top_reelbox->subwin) - 1;
 }
 
+// Returns the amount of space available at the bottom.
 static inline int
 bottom_space_p(int rows){
 	if(!last_reelbox){
-		return rows - 2;
+		return rows - 1;
 	}
 	if(getmaxy(last_reelbox->subwin) + getbegy(last_reelbox->subwin) >= rows - 1){
 		return 0;
@@ -309,17 +310,13 @@ push_interfaces_below(reelbox *pusher,int rows,int cols,int delta){
 		}
 		rb->scrline += delta;
 		move_interface_generic(rb,rows,cols,delta);
-	}
-	while(panel_hidden(last_reelbox->panel)){
-		reelbox *t;
-
-		t = last_reelbox->prev;
-		free_reelbox(last_reelbox);
-		if((last_reelbox = t) == NULL){
-			top_reelbox = NULL;
-			break;
-		}else{
-			t->next = NULL;
+		if(panel_hidden(rb->panel)){
+			if((last_reelbox = rb->prev) == NULL){
+				top_reelbox = NULL;
+			}else{
+				last_reelbox->next = NULL;
+			}
+			free_reelbox(last_reelbox);
 		}
 	}
 	// Now, if our delta was negative, see if we pulled any down below us
@@ -621,19 +618,6 @@ int packet_cb_locked(const interface *i,omphalos_packet *op,struct panel_state *
 	return 1;
 }
 
-static inline int
-room_for_newbox(int rows){
-	if(last_reelbox){
-		int r = last_reelbox->scrline + getmaxy(last_reelbox->subwin) + 1;
-
-		if(r >= rows - 1){
-			return 0;
-		}
-		return r;
-	}
-	return 1;
-}
-
 void *interface_cb_locked(interface *i,iface_state *ret,struct panel_state *ps){
 	reelbox *rb;
 
@@ -642,14 +626,13 @@ void *interface_cb_locked(interface *i,iface_state *ret,struct panel_state *ps){
 			int newrb,rows,cols;
 
 			getmaxyx(stdscr,rows,cols);
-			if( (newrb = room_for_newbox(rows)) ){
+			if( (newrb = bottom_space_p(rows)) ){
+				newrb = rows - newrb;
 				if((rb = create_reelbox(ret,newrb,cols)) == NULL){
 					free_iface_state(ret);
 					free(ret);
 					return NULL;
 				}
-				wstatus_locked(stdscr,"adding %s",i->name);
-				doupdate();
 				if(last_reelbox){
 					// set up the iface list entries
 					ret->next = last_reelbox->is->next;
@@ -673,10 +656,11 @@ void *interface_cb_locked(interface *i,iface_state *ret,struct panel_state *ps){
 				// should they intersect.
 				assert(bottom_panel(rb->panel) == OK);
 			}else{ // insert it after the last visible one, no rb
-				ret->prev = last_reelbox->is;
-				last_reelbox->is->next->prev = ret;
-				ret->next = last_reelbox->is->next;
-				last_reelbox->is->next = ret;
+				ret->next = top_reelbox->is;
+				top_reelbox->is->prev->next = ret;
+				ret->prev = top_reelbox->is->prev;
+				top_reelbox->is->prev = ret;
+				ret->rb = NULL;
 				rb = NULL;
 			}
 			++count_interface;
@@ -902,12 +886,13 @@ void use_next_iface_locked(WINDOW *w,struct panel_state *ps){
 	int rows,cols;
 	reelbox *rb;
 
-	if(!current_iface || top_reelbox == last_reelbox){
+	if(!current_iface || current_iface->is->next == current_iface->is){
 		return;
 	}
 	getmaxyx(w,rows,cols);
 	oldrb = current_iface;
 	// Don't redraw the old inteface yet; it might have been moved/hidden
+	// FIXME need replace all this -- see use_prev_iface_locked();
 	if((current_iface = current_iface->next) == NULL){
 		current_iface = top_reelbox;
 	}
@@ -927,8 +912,12 @@ void use_next_iface_locked(WINDOW *w,struct panel_state *ps){
 			// last interface in the display if we're rotating.
 			//
 			// Both have up-to-date sizes -- those aren't changing.
-			top_reelbox->next->prev = NULL;
-			top_reelbox = top_reelbox->next;
+			if(top_reelbox->next){
+				top_reelbox->next->prev = NULL;
+				top_reelbox = top_reelbox->next;
+			}else{
+				top_reelbox = last_reelbox;
+			}
 			pull_interfaces_up(rb,rows,cols,getmaxy(rb->subwin) + 1);
 			rb->scrline = getbegy(oldrb->subwin) + getmaxy(oldrb->subwin) + 1;
 			rb->prev = last_reelbox;
@@ -973,17 +962,34 @@ void use_prev_iface_locked(WINDOW *w,struct panel_state *ps){
 	int rows,cols;
 	reelbox *rb;
 
-	if(!current_iface || top_reelbox == last_reelbox){
+	if(!current_iface || current_iface->is->next == current_iface->is){
 		return;
 	}
 	getmaxyx(w,rows,cols);
 	oldrb = current_iface;
 	// Don't redraw the old interface yet; it might have been moved/hidden
-	if((current_iface = current_iface->prev) == NULL){
-		current_iface = last_reelbox;
+	if(current_iface->prev){
+		current_iface = current_iface->prev;
+	}else{
+		iface_state *is = current_iface->is->prev;
+
+		if(is->rb){
+			current_iface = is->rb;
+		}else{
+			if((is->rb = create_reelbox(is,1,cols)) == NULL){
+				return; // FIXME
+			}
+			current_iface = is->rb;
+			push_interfaces_below(NULL,rows,cols,iface_lines_bounded(is,rows));
+			if((current_iface->next = top_reelbox) == NULL){
+				last_reelbox = current_iface;
+			}
+			current_iface->prev = NULL;
+			top_reelbox = current_iface;
+			return;
+		}
 	}
 	rb = current_iface;
-	assert(rb);
 	// If the newly-selected interface is wholly visible, we'll not need
 	// change visibility of any interfaces. If it's below us, we'll need
 	// rotate the interfaces 1 unit, moving all. Otherwise, none need change
@@ -995,8 +1001,12 @@ void use_prev_iface_locked(WINDOW *w,struct panel_state *ps){
 		}else{ // we were at the top
 			// Selecting the previous interface is simpler -- we
 			// take one from the bottom, and stick it in row 1.
-			last_reelbox->prev->next = NULL;
-			last_reelbox = last_reelbox->prev;
+			if(last_reelbox->prev){
+				last_reelbox->prev->next = NULL;
+				last_reelbox = last_reelbox->prev;
+			}else{
+				last_reelbox = top_reelbox;
+			}
 			pull_interfaces_down(rb,rows,cols,getmaxy(rb->subwin) + 1);
 			rb->scrline = 1;
 			rb->next = top_reelbox;
