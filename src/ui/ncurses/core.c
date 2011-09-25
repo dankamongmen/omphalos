@@ -913,7 +913,7 @@ void use_next_iface_locked(WINDOW *w,struct panel_state *ps){
 				return; // FIXME
 			}
 			current_iface = is->rb;
-			push_interfaces_above(NULL,rows,cols,iface_lines_bounded(is,rows) + 1);
+			push_interfaces_above(NULL,rows,cols,-iface_lines_bounded(is,rows) - 1);
 			if((current_iface->prev = last_reelbox) == NULL){
 				top_reelbox = current_iface;
 			}
@@ -960,7 +960,7 @@ void use_next_iface_locked(WINDOW *w,struct panel_state *ps){
 		}else{
 			top_reelbox = last_reelbox;
 		}
-		push_interfaces_above(NULL,rows,cols,iface_lines_bounded(is,rows) + 1);
+		push_interfaces_above(NULL,rows,cols,-iface_lines_bounded(is,rows) - 1);
 		if(last_reelbox){
 			rb->scrline = last_reelbox->scrline + getmaxy(last_reelbox->subwin) + 1;
 		}else{
