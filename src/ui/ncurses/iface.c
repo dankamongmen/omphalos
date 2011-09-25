@@ -303,7 +303,6 @@ iface_box(const interface *i,const iface_state *is,WINDOW *w,int active,
 	if(partial == 0){
 		assert(bevel(w) == OK);
 	}else if(partial < 0){
-		assert(0);
 		assert(bevel_notop(w) == OK);
 	}else{
 		assert(bevel_nobottom(w) == OK);
@@ -454,7 +453,7 @@ int redraw_iface(const iface_state *is,const reelbox *rb,int active){
 		return OK;
 	}
 	getmaxyx(stdscr,scrrows,scrcols);
-	if(rb->scrline >= scrrows){ // no top
+	if(rb->scrline <= 1 && iface_lines_bounded(is,scrrows) > getmaxy(rb->subwin)){ // no top
 		partial = -1;
 	}else if(iface_wholly_visible_p(scrrows,rb) || active){ // completely visible
 		partial = 0;
@@ -464,13 +463,11 @@ int redraw_iface(const iface_state *is,const reelbox *rb,int active){
 	getmaxyx(rb->subwin,rows,cols);
 	assert(cols < scrcols); // FIXME
 	assert(werase(rb->subwin) != ERR);
-	if(partial >= 0){
-		iface_box(i,is,rb->subwin,active,partial);
-		if(interface_up_p(i)){
-			print_iface_state(i,is,rb->subwin,rows,cols,partial);
-		}
-		print_iface_hosts(i,is,rb->subwin,0/*rows*/,cols,partial);
+	iface_box(i,is,rb->subwin,active,partial);
+	if(interface_up_p(i)){
+		print_iface_state(i,is,rb->subwin,rows,cols,partial);
 	}
+	print_iface_hosts(i,is,rb->subwin,0/*rows*/,cols,partial);
 	return OK;
 }
 
