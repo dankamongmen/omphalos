@@ -739,13 +739,11 @@ void interface_removed_locked(iface_state *is,struct panel_state *ps){
 		getmaxyx(stdscr,scrrows,scrcols);
 		// we'll need pull other interfaces up or down
 		if(rb == current_iface || rb->scrline > current_iface->scrline){
-			// FIXME don't count the +1 when we extend to the bottom
-			// of the screen!
 			pull_interfaces_up(rb,scrrows,scrcols,getmaxy(rb->subwin) + 1);
 		}else{ // pull them down; we're above current_iface
 			int delta;
 
-			pull_interfaces_down(rb,scrrows,scrcols,getmaxy(rb->subwin));
+			pull_interfaces_down(rb,scrrows,scrcols,getmaxy(rb->subwin) + 1);
 			if( (delta = top_space_p(scrrows)) ){
 				pull_interfaces_up(NULL,scrrows,scrcols,delta);
 			}
@@ -951,7 +949,7 @@ void use_next_iface_locked(WINDOW *w,struct panel_state *ps){
 			last_reelbox = rb;
 			move_interface_generic(rb,rows,cols,rb->scrline - getbegy(rb->subwin));
 		}
-	}else{ // We'll need change visibilities
+	}else{ // partially visible at the top
 		iface_state *is = current_iface->is;
 
 		if(top_reelbox->next){
@@ -1047,7 +1045,7 @@ void use_prev_iface_locked(WINDOW *w,struct panel_state *ps){
 			top_reelbox = rb;
 			move_interface_generic(rb,rows,cols,getbegy(rb->subwin) - rb->scrline);
 		}
-	}else{ // We'll need change visibilities
+	}else{ // partially visible at the bottom
 		iface_state *is = current_iface->is;
 
 		if(last_reelbox->prev){
