@@ -937,6 +937,7 @@ void use_next_iface_locked(WINDOW *w,struct panel_state *ps){
 			if( (delta = top_space_p(rows)) ){
 				pull_interfaces_up(NULL,rows,cols,-delta);
 			}
+			redraw_iface_generic(is->rb);
 			return;
 		}
 	}
@@ -968,8 +969,8 @@ void use_next_iface_locked(WINDOW *w,struct panel_state *ps){
 			last_reelbox = rb;
 			move_interface_generic(rb,rows,cols,rb->scrline - getbegy(rb->subwin));
 		}
-	}else{ // partially visible
-		if(rb->scrline > oldrb->scrline){
+	}else{ // new is partially visible...
+		if(rb->scrline > oldrb->scrline){ // ...at the bottom
 			iface_state *is = current_iface->is;
 
 			rb->scrline = rows - (iface_lines_bounded(is,rows) + 1);
@@ -978,8 +979,20 @@ void use_next_iface_locked(WINDOW *w,struct panel_state *ps){
 			assert(wresize(rb->subwin,iface_lines_bounded(rb->is,rows),PAD_COLS(cols)) == OK);
 			assert(replace_panel(rb->panel,rb->subwin) != ERR);
 			assert(redraw_iface_generic(rb) == OK);
-		}else{
-			assert(0);
+		}else{ // ...at the top
+			assert(top_reelbox == rb);
+			rb->scrline = rows - (iface_lines_bounded(rb->is,rows) + 1);
+			top_reelbox->next->prev = NULL;
+			top_reelbox = top_reelbox->next;
+			push_interfaces_above(NULL,rows,cols,-(iface_lines_bounded(rb->is,rows) + 1));
+			rb->next = NULL;
+			rb->prev = last_reelbox;
+			last_reelbox->next = rb;
+			last_reelbox = rb;
+			move_interface_generic(rb,rows,cols,rb->scrline - getbegy(rb->subwin) - rb->scrline);
+			assert(wresize(rb->subwin,iface_lines_bounded(rb->is,rows),PAD_COLS(cols)) == OK);
+			assert(replace_panel(rb->panel,rb->subwin) != ERR);
+			assert(redraw_iface_generic(rb) == OK);
 		}
 	}
 	if( (delta = top_space_p(rows)) ){
