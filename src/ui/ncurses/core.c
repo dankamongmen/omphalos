@@ -986,8 +986,9 @@ void use_next_iface_locked(WINDOW *w,struct panel_state *ps){
 			top_reelbox = top_reelbox->next;
 			push_interfaces_above(NULL,rows,cols,-(iface_lines_bounded(rb->is,rows) + 1));
 			rb->next = NULL;
-			rb->prev = last_reelbox;
-			last_reelbox->next = rb;
+			if( (rb->prev = last_reelbox) ){
+				last_reelbox->next = rb;
+			}
 			last_reelbox = rb;
 			move_interface_generic(rb,rows,cols,rb->scrline - getbegy(rb->subwin) - rb->scrline);
 			assert(wresize(rb->subwin,iface_lines_bounded(rb->is,rows),PAD_COLS(cols)) == OK);
@@ -1076,6 +1077,7 @@ void use_prev_iface_locked(WINDOW *w,struct panel_state *ps){
 		iface_state *is = current_iface->is;
 
 		if(rb->scrline < oldrb->scrline){ // new is above old
+			assert(0);
 		}else{
 			if(last_reelbox->prev){
 				last_reelbox->prev->next = NULL;
