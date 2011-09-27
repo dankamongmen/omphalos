@@ -386,6 +386,7 @@ void reap_thread(const omphalos_iface *octx,interface *i){
 	//  - we safely close the fd and free the pmarsh
 	pthread_mutex_lock(&i->pmarsh->lock);
 		if(!i->pmarsh->cancelled){
+			fprintf(stderr,"TID[%s]: %lu\n",i->name,i->pmarsh->tid);
 			if( (errno = pthread_kill(i->pmarsh->tid,SIGCHLD)) ){
 				octx->diagnostic("Couldn't signal thread (%s?)",strerror(errno));
 			} // FIXME check return codes here
@@ -440,6 +441,7 @@ prepare_packet_sockets(const omphalos_iface *octx,interface *iface,int idx){
 				iface->txidx = 0;
 				if(pthread_create(&iface->pmarsh->tid,NULL,
 						psocket_thread,iface->pmarsh) == 0){
+					fprintf(stderr,"TID[%s]: %lu\n",iface->name,iface->pmarsh->tid);
 					return 0;
 				}
 			}

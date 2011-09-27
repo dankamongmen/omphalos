@@ -27,8 +27,8 @@ create_reelbox(iface_state *is,int rows,int scrline,int cols){
 	reelbox *ret;
 
 	if( (ret = malloc(sizeof(*ret))) ){
-		if((ret->subwin = newwin(iface_lines_bounded(is,rows),PAD_COLS(cols),scrline,START_COL)) == NULL ||
-				(ret->panel = new_panel(ret->subwin)) == NULL){
+		if(((ret->subwin = newwin(iface_lines_bounded(is,rows),PAD_COLS(cols),scrline,START_COL)) == NULL)
+				|| (ret->panel = new_panel(ret->subwin)) == NULL){
 			delwin(ret->subwin);
 			free(ret);
 			return NULL;
@@ -246,6 +246,10 @@ iface_details(WINDOW *hw,const interface *i,int rows){
 static void
 free_reelbox(reelbox *rb){
 	if(rb){
+		fprintf(stderr,"KILLING IT\n");
+		assert(rb->is);
+		assert(rb->is->rb == rb);
+
 		rb->is->rb = NULL;
 		assert(delwin(rb->subwin) == OK);
 		assert(del_panel(rb->panel) == OK);
@@ -266,7 +270,7 @@ static void
 pull_interfaces_down(reelbox *puller,int rows,int cols,int delta){
 	reelbox *rb;
 
-	fprintf(stderr,"pulling down %d from %s@%d\n",delta,puller ? puller->is->iface->name : "all",
+	fprintf(stderr,"pulling down %d from %s@%d\n",delta,puller ? puller->is ? puller->is->iface->name : "destroyed" : "all",
 			puller ? puller->scrline : rows);
 	for(rb = puller->prev ; rb ; rb = rb->prev){
 		rb->scrline += delta;
@@ -285,7 +289,7 @@ static void
 pull_interfaces_up(reelbox *puller,int rows,int cols,int delta){
 	reelbox *rb;
 
-	fprintf(stderr,"pulling up %d from %s@%d\n",delta,puller ? puller->is->iface->name : "all",
+	fprintf(stderr,"pulling up %d from %s@%d\n",delta,puller ? puller->is ? puller->is->iface->name : "destroyed" : "all",
 			puller ? puller->scrline : rows);
 	for(rb = puller ? puller->next : top_reelbox ; rb ; rb = rb->next){
 		rb->scrline -= delta;
@@ -308,7 +312,7 @@ push_interfaces_below(reelbox *pusher,int rows,int cols,int delta){
 	reelbox *rb;
 
 	assert(delta > 0);
-	fprintf(stderr,"pushing down %d from %s@%d\n",delta,pusher ? pusher->is->iface->name : "all",
+	fprintf(stderr,"pushing down %d from %s@%d\n",delta,pusher ? pusher->is ? pusher->is->iface->name : "destroyed" : "all",
 			pusher ? pusher->scrline : 0);
 	rb = last_reelbox;
 	while(rb){
@@ -351,7 +355,7 @@ push_interfaces_above(reelbox *pusher,int rows,int cols,int delta){
 	reelbox *rb;
 
 	assert(delta < 0);
-	fprintf(stderr,"pushing up %d from %s@%d\n",delta,pusher ? pusher->is->iface->name : "all",
+	fprintf(stderr,"pushing up %d from %s@%d\n",delta,pusher ? pusher->is ? pusher->is->iface->name : "destroyed" : "all",
 			pusher ? pusher->scrline : rows);
 	rb = top_reelbox;
 	while(rb){
@@ -712,40 +716,22 @@ void *interface_cb_locked(interface *i,iface_state *ret,struct panel_state *ps){
 }
 
 void interface_removed_locked(iface_state *is,struct panel_state *ps){
+	int scrrows,scrcols;
 	reelbox *rb;
 	
 	if(!is){
 		return;
 	}
 	rb = is->rb;
-	free(is);
-	is->next->prev = is->prev;
-	is->prev->next = is->next;
 	if(!rb){
 		fprintf(stderr,"Removed hidden interface\n");
-		return;
-	}
-	//const int visible = !panel_hidden(rb->panel);
-	//int rows,cols;
+	}else{
+		//const int visible = !panel_hidden(rb->panel);
+		//int rows,cols;
 
-	fprintf(stderr,"Removing iface at %d\n",rb->scrline);
-	free_iface_state(is); // clears l2/l3 nodes
-	--count_interface;
-	assert(werase(rb->subwin) == OK);
-	screen_update();
-	del_panel(rb->panel);
-	//getmaxyx(rb->subwin,rows,cols);
-	delwin(rb->subwin);
-	if(rb->next || rb->prev){
-		int scrrows,scrcols;
-
-		// First, splice it out of the list
-		if(rb->next){
-			rb->next->prev = rb->prev;
-		}
-		if(rb->prev){
-			rb->prev->next = rb->next;
-		}
+		fprintf(stderr,"Removing iface at %d\n",rb->scrline);
+		assert(werase(rb->subwin) == OK);
+		screen_update(); // FIXME kill; here for debugging
 		if(top_reelbox == rb){
 			top_reelbox = rb->next;
 		}
@@ -753,32 +739,50 @@ void interface_removed_locked(iface_state *is,struct panel_state *ps){
 			last_reelbox = rb->prev;
 		}
 		getmaxyx(stdscr,scrrows,scrcols);
-		// we'll need pull other interfaces up or down
-		if(rb == current_iface || rb->scrline > current_iface->scrline){
-			pull_interfaces_up(rb,scrrows,scrcols,getmaxy(rb->subwin) + 1);
-		}else{ // pull them down; we're above current_iface
-			int delta;
+		// FIXME this ought be unconditional
+		if(rb->next || rb->prev){
+			// First, splice it out of the list
+			if(rb->next){
+				rb->next->prev = rb->prev;
+			}
+			if(rb->prev){
+				rb->prev->next = rb->next;
+			}
+			fprintf(stderr,"R/C: %d/%d\n",scrrows,scrcols);
+			// we'll need pull other interfaces up or down
+			if(rb == current_iface){
+				// FIXME need do all the stuff we do in _next_/_prev_
+				if((current_iface = rb->next) == NULL){
+					current_iface = rb->prev;
+				}
+				pull_interfaces_up(rb,scrrows,scrcols,getmaxy(rb->subwin) + 1);
+				// give the details window to new current_iface
+				if(ps->p){
+					iface_details(panel_window(ps->p),get_current_iface(),ps->ysize);
+				}
+			}else if(rb->scrline > current_iface->scrline){
+				pull_interfaces_up(rb,scrrows,scrcols,getmaxy(rb->subwin) + 1);
+			}else{ // pull them down; we're above current_iface
+				int delta;
 
-			pull_interfaces_down(rb,scrrows,scrcols,getmaxy(rb->subwin) + 1);
-			if( (delta = top_space_p(scrrows)) ){
-				pull_interfaces_up(NULL,scrrows,scrcols,delta);
+				pull_interfaces_down(rb,scrrows,scrcols,getmaxy(rb->subwin) + 1);
+				if( (delta = top_space_p(scrrows)) ){
+					pull_interfaces_up(NULL,scrrows,scrcols,delta);
+				}
 			}
+		}else{
+			// If details window exists, blank it FIXME
+			assert(current_iface == rb);
+			current_iface = NULL;
 		}
-		if(rb == current_iface){
-			if((current_iface = rb->prev) == NULL){
-				current_iface = rb->next;
-			}
-			// give the details window to new current_iface
-			if(ps->p){
-				iface_details(panel_window(ps->p),get_current_iface(),ps->ysize);
-			}
-		}
-	}else{
-		// If details window exists, destroy it FIXME
-		top_reelbox = last_reelbox = current_iface = NULL;
+		free_reelbox(rb);
 	}
+	free_iface_state(is); // clears l2/l3 nodes
+	is->next->prev = is->prev;
+	is->prev->next = is->next;
+	free(is);
+	--count_interface;
 	draw_main_window(stdscr); // Update the device count
-	free(rb);
 }
 
 struct l2obj *neighbor_callback_locked(const interface *i,struct l2host *l2){
