@@ -386,7 +386,6 @@ void reap_thread(const omphalos_iface *octx,interface *i){
 	//  - we safely close the fd and free the pmarsh
 	pthread_mutex_lock(&i->pmarsh->lock);
 		if(!i->pmarsh->cancelled){
-			fprintf(stderr,"TID[%s]: %lu\n",i->name,i->pmarsh->tid);
 			if( (errno = pthread_kill(i->pmarsh->tid,SIGCHLD)) ){
 				octx->diagnostic("Couldn't signal thread (%s?)",strerror(errno));
 			} // FIXME check return codes here
@@ -424,37 +423,30 @@ pmarsh_create(void){
 static int
 prepare_packet_sockets(const omphalos_iface *octx,interface *iface,int idx){
 	if( (iface->pmarsh = pmarsh_create()) ){
-		if((iface->fd = packet_socket(octx,ETH_P_ALL)) < 0){
-			goto err;
-		}
-		if((iface->ts = mmap_tx_psocket(octx,iface->fd,idx,
-				iface->mtu,&iface->txm,&iface->ttpr)) <= 0){
-			close(iface->fd);
-			goto err;
-		}
-		if((iface->rfd = packet_socket(octx,ETH_P_ALL)) >= 0){
-			if( (iface->rs = mmap_rx_psocket(octx,iface->rfd,idx,
-					iface->mtu,&iface->rxm,&iface->rtpr)) ){
-				iface->pmarsh->octx = octx;
-				iface->pmarsh->i = iface;
-				iface->curtxm = iface->txm;
-				iface->txidx = 0;
-				if(pthread_create(&iface->pmarsh->tid,NULL,
-						psocket_thread,iface->pmarsh) == 0){
-					fprintf(stderr,"TID[%s]: %lu\n",iface->name,iface->pmarsh->tid);
-					return 0;
+		if((iface->fd = packet_socket(octx,ETH_P_ALL)) >= 0){
+			if((iface->ts = mmap_tx_psocket(octx,iface->fd,idx,
+					iface->mtu,&iface->txm,&iface->ttpr)) > 0){
+				if((iface->rfd = packet_socket(octx,ETH_P_ALL)) >= 0){
+					if((iface->rs = mmap_rx_psocket(octx,iface->rfd,idx,
+							iface->mtu,&iface->rxm,&iface->rtpr)) > 0){
+						iface->pmarsh->octx = octx;
+						iface->pmarsh->i = iface;
+						iface->curtxm = iface->txm;
+						iface->txidx = 0;
+						if(pthread_create(&iface->pmarsh->tid,NULL,
+								psocket_thread,iface->pmarsh) == 0){
+							return 0;
+						}
+					}
+					close(iface->rfd); // munmaps
 				}
 			}
-			close(iface->rfd); // munmaps
-		}
-		if(iface->fd >= 0){
-			close(iface->fd); // munma[p
+			close(iface->fd); // munmaps
 		}
 		pmarsh_destroy(octx,iface->pmarsh);
 		iface->pmarsh = NULL;
 	}
 	// Everything needs already be closed/freed by the time we get here
-err:
 	iface->rfd = iface->fd = -1;
 	memset(&iface->rtpr,0,sizeof(iface->rtpr));
 	memset(&iface->ttpr,0,sizeof(iface->ttpr));
