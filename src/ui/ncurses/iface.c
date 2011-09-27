@@ -502,6 +502,7 @@ void move_interface(reelbox *rb,int rows,int cols,int delta,int active){
 	assert(rb->is);
 	assert(rb->is->rb == rb);
 	assert(werase(rb->subwin) != ERR);
+	screen_update();
 	if(iface_wholly_visible_p(rows,rb)){
 		assert(move_panel(rb->panel,rb->scrline,1) != ERR);
 		if(getmaxy(rb->subwin) != iface_lines_bounded(is,rows)){

@@ -731,7 +731,8 @@ void interface_removed_locked(iface_state *is,struct panel_state *ps){
 	fprintf(stderr,"Removing iface at %d\n",rb->scrline);
 	free_iface_state(is); // clears l2/l3 nodes
 	--count_interface;
-	wclear(rb->subwin);
+	assert(werase(rb->subwin) == OK);
+	screen_update();
 	del_panel(rb->panel);
 	//getmaxyx(rb->subwin,rows,cols);
 	delwin(rb->subwin);
@@ -1034,6 +1035,7 @@ void use_prev_iface_locked(WINDOW *w,struct panel_state *ps){
 			}
 			current_iface->prev = NULL;
 			top_reelbox = current_iface;
+			redraw_iface_generic(current_iface);
 			return;
 		}
 	}
