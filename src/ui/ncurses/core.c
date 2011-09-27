@@ -726,56 +726,46 @@ void interface_removed_locked(iface_state *is,struct panel_state *ps){
 	if(!rb){
 		fprintf(stderr,"Removed hidden interface\n");
 	}else{
-		//const int visible = !panel_hidden(rb->panel);
-		//int rows,cols;
+		int delta = getmaxy(rb->subwin) + 1;
 
 		fprintf(stderr,"Removing iface at %d\n",rb->scrline);
 		assert(werase(rb->subwin) == OK);
 		screen_update(); // FIXME kill; here for debugging
-		if(top_reelbox == rb){
-			top_reelbox = rb->next;
-		}
-		if(last_reelbox == rb){
+		getmaxyx(stdscr,scrrows,scrcols);
+		// we'll need pull other interfaces up or down
+		if(rb->next){
+			rb->next->prev = rb->prev;
+		}else{
 			last_reelbox = rb->prev;
 		}
-		getmaxyx(stdscr,scrrows,scrcols);
-		// FIXME this ought be unconditional
-		if(rb->next || rb->prev){
-			// First, splice it out of the list
-			if(rb->next){
-				rb->next->prev = rb->prev;
-			}
-			if(rb->prev){
-				rb->prev->next = rb->next;
-			}
-			fprintf(stderr,"R/C: %d/%d\n",scrrows,scrcols);
-			// we'll need pull other interfaces up or down
-			if(rb == current_iface){
-				// FIXME need do all the stuff we do in _next_/_prev_
-				if((current_iface = rb->next) == NULL){
-					current_iface = rb->prev;
-				}
-				pull_interfaces_up(rb,scrrows,scrcols,getmaxy(rb->subwin) + 1);
-				// give the details window to new current_iface
-				if(ps->p){
-					iface_details(panel_window(ps->p),get_current_iface(),ps->ysize);
-				}
-			}else if(rb->scrline > current_iface->scrline){
-				pull_interfaces_up(rb,scrrows,scrcols,getmaxy(rb->subwin) + 1);
-			}else{ // pull them down; we're above current_iface
-				int delta;
-
-				pull_interfaces_down(rb,scrrows,scrcols,getmaxy(rb->subwin) + 1);
-				if( (delta = top_space_p(scrrows)) ){
-					pull_interfaces_up(NULL,scrrows,scrcols,delta);
-				}
-			}
+		if(rb->prev){
+			rb->prev->next = rb->next;
 		}else{
-			// If details window exists, blank it FIXME
-			assert(current_iface == rb);
-			current_iface = NULL;
+			top_reelbox = rb->next;
 		}
-		free_reelbox(rb);
+		if(rb == current_iface){
+			// FIXME need do all the stuff we do in _next_/_prev_
+			if((current_iface = rb->next) == NULL){
+				current_iface = rb->prev;
+			}
+			pull_interfaces_up(rb,scrrows,scrcols,delta);
+			// give the details window to new current_iface
+			if(ps->p){
+				// If current is NULL, blank it FIXME
+				iface_details(panel_window(ps->p),get_current_iface(),ps->ysize);
+			}
+		}else if(rb->scrline > current_iface->scrline){
+			pull_interfaces_up(rb,scrrows,scrcols,delta);
+		}else{ // pull them down; we're above current_iface
+			int ts;
+
+			pull_interfaces_down(rb,scrrows,scrcols,delta);
+			if( (ts = top_space_p(scrrows)) ){
+				pull_interfaces_up(NULL,scrrows,scrcols,ts);
+			}
+		}
+		// FIXME results in massive corruption at shutdown...why?
+		//free_reelbox(rb);
 	}
 	free_iface_state(is); // clears l2/l3 nodes
 	is->next->prev = is->prev;
