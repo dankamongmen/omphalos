@@ -919,9 +919,6 @@ void use_next_iface_locked(WINDOW *w,struct panel_state *ps){
 		if(is->rb){
 			current_iface = is->rb;
 		}else{
-			int spacebot = rows - (current_iface->scrline + getmaxy(current_iface->subwin));
-			assert(spacebot >= 0);
-			assert(spacebot < 2);
 			if((is->rb = create_reelbox(is,rows,(rows - 1) - iface_lines_bounded(is,rows),cols)) == NULL){
 				return; // FIXME
 			}
