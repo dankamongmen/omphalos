@@ -272,6 +272,7 @@ pull_interfaces_down(reelbox *puller,int rows,int cols,int delta){
 
 	fprintf(stderr,"pulling down %d from %s@%d\n",delta,puller ? puller->is ? puller->is->iface->name : "destroyed" : "all",
 			puller ? puller->scrline : rows);
+	assert(delta > 0);
 	for(rb = puller->prev ; rb ; rb = rb->prev){
 		rb->scrline += delta;
 		move_interface_generic(rb,rows,cols,delta);
@@ -291,6 +292,7 @@ pull_interfaces_up(reelbox *puller,int rows,int cols,int delta){
 
 	fprintf(stderr,"pulling up %d from %s@%d\n",delta,puller ? puller->is ? puller->is->iface->name : "destroyed" : "all",
 			puller ? puller->scrline : rows);
+	assert(delta > 0);
 	for(rb = puller ? puller->next : top_reelbox ; rb ; rb = rb->next){
 		rb->scrline -= delta;
 		move_interface_generic(rb,rows,cols,-delta);
@@ -932,7 +934,7 @@ void use_next_iface_locked(WINDOW *w,struct panel_state *ps){
 			current_iface->next = NULL;
 			last_reelbox = current_iface;
 			if( (delta = top_space_p(rows)) ){
-				pull_interfaces_up(NULL,rows,cols,-delta);
+				pull_interfaces_up(NULL,rows,cols,delta);
 			}
 			redraw_iface_generic(is->rb);
 			return;
@@ -994,7 +996,7 @@ void use_next_iface_locked(WINDOW *w,struct panel_state *ps){
 		}
 	}
 	if( (delta = top_space_p(rows)) ){
-		pull_interfaces_up(NULL,rows,cols,-delta);
+		pull_interfaces_up(NULL,rows,cols,delta);
 	}
 	if(panel_hidden(oldrb->panel)){
 		// we hid the entire panel, and thus might have space
