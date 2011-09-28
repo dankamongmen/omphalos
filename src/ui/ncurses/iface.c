@@ -420,7 +420,7 @@ print_iface_state(const interface *i,const iface_state *is,WINDOW *w,
 	unsigned long usecdomain;
 	int targ;
 
-	if(rows < 2 || partial < -1){
+	if(rows < 2 || partial <= -1){
 		return;
 	}else if(partial == -1){
 		targ = 0;
@@ -460,7 +460,7 @@ int redraw_iface(const iface_state *is,const reelbox *rb,int active){
 	getmaxyx(stdscr,scrrows,scrcols);
 	assert(rb->scrline >= 1);
 	if(rb->scrline == 1 && iface_lines_bounded(is,scrrows) > getmaxy(rb->subwin)){ // no top
-		partial = getmaxy(rb->subwin) - iface_lines_bounded(is,scrrows);
+		partial = 1 + getmaxy(rb->subwin) - iface_lines_bounded(is,scrrows);
 	}else if(iface_wholly_visible_p(scrrows,rb) || active){ // completely visible
 		partial = 0;
 	}else{
@@ -541,8 +541,10 @@ void move_interface(reelbox *rb,int rows,int cols,int delta,int active){
 			nlines = rr;
 		}
 	}
-	assert(nlines >= 1);
-	if(nlines > rr){
+	if(nlines < 1){
+		assert(hide_panel(rb->panel) != ERR);
+		return;
+	}else if(nlines > rr){
 		assert(move_panel(rb->panel,targ,1) == OK);
 		assert(wresize(rb->subwin,nlines,PAD_COLS(cols)) == OK);
 	}else if(nlines < rr){
