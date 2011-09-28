@@ -1135,6 +1135,7 @@ void check_consistency(void){
 	const reelbox *rb,*prev = NULL;
 	int sawcur = 0,expect = 1;
 
+	fprintf(stderr,"CHECKING CONSISTENCY\n");
 	if(top_reelbox){
 		assert(!top_reelbox->is->prev->rb || top_reelbox->is->prev->rb == last_reelbox);
 	}
@@ -1142,6 +1143,9 @@ void check_consistency(void){
 		assert(rb->is);
 		assert(rb->is->rb == rb);
 		assert(!sawcur || rb != current_iface);
+		fprintf(stderr,"\t%s: %d->%d (%d)\n",rb->is->iface->name,
+				getbegy(rb->subwin),getmaxy(rb->subwin) + getbegy(rb->subwin),
+				iface_lines_unbounded(rb->is));
 		if(rb == current_iface){
 			sawcur = 1;
 		}
@@ -1165,4 +1169,5 @@ void check_consistency(void){
 	assert(prev == last_reelbox);
 	assert((top_reelbox && last_reelbox && current_iface) ||
 			(!top_reelbox && !last_reelbox && !current_iface));
+	fprintf(stderr,"CONSISTENT\n");
 }
