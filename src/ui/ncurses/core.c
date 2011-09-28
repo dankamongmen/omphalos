@@ -273,12 +273,24 @@ pull_interfaces_down(reelbox *puller,int rows,int cols,int delta){
 	fprintf(stderr,"pulling down %d from %s@%d\n",delta,puller ? puller->is ? puller->is->iface->name : "destroyed" : "all",
 			puller ? puller->scrline : rows);
 	assert(delta > 0);
-	for(rb = puller->prev ; rb ; rb = rb->prev){
+	rb = puller ? puller->prev : last_reelbox;
+	while(rb){
 		rb->scrline += delta;
 		move_interface_generic(rb,rows,cols,delta);
+		if(panel_hidden(rb->panel)){
+			if((last_reelbox = rb->prev) == NULL){
+				top_reelbox = NULL;
+			}else{
+				last_reelbox->next = NULL;
+			}
+			free_reelbox(rb);
+			rb = last_reelbox;
+		}else{
+			rb = rb->prev;
+		}
 	}
 	if(top_reelbox){
-		if(top_reelbox->scrline <= 1){
+		if(top_reelbox->scrline <= 2){
 			return;
 		}
 	}
@@ -293,9 +305,26 @@ pull_interfaces_up(reelbox *puller,int rows,int cols,int delta){
 	fprintf(stderr,"pulling up %d from %s@%d\n",delta,puller ? puller->is ? puller->is->iface->name : "destroyed" : "all",
 			puller ? puller->scrline : rows);
 	assert(delta > 0);
-	for(rb = puller ? puller->next : top_reelbox ; rb ; rb = rb->next){
+	rb = puller ? puller->next : top_reelbox;
+	while(rb){
 		rb->scrline -= delta;
 		move_interface_generic(rb,rows,cols,-delta);
+		if(panel_hidden(rb->panel)){
+			if(last_reelbox == rb){
+				if( (last_reelbox = rb->prev) ){
+					last_reelbox->next = NULL;
+				}
+			}
+			if(top_reelbox == rb){
+				if( (top_reelbox = rb->next) ){
+					top_reelbox->prev = NULL;
+				}
+			}
+			free_reelbox(rb);
+			rb = top_reelbox;
+		}else{
+			rb = rb->next;
+		}
 	}
 	if(last_reelbox){
 		if(last_reelbox->scrline + getmaxy(last_reelbox->subwin) >= rows - 1){
