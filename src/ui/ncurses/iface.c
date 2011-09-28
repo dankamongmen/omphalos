@@ -170,39 +170,39 @@ print_iface_hosts(const interface *i,const iface_state *is,WINDOW *w,
 		if(line >= rows - (partial <= 0)){
 			break;
 		}
+		switch(l->cat){
+			case RTN_UNICAST:
+				attrs = COLOR_PAIR(UCAST_COLOR);
+				devname = get_devname(l->l2);
+				legend = 'U';
+				break;
+			case RTN_LOCAL:
+				attrs = A_BOLD | COLOR_PAIR(LCAST_COLOR);
+				if(interface_virtual_p(i) ||
+					(devname = get_devname(l->l2)) == NULL){
+					devname = i->topinfo.devname;
+				}
+				legend = 'L';
+				break;
+			case RTN_MULTICAST:
+				attrs = A_BOLD | COLOR_PAIR(MCAST_COLOR);
+				devname = get_devname(l->l2);
+				legend = 'M';
+				break;
+			case RTN_BROADCAST:
+				attrs = COLOR_PAIR(BCAST_COLOR);
+				devname = get_devname(l->l2);
+				legend = 'B';
+				break;
+			default:
+				assert(0 && "Unknown l2 category");
+				break;
+		}
+		if(!interface_up_p(i)){
+			attrs = (attrs & A_BOLD) | COLOR_PAIR(DBORDER_COLOR);
+		}
+		assert(wattrset(w,attrs) != ERR);
 		if(line >= 0){
-			switch(l->cat){
-				case RTN_UNICAST:
-					attrs = COLOR_PAIR(UCAST_COLOR);
-					devname = get_devname(l->l2);
-					legend = 'U';
-					break;
-				case RTN_LOCAL:
-					attrs = A_BOLD | COLOR_PAIR(LCAST_COLOR);
-					if(interface_virtual_p(i) ||
-						(devname = get_devname(l->l2)) == NULL){
-						devname = i->topinfo.devname;
-					}
-					legend = 'L';
-					break;
-				case RTN_MULTICAST:
-					attrs = A_BOLD | COLOR_PAIR(MCAST_COLOR);
-					devname = get_devname(l->l2);
-					legend = 'M';
-					break;
-				case RTN_BROADCAST:
-					attrs = COLOR_PAIR(BCAST_COLOR);
-					devname = get_devname(l->l2);
-					legend = 'B';
-					break;
-				default:
-					assert(0 && "Unknown l2 category");
-					break;
-			}
-			if(!interface_up_p(i)){
-				attrs = (attrs & A_BOLD) | COLOR_PAIR(DBORDER_COLOR);
-			}
-			assert(wattrset(w,attrs) != ERR);
 			l2ntop(l->l2,i->addrlen,hw);
 			if(devname){
 				size_t len = strlen(devname);
