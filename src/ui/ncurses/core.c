@@ -1075,7 +1075,7 @@ void use_prev_iface_locked(WINDOW *w,struct panel_state *ps){
 
 		if(rb->scrline < oldrb->scrline){ // ... at the top
 			rb->scrline = 1;
-			push_interfaces_below(rb,rows,cols,getmaxy(rb->subwin) - iface_lines_bounded(is,rows));
+			push_interfaces_below(rb,rows,cols,-(getmaxy(rb->subwin) - iface_lines_bounded(is,rows)));
 			assert(wresize(rb->subwin,iface_lines_bounded(rb->is,rows),PAD_COLS(cols)) == OK);
 			assert(replace_panel(rb->panel,rb->subwin) != ERR);
 			assert(redraw_iface_generic(rb) == OK);
