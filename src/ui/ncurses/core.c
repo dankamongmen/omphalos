@@ -921,11 +921,17 @@ void use_next_iface_locked(WINDOW *w,struct panel_state *ps){
 		if(is->rb){
 			current_iface = is->rb;
 		}else{
+			int delta;
+
 			if((is->rb = create_reelbox(is,rows,(rows - 1) - iface_lines_bounded(is,rows),cols)) == NULL){
 				return; // FIXME
 			}
 			current_iface = is->rb;
-			push_interfaces_above(NULL,rows,cols,-iface_lines_bounded(is,rows) - 1);
+			delta = -iface_lines_bounded(is,rows);
+			if(getbegy(last_reelbox->subwin) + getmaxy(last_reelbox->subwin) >= rows - 1){
+				--delta;
+			}
+			push_interfaces_above(NULL,rows,cols,delta);
 			if((current_iface->prev = last_reelbox) == NULL){
 				top_reelbox = current_iface;
 			}else{

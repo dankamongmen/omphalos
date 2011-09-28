@@ -522,7 +522,6 @@ void move_interface(reelbox *rb,int rows,int cols,int delta,int active){
 	rr = getmaxy(rb->subwin);
 	if(delta > 0){ // moving down
 		if(rb->scrline >= rows - 1){
-			fprintf(stderr,"HIDE TYPE 1\n");
 			assert(hide_panel(rb->panel) != ERR);
 			return;
 		}
@@ -530,7 +529,6 @@ void move_interface(reelbox *rb,int rows,int cols,int delta,int active){
 		nlines = rows - rb->scrline - 1; // sans-bottom partial
 	}else{
 		if((rr + getbegy(rb->subwin)) <= -delta){
-			fprintf(stderr,"HIDE TYPE 2 (%d, %d, %d)\n",rr,getbegy(rb->subwin),-delta);
 			assert(hide_panel(rb->panel) != ERR);
 			return;
 		}
@@ -538,18 +536,16 @@ void move_interface(reelbox *rb,int rows,int cols,int delta,int active){
 			targ = 1;
 			nlines = rr + (rb->scrline - 1);
 			rb->scrline = 1;
+		}else{
+			targ = rb->scrline;
+			nlines = rr;
 		}
 	}
-	// FIXME this shouldn't be necessary. replace with assert(nlines >= 1);
-	if(nlines < 1){
-			fprintf(stderr,"HIDE TYPE 3\n");
-		assert(hide_panel(rb->panel) != ERR);
-		return;
-	}else if(nlines > rr){
+	assert(nlines >= 1);
+	if(nlines > rr){
 		assert(move_panel(rb->panel,targ,1) == OK);
 		assert(wresize(rb->subwin,nlines,PAD_COLS(cols)) == OK);
 	}else if(nlines < rr){
-		fprintf(stderr,"HAD %d GET %d\n",rr,nlines);
 		assert(wresize(rb->subwin,nlines,PAD_COLS(cols)) == OK);
 		assert(move_panel(rb->panel,targ,1) == OK);
 	}else{
