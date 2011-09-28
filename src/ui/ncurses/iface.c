@@ -520,7 +520,7 @@ void move_interface(reelbox *rb,int rows,int cols,int delta,int active){
 		return;
 	}
 	rr = getmaxy(rb->subwin);
-	if(delta > 0){
+	if(delta > 0){ // moving down
 		if(rb->scrline >= rows - 1){
 			fprintf(stderr,"HIDE TYPE 1\n");
 			assert(hide_panel(rb->panel) != ERR);
@@ -534,9 +534,11 @@ void move_interface(reelbox *rb,int rows,int cols,int delta,int active){
 			assert(hide_panel(rb->panel) != ERR);
 			return;
 		}
-		targ = 1;
-		nlines = rr + (rb->scrline - 1); // rb->scrline is < 1
-		rb->scrline = 1;
+		if(rb->scrline < 1){
+			targ = 1;
+			nlines = rr + (rb->scrline - 1);
+			rb->scrline = 1;
+		}
 	}
 	// FIXME this shouldn't be necessary. replace with assert(nlines >= 1);
 	if(nlines < 1){
