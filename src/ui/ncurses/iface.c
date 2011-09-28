@@ -473,7 +473,7 @@ int redraw_iface(const iface_state *is,const reelbox *rb,int active){
 	if(interface_up_p(i)){
 		print_iface_state(i,is,rb->subwin,rows,cols,partial);
 	}
-	print_iface_hosts(i,is,rb->subwin,0/*rows*/,cols,partial);
+	print_iface_hosts(i,is,rb->subwin,rows,cols,partial);
 	return OK;
 }
 
