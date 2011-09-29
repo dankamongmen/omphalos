@@ -355,7 +355,7 @@ push_interfaces_below(reelbox *pusher,int rows,int cols,int delta){
 		rb->scrline += delta;
 		move_interface_generic(rb,rows,cols,delta);
 		if(panel_hidden(rb->panel)){
-			//fprintf(stderr,"HID THE LAST!\n");
+			fprintf(stderr,"HID THE LAST (%s)!\n",rb->is->iface->name);
 			if((last_reelbox = rb->prev) == NULL){
 				top_reelbox = NULL;
 			}else{
@@ -986,7 +986,7 @@ void use_next_iface_locked(WINDOW *w,struct panel_state *ps){
 		if(rb->scrline > oldrb->scrline){ // new is below old
 			assert(redraw_iface_generic(oldrb) == OK);
 			assert(redraw_iface_generic(rb) == OK);
-		}else{ // we were at the bottom
+		}else{ // we were at the bottom (rotate)
 			if(top_reelbox->next){
 				top_reelbox->next->prev = NULL;
 				top_reelbox = top_reelbox->next;
@@ -1015,12 +1015,18 @@ void use_next_iface_locked(WINDOW *w,struct panel_state *ps){
 			assert(wresize(rb->subwin,iface_lines_bounded(rb->is,rows),PAD_COLS(cols)) == OK);
 			assert(replace_panel(rb->panel,rb->subwin) != ERR);
 			assert(redraw_iface_generic(rb) == OK);
-		}else{ // ...at the top
+		}else{ // ...at the top (rotate)
+			int delta;
+
 			assert(top_reelbox == rb);
-			rb->scrline = rows - (iface_lines_bounded(rb->is,rows) + 1);
+			rb->scrline = rows - 1 - iface_lines_bounded(rb->is,rows);
 			top_reelbox->next->prev = NULL;
 			top_reelbox = top_reelbox->next;
-			push_interfaces_above(NULL,rows,cols,-(iface_lines_bounded(rb->is,rows) + 1));
+			delta = -iface_lines_bounded(rb->is,rows);
+			if(getbegy(last_reelbox->subwin) + getmaxy(last_reelbox->subwin) >= (rows - 1)){
+				--delta;
+			}
+			push_interfaces_above(NULL,rows,cols,delta);
 			rb->next = NULL;
 			if( (rb->prev = last_reelbox) ){
 				last_reelbox->next = rb;
