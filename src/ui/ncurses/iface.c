@@ -502,8 +502,8 @@ void move_interface(reelbox *rb,int rows,int cols,int delta,int active){
 	int nlines,rr,targ;
        
 	is = rb->is;
-	fprintf(stderr,"  moving %s (%d) from %d to %d (%d)\n",is->iface->name,
-			iface_lines_bounded(is,rows),getbegy(rb->subwin),rb->scrline,delta);
+	//fprintf(stderr,"  moving %s (%d) from %d to %d (%d)\n",is->iface->name,
+	//		iface_lines_bounded(is,rows),getbegy(rb->subwin),rb->scrline,delta);
 	assert(rb->is);
 	assert(rb->is->rb == rb);
 	assert(werase(rb->subwin) != ERR);
