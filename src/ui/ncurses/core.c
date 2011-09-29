@@ -25,9 +25,14 @@ static int resize_iface(reelbox *);
 static reelbox *
 create_reelbox(iface_state *is,int rows,int scrline,int cols){
 	reelbox *ret;
+	int lines;
 
+	lines = iface_lines_bounded(is,rows);
+	if(lines > rows - scrline){
+		lines = rows - scrline;
+	}
 	if( (ret = malloc(sizeof(*ret))) ){
-		if(((ret->subwin = newwin(iface_lines_bounded(is,rows),PAD_COLS(cols),scrline,START_COL)) == NULL)
+		if(((ret->subwin = newwin(lines,PAD_COLS(cols),scrline,START_COL)) == NULL)
 				|| (ret->panel = new_panel(ret->subwin)) == NULL){
 			delwin(ret->subwin);
 			free(ret);
@@ -65,7 +70,7 @@ bottom_space_p(int rows){
 	if(!last_reelbox){
 		return rows - 1;
 	}
-	if(getmaxy(last_reelbox->subwin) + getbegy(last_reelbox->subwin) >= rows - 1){
+	if(getmaxy(last_reelbox->subwin) + getbegy(last_reelbox->subwin) >= rows - 2){
 		return 0;
 	}
 	return (rows - 1) - (getmaxy(last_reelbox->subwin) + getbegy(last_reelbox->subwin));
@@ -278,6 +283,7 @@ pull_interfaces_down(reelbox *puller,int rows,int cols,int delta){
 		rb->scrline += delta;
 		move_interface_generic(rb,rows,cols,delta);
 		if(panel_hidden(rb->panel)){
+			fprintf(stderr,"PULLED THE BOTTOM OFF\n");
 			if((last_reelbox = rb->prev) == NULL){
 				top_reelbox = NULL;
 			}else{
@@ -310,15 +316,11 @@ pull_interfaces_up(reelbox *puller,int rows,int cols,int delta){
 		rb->scrline -= delta;
 		move_interface_generic(rb,rows,cols,-delta);
 		if(panel_hidden(rb->panel)){
-			if(last_reelbox == rb){
-				if( (last_reelbox = rb->prev) ){
-					last_reelbox->next = NULL;
-				}
-			}
-			if(top_reelbox == rb){
-				if( (top_reelbox = rb->next) ){
-					top_reelbox->prev = NULL;
-				}
+			fprintf(stderr,"PULLED THE TOP OFF\n");
+			if((top_reelbox = rb->next) == NULL){
+				last_reelbox = NULL;
+			}else{
+				top_reelbox->prev = NULL;
 			}
 			free_reelbox(rb);
 			rb = top_reelbox;
