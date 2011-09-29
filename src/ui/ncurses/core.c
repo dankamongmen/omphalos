@@ -744,7 +744,7 @@ void *interface_cb_locked(interface *i,iface_state *ret,struct panel_state *ps){
 	return ret; // callers are responsible for screen_update()
 }
 
-void interface_removed_locked(iface_state *is,struct panel_state *ps){
+void interface_removed_locked(iface_state *is,struct panel_state **ps){
 	int scrrows,scrcols;
 	reelbox *rb;
 	
@@ -759,7 +759,6 @@ void interface_removed_locked(iface_state *is,struct panel_state *ps){
 
 		//fprintf(stderr,"Removing iface at %d\n",rb->scrline);
 		assert(werase(rb->subwin) == OK);
-		screen_update(); // FIXME kill; here for debugging
 		getmaxyx(stdscr,scrrows,scrcols);
 		// we'll need pull other interfaces up or down
 		if(rb->next){
@@ -779,9 +778,13 @@ void interface_removed_locked(iface_state *is,struct panel_state *ps){
 			}
 			pull_interfaces_up(rb,scrrows,scrcols,delta);
 			// give the details window to new current_iface
-			if(ps->p){
-				// If current is NULL, blank it FIXME
-				iface_details(panel_window(ps->p),get_current_iface(),ps->ysize);
+			if(ps){
+				if(current_iface){
+					iface_details(panel_window((*ps)->p),get_current_iface(),(*ps)->ysize);
+				}else{
+					hide_panel_locked(*ps);
+					*ps = NULL;
+				}
 			}
 		}else if(rb->scrline > current_iface->scrline){
 			pull_interfaces_up(rb,scrrows,scrcols,delta);

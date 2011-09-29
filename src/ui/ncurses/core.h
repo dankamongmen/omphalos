@@ -90,7 +90,7 @@ int wstatus_locked(WINDOW *,const char *fmt,...) __attribute__ ((format (printf,
 int wvstatus_locked(WINDOW *w,const char *,va_list);
 struct l3obj *host_callback_locked(const struct interface *,struct l2host *,struct l3host *);
 struct l2obj *neighbor_callback_locked(const struct interface *,struct l2host *);
-void interface_removed_locked(iface_state *,struct panel_state *);
+void interface_removed_locked(iface_state *,struct panel_state **);
 void *interface_cb_locked(struct interface *,iface_state *,struct panel_state *);
 int packet_cb_locked(const struct interface *,struct omphalos_packet *,struct panel_state *);
 void toggle_promisc_locked(const struct omphalos_iface *,WINDOW *w);
