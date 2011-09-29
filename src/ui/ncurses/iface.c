@@ -459,10 +459,11 @@ int redraw_iface(const iface_state *is,const reelbox *rb,int active){
 	}
 	getmaxyx(stdscr,scrrows,scrcols);
 	assert(rb->scrline >= 1);
-	if(rb->scrline == 1 && iface_lines_bounded(is,scrrows) > getmaxy(rb->subwin)){ // no top
-		partial = 1 + getmaxy(rb->subwin) - iface_lines_bounded(is,scrrows);
-	}else if(iface_wholly_visible_p(scrrows,rb) || active){ // completely visible
+	if(iface_wholly_visible_p(scrrows,rb) || active){ // completely visible
 		partial = 0;
+	}else if(rb->scrline == 1){ // no top
+		partial = 1 + getmaxy(rb->subwin) - iface_lines_unbounded(is);
+		assert(partial <= 0);
 	}else{
 		partial = 1; // no bottom
 	}

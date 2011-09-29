@@ -5,6 +5,7 @@
 extern "C" {
 #endif
 
+#include <limits.h>
 #include <stdarg.h>
 #include <ncursesw/panel.h>
 #include <ncursesw/ncurses.h>
@@ -77,6 +78,11 @@ iface_lines_bounded(const iface_state *is,int rows){
 		lines = rows - 2;
 	}
 	return lines;
+}
+
+static inline int
+iface_lines_unbounded(const struct iface_state *is){
+	return iface_lines_bounded(is,INT_MAX);
 }
 
 // These functions may only be called while the ncurses lock is held. They
