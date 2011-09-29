@@ -58,9 +58,6 @@ top_space_p(int rows){
 	if(!top_reelbox){
 		return rows - 2;
 	}
-	if(getbegy(top_reelbox->subwin) <= 1){
-		return 0;
-	}
 	return getbegy(top_reelbox->subwin) - 1;
 }
 
@@ -251,7 +248,6 @@ iface_details(WINDOW *hw,const interface *i,int rows){
 static void
 free_reelbox(reelbox *rb){
 	if(rb){
-		//fprintf(stderr,"KILLING IT\n");
 		assert(rb->is);
 		assert(rb->is->rb == rb);
 
@@ -283,7 +279,7 @@ pull_interfaces_down(reelbox *puller,int rows,int cols,int delta){
 		rb->scrline += delta;
 		move_interface_generic(rb,rows,cols,delta);
 		if(panel_hidden(rb->panel)){
-			fprintf(stderr,"PULLED THE BOTTOM OFF\n");
+			//fprintf(stderr,"PULLED THE BOTTOM OFF\n");
 			if((last_reelbox = rb->prev) == NULL){
 				top_reelbox = NULL;
 			}else{
@@ -316,7 +312,7 @@ pull_interfaces_up(reelbox *puller,int rows,int cols,int delta){
 		rb->scrline -= delta;
 		move_interface_generic(rb,rows,cols,-delta);
 		if(panel_hidden(rb->panel)){
-			fprintf(stderr,"PULLED THE TOP OFF\n");
+			//fprintf(stderr,"PULLED THE TOP OFF\n");
 			if((top_reelbox = rb->next) == NULL){
 				last_reelbox = NULL;
 			}else{
@@ -355,7 +351,7 @@ push_interfaces_below(reelbox *pusher,int rows,int cols,int delta){
 		rb->scrline += delta;
 		move_interface_generic(rb,rows,cols,delta);
 		if(panel_hidden(rb->panel)){
-			fprintf(stderr,"HID THE LAST (%s)!\n",rb->is->iface->name);
+			//fprintf(stderr,"HID THE LAST (%s)!\n",rb->is->iface->name);
 			if((last_reelbox = rb->prev) == NULL){
 				top_reelbox = NULL;
 			}else{
@@ -939,19 +935,15 @@ void use_next_iface_locked(WINDOW *w,struct panel_state *ps){
 	if(!current_iface || current_iface->is->next == current_iface->is){
 		return;
 	}
-	//fprintf(stderr,"Want next interface (%s->%s)\n",current_iface->is->iface->name,
+	// fprintf(stderr,"Want next interface (%s->%s)\n",current_iface->is->iface->name,
 	//		current_iface->is->next->iface->name);
 	getmaxyx(w,rows,cols);
 	oldrb = current_iface;
 	// Don't redraw the old inteface yet; it might have been moved/hidden
-	if(current_iface->next){
-		current_iface = current_iface->next;
-	}else{
+	if(current_iface->next == NULL){
 		iface_state *is = current_iface->is->next;
 
-		if(is->rb){
-			current_iface = is->rb;
-		}else{
+		if(is->rb == NULL){ // it's off-screen
 			int delta;
 
 			if((is->rb = create_reelbox(is,rows,(rows - 1) - iface_lines_bounded(is,rows),cols)) == NULL){
@@ -976,6 +968,9 @@ void use_next_iface_locked(WINDOW *w,struct panel_state *ps){
 			redraw_iface_generic(is->rb);
 			return;
 		}
+		current_iface = is->rb; // it's at the top
+	}else{
+		current_iface = current_iface->next; // it's below us
 	}
 	rb = current_iface;
 	// If the newly-selected interface is wholly visible, we'll not need
@@ -1008,9 +1003,10 @@ void use_next_iface_locked(WINDOW *w,struct panel_state *ps){
 	}else{ // new is partially visible...
 		if(rb->scrline > oldrb->scrline){ // ...at the bottom
 			iface_state *is = current_iface->is;
+			int delta = getmaxy(rb->subwin) - iface_lines_bounded(is,rows);
 
 			rb->scrline = rows - (iface_lines_bounded(is,rows) + 1);
-			push_interfaces_above(rb,rows,cols,getmaxy(rb->subwin) - iface_lines_bounded(is,rows));
+			push_interfaces_above(rb,rows,cols,delta);
 			move_interface_generic(rb,rows,cols,getbegy(rb->subwin) - rb->scrline);
 			assert(wresize(rb->subwin,iface_lines_bounded(rb->is,rows),PAD_COLS(cols)) == OK);
 			assert(replace_panel(rb->panel,rb->subwin) != ERR);
@@ -1030,9 +1026,11 @@ void use_next_iface_locked(WINDOW *w,struct panel_state *ps){
 			rb->next = NULL;
 			if( (rb->prev = last_reelbox) ){
 				last_reelbox->next = rb;
+			}else{
+				top_reelbox = rb;
 			}
 			last_reelbox = rb;
-			move_interface_generic(rb,rows,cols,rb->scrline - getbegy(rb->subwin) - rb->scrline);
+			move_interface_generic(rb,rows,cols,rb->scrline);
 			assert(wresize(rb->subwin,iface_lines_bounded(rb->is,rows),PAD_COLS(cols)) == OK);
 			assert(replace_panel(rb->panel,rb->subwin) != ERR);
 			assert(redraw_iface_generic(rb) == OK);
