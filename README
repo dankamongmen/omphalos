@@ -42,7 +42,7 @@ can be accomplished by running "make sudobless" or running tools/addcaps.
 
 If MADV_HUGEPAGE is available at compilation time, madvise() will be used
 to advise hugepage backing for important, large data structures including
-the ringbuffers. This ought significantly improve performance.
+the ringbuffers. This could improve performance.
 
 ===================================================================
 III. Usage
