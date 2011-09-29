@@ -966,6 +966,10 @@ void use_next_iface_locked(WINDOW *w,struct panel_state *ps){
 				pull_interfaces_up(NULL,rows,cols,delta);
 			}
 			redraw_iface_generic(is->rb);
+			if(ps->p){
+				assert(top_panel(ps->p) != ERR);
+				iface_details(panel_window(ps->p),is->iface,ps->ysize);
+			}
 			return;
 		}
 		current_iface = is->rb; // it's at the top
@@ -1084,6 +1088,10 @@ void use_prev_iface_locked(WINDOW *w,struct panel_state *ps){
 			current_iface->prev = NULL;
 			top_reelbox = current_iface;
 			redraw_iface_generic(current_iface);
+			if(ps->p){
+				assert(top_panel(ps->p) != ERR);
+				iface_details(panel_window(ps->p),is->iface,ps->ysize);
+			}
 			return;
 		}
 	}
