@@ -1,5 +1,4 @@
 #include <assert.h>
-#include <limits.h>
 #include <unistd.h>
 #include <ui/ncurses/core.h>
 #include <ui/ncurses/util.h>
@@ -92,11 +91,6 @@ int wstatus_locked(WINDOW *w,const char *fmt,...){
 	ret = wvstatus_locked(w,fmt,va);
 	va_end(va);
 	return ret;
-}
-
-static inline int
-iface_lines_unbounded(const struct iface_state *is){
-	return iface_lines_bounded(is,INT_MAX);
 }
 
 static inline int
