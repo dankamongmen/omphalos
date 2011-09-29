@@ -245,7 +245,7 @@ iface_details(WINDOW *hw,const interface *i,int rows){
 static void
 free_reelbox(reelbox *rb){
 	if(rb){
-		fprintf(stderr,"KILLING IT\n");
+		//fprintf(stderr,"KILLING IT\n");
 		assert(rb->is);
 		assert(rb->is->rb == rb);
 
@@ -269,8 +269,8 @@ static void
 pull_interfaces_down(reelbox *puller,int rows,int cols,int delta){
 	reelbox *rb;
 
-	fprintf(stderr,"pulling down %d from %s@%d\n",delta,puller ? puller->is ? puller->is->iface->name : "destroyed" : "all",
-			puller ? puller->scrline : rows);
+	//fprintf(stderr,"pulling down %d from %s@%d\n",delta,puller ? puller->is ? puller->is->iface->name : "destroyed" : "all",
+	//		puller ? puller->scrline : rows);
 	assert(delta > 0);
 	rb = puller ? puller->prev : last_reelbox;
 	while(rb){
@@ -302,8 +302,8 @@ static void
 pull_interfaces_up(reelbox *puller,int rows,int cols,int delta){
 	reelbox *rb;
 
-	fprintf(stderr,"pulling up %d from %s@%d\n",delta,puller ? puller->is ? puller->is->iface->name : "destroyed" : "all",
-			puller ? puller->scrline : rows);
+	//fprintf(stderr,"pulling up %d from %s@%d\n",delta,puller ? puller->is ? puller->is->iface->name : "destroyed" : "all",
+	//		puller ? puller->scrline : rows);
 	assert(delta > 0);
 	rb = puller ? puller->next : top_reelbox;
 	while(rb){
@@ -339,8 +339,8 @@ push_interfaces_below(reelbox *pusher,int rows,int cols,int delta){
 	reelbox *rb;
 
 	assert(delta > 0);
-	fprintf(stderr,"pushing down %d from %s@%d\n",delta,pusher ? pusher->is ? pusher->is->iface->name : "destroyed" : "all",
-			pusher ? pusher->scrline : 0);
+	//fprintf(stderr,"pushing down %d from %s@%d\n",delta,pusher ? pusher->is ? pusher->is->iface->name : "destroyed" : "all",
+	//		pusher ? pusher->scrline : 0);
 	rb = last_reelbox;
 	while(rb){
 		if(rb == pusher){
@@ -349,7 +349,7 @@ push_interfaces_below(reelbox *pusher,int rows,int cols,int delta){
 		rb->scrline += delta;
 		move_interface_generic(rb,rows,cols,delta);
 		if(panel_hidden(rb->panel)){
-			fprintf(stderr,"HID THE LAST!\n");
+			//fprintf(stderr,"HID THE LAST!\n");
 			if((last_reelbox = rb->prev) == NULL){
 				top_reelbox = NULL;
 			}else{
@@ -382,8 +382,8 @@ push_interfaces_above(reelbox *pusher,int rows,int cols,int delta){
 	reelbox *rb;
 
 	assert(delta < 0);
-	fprintf(stderr,"pushing up %d from %s@%d\n",delta,pusher ? pusher->is ? pusher->is->iface->name : "destroyed" : "all",
-			pusher ? pusher->scrline : rows);
+	//fprintf(stderr,"pushing up %d from %s@%d\n",delta,pusher ? pusher->is ? pusher->is->iface->name : "destroyed" : "all",
+	//		pusher ? pusher->scrline : rows);
 	rb = top_reelbox;
 	while(rb){
 		if(rb == pusher){
@@ -392,7 +392,7 @@ push_interfaces_above(reelbox *pusher,int rows,int cols,int delta){
 		rb->scrline += delta;
 		move_interface_generic(rb,rows,cols,delta);
 		if(panel_hidden(rb->panel)){
-			fprintf(stderr,"HID THE TOP!\n");
+			//fprintf(stderr,"HID THE TOP!\n");
 			if((top_reelbox = rb->next) == NULL){
 				last_reelbox = NULL;
 			}else{
@@ -431,7 +431,7 @@ resize_iface(reelbox *rb){
 	is = rb->is;
 	getmaxyx(stdscr,rows,cols);
 	const int nlines = iface_lines_bounded(is,rows);
-	fprintf(stderr,"resizing %s@%d from %d to %d\n",is->iface->name,rb->scrline,getmaxy(rb->subwin),nlines);
+	//fprintf(stderr,"resizing %s@%d from %d to %d\n",is->iface->name,rb->scrline,getmaxy(rb->subwin),nlines);
 	getmaxyx(rb->subwin,subrows,subcols);
 	assert(subcols); // FIXME
 	if(nlines < subrows){ // Shrink the interface
@@ -751,11 +751,11 @@ void interface_removed_locked(iface_state *is,struct panel_state *ps){
 	}
 	rb = is->rb;
 	if(!rb){
-		fprintf(stderr,"Removed hidden interface\n");
+		//fprintf(stderr,"Removed hidden interface\n");
 	}else{
 		int delta = getmaxy(rb->subwin) + 1;
 
-		fprintf(stderr,"Removing iface at %d\n",rb->scrline);
+		//fprintf(stderr,"Removing iface at %d\n",rb->scrline);
 		assert(werase(rb->subwin) == OK);
 		screen_update(); // FIXME kill; here for debugging
 		getmaxyx(stdscr,scrrows,scrcols);
@@ -933,8 +933,8 @@ void use_next_iface_locked(WINDOW *w,struct panel_state *ps){
 	if(!current_iface || current_iface->is->next == current_iface->is){
 		return;
 	}
-	fprintf(stderr,"Want next interface (%s->%s)\n",current_iface->is->iface->name,
-			current_iface->is->next->iface->name);
+	//fprintf(stderr,"Want next interface (%s->%s)\n",current_iface->is->iface->name,
+	//		current_iface->is->next->iface->name);
 	getmaxyx(w,rows,cols);
 	oldrb = current_iface;
 	// Don't redraw the old inteface yet; it might have been moved/hidden
@@ -1048,8 +1048,8 @@ void use_prev_iface_locked(WINDOW *w,struct panel_state *ps){
 	if(!current_iface || current_iface->is->next == current_iface->is){
 		return;
 	}
-	fprintf(stderr,"Want previous interface (%s->%s)\n",current_iface->is->iface->name,
-			current_iface->is->prev->iface->name);
+	//fprintf(stderr,"Want previous interface (%s->%s)\n",current_iface->is->iface->name,
+	//		current_iface->is->prev->iface->name);
 	getmaxyx(w,rows,cols);
 	oldrb = current_iface;
 	// Don't redraw the old interface yet; it might have been moved/hidden
@@ -1169,7 +1169,7 @@ void check_consistency(void){
 	const reelbox *rb,*prev = NULL;
 	int sawcur = 0,expect = 1;
 
-	fprintf(stderr,"CHECKING CONSISTENCY\n");
+	//fprintf(stderr,"CHECKING CONSISTENCY\n");
 	if(top_reelbox){
 		assert(!top_reelbox->is->prev->rb || top_reelbox->is->prev->rb == last_reelbox);
 	}
@@ -1177,9 +1177,9 @@ void check_consistency(void){
 		assert(rb->is);
 		assert(rb->is->rb == rb);
 		assert(!sawcur || rb != current_iface);
-		fprintf(stderr,"\t%s: %d->%d (%d)\n",rb->is->iface->name,
-				getbegy(rb->subwin),getmaxy(rb->subwin) + getbegy(rb->subwin),
-				iface_lines_unbounded(rb->is));
+		//fprintf(stderr,"\t%s: %d->%d (%d)\n",rb->is->iface->name,
+		//		getbegy(rb->subwin),getmaxy(rb->subwin) + getbegy(rb->subwin),
+		//		iface_lines_unbounded(rb->is));
 		if(rb == current_iface){
 			sawcur = 1;
 		}
@@ -1191,8 +1191,8 @@ void check_consistency(void){
 			}
 		}
 		if(getbegy(rb->subwin) != expect){
-			fprintf(stderr,"\n\n\n\n UH-OH had %d/%d wanted %d\n",
-					getbegy(rb->subwin),rb->scrline,expect);
+			//fprintf(stderr,"\n\n\n\n UH-OH had %d/%d wanted %d\n",
+			//		getbegy(rb->subwin),rb->scrline,expect);
 		}
 		assert(getbegy(rb->subwin) == expect);
 		expect += getmaxy(rb->subwin) + 1;
@@ -1203,5 +1203,5 @@ void check_consistency(void){
 	assert(prev == last_reelbox);
 	assert((top_reelbox && last_reelbox && current_iface) ||
 			(!top_reelbox && !last_reelbox && !current_iface));
-	fprintf(stderr,"CONSISTENT\n");
+	//fprintf(stderr,"CONSISTENT\n");
 }
