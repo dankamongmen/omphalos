@@ -1040,11 +1040,6 @@ void use_next_iface_locked(WINDOW *w,struct panel_state *ps){
 	if( (delta = top_space_p(rows)) ){
 		pull_interfaces_up(NULL,rows,cols,delta);
 	}
-	if(panel_hidden(oldrb->panel)){
-		// we hid the entire panel, and thus might have space
-		// to move up into. move as many interfaces as we can
-		// onscreen FIXME
-	}
 	if(ps->p){
 		assert(top_panel(ps->p) != ERR);
 		iface_details(panel_window(ps->p),rb->is->iface,ps->ysize);
@@ -1148,11 +1143,6 @@ void use_prev_iface_locked(WINDOW *w,struct panel_state *ps){
 			assert(replace_panel(rb->panel,rb->subwin) != ERR);
 			assert(redraw_iface_generic(rb) == OK);
 		}
-	}
-	if(panel_hidden(oldrb->panel)){
-		// we hid the entire panel, and thus might have space
-		// to move up into. move as many interfaces as we can
-		// onscreen FIXME
 	}
 	if(ps->p){
 		assert(top_panel(ps->p) != ERR);
