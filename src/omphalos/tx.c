@@ -58,7 +58,6 @@ void send_tx_frame(const omphalos_iface *octx,interface *i,void *frame){
 		i->txbytes += tplen;
 		++i->txframes;
 	}
-	while(thdr->tp_status != TP_STATUS_AVAILABLE); // FIXME
 }
 
 void abort_tx_frame(interface *i,void *frame){
