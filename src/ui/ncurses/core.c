@@ -431,14 +431,10 @@ resize_iface(reelbox *rb){
 	getmaxyx(rb->subwin,subrows,subcols);
 	assert(subcols); // FIXME
 	if(nlines < subrows){ // Shrink the interface
-		//int delta = subrows - nlines;
-		// FIXME if we're above the current interface, we shrink and
-		// then move down, pulling things from above
 		assert(werase(rb->subwin) == OK);
 		screen_update(); // FIXME surely unnecessary?
 		assert(wresize(rb->subwin,nlines,PAD_COLS(cols)) != ERR);
 		assert(replace_panel(rb->panel,rb->subwin) != ERR);
-		// FIXME pull_interfaces_up(rb,rows,cols,delta);
 		return OK;
 	}else if(nlines == subrows){ // otherwise, expansion
 		return OK;
@@ -1161,11 +1157,20 @@ int expand_iface_locked(void){
 }
 
 int collapse_iface_locked(void){
+	int delta;
+
 	if(!current_iface){
 		return 0;
 	}
+	delta = getmaxy(current_iface->subwin);
 	collapse_interface(current_iface->is);
 	assert(resize_iface(current_iface) == OK);
+	if( (delta -= getmaxy(current_iface->subwin)) ){
+		int rows,cols;
+
+		getmaxyx(stdscr,rows,cols);
+		pull_interfaces_up(current_iface,rows,cols,delta);
+	}
 	redraw_iface_generic(current_iface);
 	return 0;
 }
