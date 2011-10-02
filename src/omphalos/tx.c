@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <assert.h>
+#include <linux/ip.h>
 #include <sys/socket.h>
 #include <omphalos/tx.h>
 #include <linux/if_arp.h>
@@ -41,6 +42,7 @@ void send_tx_frame(const omphalos_iface *octx,interface *i,void *frame){
 	struct tpacket_hdr *thdr = frame;
 	uint32_t tplen = thdr->tp_len;
 
+	assert(thdr->tp_status == TP_STATUS_AVAILABLE);
 	thdr->tp_status = TP_STATUS_SEND_REQUEST;
 	{
 		struct pcap_pkthdr phdr;
@@ -56,6 +58,7 @@ void send_tx_frame(const omphalos_iface *octx,interface *i,void *frame){
 		i->txbytes += tplen;
 		++i->txframes;
 	}
+	while(thdr->tp_status != TP_STATUS_AVAILABLE); // FIXME
 }
 
 void abort_tx_frame(interface *i,void *frame){
