@@ -169,6 +169,9 @@ void handle_ipv4_packet(const omphalos_iface *octx,omphalos_packet *op,
 int prep_ipv4_header(void *frame,size_t flen,uint32_t src,uint32_t dst,uint16_t proto){
 	struct iphdr *ip;
 
+	if(src == 0){
+		return -1; // FIXME for testing only. have to allow this.
+	}
 	if(flen < sizeof(*ip)){
 		return -1;
 	}
