@@ -161,11 +161,24 @@ lookup_l3host_common(const omphalos_iface *octx,interface *i,struct l2host *l2,
 	memcpy(&cmp,addr,sizeof(cmp));
 	for(prev = orig ; (l3 = *prev) ; prev = &l3->next){
 		if(memcmp(&l3->addr,&cmp,len) == 0){
+			char *rev;
+
 			// Move it to the front of the list, splicing it out
 			*prev = l3->next;
 			l3->next = *orig;
 			*orig = l3;
 			l3->l2 = l2; // Update the last l2 FIXME
+			if(l3->name && l3->nlevel >= NAMING_LEVEL_RESOLVING){
+				return l3;
+			}
+			if(dnsfxn == NULL || revstrfxn == NULL){
+				return l3;
+			}
+			if((rev = revstrfxn(addr)) == NULL){
+				return l3;
+			}
+			queue_for_naming(octx,i,l2,l3,dnsfxn,rev);
+			free(rev);
 			return l3;
 		}
 	}
@@ -181,7 +194,7 @@ lookup_l3host_common(const omphalos_iface *octx,interface *i,struct l2host *l2,
 		}else if(cat == RTN_UNICAST || cat == RTN_LOCAL){
 			char *rev;
 
-			if(dnsfxn && (rev = revstrfxn(addr))){
+			if(dnsfxn && revstrfxn && (rev = revstrfxn(addr))){
 				queue_for_naming(octx,i,l2,l3,dnsfxn,rev);
 				free(rev);
 			}

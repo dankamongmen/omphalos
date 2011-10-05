@@ -17,7 +17,7 @@ void *get_tx_frame(const struct omphalos_iface *,struct interface *,size_t *);
 void send_tx_frame(const struct omphalos_iface *,struct interface *,void *);
 
 // Release a frame for reuse without transmitting it
-void abort_tx_frame(struct interface *,void *);
+void abort_tx_frame(const struct omphalos_iface *,struct interface *,void *);
 
 // Frame preparation
 

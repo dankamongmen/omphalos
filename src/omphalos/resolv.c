@@ -77,6 +77,7 @@ int queue_for_naming(const struct omphalos_iface *octx,struct interface *i,
 			const char *revstr){
 	int ret = 0;
 
+	// FIXME uhhh, do something with result when it's not NULL!
 	if(create_resolvq(i,l2,l3) == NULL){
 		return -1;
 	}
@@ -91,6 +92,9 @@ int queue_for_naming(const struct omphalos_iface *octx,struct interface *i,
 		ret = dnsfxn(octx,AF_INET6,resolvers6,revstr);
 	}
 	pthread_mutex_unlock(&resolver_lock);
+	if(!ret){
+		name_l3host_absolute(octx,i,l2,l3,"Resolving...",NAMING_LEVEL_RESOLVING);
+	}
 	return ret;
 }
 

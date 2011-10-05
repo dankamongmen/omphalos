@@ -41,6 +41,7 @@ void send_tx_frame(const omphalos_iface *octx,interface *i,void *frame){
 	struct tpacket_hdr *thdr = frame;
 	uint32_t tplen = thdr->tp_len;
 
+	octx->diagnostic("Transmitting on %s",i->name);
 	thdr->tp_status = TP_STATUS_SEND_REQUEST;
 	{
 		struct pcap_pkthdr phdr;
@@ -58,11 +59,12 @@ void send_tx_frame(const omphalos_iface *octx,interface *i,void *frame){
 	}
 }
 
-void abort_tx_frame(interface *i,void *frame){
+void abort_tx_frame(const omphalos_iface *octx,interface *i,void *frame){
 	struct tpacket_hdr *thdr = frame;
 
 	++i->txaborts;
 	thdr->tp_status = TP_STATUS_AVAILABLE;
+	octx->diagnostic("Aborted %llu on %s",i->txaborts,i->name);
 }
 
 // FIXME

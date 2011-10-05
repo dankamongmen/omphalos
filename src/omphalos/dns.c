@@ -421,7 +421,7 @@ int tx_dns_a(const omphalos_iface *octx,int fam,const void *addr,
 	thdr = frame;
 	tlen = thdr->tp_mac;
 	if((r = prep_eth_header(frame + tlen,flen - tlen,rp.i,&hw,ETH_P_IP)) < 0){
-		abort_tx_frame(rp.i,frame);
+		abort_tx_frame(octx,rp.i,frame);
 		return -1;;
 	}
 	tlen += r;
@@ -434,22 +434,22 @@ int tx_dns_a(const omphalos_iface *octx,int fam,const void *addr,
 		r = prep_ipv4_header(iphdr,flen - tlen,src4,addr4,IPPROTO_UDP);
 	}else if(fam == AF_INET6){
 		// FIXME
-		abort_tx_frame(rp.i,frame);
+		abort_tx_frame(octx,rp.i,frame);
 		return -1;
 	}else{
-		abort_tx_frame(rp.i,frame);
+		abort_tx_frame(octx,rp.i,frame);
 		return -1;
 	}
 	if(r < 0){
-		abort_tx_frame(rp.i,frame);
-		return -1;;
+		abort_tx_frame(octx,rp.i,frame);
+		return -1;
 	}
 	// Stash the <l3 headers' total size, so we can set tot_len when done
 	*totlen = tlen;
 	tlen += r;
 	if(flen - tlen < sizeof(*udp)){
-		abort_tx_frame(rp.i,frame);
-		return -1;;
+		abort_tx_frame(octx,rp.i,frame);
+		return -1;
 	}
 	udp = (struct udphdr *)((char *)frame + tlen);
 	udp->dest = htons(DNS_TARGET_PORT);
@@ -457,8 +457,8 @@ int tx_dns_a(const omphalos_iface *octx,int fam,const void *addr,
 	udp->check = 0u;
 	tlen += sizeof(*udp);
 	if(flen - tlen < sizeof(*dnshdr) + strlen(question) + 1 + 4){
-		abort_tx_frame(rp.i,frame);
-		return -1;;
+		abort_tx_frame(octx,rp.i,frame);
+		return -1;
 	}
 	dnshdr = (struct dnshdr *)((char *)frame + tlen);
 	dnshdr->id = random();
