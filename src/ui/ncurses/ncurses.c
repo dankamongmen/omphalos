@@ -580,7 +580,7 @@ neighbor_callback(const interface *i,struct l2host *l2){
 static void
 interface_removed_callback(const interface *i __attribute__ ((unused)),void *unsafe){
 	lock_ncurses();
-		interface_removed_locked(unsafe,&details);
+		interface_removed_locked(unsafe,details.p ? &active : NULL);
 	unlock_ncurses();
 }
 

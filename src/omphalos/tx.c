@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <assert.h>
+#include <linux/ip.h>
 #include <sys/socket.h>
 #include <omphalos/tx.h>
 #include <linux/if_arp.h>
@@ -41,7 +42,7 @@ void send_tx_frame(const omphalos_iface *octx,interface *i,void *frame){
 	struct tpacket_hdr *thdr = frame;
 	uint32_t tplen = thdr->tp_len;
 
-	octx->diagnostic("Transmitting on %s",i->name);
+	assert(thdr->tp_status == TP_STATUS_AVAILABLE);
 	thdr->tp_status = TP_STATUS_SEND_REQUEST;
 	{
 		struct pcap_pkthdr phdr;
