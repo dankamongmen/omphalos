@@ -270,8 +270,13 @@ pull_interfaces_down(reelbox *puller,int rows,int cols,int delta){
 	assert(delta > 0);
 	rb = puller ? puller->prev : last_reelbox;
 	while(rb){
-		rb->scrline += delta;
-		move_interface_generic(rb,rows,cols,delta);
+		if(iface_lines_bounded(rb->is,rows) > getmaxy(rb->subwin)){
+			assert(rb == top_reelbox);
+			resize_iface(rb);
+		}else{
+			rb->scrline += delta;
+			move_interface_generic(rb,rows,cols,delta);
+		}
 		if(panel_hidden(rb->panel)){
 			//fprintf(stderr,"PULLED THE BOTTOM OFF\n");
 			if((last_reelbox = rb->prev) == NULL){
@@ -303,6 +308,7 @@ pull_interfaces_up(reelbox *puller,int rows,int cols,int delta){
 	assert(delta > 0);
 	rb = puller ? puller->next : top_reelbox;
 	while(rb){
+		// FIXME entirely broken for partials
 		rb->scrline -= delta;
 		move_interface_generic(rb,rows,cols,-delta);
 		if(panel_hidden(rb->panel)){
@@ -404,6 +410,22 @@ push_interfaces_above(reelbox *pusher,int rows,int cols,int delta){
 	// FIXME pull_interfaces_up(pusher,rows,cols,delta);
 }
 
+static inline int
+gap_above(reelbox *rb){
+	if(!rb->prev){
+		return 0;
+	}
+	return getbegy(rb->subwin) - (getmaxy(rb->prev->subwin) + getbegy(rb->prev->subwin)) - 1;
+}
+
+static inline int
+gap_below(reelbox *rb){
+	if(!rb->next){
+		return 0;
+	}
+	return getbegy(rb->next->subwin) - (getmaxy(rb->subwin) + getbegy(rb->subwin)) - 1;
+}
+
 // Upon entry, the display might not have been updated to reflect a change in
 // the interface's data. If so, the interface panel is resized (subject to the
 // containing window's constraints) and other panels are moved as necessary.
@@ -435,6 +457,13 @@ resize_iface(reelbox *rb){
 		screen_update(); // FIXME surely unnecessary?
 		assert(wresize(rb->subwin,nlines,PAD_COLS(cols)) != ERR);
 		assert(replace_panel(rb->panel,rb->subwin) != ERR);
+		if(rb->scrline < current_iface->scrline){
+			rb->scrline += subrows - nlines;
+			assert(move_panel(rb->panel,rb->scrline,1) != ERR);
+			pull_interfaces_down(rb,rows,cols,subrows - nlines);
+		}else{
+			pull_interfaces_up(rb,rows,cols,subrows - nlines);
+		}
 		return OK;
 	}else if(nlines == subrows){ // otherwise, expansion
 		return OK;
@@ -475,6 +504,7 @@ resize_iface(reelbox *rb){
 			if(delta > nlines - subrows){
 				delta = nlines - subrows;
 			}
+			delta -= gap_below(rb); // FIXME questionable
 			push_interfaces_below(rb,rows,cols,delta);
 			subrows += delta;
 		}
@@ -484,6 +514,7 @@ resize_iface(reelbox *rb){
 				if(delta > nlines - subrows){
 					delta = nlines - subrows;
 				}
+				delta -= gap_below(rb);
 				if(delta > 0){
 					push_interfaces_below(rb,rows,cols,delta);
 				}
@@ -492,6 +523,7 @@ resize_iface(reelbox *rb){
 				if(delta > nlines - subrows){
 					delta = nlines - subrows;
 				}
+				delta -= gap_above(rb);
 				if(delta){
 					push_interfaces_above(rb,rows,cols,-delta);
 					rb->scrline -= delta;
@@ -499,6 +531,18 @@ resize_iface(reelbox *rb){
 				}
 			}
 			subrows += delta;
+			if(nlines > subrows){
+				if( (delta = gap_below(rb)) ){
+					subrows += delta > (nlines - subrows) ?
+						nlines - subrows : delta;
+				}
+			}
+			if(nlines > subrows){
+				if( (delta = gap_above(rb)) ){
+					subrows += delta > (nlines - subrows) ?
+						nlines - subrows : delta;
+				}
+			}
 		}
 		if(subrows != getmaxy(rb->subwin)){
 			assert(wresize(rb->subwin,subrows,PAD_COLS(cols)) != ERR);
