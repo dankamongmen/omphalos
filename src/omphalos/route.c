@@ -259,7 +259,7 @@ int get_router(int fam,const void *addr,struct routepath *rp){
 	}
 	pthread_mutex_lock(&route_lock);
 	while(rt){
-		uint128_t tmp; // FIXME so lame
+		uint128_t tmp = { 0, 0, 0, 0 }; // FIXME so lame
 		unsigned z;
 
 		// Construct a properly-masked version of maskaddr
@@ -268,22 +268,22 @@ int get_router(int fam,const void *addr,struct routepath *rp){
 				if(rt->maskbits >= 32 * (z + 1)){
 					tmp[z] = maskaddr[z];
 				}else{
-					uint32_t mask = ~0U << (32 - rt->maskbits % 32);
+					uint32_t mask = ~0U << (32 - (rt->maskbits % 32));
 
-					tmp[z] = htonl(maskaddr[z]) & mask;
+					tmp[z] = htonl(ntohl(maskaddr[z]) & mask);
 				}
 			}else{
 				tmp[z] = 0;
 			}
 		}
-		if(memcmp((const char *)&rt->ssd + gwoffset,&tmp,len) == 0){
+		if(memcmp((const char *)(&rt->ssd) + gwoffset,&tmp[0],len) == 0){
 			break;
 		}
 		rt = rt->next;
 	}
 	if(rt){
 		rp->i = rt->iface;
-		memcpy(&rp->src,(const char *)&rt->sss + gwoffset,len);
+		memcpy(&rp->src,(const char *)(&rt->sss) + gwoffset,len);
 		memset(&gw,0,sizeof(gw));
 		memcpy(&gw,rt->ssg.ss_family ? (const char *)&rt->ssg + gwoffset : addr,len);
 		if( (rp->l3 = find_l3host(rp->i,fam,&gw)) ){

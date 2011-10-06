@@ -65,7 +65,8 @@ void abort_tx_frame(const omphalos_iface *octx,interface *i,void *frame){
 
 	++i->txaborts;
 	thdr->tp_status = TP_STATUS_AVAILABLE;
-	octx->diagnostic("Aborted %llu on %s",i->txaborts,i->name);
+	assert(octx);
+	//octx->diagnostic("Aborted %llu on %s",i->txaborts,i->name);
 }
 
 // FIXME
