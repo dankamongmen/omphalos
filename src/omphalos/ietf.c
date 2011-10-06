@@ -157,7 +157,7 @@ static const char *
 ietf_bcast_ipv4(const uint32_t *ip){
 	const uint32_t localb = 0xffffffffu;
 
-	if(memcmp(ip,&localb,4) == 0){
+	if(memcmp(ip,&localb,sizeof(localb)) == 0){
 		return "Local IPv4 broadcast (RFC 919)";
 	}
 	return NULL;
