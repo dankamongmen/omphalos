@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <netinet/ip.h>
 #include <linux/tcp.h>
 #include <linux/igmp.h>

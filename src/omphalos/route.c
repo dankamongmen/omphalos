@@ -223,6 +223,14 @@ int handle_rtm_newroute(const omphalos_iface *octx,const struct nlmsghdr *nl){
 			}
 			r->next = *prev;
 			*prev = r;
+			if(r->sss.ss_family){
+				while( *(prev = &(*prev)->next) ){
+					assert((*prev)->maskbits < r->maskbits);
+					if(!((*prev)->sss.ss_family)){
+						memcpy(&(*prev)->sss,&r->sss,sizeof(r->sss));
+					}
+				}
+			}
 		pthread_mutex_unlock(&route_lock);
 	}else if(r->family == AF_INET6){
 		if(add_route6(octx,r->iface,ad,r->ssg.ss_family ? ag : NULL,r->sss.ss_family ? as : NULL,r->maskbits,iif)){
@@ -240,6 +248,7 @@ int handle_rtm_newroute(const omphalos_iface *octx,const struct nlmsghdr *nl){
 			}
 			r->next = *prev;
 			*prev = r;
+			// FIXME set less-specific sources
 		pthread_mutex_unlock(&route_lock);
 	}
 	// FIXME need a route callback in octx
