@@ -150,6 +150,7 @@ int offer_resolution(const omphalos_iface *octx,int fam,const void *addr,
 static void
 parse_resolv_conf(const omphalos_iface *octx){
 	resolver *revs = NULL;
+	unsigned count = 0;
 	char *line;
 	FILE *fp;
 	char *b;
@@ -194,6 +195,7 @@ parse_resolv_conf(const omphalos_iface *octx){
 		}
 		r->next = revs;
 		revs = r;
+		++count;
 		// FIXME
 		//
 #undef NSTOKEN
@@ -210,7 +212,8 @@ parse_resolv_conf(const omphalos_iface *octx){
 		resolvers = revs;
 		pthread_mutex_unlock(&resolver_lock);
 		free_resolvers(&r);
-		octx->diagnostic("Reloaded resolvers from %s",resolvconf_fn);
+		octx->diagnostic("Reloaded %u resolver%s from %s",count,
+				count == 1 ? "" : "s",resolvconf_fn);
 	}
 }
 
