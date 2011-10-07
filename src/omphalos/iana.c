@@ -50,7 +50,7 @@ free_ouitries(ouitrie **tries){
 
 static void
 parse_file(const omphalos_iface *octx){
-	unsigned allocerr;
+	unsigned allocerr,count = 0;
 	const char *line;
 	FILE *fp;
 	char *b;
@@ -112,6 +112,7 @@ parse_file(const omphalos_iface *octx){
 				break; // FIXME
 			}
 		}
+		++count;
 		allocerr = 0;
 	}
 	free(b);
@@ -121,7 +122,8 @@ parse_file(const omphalos_iface *octx){
 		octx->diagnostic("Error reading %s",ianafn);
 	}
 	fclose(fp);
-	octx->diagnostic("Reloaded OUIs from %s",ianafn);
+	octx->diagnostic("Reloaded %u OUI%s from %s",count,
+				count == 1 ? "" : "s",ianafn);
 }
 
 // A value can be passed which will be "broadcast" out to all children of this
