@@ -197,6 +197,7 @@ int add_route4(const omphalos_iface *octx,interface *i,const struct in_addr *s,
 	r->iif = iif;
 	r->maskbits = blen;
 	prev = &i->ip4r;
+	// Order most-specific (largest maskbits) to least-specific (0 maskbits)
 	while(*prev){
 		if(r->maskbits > (*prev)->maskbits){
 			break;
@@ -205,6 +206,16 @@ int add_route4(const omphalos_iface *octx,interface *i,const struct in_addr *s,
 	}
 	r->next = *prev;
 	*prev = r;
+	// Set the src for any less-specific routes we contain
+	if(r->addrs & ROUTE_HAS_SRC){
+		while( *(prev = &(*prev)->next) ){
+			assert((*prev)->maskbits < r->maskbits);
+			if(!((*prev)->addrs & ROUTE_HAS_SRC)){
+				(*prev)->addrs |= ROUTE_HAS_SRC;
+				memcpy(&(*prev)->src,src,sizeof(*src));
+			}
+		}
+	}
 	return 0;
 }
 
