@@ -78,8 +78,8 @@ int handle_rtm_newroute(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	struct rtattr *ra;
 	void *as,*ad,*ag;
 	int rlen,iif,oif;
+	route *r,**prev;
 	size_t flen;
-	route *r;
 
 	iif = oif = -1;
 	if((r = create_route()) == NULL){
@@ -213,8 +213,16 @@ int handle_rtm_newroute(const omphalos_iface *octx,const struct nlmsghdr *nl){
 			send_arp_probe(octx,r->iface,r->iface->bcast,ag,flen,as);
 		}
 		pthread_mutex_lock(&route_lock);
-			r->next = ip_table4;
-			ip_table4 = r;
+			prev = &ip_table4;
+			// Order most-specific (largest maskbits) to least-specific (0 maskbits)
+			while(*prev){
+				if(r->maskbits > (*prev)->maskbits){
+					break;
+				}
+				prev = &(*prev)->next;
+			}
+			r->next = *prev;
+			*prev = r;
 		pthread_mutex_unlock(&route_lock);
 	}else if(r->family == AF_INET6){
 		if(add_route6(octx,r->iface,ad,r->ssg.ss_family ? ag : NULL,r->sss.ss_family ? as : NULL,r->maskbits,iif)){
@@ -222,8 +230,16 @@ int handle_rtm_newroute(const omphalos_iface *octx,const struct nlmsghdr *nl){
 			goto err;
 		}
 		pthread_mutex_lock(&route_lock);
-			r->next = ip_table6;
-			ip_table6 = r;
+			prev = &ip_table6;
+			// Order most-specific (largest maskbits) to least-specific (0 maskbits)
+			while(*prev){
+				if(r->maskbits > (*prev)->maskbits){
+					break;
+				}
+				prev = &(*prev)->next;
+			}
+			r->next = *prev;
+			*prev = r;
 		pthread_mutex_unlock(&route_lock);
 	}
 	// FIXME need a route callback in octx
