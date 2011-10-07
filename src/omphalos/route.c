@@ -194,16 +194,14 @@ int handle_rtm_newroute(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	if(!r->sss.ss_family){
 		struct routepath rp;
 
-		if(get_router(r->sss.ss_family,ad,&rp)){
-			octx->diagnostic("Unroutable next hop on %s",r->iface->name);
-			goto err;
-		}
-		if(r->sss.ss_family == AF_INET){
-			memcpy(as,&rp.src[0],4);
-		}else if(r->sss.ss_family == AF_INET6){
-			memcpy(as,&rp.src[0],16);
-		}else{
-			assert(0);
+		if(get_router(r->sss.ss_family,ad,&rp) == 0){
+			if(r->sss.ss_family == AF_INET){
+				memcpy(as,&rp.src[0],4);
+			}else if(r->sss.ss_family == AF_INET6){
+				memcpy(as,&rp.src[0],16);
+			}else{
+				assert(0);
+			}
 		}
 	}
 	if(r->family == AF_INET){
