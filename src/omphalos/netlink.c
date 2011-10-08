@@ -641,7 +641,7 @@ handle_newlink_locked(const omphalos_iface *octx,interface *iface,
 
 	// Bring down or set up the packet sockets and thread, as appropriate
 	if(iface->fd < 0 && (iface->flags & IFF_UP)){
-		int r;
+		int r = -1;
 
 		iface->opaque = octx->iface_event(iface,iface->opaque);
 		if(iface->addr){
@@ -653,7 +653,13 @@ handle_newlink_locked(const omphalos_iface *octx,interface *iface,
 		if(iface->arptype != ARPHRD_LOOPBACK){
 			r = prepare_packet_sockets(octx,iface,ii->ifi_index);
 		}else{
-			r = prepare_rx_socket(octx,iface,ii->ifi_index);
+			// FIXME we'll also need an AF_INET6 socket...
+			if((iface->fd = socket(AF_INET,SOCK_DGRAM,0)) >= 0){
+				r = prepare_rx_socket(octx,iface,ii->ifi_index);
+				if(r){
+					close(iface->fd);
+				}
+			}
 		}
 		if(r){
 			// Everything needs already be closed/freed by here
