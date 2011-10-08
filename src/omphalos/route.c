@@ -70,6 +70,7 @@ int handle_rtm_delroute(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	if(rlen){
 		octx->diagnostic("%d excess bytes on newlink message",rlen);
 	}
+	// FIXME handle it!
 	return 0;
 }
 

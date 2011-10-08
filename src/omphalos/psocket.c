@@ -161,7 +161,8 @@ recover_truncated_packet(const omphalos_iface *octx,interface *iface,int fd,unsi
 }
 
 // -1: error; don't call us anymore. 0: handled frame. 1: interrupted; we
-// return for a cancellation check, and the frameptr oughtn't be advanced.
+// return for a cancellation check, and the frameptr oughtn't be advanced. The
+// interface lock must be held upon entry.
 int handle_ring_packet(const omphalos_iface *octx,interface *iface,int fd,void *frame){
 	struct tpacket_hdr *thdr = frame;
 	omphalos_packet packet = {
@@ -179,7 +180,11 @@ int handle_ring_packet(const omphalos_iface *octx,interface *iface,int fd,void *
 		pfd[0].revents = 0;
 		pfd[0].events = POLLIN | POLLRDNORM | POLLERR;
 		msec = IFACE_TIMESTAT_USECS / 1000;
-		if((events = poll(pfd,sizeof(pfd) / sizeof(*pfd),msec)) == 0){
+		pthread_mutex_unlock(&iface->lock);
+		events = poll(pfd,sizeof(pfd) / sizeof(*pfd),msec);
+		// FIXME need check for cancellation here, yes?
+		pthread_mutex_lock(&iface->lock);
+		if(events == 0){
 			gettimeofday(&packet.tv,NULL);
 			timestat_inc(&iface->fps,&packet.tv,0);
 			timestat_inc(&iface->bps,&packet.tv,0);
