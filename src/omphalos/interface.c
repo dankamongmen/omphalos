@@ -171,6 +171,7 @@ int print_all_iface_stats(FILE *fp,interface *agg){
 	return 0;
 }
 
+// Interface lock must be held upon entry
 // FIXME need to check and ensure they don't overlap with existing routes
 int add_route4(const omphalos_iface *octx,interface *i,const struct in_addr *s,
 		const struct in_addr *via,const struct in_addr *src,
@@ -219,6 +220,7 @@ int add_route4(const omphalos_iface *octx,interface *i,const struct in_addr *s,
 	return 0;
 }
 
+// Interface lock must be held upon entry
 int add_route6(const omphalos_iface *octx,interface *i,const struct in6_addr *s,
 		const struct in6_addr *via,const struct in6_addr *src,
 		unsigned blen,int iif){

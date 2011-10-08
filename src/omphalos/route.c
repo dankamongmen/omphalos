@@ -191,6 +191,7 @@ int handle_rtm_newroute(const omphalos_iface *octx,const struct nlmsghdr *nl){
 		free_route(r);
 		return 0;
 	}
+	assert(r->iface);
 	if(!r->sss.ss_family){
 		struct routepath rp;
 
@@ -205,10 +206,13 @@ int handle_rtm_newroute(const omphalos_iface *octx,const struct nlmsghdr *nl){
 		}
 	}
 	if(r->family == AF_INET){
+		pthread_mutex_lock(&r->iface->lock);
 		if(add_route4(octx,r->iface,ad,r->ssg.ss_family ? ag : NULL,r->sss.ss_family ? as : NULL,r->maskbits,iif)){
+			pthread_mutex_unlock(&r->iface->lock);
 			octx->diagnostic("Couldn't add route to %s",r->iface->name);
 			goto err;
 		}
+		pthread_mutex_unlock(&r->iface->lock);
 		if(r->ssg.ss_family){
 			send_arp_probe(octx,r->iface,r->iface->bcast,ag,flen,as);
 		}
@@ -233,10 +237,13 @@ int handle_rtm_newroute(const omphalos_iface *octx,const struct nlmsghdr *nl){
 			}
 		pthread_mutex_unlock(&route_lock);
 	}else if(r->family == AF_INET6){
+		pthread_mutex_lock(&r->iface->lock);
 		if(add_route6(octx,r->iface,ad,r->ssg.ss_family ? ag : NULL,r->sss.ss_family ? as : NULL,r->maskbits,iif)){
+			pthread_mutex_unlock(&r->iface->lock);
 			octx->diagnostic("Couldn't add route to %s",r->iface->name);
 			goto err;
 		}
+		pthread_mutex_unlock(&r->iface->lock);
 		pthread_mutex_lock(&route_lock);
 			prev = &ip_table6;
 			// Order most-specific (largest maskbits) to least-specific (0 maskbits)

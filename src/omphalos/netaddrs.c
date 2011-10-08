@@ -103,6 +103,7 @@ struct l3host *find_l3host(interface *i,int fam,const void *addr){
 	return NULL;
 }
 
+// Interface lock needs be held upon entry
 static l3host *
 lookup_l3host_common(const omphalos_iface *octx,interface *i,struct l2host *l2,
 			int fam,const void *addr,int knownlocal){
