@@ -841,7 +841,8 @@ void interface_removed_locked(iface_state *is,struct panel_state **ps){
 	draw_main_window(stdscr); // Update the device count
 }
 
-struct l2obj *neighbor_callback_locked(const interface *i,struct l2host *l2){
+struct l2obj *neighbor_callback_locked(const interface *i,struct l2host *l2,
+					struct panel_state *ps){
 	struct l2obj *ret;
 	iface_state *is;
 	reelbox *rb;
@@ -861,11 +862,15 @@ struct l2obj *neighbor_callback_locked(const interface *i,struct l2host *l2){
 	if( (rb = is->rb) ){
 		resize_iface(rb);
 		redraw_iface_generic(rb);
+		if(ps->p){
+			assert(top_panel(ps->p) != ERR);
+		}
 	}
 	return ret;
 }
 
-struct l3obj *host_callback_locked(const interface *i,struct l2host *l2,struct l3host *l3){
+struct l3obj *host_callback_locked(const interface *i,struct l2host *l2,
+		struct l3host *l3,struct panel_state *ps){
 	struct l2obj *l2o;
 	struct l3obj *ret;
 	iface_state *is;
@@ -885,6 +890,9 @@ struct l3obj *host_callback_locked(const interface *i,struct l2host *l2,struct l
 	if( (rb = is->rb) ){
 		resize_iface(rb);
 		redraw_iface_generic(rb);
+		if(ps->p){
+			assert(top_panel(ps->p) != ERR);
+		}
 	}
 	return ret;
 }
@@ -1190,17 +1198,20 @@ void use_prev_iface_locked(WINDOW *w,struct panel_state *ps){
 	}
 }
 
-int expand_iface_locked(void){
+int expand_iface_locked(struct panel_state *ps){
 	if(!current_iface){
 		return 0;
 	}
 	expand_interface(current_iface->is);
 	assert(resize_iface(current_iface) == OK);
 	redraw_iface_generic(current_iface);
+	if(ps->p){
+		assert(top_panel(ps->p) != ERR);
+	}
 	return 0;
 }
 
-int collapse_iface_locked(void){
+int collapse_iface_locked(struct panel_state *ps){
 	int delta;
 
 	if(!current_iface){
@@ -1216,6 +1227,9 @@ int collapse_iface_locked(void){
 		pull_interfaces_up(current_iface,rows,cols,delta);
 	}
 	redraw_iface_generic(current_iface);
+	if(ps->p){
+		assert(top_panel(ps->p) != ERR);
+	}
 	return 0;
 }
 

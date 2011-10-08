@@ -288,13 +288,13 @@ ncurses_input_thread(void *unsafe_marsh){
 		case '+':
 		case KEY_RIGHT:
 			lock_ncurses();
-				expand_iface_locked();
+				expand_iface_locked(&details);
 			unlock_ncurses();
 			break;
 		case '-':
 		case KEY_LEFT:
 			lock_ncurses();
-				collapse_iface_locked();
+				collapse_iface_locked(&details);
 			unlock_ncurses();
 			break;
 		case 'm':
@@ -558,7 +558,7 @@ host_callback(const interface *i,struct l2host *l2,struct l3host *l3){
 	void *ret;
 
 	pthread_mutex_lock(&bfl);
-	if( (ret = host_callback_locked(i,l2,l3)) ){
+	if( (ret = host_callback_locked(i,l2,l3,&details)) ){
 		screen_update();
 	}
 	pthread_mutex_unlock(&bfl);
@@ -570,7 +570,7 @@ neighbor_callback(const interface *i,struct l2host *l2){
 	void *ret;
 
 	pthread_mutex_lock(&bfl);
-	if( (ret = neighbor_callback_locked(i,l2)) ){
+	if( (ret = neighbor_callback_locked(i,l2,&details)) ){
 		screen_update();
 	}
 	pthread_mutex_unlock(&bfl);
