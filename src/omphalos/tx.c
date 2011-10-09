@@ -16,57 +16,78 @@
 // Acquire a frame from the ringbuffer. Start writing, given return value
 // 'frame', at: (char *)frame + ((struct tpacket_hdr *)frame)->tp_mac.
 void *get_tx_frame(const omphalos_iface *octx,interface *i,size_t *fsize){
-	struct tpacket_hdr *thdr = i->curtxm;
 	void *ret;
 
-	if(thdr == NULL){
-		octx->diagnostic("Can't transmit on %s (fd %d)",i->name,i->fd);
-		return NULL;
+	if(i->arptype != ARPHRD_LOOPBACK){
+		struct tpacket_hdr *thdr = i->curtxm;
+
+		if(thdr == NULL){
+			octx->diagnostic("Can't transmit on %s (fd %d)",i->name,i->fd);
+			return NULL;
+		}
+		// FIXME need also check for TP_WRONG_FORMAT methinks?
+		if(thdr->tp_status != TP_STATUS_AVAILABLE){
+			octx->diagnostic("No available TX frames on %s",i->name);
+			return NULL;
+		}
+		// FIXME we ought be able to set this once for each packet, and be done
+		thdr->tp_net = thdr->tp_mac = TPACKET_ALIGN(sizeof(struct tpacket_hdr));
+		ret = i->curtxm;
+		i->curtxm += inclen(&i->txidx,&i->ttpr);
+		*fsize = i->ttpr.tp_frame_size;
+	}else{
+		// FIXME pull from constrained, preallocated, compact buffer ew
+		ret = malloc(i->mtu);
 	}
-	// FIXME need also check for TP_WRONG_FORMAT methinks?
-	if(thdr->tp_status != TP_STATUS_AVAILABLE){
-		octx->diagnostic("No available TX frames on %s",i->name);
-		return NULL;
-	}
-	// FIXME we ought be able to set this once for each packet, and be done
-	thdr->tp_net = thdr->tp_mac = TPACKET_ALIGN(sizeof(struct tpacket_hdr));
-	ret = i->curtxm;
-	i->curtxm += inclen(&i->txidx,&i->ttpr);
-	*fsize = i->ttpr.tp_frame_size;
 	return ret;
 }
 
 // Mark a frame as ready-to-send. Must have come from get_tx_frame() using this
 // same interface. Yes, we will see packets we generate on the RX ring.
 void send_tx_frame(const omphalos_iface *octx,interface *i,void *frame){
-	struct tpacket_hdr *thdr = frame;
-	uint32_t tplen = thdr->tp_len;
+	int ret;
 
-	assert(thdr->tp_status == TP_STATUS_AVAILABLE);
-	thdr->tp_status = TP_STATUS_SEND_REQUEST;
-	/*{
-		struct pcap_pkthdr phdr;
+	if(i->arptype != ARPHRD_LOOPBACK){
+		struct tpacket_hdr *thdr = frame;
+		uint32_t tplen = thdr->tp_len;
 
-		phdr.caplen = phdr.len = thdr->tp_len;
-		gettimeofday(&phdr.ts,NULL);
-		log_pcap_packet(&phdr,(char *)frame + thdr->tp_mac);
-	}*/
-	if(send(i->fd,NULL,0,0) < 0){
+		assert(thdr->tp_status == TP_STATUS_AVAILABLE);
+		thdr->tp_status = TP_STATUS_SEND_REQUEST;
+		/*{
+			struct pcap_pkthdr phdr;
+
+			phdr.caplen = phdr.len = thdr->tp_len;
+			gettimeofday(&phdr.ts,NULL);
+			log_pcap_packet(&phdr,(char *)frame + thdr->tp_mac);
+		}*/
+		ret = send(i->fd,NULL,0,0);
+		if(ret == 0){
+			ret = tplen;
+		}
+	}else{
+		free(frame);
+		ret = -1; // FIXME
+	}
+	if(ret < 0){
 		octx->diagnostic("Error transmitting on %s",i->name);
 		++i->txerrors;
 	}else{
-		i->txbytes += tplen;
+		i->txbytes += ret;
 		++i->txframes;
 	}
 }
 
 void abort_tx_frame(const omphalos_iface *octx,interface *i,void *frame){
-	struct tpacket_hdr *thdr = frame;
+	if(i->arptype != ARPHRD_LOOPBACK){
+		struct tpacket_hdr *thdr = frame;
 
-	++i->txaborts;
-	thdr->tp_status = TP_STATUS_AVAILABLE;
-	assert(octx);
-	//octx->diagnostic("Aborted %llu on %s",i->txaborts,i->name);
+		++i->txaborts;
+		thdr->tp_status = TP_STATUS_AVAILABLE;
+		assert(octx);
+	}else{
+		free(frame);
+	}
+	octx->diagnostic("Aborted TX %llu on %s",i->txaborts,i->name);
 }
 
 // FIXME
