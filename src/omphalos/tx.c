@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <linux/ip.h>
+#include <linux/udp.h>
 #include <sys/socket.h>
 #include <omphalos/tx.h>
 #include <linux/if_arp.h>
@@ -36,12 +37,66 @@ void *get_tx_frame(const omphalos_iface *octx,interface *i,size_t *fsize){
 		i->curtxm += inclen(&i->txidx,&i->ttpr);
 		*fsize = i->ttpr.tp_frame_size;
 	}else{
+		struct tpacket_hdr *thdr;
+
+		*fsize = i->mtu + TPACKET_ALIGN(sizeof(struct tpacket_hdr));
 		// FIXME pull from constrained, preallocated, compact buffer ew
-		ret = malloc(i->mtu);
+		ret = malloc(*fsize);
+		if( (thdr = ret) ){
+			thdr->tp_net = thdr->tp_mac = TPACKET_ALIGN(sizeof(struct tpacket_hdr));
+		}else{
+			octx->diagnostic("Can't transmit on %s (fd %d)",i->name,i->fd);
+			*fsize = 0;
+		}
 	}
 	return ret;
 }
 
+// Loopback devices don't play nicely with PF_PACKET sockets; transmitting on
+// them results in packets visible to device-level sniffers (tcpdump, wireshark,
+// ourselves) but never injected into the machine's IP stack. These results are
+// not portable across systems, either; FreeBSD and OpenBSD do things
+// differently, to the point of a distinct loopback header type.
+//
+// So, we take the packet as prepared, and sendto() over the (unbound) TX
+// sockets (we need one per protocol family -- effectively, AF_INET and
+// AF_INET6). This suffers a copy, of course.
+//
+// We currently only support IPv4, but ought support IPv6 also. UDP is the only
+// transport protocol supported now, or likely to be supported ever (due to the
+// mechanics of the mechanism).
+static ssize_t
+send_loopback_frame(const omphalos_iface *octx __attribute__ ((unused)),
+					interface *i,void *frame){
+	struct tpacket_hdr *thdr = frame;
+	const struct udphdr *udp;
+	const struct ethhdr *eth;
+	struct sockaddr_in sina;
+	const struct iphdr *ip;
+	const void *payload;
+	unsigned plen;
+
+	eth = (const struct ethhdr *)((const char *)frame + thdr->tp_mac);
+	assert(eth->h_proto == ntohs(ETH_P_IP));
+	ip = (const struct iphdr *)((const char *)eth + sizeof(*eth));
+	assert(ip->protocol == IPPROTO_UDP);
+	udp = (const struct udphdr *)((const char *)ip + ip->ihl * 4u);
+	memset(&sina,0,sizeof(sina));
+	sina.sin_family = AF_INET;
+	sina.sin_addr.s_addr = ip->daddr;
+	sina.sin_port = udp->dest;
+	payload = (const char *)udp + sizeof(*udp);
+	plen = ntohs(udp->len) - sizeof(*udp);
+	return sendto(i->fd,payload,plen,0,&sina,sizeof(sina));
+}
+
+/* to log transmitted packets, use the following: {
+	struct pcap_pkthdr phdr;
+
+	phdr.caplen = phdr.len = thdr->tp_len;
+	gettimeofday(&phdr.ts,NULL);
+	log_pcap_packet(&phdr,(char *)frame + thdr->tp_mac);
+}*/
 // Mark a frame as ready-to-send. Must have come from get_tx_frame() using this
 // same interface. Yes, we will see packets we generate on the RX ring.
 void send_tx_frame(const omphalos_iface *octx,interface *i,void *frame){
@@ -53,20 +108,13 @@ void send_tx_frame(const omphalos_iface *octx,interface *i,void *frame){
 
 		assert(thdr->tp_status == TP_STATUS_AVAILABLE);
 		thdr->tp_status = TP_STATUS_SEND_REQUEST;
-		/*{
-			struct pcap_pkthdr phdr;
-
-			phdr.caplen = phdr.len = thdr->tp_len;
-			gettimeofday(&phdr.ts,NULL);
-			log_pcap_packet(&phdr,(char *)frame + thdr->tp_mac);
-		}*/
 		ret = send(i->fd,NULL,0,0);
 		if(ret == 0){
 			ret = tplen;
 		}
 	}else{
+		ret = send_loopback_frame(octx,i,frame);
 		free(frame);
-		ret = -1; // FIXME
 	}
 	if(ret < 0){
 		octx->diagnostic("Error transmitting on %s",i->name);
