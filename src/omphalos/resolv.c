@@ -20,7 +20,10 @@ typedef struct resolvq {
 } resolvq;
 
 typedef struct resolver {
-	struct in_addr addr;	// FIXME need support ipv6
+	union {
+		struct in_addr ip4;
+		struct in6_addr ip6;
+	} addr;
 	struct resolver *next;
 } resolver;
 
