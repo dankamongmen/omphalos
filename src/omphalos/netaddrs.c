@@ -33,6 +33,18 @@ static l3host external_l3 = {
 	.fam = AF_INET,
 }; // FIXME augh
 
+// RFC 3513 notes :: (all zeros) to be the "unspecified" address. It ought
+// never appear as a destination address.
+static l3host unspecified_ipv6 = {
+	.name = "unspec6",
+	.fam = AF_INET6,
+};
+
+static l3host unspecified_ipv4 = {
+	.name = "unspec4",
+	.fam = AF_INET,
+};
+
 // FIXME like the l2addrs, need do this in constant space via LRU or something
 static l3host *
 create_l3host(int fam,const void *addr,size_t len){
@@ -115,27 +127,38 @@ lookup_l3host_common(const omphalos_iface *octx,interface *i,struct l2host *l2,
 	int cat;
 
 	switch(fam){
-		case AF_INET:
+		case AF_INET:{
+			const uint32_t zaddr = 0;
+
 			len = 4;
 			orig = &i->ip4hosts;
 			dnsfxn = tx_dns_a;
 			revstrfxn = rev_dns_a;
+			if(memcmp(addr,&zaddr,len) == 0){
+				return &unspecified_ipv4;
+			}
 			break;
-		case AF_INET6:
+		}case AF_INET6:{
+			const uint128_t zaddr = { 0, 0, 0, 0 };
+
 			len = 16;
 			orig = &i->ip6hosts;
 			dnsfxn = tx_dns_aaaa;
 			revstrfxn = rev_dns_aaaa;
+			if(memcmp(addr,&zaddr,len) == 0){
+				return &unspecified_ipv6;
+			}
 			break;
-		case AF_BSSID:
+		}case AF_BSSID:{
 			len = ETH_ALEN;
 			orig = &i->cells;
 			dnsfxn = NULL;
 			revstrfxn = NULL;
 			break;
-		default:
+		}default:{
 			octx->diagnostic("Don't support l3 type %d",fam);
 			return NULL; // FIXME
+		}
 	}
 	if(routed_family_p(fam)){
 		cat = l2categorize(i,l2);
