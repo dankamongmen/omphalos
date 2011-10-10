@@ -1212,20 +1212,11 @@ int expand_iface_locked(struct panel_state *ps){
 }
 
 int collapse_iface_locked(struct panel_state *ps){
-	int delta;
-
 	if(!current_iface){
 		return 0;
 	}
-	delta = getmaxy(current_iface->subwin);
 	collapse_interface(current_iface->is);
 	assert(resize_iface(current_iface) == OK);
-	if( (delta -= getmaxy(current_iface->subwin)) ){
-		int rows,cols;
-
-		getmaxyx(stdscr,rows,cols);
-		pull_interfaces_up(current_iface,rows,cols,delta);
-	}
 	redraw_iface_generic(current_iface);
 	if(ps->p){
 		assert(top_panel(ps->p) != ERR);
