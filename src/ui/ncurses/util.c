@@ -3,6 +3,10 @@
 #include <ui/ncurses/util.h>
 #include <ncursesw/ncurses.h>
 
+#define COLOR_CEILING 256 // FIXME
+
+static short or[COLOR_CEILING],og[COLOR_CEILING],ob[COLOR_CEILING];
+
 int bevel_notop(WINDOW *w){
 	static const cchar_t bchr[] = {
 		{ .attr = 0, .chars = L"╰", },
@@ -103,37 +107,79 @@ char *genprefix(uintmax_t val,unsigned decimal,char *buf,size_t bsize,
 // standard vga colors explicitly.
 // FIXME dark evil hackery aieeeee
 int setup_extended_colors(void){
-	int ret = OK;
+	int ret = OK,q;
 
-	/*if(can_change_color() != TRUE){
+	assert(COLORS <= COLOR_CEILING);
+	if(can_change_color() != TRUE){
 		return ERR;
 	}
 	// rgb of 0->0, 85->333, 128->500, 170->666, 192->750, 255->999
-	ret |= init_color(COLOR_BLACK,180,180,180);
-	ret |= init_color(COLOR_RED,666,0,0);
-	ret |= init_color(COLOR_BLUE,0,333,750);
-	ret |= init_color(COLOR_GREEN,0,500,0);
-	ret |= init_color(9,999,333,333);
-	ret |= init_color(10,333,999,333);
-	ret |= init_color(12,333,333,999);
-	ret |= wrefresh(curscr);*/
+	// Gnome-terminal palette:
+	// 06 -> 23
+	// 20 -> 125
+	// 29 -> 160
+	// 2E -> 156
+	// 34 -> 203
+	// 36 -> 211
+	// 4e -> 304
+	// 50 -> 312
+	// 53 -> 324
+	// 55 -> 332
+	// 57 -> 340
+	// 65 -> 394
+	// 75 -> 457
+	// 7b -> 480
+	// 8a -> 539
+	// 9a -> 601
+	// a0 -> 624
+	// a4 -> 640
+	// c4 -> 765
+	// CC -> 796
+	// cf -> 808
+	// d3 -> 823
+	// d7 -> 839
+	// e2 -> 882
+	// ef -> 933
+	// #2E3436:#CC0000:#4E9A06:#C4A000:
+	// #3465A4:#75507B:#06989A:#D3D7CF:
+	// #555753:#EF2929:#8AE234:#FCE94F:
+	// #729FCF:#AD7FA8:#34E2E2:#EEEEEC
+	ret |= init_color(COLOR_BLACK,156,203,211);
+	ret |= init_color(COLOR_RED,796,0,0);
+	ret |= init_color(COLOR_GREEN,304,601,23);
+	ret |= init_color(COLOR_YELLOW,765,624,0);
+	ret |= init_color(COLOR_BLUE,203,394,640);
+	ret |= init_color(COLOR_MAGENTA,457,312,480);
+	ret |= init_color(COLOR_CYAN,23,593,601);
+	ret |= init_color(COLOR_WHITE,823,839,808);
+	ret |= init_color(8,332,340,324);
+	ret |= init_color(9,933,160,160);
+	ret |= init_color(10,539,882,203);
+	ret |= init_color(11,983,909,308);
+	ret |= init_color(12,445,620,808);
+	ret |= init_color(13,675,496,656);
+	ret |= init_color(14,203,882,882);
+	ret |= init_color(15,929,929,921);
+	for(q = 0 ; q < COLORS ; ++q){
+		assert(color_content(q,or + q,og + q,ob + q) == OK);
+	}
+	ret |= wrefresh(curscr);
 	return ret;
 }
 
 #define REFRESH 60 // Screen refresh rate in Hz FIXME
 #include <unistd.h>
 void fade(unsigned sec){
-	const unsigned quanta = sec * (REFRESH / 4);
-	const unsigned us = sec * 1000000 / quanta;
-	short or[COLORS],og[COLORS],ob[COLORS];
+	const int quanta = sec * (REFRESH / 4);
+	const int us = sec * 1000000 / quanta;
 	short r[COLORS],g[COLORS],b[COLORS];
-	unsigned q;
+	int q;
 
-	for(q = 0 ; q < sizeof(or) / sizeof(*or) ; ++q){
-		assert(color_content(q,r + q,g + q,b + q) == OK);
-		or[q] = r[q];
-		og[q] = g[q];
-		ob[q] = b[q];
+	assert(COLORS <= COLOR_CEILING); // FIXME use number collected originally
+	for(q = 0 ; q < COLORS ; ++q){
+		r[q] = or[q];
+		g[q] = og[q];
+		b[q] = ob[q];
 	}
 	for(q = 0 ; q < quanta ; ++q){
 		unsigned p;
@@ -156,9 +202,9 @@ void fade(unsigned sec){
 	}
 	// FIXME also want all other windows cleared. best to interleave the
 	// fade with actual interface shutdown so they're naturally gone
-	for(q = 0 ; q < sizeof(or) / sizeof(*or) ; ++q){
+	/*for(q = 0 ; q < COLORS ; ++q){
 		assert(init_color(q,or[q],og[q],ob[q]) == OK);
-	}
+	}*/
 	setup_extended_colors();
 	wrefresh(curscr);
 }
