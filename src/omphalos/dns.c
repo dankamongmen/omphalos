@@ -293,7 +293,7 @@ void handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 		uint128_t addr6;
 		uint32_t addr4;
 	} nsaddru;
-	void *nsaddr = &nsaddru;
+	void *nsaddr;
 	char *buf;
 	int nsfam;
 
@@ -306,9 +306,11 @@ void handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 	if(op->l3proto == ETH_P_IP){
 		nsfam = AF_INET;
 		nsaddru.addr4 = get_l3addr_in(op->l3s);
+		nsaddr = &nsaddru.addr4;
 	}else if(op->l3proto == ETH_P_IPV6){
 		nsfam = AF_INET6;
 		nsaddru.addr6 = get_l3addr_in6(op->l3s);
+		nsaddr = &nsaddru.addr6;
 	}else{
 		octx->diagnostic("DNS on %s:0x%x",op->i->name,op->l3proto);
 		op->noproto = 1;
@@ -401,12 +403,12 @@ malformed:
 int tx_dns_a(const omphalos_iface *octx,int fam,const void *addr,
 		const char *question){
 	struct tpacket_hdr *thdr;
+	uint16_t *totlen,tptr;
 	struct dnshdr *dnshdr;
 	struct iphdr *iphdr;
 	struct routepath rp;
 	struct udphdr *udp;
 	size_t flen,tlen;
-	uint16_t *totlen;
 	hwaddrint hw;
 	void *frame;
 	int r;
@@ -471,8 +473,10 @@ int tx_dns_a(const omphalos_iface *octx,int fam,const void *addr,
 	udp->len = sizeof(struct udphdr) + sizeof(struct dnshdr);
 	memcpy((char *)frame + tlen,question,strlen(question) + 1);
 	tlen += strlen(question) + 1;
-	*(uint16_t *)((char *)frame + tlen + 1) = ntohs(DNS_TYPE_PTR);
-	*(uint16_t *)((char *)frame + tlen + 1 + 2) = ntohs(DNS_CLASS_IN);
+	tptr = DNS_TYPE_PTR;
+	memcpy((char *)frame + tlen,&tptr,2);
+	tptr = DNS_CLASS_IN;
+	memcpy((char *)frame + tlen + 2,&tptr,2);
 	tlen += 4;
 	thdr->tp_len = tlen - sizeof(*thdr);
 	udp->len += strlen(question) + 1 + 4;
