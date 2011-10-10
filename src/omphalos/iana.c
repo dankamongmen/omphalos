@@ -228,6 +228,11 @@ name_ethmcastaddr(const void *mac){
 			.mlen = 6,
 			.eproto = ETH_P_STP,
 		},{
+			.name = "DEC Maintenance Operation Protocol",
+			.mac = "\xab\x00\x00\x02\x00\x00",
+			.mlen = 6,
+			.eproto = ETH_P_DNA_RC,
+		},{
 			.name = "Ethernet Configuration Test Protocol",
 			.mac = "\xcf\x00\x00\x00\x00\x00",
 			.mlen = 6,
