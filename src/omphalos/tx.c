@@ -108,10 +108,12 @@ void send_tx_frame(const omphalos_iface *octx,interface *i,void *frame){
 
 		assert(thdr->tp_status == TP_STATUS_AVAILABLE);
 		thdr->tp_status = TP_STATUS_SEND_REQUEST;
-		ret = send(i->fd,NULL,0,0);
+		// FIXME zero-copy wants NULL, 0, 0 AFAICT
+		ret = send(i->fd,(char *)frame + TPACKET_ALIGN(sizeof(*thdr)),tplen,0);
 		if(ret == 0){
 			ret = tplen;
 		}
+		//octx->diagnostic("Transmitted %d on %s",ret,i->name);
 	}else{
 		ret = send_loopback_frame(octx,i,frame);
 		free(frame);
