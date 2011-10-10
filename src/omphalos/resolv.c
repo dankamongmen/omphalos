@@ -89,10 +89,10 @@ int queue_for_naming(const struct omphalos_iface *octx,struct interface *i,
 	}
 	// FIXME round-robin or even use the simple resolv.conf algorithm
 	if(resolvers){
-		ret = dnsfxn(octx,AF_INET,resolvers,revstr);
+		ret = dnsfxn(octx,AF_INET,&resolvers->addr.ip4,revstr);
 	}
 	if(resolvers6){
-		ret = dnsfxn(octx,AF_INET6,resolvers6,revstr);
+		ret = dnsfxn(octx,AF_INET6,&resolvers6->addr.ip6,revstr);
 	}
 	pthread_mutex_unlock(&resolver_lock);
 	if(!ret){
@@ -101,11 +101,12 @@ int queue_for_naming(const struct omphalos_iface *octx,struct interface *i,
 	return ret;
 }
 
-static void
+/*static void
 offer_nameserver(int nsfam,const void *nameserver){
 	resolver **head,*r;
 	size_t len;
 
+	// FIXME don't accept a nameserver to which we can't route, in general
 	pthread_mutex_lock(&resolver_lock);
 	if(nsfam == AF_INET){
 		head = &resolvers;
@@ -127,14 +128,16 @@ offer_nameserver(int nsfam,const void *nameserver){
 		*head = r;
 	}
 	pthread_mutex_unlock(&resolver_lock);
-}
+}*/
 
 int offer_resolution(const omphalos_iface *octx,int fam,const void *addr,
 				const char *name,namelevel nlevel,
-				int nsfam,const void *nameserver){
+				int nsfam __attribute__ ((unused)),
+				const void *nameserver __attribute__ ((unused))){
 	resolvq *r,**p;
 
-	offer_nameserver(nsfam,nameserver);
+	// FIXME don't call until we filter offers better
+	// offer_nameserver(nsfam,nameserver);
 	pthread_mutex_lock(&rqueue_lock);
 	for(p = &rqueue ; (r = *p) ; p = &r->next){
 		if(l3addr_eq_p(r->l3,fam,addr)){
