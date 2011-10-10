@@ -227,6 +227,11 @@ name_ethmcastaddr(const void *mac){
 			.mac = "\x01\x80\xc2\x00\x10\x10",
 			.mlen = 6,
 			.eproto = ETH_P_STP,
+		},{
+			.name = "Ethernet Configuration Test Protocol",
+			.mac = "\xcf\x00\x00\x00\x00\x00",
+			.mlen = 6,
+			.eproto = ETH_P_CTP,
 		},{ .name = NULL, .mac = NULL, .mlen = 0, }
 	},*mc;
 
