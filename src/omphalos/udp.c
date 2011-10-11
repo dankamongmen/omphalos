@@ -30,6 +30,7 @@ void handle_udp_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 			handle_dns_packet(octx,op,ubdy,ulen);
 		}break;
 		case __constant_htons(MDNS_UDP_PORT):{
+			// FIXME also check daddr?
 			handle_mdns_packet(octx,op,ubdy,ulen);
 		}break;
 	}
