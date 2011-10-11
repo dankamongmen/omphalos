@@ -132,7 +132,7 @@ lookup_l3host_common(const omphalos_iface *octx,interface *i,struct l2host *l2,
 
 			len = 4;
 			orig = &i->ip4hosts;
-			dnsfxn = tx_dns_a;
+			dnsfxn = tx_dns_ptr;
 			revstrfxn = rev_dns_a;
 			if(memcmp(addr,&zaddr,len) == 0){
 				return &unspecified_ipv4;
@@ -143,7 +143,7 @@ lookup_l3host_common(const omphalos_iface *octx,interface *i,struct l2host *l2,
 
 			len = 16;
 			orig = &i->ip6hosts;
-			dnsfxn = tx_dns_aaaa;
+			dnsfxn = tx_dns_ptr;
 			revstrfxn = rev_dns_aaaa;
 			if(memcmp(addr,&zaddr,len) == 0){
 				return &unspecified_ipv6;

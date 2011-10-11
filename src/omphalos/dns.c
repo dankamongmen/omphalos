@@ -401,7 +401,7 @@ malformed:
 	return;
 }
 
-int tx_dns_a(const omphalos_iface *octx,int fam,const void *addr,
+int tx_dns_ptr(const omphalos_iface *octx,int fam,const void *addr,
 		const char *question){
 	struct tpacket_hdr *thdr;
 	uint16_t *totlen,tptr;
@@ -414,6 +414,7 @@ int tx_dns_a(const omphalos_iface *octx,int fam,const void *addr,
 	void *frame;
 	int r;
 
+	assert(fam == AF_INET || fam == AF_INET6);
 	if(get_router(fam,addr,&rp)){
 		return -1;;
 	}
@@ -440,9 +441,6 @@ int tx_dns_a(const omphalos_iface *octx,int fam,const void *addr,
 		// FIXME
 		abort_tx_frame(octx,rp.i,frame);
 		return -1;
-	}else{
-		abort_tx_frame(octx,rp.i,frame);
-		return -1;
 	}
 	if(r < 0){
 		abort_tx_frame(octx,rp.i,frame);
@@ -457,7 +455,7 @@ int tx_dns_a(const omphalos_iface *octx,int fam,const void *addr,
 	}
 	udp = (struct udphdr *)((char *)frame + tlen);
 	udp->dest = htons(DNS_TARGET_PORT);
-	udp->source = 31337; // FIXME lol
+	udp->source = random();
 	udp->check = 0u;
 	tlen += sizeof(*udp);
 	if(flen - tlen < sizeof(*dnshdr) + strlen(question) + 1 + 4){
@@ -488,37 +486,6 @@ int tx_dns_a(const omphalos_iface *octx,int fam,const void *addr,
 	udp->check = udp4_csum(iphdr);
 	send_tx_frame(octx,rp.i,frame);
 	return 0;
-}
-
-int tx_dns_aaaa(const omphalos_iface *octx,int fam,const void *addr,
-		const char *question){
-	struct tpacket_hdr *thdr;
-	struct routepath rp;
-	size_t flen,tlen;
-	hwaddrint hw;
-	void *frame;
-	int r;
-
-	octx->diagnostic("Looking up [%s]",question);
-	if(get_router(fam,addr,&rp)){
-		return -1;;
-	}
-	if((frame = get_tx_frame(octx,rp.i,&flen)) == NULL){
-		return -1;;
-	}
-	hw = get_hwaddr(rp.l2);
-	thdr = frame;
-	tlen = thdr->tp_mac;
-	if((r = prep_eth_header(frame + tlen,flen - tlen,rp.i,&hw,
-				fam == AF_INET ? ETH_P_IP : ETH_P_IPV6)) < 0){
-		abort_tx_frame(octx,rp.i,frame);
-		return -1;;
-	}
-	tlen += r;
-	// FIXME set up AAAA question
-	send_tx_frame(octx,rp.i,frame);
-	assert(0);
-	return -1; // FIXME
 }
 
 char *rev_dns_a(const void *i4){
