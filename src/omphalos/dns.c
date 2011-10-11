@@ -21,7 +21,8 @@
 #define IP6_REVSTR_DECODED ".ip6.arpa"
 #define IP6_REVSTR "\x03" "ip6" "\x04" "arpa"
 
-#define DNS_CLASS_IN	__constant_ntohs(1u)
+#define DNS_CLASS_IN	__constant_ntohs(0x0001u)
+#define DNS_CLASS_FLUSH	__constant_ntohs(0x8000u)
 #define DNS_TYPE_A	__constant_ntohs(1u)
 #define DNS_TYPE_PTR	__constant_ntohs(12u)
 #define DNS_TYPE_AAAA	__constant_ntohs(28u)
@@ -247,7 +248,7 @@ extract_dns_record(size_t len,const unsigned char *sec,unsigned *class,
 			free(buf);
 			return NULL;
 		}
-		*class = *((uint16_t *)sec + 1);
+		*class = *((uint16_t *)sec + 1) & ~(DNS_CLASS_FLUSH);
 		*type = *(uint16_t *)sec;
 		*idx += 4;
 	}
