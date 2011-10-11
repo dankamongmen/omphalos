@@ -434,10 +434,6 @@ ncurses_setup(const omphalos_iface *octx){
 		errstr = "Couldn't set blocking input\n";
 		goto err;
 	}
-	if(setup_extended_colors() != OK){
-		errstr = "Couldn't initialize extended colors\n";
-		goto err;
-	}
 	if(init_pair(BORDER_COLOR,COLOR_GREEN,-1) != OK){
 		errstr = "Couldn't initialize ncurses colorpair\n";
 		goto err;
@@ -488,6 +484,10 @@ ncurses_setup(const omphalos_iface *octx){
 	assert(init_pair(BCAST_COLOR,COLOR_BLUE,-1) == OK);
 	if(init_pair(ROUTER_COLOR,COLOR_YELLOW,-1) != OK){
 		errstr = "Couldn't initialize ncurses colorpair\n";
+		goto err;
+	}
+	if(setup_extended_colors() != OK){
+		errstr = "Couldn't initialize extended colors\n";
 		goto err;
 	}
 	if(curs_set(0) == ERR){
@@ -631,9 +631,9 @@ int main(int argc,char * const *argv){
 		fprintf(stderr,"Error in omphalos_init() (%s?)\n",strerror(err));
 		return EXIT_FAILURE;
 	}
-	/*lock_ncurses();
+	lock_ncurses();
 	fade(1);
-	unlock_ncurses();*/
+	unlock_ncurses();
 	omphalos_cleanup(&pctx);
 	if(mandatory_cleanup(&stdscr)){
 		return EXIT_FAILURE;

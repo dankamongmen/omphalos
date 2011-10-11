@@ -324,12 +324,25 @@ pull_interfaces_up(reelbox *puller,int rows,int cols,int delta){
 			rb = rb->next;
 		}
 	}
-	if(last_reelbox){
-		if(last_reelbox->scrline + getmaxy(last_reelbox->subwin) >= rows - 1){
+	while(last_reelbox){
+		struct iface_state *i;
+		int scrline;
+
+		if((scrline = last_reelbox->scrline + getmaxy(last_reelbox->subwin)) >= rows - 2){
 			return;
 		}
+		i = last_reelbox->is->next;
+		if(i->rb){
+			return; // next interface is already visible
+		}
+		if((rb = create_reelbox(i,rows,scrline + 1,cols)) == NULL){
+			return;
+		}
+		rb->prev = last_reelbox;
+		last_reelbox->next = rb;
+		rb->next = NULL;
+		last_reelbox = rb;
 	}
-	// FIXME make more visible
 }
 
 // An interface (pusher) has had its bottom border moved up or down (positive or
@@ -1212,20 +1225,11 @@ int expand_iface_locked(struct panel_state *ps){
 }
 
 int collapse_iface_locked(struct panel_state *ps){
-	int delta;
-
 	if(!current_iface){
 		return 0;
 	}
-	delta = getmaxy(current_iface->subwin);
 	collapse_interface(current_iface->is);
 	assert(resize_iface(current_iface) == OK);
-	if( (delta -= getmaxy(current_iface->subwin)) ){
-		int rows,cols;
-
-		getmaxyx(stdscr,rows,cols);
-		pull_interfaces_up(current_iface,rows,cols,delta);
-	}
 	redraw_iface_generic(current_iface);
 	if(ps->p){
 		assert(top_panel(ps->p) != ERR);
@@ -1245,9 +1249,9 @@ void check_consistency(void){
 		assert(rb->is);
 		assert(rb->is->rb == rb);
 		assert(!sawcur || rb != current_iface);
-		//fprintf(stderr,"\t%s: %d->%d (%d)\n",rb->is->iface->name,
-		//		getbegy(rb->subwin),getmaxy(rb->subwin) + getbegy(rb->subwin),
-		//		iface_lines_unbounded(rb->is));
+		/*fprintf(stderr,"\t%s: %d->%d (%d)\n",rb->is->iface->name,
+				getbegy(rb->subwin),getmaxy(rb->subwin) + getbegy(rb->subwin),
+				iface_lines_unbounded(rb->is));*/
 		if(rb == current_iface){
 			sawcur = 1;
 		}
@@ -1258,10 +1262,10 @@ void check_consistency(void){
 				expect = 2;
 			}
 		}
-		if(getbegy(rb->subwin) != expect){
-			//fprintf(stderr,"\n\n\n\n UH-OH had %d/%d wanted %d\n",
-			//		getbegy(rb->subwin),rb->scrline,expect);
-		}
+		/*if(getbegy(rb->subwin) != expect){
+			fprintf(stderr,"\n\n\n\n UH-OH had %d/%d wanted %d\n",
+					getbegy(rb->subwin),rb->scrline,expect);
+		}*/
 		assert(getbegy(rb->subwin) == expect);
 		expect += getmaxy(rb->subwin) + 1;
 		assert(!panel_hidden(rb->panel));
