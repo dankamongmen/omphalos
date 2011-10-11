@@ -87,7 +87,7 @@ send_loopback_frame(const omphalos_iface *octx __attribute__ ((unused)),
 	sina.sin_port = udp->dest;
 	payload = (const char *)udp + sizeof(*udp);
 	plen = ntohs(udp->len) - sizeof(*udp);
-	return sendto(i->fd,payload,plen,0,&sina,sizeof(sina));
+	return sendto(i->fd,payload,plen,MSG_DONTROUTE,&sina,sizeof(sina));
 }
 
 /* to log transmitted packets, use the following: {
