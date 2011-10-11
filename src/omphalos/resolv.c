@@ -97,6 +97,8 @@ int queue_for_naming(const struct omphalos_iface *octx,struct interface *i,
 	pthread_mutex_unlock(&resolver_lock);
 	if(!ret){
 		name_l3host_absolute(octx,i,l2,l3,"Resolving...",NAMING_LEVEL_RESOLVING);
+	}else{
+		name_l3host_absolute(octx,i,l2,l3,"DNS failure",NAMING_LEVEL_FAIL);
 	}
 	return ret;
 }
