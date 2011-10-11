@@ -41,7 +41,7 @@ struct dnshdr {
 // 31 delimiters).
 static int
 process_reverse6_lookup(const char *buf,int *fam,void *addr,size_t len){
-	uint128_t addr6 = *(const uint128_t *)addr;
+	uint128_t addr6;
 	int wantdigit;
 
 	if(len != 63){
@@ -65,6 +65,7 @@ process_reverse6_lookup(const char *buf,int *fam,void *addr,size_t len){
 		wantdigit = !wantdigit;
 	}
 	*fam = AF_INET6;
+	memcpy(addr,&addr6,sizeof(addr6));
 	return 0;
 }
 
