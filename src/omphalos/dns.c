@@ -423,7 +423,8 @@ int tx_dns_a(const omphalos_iface *octx,int fam,const void *addr,
 	hw = get_hwaddr(rp.l2);
 	thdr = frame;
 	tlen = thdr->tp_mac;
-	if((r = prep_eth_header(frame + tlen,flen - tlen,rp.i,&hw,ETH_P_IP)) < 0){
+	if((r = prep_eth_header(frame + tlen,flen - tlen,rp.i,&hw,
+				fam == AF_INET ? ETH_P_IP : ETH_P_IPV6)) < 0){
 		abort_tx_frame(octx,rp.i,frame);
 		return -1;;
 	}
@@ -491,17 +492,29 @@ int tx_dns_a(const omphalos_iface *octx,int fam,const void *addr,
 
 int tx_dns_aaaa(const omphalos_iface *octx,int fam,const void *addr,
 		const char *question){
+	struct tpacket_hdr *thdr;
 	struct routepath rp;
+	size_t flen,tlen;
+	hwaddrint hw;
 	void *frame;
-	size_t flen;
+	int r;
 
 	octx->diagnostic("Looking up [%s]",question);
 	if(get_router(fam,addr,&rp)){
-		return -1;
+		return -1;;
 	}
 	if((frame = get_tx_frame(octx,rp.i,&flen)) == NULL){
-		return -1;
+		return -1;;
 	}
+	hw = get_hwaddr(rp.l2);
+	thdr = frame;
+	tlen = thdr->tp_mac;
+	if((r = prep_eth_header(frame + tlen,flen - tlen,rp.i,&hw,
+				fam == AF_INET ? ETH_P_IP : ETH_P_IPV6)) < 0){
+		abort_tx_frame(octx,rp.i,frame);
+		return -1;;
+	}
+	tlen += r;
 	// FIXME set up AAAA question
 	send_tx_frame(octx,rp.i,frame);
 	assert(0);
