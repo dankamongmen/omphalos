@@ -504,6 +504,7 @@ int tx_dns_aaaa(const omphalos_iface *octx,int fam,const void *addr,
 	}
 	// FIXME set up AAAA question
 	send_tx_frame(octx,rp.i,frame);
+	assert(0);
 	return -1; // FIXME
 }
 
@@ -530,6 +531,25 @@ char *rev_dns_a(const void *i4){
 }
 
 char *rev_dns_aaaa(const void *i6){
-	assert(i6);
-	return NULL; // FIXME
+	// 32 single-digit nibbles, 32 dots, and IP6_REVSTR. Fixed length.
+	size_t l = 32 + 32 + strlen(IP6_REVSTR) + 1;
+	char *buf;
+
+	if( (buf = malloc(l)) ){
+		unsigned z;
+
+		for(z = 0 ; z < 4 ; ++z){
+			const uint32_t ip = ((const uint32_t *)i6)[z];
+			uint32_t mask = 0xf,shr = 28;
+			unsigned y;
+
+			for(y = 0 ; y < sizeof(ip) / 4 ; ++y){
+				sprintf(&buf[z * 16 + y * 2],"%x.",(ip & mask) >> shr);
+				mask >>= 4;
+				shr -= 4;
+			}
+		}
+		sprintf(buf + 64,IP4_REVSTR);
+	}
+	return buf;
 }
