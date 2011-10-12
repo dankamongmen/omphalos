@@ -417,7 +417,7 @@ int tx_dns_ptr(const omphalos_iface *octx,int fam,const void *addr,
 	if((frame = get_tx_frame(octx,rp.i,&flen)) == NULL){
 		return -1;;
 	}
-	r = setup_dns_ptr(&rp,fam,flen,frame,question);
+	r = setup_dns_ptr(&rp,fam,DNS_TARGET_PORT,flen,frame,question);
 	if(r){
 		abort_tx_frame(octx,rp.i,frame);
 		return -1;;
@@ -426,8 +426,8 @@ int tx_dns_ptr(const omphalos_iface *octx,int fam,const void *addr,
 	return 0;
 }
 
-int setup_dns_ptr(const struct routepath *rp,int fam,size_t flen,
-			void *frame,const char *question){
+int setup_dns_ptr(const struct routepath *rp,int fam,unsigned port,
+			size_t flen,void *frame,const char *question){
 	struct tpacket_hdr *thdr;
 	uint16_t *totlen,tptr;
 	struct dnshdr *dnshdr;
@@ -471,7 +471,7 @@ int setup_dns_ptr(const struct routepath *rp,int fam,size_t flen,
 		return -1;
 	}
 	udp = (struct udphdr *)((char *)frame + tlen);
-	udp->dest = htons(DNS_TARGET_PORT);
+	udp->dest = htons(port);
 	udp->source = random();
 	udp->check = 0u;
 	tlen += sizeof(*udp);

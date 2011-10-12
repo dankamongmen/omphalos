@@ -17,8 +17,8 @@ void handle_dns_packet(const struct omphalos_iface *,struct omphalos_packet *,
 int tx_dns_ptr(const struct omphalos_iface *,int,const void *,const char *)
 		__attribute__ ((nonnull (1,3,4)));
 
-int setup_dns_ptr(const struct routepath *,int,size_t,void *,const char *)
-			__attribute__ ((nonnull (1,4,5)));
+int setup_dns_ptr(const struct routepath *,int,unsigned,size_t,void *,const char *)
+			__attribute__ ((nonnull (1,5,6)));
 
 // Generate reverse DNS lookup strings
 char *rev_dns_a(const void *);		// Expects a 32-bit IPv4 address

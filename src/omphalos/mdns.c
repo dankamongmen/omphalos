@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <sys/socket.h>
 #include <omphalos/tx.h>
+#include <omphalos/udp.h>
 #include <omphalos/dns.h>
 #include <omphalos/mdns.h>
 #include <asm/byteorder.h>
@@ -48,7 +49,7 @@ int tx_mdns_ptr(const omphalos_iface *octx,interface *i,int fam,const char *str)
 	if((frame = get_tx_frame(octx,i,&flen)) == NULL){
 		return -1;
 	}
-	if(setup_dns_ptr(&rp,fam,flen,frame,str)){
+	if(setup_dns_ptr(&rp,fam,MDNS_UDP_PORT,flen,frame,str)){
 		abort_tx_frame(octx,i,frame);
 		return -1;
 	}

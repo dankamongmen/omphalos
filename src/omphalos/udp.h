@@ -11,6 +11,9 @@ extern "C" {
 struct omphalos_iface;
 struct omphalos_packet;
 
+#define DNS_UDP_PORT 53
+#define MDNS_UDP_PORT 5353
+
 void handle_udp_packet(const struct omphalos_iface *,struct omphalos_packet *,
 					const void *,size_t);
 

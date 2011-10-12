@@ -8,9 +8,6 @@
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
 
-#define DNS_UDP_PORT 53
-#define MDNS_UDP_PORT 5353
-
 // FIXME we want an automata-based approach to generically match. until then,
 // use well-known ports, ugh...
 void handle_udp_packet(const omphalos_iface *octx,omphalos_packet *op,const void *frame,size_t len){
