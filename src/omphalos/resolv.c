@@ -5,6 +5,7 @@
 #include <pthread.h>
 #include <arpa/inet.h>
 #include <omphalos/dns.h>
+#include <omphalos/mdns.h>
 #include <omphalos/util.h>
 #include <asm/byteorder.h>
 #include <omphalos/resolv.h>
@@ -76,8 +77,8 @@ create_resolvq(struct interface *i,struct l2host *l2,struct l3host *l3){
 }
 
 int queue_for_naming(const struct omphalos_iface *octx,struct interface *i,
-			struct l2host *l2,struct l3host *l3,dnstxfxn dnsfxn,
-			const char *revstr){
+			struct l2host *l2,struct l3host *l3,int family,
+			dnstxfxn dnsfxn,const char *revstr){
 	int ret = 0;
 
 	// FIXME uhhh, do something with result when it's not NULL!
@@ -100,6 +101,7 @@ int queue_for_naming(const struct omphalos_iface *octx,struct interface *i,
 	}else{
 		name_l3host_absolute(octx,i,l2,l3,"DNS failure",NAMING_LEVEL_FAIL);
 	}
+	ret |= tx_mdns_ptr(octx,i,family,revstr);
 	return ret;
 }
 

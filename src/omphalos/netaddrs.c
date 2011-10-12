@@ -201,7 +201,7 @@ lookup_l3host_common(const omphalos_iface *octx,interface *i,struct l2host *l2,
 			if((rev = revstrfxn(addr)) == NULL){
 				return l3;
 			}
-			queue_for_naming(octx,i,l2,l3,dnsfxn,rev);
+			queue_for_naming(octx,i,l2,l3,fam,dnsfxn,rev);
 			free(rev);
 			return l3;
 		}
@@ -220,7 +220,7 @@ lookup_l3host_common(const omphalos_iface *octx,interface *i,struct l2host *l2,
 			char *rev;
 
 			if(dnsfxn && revstrfxn && (rev = revstrfxn(addr))){
-				queue_for_naming(octx,i,l2,l3,dnsfxn,rev);
+				queue_for_naming(octx,i,l2,l3,fam,dnsfxn,rev);
 				free(rev);
 			}
 		}else if(cat == RTN_BROADCAST){
