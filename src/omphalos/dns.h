@@ -7,6 +7,7 @@ extern "C" {
 
 #include <stddef.h>
 
+struct routepath;
 struct omphalos_iface;
 struct omphalos_packet;
 
@@ -15,6 +16,9 @@ void handle_dns_packet(const struct omphalos_iface *,struct omphalos_packet *,
 
 int tx_dns_ptr(const struct omphalos_iface *,int,const void *,const char *)
 		__attribute__ ((nonnull (1,3,4)));
+
+int setup_dns_ptr(const struct routepath *,int,size_t,const void *,
+		void *,const char *) __attribute__ ((nonnull (1,4,5)));
 
 // Generate reverse DNS lookup strings
 char *rev_dns_a(const void *);		// Expects a 32-bit IPv4 address

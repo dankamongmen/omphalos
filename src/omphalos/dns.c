@@ -404,15 +404,9 @@ malformed:
 
 int tx_dns_ptr(const omphalos_iface *octx,int fam,const void *addr,
 		const char *question){
-	struct tpacket_hdr *thdr;
-	uint16_t *totlen,tptr;
-	struct dnshdr *dnshdr;
-	struct iphdr *iphdr;
 	struct routepath rp;
-	struct udphdr *udp;
-	size_t flen,tlen;
-	hwaddrint hw;
 	void *frame;
+	size_t flen;
 	int r;
 
 	assert(fam == AF_INET || fam == AF_INET6);
@@ -422,36 +416,52 @@ int tx_dns_ptr(const omphalos_iface *octx,int fam,const void *addr,
 	if((frame = get_tx_frame(octx,rp.i,&flen)) == NULL){
 		return -1;;
 	}
-	hw = get_hwaddr(rp.l2);
-	thdr = frame;
-	tlen = thdr->tp_mac;
-	if((r = prep_eth_header(frame + tlen,flen - tlen,rp.i,&hw,
-				fam == AF_INET ? ETH_P_IP : ETH_P_IPV6)) < 0){
+	r = setup_dns_ptr(&rp,fam,flen,addr,frame,question);
+	if(r){
 		abort_tx_frame(octx,rp.i,frame);
 		return -1;;
+	}
+	send_tx_frame(octx,rp.i,frame);
+	return 0;
+}
+
+int setup_dns_ptr(const struct routepath *rp,int fam,size_t flen,
+		const void *addr,void *frame,const char *question){
+	struct tpacket_hdr *thdr;
+	uint16_t *totlen,tptr;
+	struct dnshdr *dnshdr;
+	struct iphdr *iphdr;
+	struct udphdr *udp;
+	hwaddrint hw;
+	size_t tlen;
+	int r;
+
+	hw = get_hwaddr(rp->l2);
+	thdr = frame;
+	tlen = thdr->tp_mac;
+	if((r = prep_eth_header(frame + tlen,flen - tlen,rp->i,&hw,
+				fam == AF_INET ? ETH_P_IP : ETH_P_IPV6)) < 0){
+		return -1;
 	}
 	tlen += r;
 	if(fam == AF_INET){
 		uint32_t addr4 = *(const uint32_t *)addr;
-		uint32_t src4 = rp.src[0];
+		uint32_t src4 = rp->src[0];
 
 		totlen = &((struct iphdr *)(frame + tlen))->tot_len;
 		iphdr = frame + tlen;
 		r = prep_ipv4_header(iphdr,flen - tlen,src4,addr4,IPPROTO_UDP);
 	}else if(fam == AF_INET6){
 		// FIXME
-		abort_tx_frame(octx,rp.i,frame);
 		return -1;
 	}
-	if(r < 0){
-		abort_tx_frame(octx,rp.i,frame);
+	if(r){
 		return -1;
 	}
 	// Stash the <l3 headers' total size, so we can set tot_len when done
 	*totlen = tlen;
 	tlen += r;
 	if(flen - tlen < sizeof(*udp)){
-		abort_tx_frame(octx,rp.i,frame);
 		return -1;
 	}
 	udp = (struct udphdr *)((char *)frame + tlen);
@@ -460,7 +470,6 @@ int tx_dns_ptr(const omphalos_iface *octx,int fam,const void *addr,
 	udp->check = 0u;
 	tlen += sizeof(*udp);
 	if(flen - tlen < sizeof(*dnshdr) + strlen(question) + 1 + 4){
-		abort_tx_frame(octx,rp.i,frame);
 		return -1;
 	}
 	dnshdr = (struct dnshdr *)((char *)frame + tlen);
@@ -485,7 +494,6 @@ int tx_dns_ptr(const omphalos_iface *octx,int fam,const void *addr,
 	*totlen = htons(tlen - *totlen);
 	iphdr->check = ipv4_csum(iphdr);
 	udp->check = udp4_csum(iphdr);
-	send_tx_frame(octx,rp.i,frame);
 	return 0;
 }
 
