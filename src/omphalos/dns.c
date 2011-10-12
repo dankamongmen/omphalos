@@ -416,7 +416,7 @@ int tx_dns_ptr(const omphalos_iface *octx,int fam,const void *addr,
 	if((frame = get_tx_frame(octx,rp.i,&flen)) == NULL){
 		return -1;;
 	}
-	r = setup_dns_ptr(&rp,fam,flen,addr,frame,question);
+	r = setup_dns_ptr(&rp,fam,flen,frame,question);
 	if(r){
 		abort_tx_frame(octx,rp.i,frame);
 		return -1;;
@@ -426,7 +426,7 @@ int tx_dns_ptr(const omphalos_iface *octx,int fam,const void *addr,
 }
 
 int setup_dns_ptr(const struct routepath *rp,int fam,size_t flen,
-		const void *addr,void *frame,const char *question){
+			void *frame,const char *question){
 	struct tpacket_hdr *thdr;
 	uint16_t *totlen,tptr;
 	struct dnshdr *dnshdr;
@@ -445,7 +445,7 @@ int setup_dns_ptr(const struct routepath *rp,int fam,size_t flen,
 	}
 	tlen += r;
 	if(fam == AF_INET){
-		uint32_t addr4 = *(const uint32_t *)addr;
+		uint32_t addr4 = get_l3addr_in(rp->l3);
 		uint32_t src4 = rp->src[0];
 
 		totlen = &((struct iphdr *)(frame + tlen))->tot_len;

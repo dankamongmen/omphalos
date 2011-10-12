@@ -190,9 +190,12 @@ name_ethmcastaddr(const void *mac){
 		size_t mlen;
 		uint16_t eproto;	// host byte order
 	} mcasts[] = {
+		// We don't list eg mDNS because the 224.0.0.0/4 network
+		// is larger than the 23 bits available for mapping, and
+		// thus other multicast addresses could use that MAC.
 		{ // FIXME need handle MPLS Multicast on 01:00:53:1+
 			.name = "RFC 1112 IPv4 multicast",
-			.mac = "\x01\x00\x5e",		// low order 23 bits of ip addresses from 224.0.0.0/4
+			.mac = "\x01\x00\x5e",	// low order 23 bits of ip addresses from 224.0.0.0/4
 			.mlen = 3,
 			.eproto = ETH_P_IP,
 		},{
