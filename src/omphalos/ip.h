@@ -7,6 +7,7 @@ extern "C" {
 
 #include <stddef.h>
 #include <stdint.h>
+#include <omphalos/128.h>
 
 struct omphalos_iface;
 struct omphalos_packet;
@@ -17,7 +18,8 @@ void handle_ipv4_packet(const struct omphalos_iface *,struct omphalos_packet *,
 void handle_ipv6_packet(const struct omphalos_iface *,struct omphalos_packet *,
 					const void *,size_t);
 
-int prep_ipv4_header(void *,size_t,uint32_t,uint32_t,uint16_t);
+int prep_ipv4_header(void *,size_t,uint32_t,uint32_t,unsigned);
+int prep_ipv6_header(void *,size_t,uint128_t,uint128_t,unsigned);
 
 #ifdef __cplusplus
 }

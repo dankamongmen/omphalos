@@ -1,8 +1,9 @@
 #include <ctype.h>
 #include <assert.h>
 #include <stdint.h>
-#include <linux/ip.h>
 #include <linux/udp.h>
+#include <netinet/ip.h>
+#include <netinet/ip6.h>
 #include <omphalos/ip.h>
 #include <omphalos/tx.h>
 #include <omphalos/dns.h>
@@ -430,10 +431,10 @@ int setup_dns_ptr(const struct routepath *rp,int fam,size_t flen,
 	struct tpacket_hdr *thdr;
 	uint16_t *totlen,tptr;
 	struct dnshdr *dnshdr;
-	struct iphdr *iphdr;
 	struct udphdr *udp;
 	hwaddrint hw;
 	size_t tlen;
+	void *iphdr;
 	int r;
 
 	hw = get_hwaddr(rp->l2);
@@ -444,22 +445,27 @@ int setup_dns_ptr(const struct routepath *rp,int fam,size_t flen,
 		return -1;
 	}
 	tlen += r;
+	iphdr = (char *)frame + tlen;
+	// Stash the <l3 headers' total size, so we can set tot_len when done
 	if(fam == AF_INET){
 		uint32_t addr4 = get_l3addr_in(rp->l3);
 		uint32_t src4 = rp->src[0];
 
-		totlen = &((struct iphdr *)(frame + tlen))->tot_len;
-		iphdr = frame + tlen;
+		totlen = &((struct iphdr *)iphdr)->tot_len;
 		r = prep_ipv4_header(iphdr,flen - tlen,src4,addr4,IPPROTO_UDP);
+		*totlen = tlen;
 	}else if(fam == AF_INET6){
-		// FIXME
+		uint128_t addr6 = get_l3addr_in6(rp->l3);
+		uint128_t src6;
+
+		memcpy(&src6,&rp->src,sizeof(src6));
+		totlen = &((struct ip6_hdr *)iphdr)->ip6_ctlun.ip6_un1.ip6_un1_plen;
+		r = prep_ipv6_header(iphdr,flen - tlen,src6,addr6,IPPROTO_UDP);
+		*totlen = tlen + r;
+	}
+	if(r < 0){
 		return -1;
 	}
-	if(r){
-		return -1;
-	}
-	// Stash the <l3 headers' total size, so we can set tot_len when done
-	*totlen = tlen;
 	tlen += r;
 	if(flen - tlen < sizeof(*udp)){
 		return -1;
@@ -492,7 +498,9 @@ int setup_dns_ptr(const struct routepath *rp,int fam,size_t flen,
 	udp->len += strlen(question) + 1 + 4;
 	udp->len = htons(udp->len);
 	*totlen = htons(tlen - *totlen);
-	iphdr->check = ipv4_csum(iphdr);
+	if(fam == AF_INET){
+		((struct iphdr *)iphdr)->check = ipv4_csum(iphdr);
+	}
 	udp->check = udp4_csum(iphdr);
 	return 0;
 }

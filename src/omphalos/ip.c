@@ -17,6 +17,7 @@
 #include <omphalos/interface.h>
 
 #define DEFAULT_IP4_TTL 64
+#define DEFAULT_IP6_TTL 64
 
 static void
 handle_igmp_packet(const omphalos_iface *octx,omphalos_packet *op,const void *frame,size_t len){
@@ -167,7 +168,7 @@ void handle_ipv4_packet(const omphalos_iface *octx,omphalos_packet *op,
 // Doesn't set ->tot_len; that must be done by the caller. Prepare ->check for
 // checksum evaluation, but we cannot yet actually evaluate it (FIXME though we
 // could calculate differential).
-int prep_ipv4_header(void *frame,size_t flen,uint32_t src,uint32_t dst,uint16_t proto){
+int prep_ipv4_header(void *frame,size_t flen,uint32_t src,uint32_t dst,unsigned proto){
 	struct iphdr *ip;
 
 	if(src == 0){
@@ -185,6 +186,24 @@ int prep_ipv4_header(void *frame,size_t flen,uint32_t src,uint32_t dst,uint16_t 
 	ip->saddr = src;
 	ip->daddr = dst;
 	ip->protocol = proto;
-	ip->check = 0;
 	return ip->ihl << 2u;
+}
+
+// Doesn't set ->tot_len; that must be done by the caller. Prepare ->check for
+// checksum evaluation, but we cannot yet actually evaluate it (FIXME though we
+// could calculate differential).
+int prep_ipv6_header(void *frame,size_t flen,uint128_t src,uint128_t dst,unsigned proto){
+	struct ip6_hdr *ip;
+
+	if(flen < sizeof(*ip)){
+		return -1;
+	}
+	ip = frame;
+	memset(ip,0,sizeof(*ip));
+	ip->ip6_ctlun.ip6_un1.ip6_un1_flow = (6u << 28u);
+	ip->ip6_ctlun.ip6_un1.ip6_un1_hlim = DEFAULT_IP6_TTL;
+	ip->ip6_ctlun.ip6_un1.ip6_un1_nxt = proto;
+	memcpy(ip->ip6_src.s6_addr32,&src,sizeof(src));
+	memcpy(ip->ip6_dst.s6_addr32,&dst,sizeof(dst));
+	return sizeof(*ip);
 }
