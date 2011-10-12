@@ -6,6 +6,7 @@ extern "C" {
 #endif
 
 #include <stdio.h>
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
@@ -198,6 +199,18 @@ interface_promisc_p(const interface *i){
 static inline int
 interface_virtual_p(const interface *i){
 	return i->settings_valid == SETTINGS_INVALID;
+}
+
+static inline void
+lock_interface(interface *i){
+	int r = pthread_mutex_lock(&i->lock);
+	assert(r == 0);
+}
+
+static inline void
+unlock_interface(interface *i){
+	int r = pthread_mutex_unlock(&i->lock);
+	assert(r == 0);
 }
 
 #ifdef __cplusplus
