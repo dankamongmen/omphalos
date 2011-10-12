@@ -18,6 +18,7 @@ void handle_udp_packet(const struct omphalos_iface *,struct omphalos_packet *,
 					const void *,size_t);
 
 uint16_t udp4_csum(const void *hdr) __attribute__ ((nonnull (1)));
+uint16_t udp6_csum(const void *hdr) __attribute__ ((nonnull (1)));
 
 #ifdef __cplusplus
 }

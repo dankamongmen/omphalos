@@ -70,3 +70,39 @@ uint16_t udp4_csum(const void *hdr){
 	return fold;
 }
 
+// hdr must be a valid ipv6 header
+uint16_t udp6_csum(const void *hdr){
+	const struct iphdr *ih = hdr;
+	const struct udphdr *uh = (const void *)((const char *)hdr + (ih->ihl << 2u));
+	const void *data = (const char *)uh + sizeof(*uh);
+	uint16_t dlen = ntohs(uh->len);
+	const uint16_t *cur;
+	uint16_t fold;
+	uint32_t sum;
+	unsigned z;
+
+	sum = 0;
+	// UDP4 checksum is over UDP header, UDP data (zero padded to make it a
+	// multiple of 16 bits), and 12-byte IPv4 pseudoheader containing
+	// source addr, dest addr, 8 bits of 0, protocol, and total UDP length.
+	sum += (ih->saddr & 0xffffu) + (ih->saddr >> 16u); // saddr
+	sum += (ih->daddr & 0xffffu) + (ih->daddr >> 16u); // daddr
+	sum += htons(ih->protocol); // zeroes and protocol
+	sum += htons(dlen); // total length
+	cur = (const uint16_t *)uh; // now checksum over UDP header + data
+	for(z = 0 ; z < (sizeof(*uh) + dlen) / sizeof(*cur) ; ++z){
+		sum += cur[z];
+	}
+	if(dlen % 2){
+		sum += ((uint16_t)(((const unsigned char *)data)[dlen - 1])) << 8u;
+	}
+	fold = 0;
+	for(z = 0 ; z < sizeof(sum) / 2 ; ++z){
+		fold += sum & 0xffffu;
+		sum >>= 16u;
+	}
+	if((fold = ~fold) == 0u){
+		fold = 0xffffu;
+	}
+	return fold;
+}

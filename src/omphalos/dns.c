@@ -500,8 +500,10 @@ int setup_dns_ptr(const struct routepath *rp,int fam,unsigned port,
 	*totlen = htons(tlen - *totlen);
 	if(fam == AF_INET){
 		((struct iphdr *)iphdr)->check = ipv4_csum(iphdr);
+		udp->check = udp4_csum(iphdr);
+	}else{
+		udp->check = udp6_csum(iphdr);
 	}
-	udp->check = udp4_csum(iphdr);
 	return 0;
 }
 

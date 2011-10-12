@@ -91,11 +91,6 @@ send_loopback_frame(const omphalos_iface *octx __attribute__ ((unused)),
 }
 
 /* to log transmitted packets, use the following: {
-	struct pcap_pkthdr phdr;
-
-	phdr.caplen = phdr.len = thdr->tp_len;
-	gettimeofday(&phdr.ts,NULL);
-	log_pcap_packet(&phdr,(char *)frame + thdr->tp_mac);
 }*/
 // Mark a frame as ready-to-send. Must have come from get_tx_frame() using this
 // same interface. Yes, we will see packets we generate on the RX ring.
@@ -109,6 +104,11 @@ void send_tx_frame(const omphalos_iface *octx,interface *i,void *frame){
 		assert(thdr->tp_status == TP_STATUS_AVAILABLE);
 		thdr->tp_status = TP_STATUS_SEND_REQUEST;
 		// FIXME zero-copy wants NULL, 0, 0 AFAICT
+		{struct pcap_pkthdr phdr;
+
+	phdr.caplen = phdr.len = thdr->tp_len;
+	gettimeofday(&phdr.ts,NULL);
+	log_pcap_packet(&phdr,(char *)frame + thdr->tp_mac);}
 		ret = send(i->fd,(char *)frame + TPACKET_ALIGN(sizeof(*thdr)),tplen,0);
 		if(ret == 0){
 			ret = tplen;
