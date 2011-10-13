@@ -3,6 +3,7 @@
 #include <linux/udp.h>
 #include <omphalos/udp.h>
 #include <omphalos/dns.h>
+#include <omphalos/dhcp.h>
 #include <omphalos/mdns.h>
 #include <asm/byteorder.h>
 #include <omphalos/omphalos.h>
@@ -29,6 +30,10 @@ void handle_udp_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 		case __constant_htons(MDNS_UDP_PORT):{
 			// FIXME also check daddr?
 			handle_mdns_packet(octx,op,ubdy,ulen);
+		}break;
+		case __constant_htons(DHCP_UDP_PORT):{
+			// FIXME also check daddr?
+			handle_dhcp_packet(octx,op,ubdy,ulen);
 		}break;
 	}
 }
