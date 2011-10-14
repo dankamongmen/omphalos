@@ -21,12 +21,18 @@
 #define IP4_REVSTR "\x07" "in-addr" "\x04" "arpa"
 #define IP6_REVSTR_DECODED ".ip6.arpa"
 #define IP6_REVSTR "\x03" "ip6" "\x04" "arpa"
+#define MDNS_REVSTR_DECODED ".local"
+#define MDNS_REVSTR "\x05" "local"
 
 #define DNS_CLASS_IN	__constant_ntohs(0x0001u)
 #define DNS_CLASS_FLUSH	__constant_ntohs(0x8000u)
 #define DNS_TYPE_A	__constant_ntohs(1u)
+#define DNS_TYPE_CNAME	__constant_ntohs(5u)
 #define DNS_TYPE_PTR	__constant_ntohs(12u)
+#define DNS_TYPE_HINFO	__constant_ntohs(13u)
+#define DNS_TYPE_TXT	__constant_ntohs(16u)
 #define DNS_TYPE_AAAA	__constant_ntohs(28u)
+#define DNS_TYPE_SRV	__constant_ntohs(33u)
 
 #define DNS_TARGET_PORT 53	// FIXME terrible
 
@@ -79,6 +85,15 @@ process_reverse_lookup(const char *buf,int *fam,void *addr){
 	unsigned quad;
 	char q[4][5];
 
+	// First, check for mDNS
+	if(len < __builtin_strlen(MDNS_REVSTR_DECODED)){
+		return -1;
+	}
+	const size_t xmlen = len - __builtin_strlen(MDNS_REVSTR_DECODED);
+	if(strcmp(buf + xmlen,MDNS_REVSTR_DECODED) == 0){
+		// FIXME for now, do nothing with mDNS PTR records
+		return -1;
+	}
 	// Check the IPv6 string first (it's shorter)
 	if(len < __builtin_strlen(IP6_REVSTR_DECODED)){
 		return -1;
@@ -374,6 +389,14 @@ void handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 			}else if(type == DNS_TYPE_AAAA){
 				offer_resolution(octx,AF_INET6,data,buf,
 						NAMING_LEVEL_DNS,nsfam,nsaddr);
+			}else if(type == DNS_TYPE_CNAME){
+				// FIXME do what (nothing probably)?
+			}else if(type == DNS_TYPE_TXT){
+				// FIXME do what?
+			}else if(type == DNS_TYPE_SRV){
+				// FIXME do what?
+			}else if(type == DNS_TYPE_HINFO){
+				// FIXME do what?
 			}
 			//octx->diagnostic("TYPE: %hu CLASS: %hu",
 			//		,ntohs(*((uint16_t *)sec + 1)));

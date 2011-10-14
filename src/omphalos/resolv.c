@@ -99,9 +99,7 @@ int queue_for_naming(const struct omphalos_iface *octx,struct interface *i,
 		ret = dnsfxn(octx,AF_INET6,&resolvers6->addr.ip6,revstr);
 	}
 	pthread_mutex_unlock(&resolver_lock);
-	if(family == AF_INET6){ // FIXME also do 4!
-		ret |= tx_mdns_ptr(octx,i,family,revstr);
-	}
+	ret |= tx_mdns_ptr(octx,i,family,revstr);
 	return ret;
 }
 
