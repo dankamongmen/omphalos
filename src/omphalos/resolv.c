@@ -85,6 +85,9 @@ int queue_for_naming(const struct omphalos_iface *octx,struct interface *i,
 	if(create_resolvq(i,l2,l3) == NULL){
 		return -1;
 	}
+	if(!ret){
+		name_l3host_absolute(octx,i,l2,l3,"Resolving...",NAMING_LEVEL_RESOLVING);
+	}
 	if(pthread_mutex_lock(&resolver_lock)){
 		return -1;
 	}
@@ -96,11 +99,6 @@ int queue_for_naming(const struct omphalos_iface *octx,struct interface *i,
 		ret = dnsfxn(octx,AF_INET6,&resolvers6->addr.ip6,revstr);
 	}
 	pthread_mutex_unlock(&resolver_lock);
-	if(!ret){
-		name_l3host_absolute(octx,i,l2,l3,"Resolving...",NAMING_LEVEL_RESOLVING);
-	}else{
-		name_l3host_absolute(octx,i,l2,l3,"DNS failure",NAMING_LEVEL_FAIL);
-	}
 	if(family == AF_INET6){ // FIXME also do 4!
 		ret |= tx_mdns_ptr(octx,i,family,revstr);
 	}

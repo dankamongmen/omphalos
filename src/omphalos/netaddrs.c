@@ -195,6 +195,9 @@ lookup_l3host_common(const omphalos_iface *octx,interface *i,struct l2host *l2,
 			if(l3->name && l3->nlevel >= NAMING_LEVEL_RESOLVING){
 				return l3;
 			}
+			if(cat != RTN_UNICAST && cat != RTN_LOCAL){
+				return l3;
+			}
 			if(dnsfxn == NULL || revstrfxn == NULL){
 				return l3;
 			}
@@ -210,29 +213,24 @@ lookup_l3host_common(const omphalos_iface *octx,interface *i,struct l2host *l2,
 		l3->l2 = l2;
                 l3->next = *orig;
                 *orig = l3;
-		if(cat == RTN_MULTICAST){
-			const char *mname = ietf_multicast_lookup(fam,addr);
-			if(mname){
-				l3->name = strdup(mname);
-				l3->nlevel = NAMING_LEVEL_GLOBAL;
-			}
-		}else if(cat == RTN_UNICAST || cat == RTN_LOCAL){
+		if(cat == RTN_UNICAST || cat == RTN_LOCAL){
 			char *rev;
 
 			if(dnsfxn && revstrfxn && (rev = revstrfxn(addr))){
+				// Calls the host event if necessary
 				queue_for_naming(octx,i,l2,l3,fam,dnsfxn,rev);
 				free(rev);
 			}
+		}else if(cat == RTN_MULTICAST){
+			const char *mname = ietf_multicast_lookup(fam,addr);
+			if(mname){
+				name_l3host_absolute(octx,i,l2,l3,mname,NAMING_LEVEL_GLOBAL);
+			}
 		}else if(cat == RTN_BROADCAST){
 			const char *mname = ietf_bcast_lookup(fam,addr);
-
 			if(mname){
-				l3->name = strdup(mname);
-				l3->nlevel = NAMING_LEVEL_GLOBAL;
+				name_l3host_absolute(octx,i,l2,l3,mname,NAMING_LEVEL_GLOBAL);
 			}
-		}
-		if(octx->host_event){
-			l3->opaque = octx->host_event(i,l2,l3);
 		}
         }
         return l3;
