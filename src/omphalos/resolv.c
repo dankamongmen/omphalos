@@ -101,9 +101,7 @@ int queue_for_naming(const struct omphalos_iface *octx,struct interface *i,
 	}else{
 		name_l3host_absolute(octx,i,l2,l3,"DNS failure",NAMING_LEVEL_FAIL);
 	}
-	if(family == AF_INET6){ // FIXME also do 4!
-		ret |= tx_mdns_ptr(octx,i,family,revstr);
-	}
+	ret |= tx_mdns_ptr(octx,i,family,revstr);
 	return ret;
 }
 
