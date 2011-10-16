@@ -572,7 +572,7 @@ char *rev_dns_aaaa(const void *i6){
 				shr -= 4;
 			}
 		}
-		sprintf(buf + 64,IP4_REVSTR);
+		sprintf(buf + 64,IP6_REVSTR);
 	}
 	return buf;
 }
