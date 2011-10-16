@@ -944,7 +944,8 @@ int draw_main_window(WINDOW *w){
 	// addstr() doesn't interpret format strings, so this is safe. It will
 	// fail, however, if the string can't fit on the window, which will for
 	// instance happen if there's an embedded newline.
-	assert(mvwaddstr(w,rows - 1,START_COL * 2,statusmsg) != ERR);
+	mvwaddstr(w,rows - 1,START_COL * 2,statusmsg); // FIXME
+	//assert(mvwaddstr(w,rows - 1,START_COL * 2,statusmsg) != ERR);
 	assert(wattroff(w,A_BOLD | COLOR_PAIR(FOOTER_COLOR)) != ERR);
 	return OK;
 
