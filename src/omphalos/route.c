@@ -213,10 +213,10 @@ int handle_rtm_newroute(const omphalos_iface *octx,const struct nlmsghdr *nl){
 			octx->diagnostic(L"Couldn't add route to %s",r->iface->name);
 			goto err;
 		}
-		pthread_mutex_unlock(&r->iface->lock);
 		if(r->ssg.ss_family){
 			send_arp_probe(octx,r->iface,r->iface->bcast,ag,flen,as);
 		}
+		pthread_mutex_unlock(&r->iface->lock);
 		pthread_mutex_lock(&route_lock);
 			prev = &ip_table4;
 			// Order most-specific (largest maskbits) to least-specific (0 maskbits)
