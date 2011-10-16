@@ -42,7 +42,6 @@ void handle_udp_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 uint16_t udp4_csum(const void *hdr){
 	const struct iphdr *ih = hdr;
 	const struct udphdr *uh = (const void *)((const char *)hdr + (ih->ihl << 2u));
-	const void *data = (const char *)uh + sizeof(*uh);
 	uint16_t dlen = ntohs(uh->len);
 	const uint16_t *cur;
 	uint32_t sum,fold;
@@ -57,11 +56,11 @@ uint16_t udp4_csum(const void *hdr){
 	sum += htons(ih->protocol); // zeroes and protocol
 	sum += htons(dlen); // total length
 	cur = (const uint16_t *)uh; // now checksum over UDP header + data
-	for(z = 0 ; z < (sizeof(*uh) + dlen) / sizeof(*cur) ; ++z){
+	for(z = 0 ; z < dlen / sizeof(*cur) ; ++z){
 		sum += cur[z];
 	}
 	if(dlen % 2){
-		sum += ((uint16_t)(((const unsigned char *)data)[dlen - 1])) << 8u;
+		sum += ((uint16_t)(((const unsigned char *)uh)[dlen - 1])) << 8u;
 	}
 	fold = 0;
 	for(z = 0 ; z < sizeof(sum) / 2 ; ++z){
@@ -79,7 +78,6 @@ uint16_t udp4_csum(const void *hdr){
 uint16_t udp6_csum(const void *hdr){
 	const struct iphdr *ih = hdr;
 	const struct udphdr *uh = (const void *)((const char *)hdr + (ih->ihl << 2u));
-	const void *data = (const char *)uh + sizeof(*uh);
 	uint16_t dlen = ntohs(uh->len);
 	const uint16_t *cur;
 	uint16_t fold;
@@ -95,11 +93,11 @@ uint16_t udp6_csum(const void *hdr){
 	sum += htons(ih->protocol); // zeroes and protocol
 	sum += htons(dlen); // total length
 	cur = (const uint16_t *)uh; // now checksum over UDP header + data
-	for(z = 0 ; z < (sizeof(*uh) + dlen) / sizeof(*cur) ; ++z){
+	for(z = 0 ; z < dlen / sizeof(*cur) ; ++z){
 		sum += cur[z];
 	}
 	if(dlen % 2){
-		sum += ((uint16_t)(((const unsigned char *)data)[dlen - 1])) << 8u;
+		sum += ((uint16_t)(((const unsigned char *)uh)[dlen - 1])) << 8u;
 	}
 	fold = 0;
 	for(z = 0 ; z < sizeof(sum) / 2 ; ++z){
