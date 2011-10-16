@@ -323,12 +323,12 @@ void handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 	}
 	if(op->l3proto == ETH_P_IP){
 		nsfam = AF_INET;
-		nsaddru.addr4 = get_l3addr_in(op->l3s);
 		nsaddr = &nsaddru.addr4;
+		memcpy(nsaddr,op->l3saddr,4);
 	}else if(op->l3proto == ETH_P_IPV6){
 		nsfam = AF_INET6;
-		nsaddru.addr6 = get_l3addr_in6(op->l3s);
 		nsaddr = &nsaddru.addr6;
+		memcpy(nsaddr,op->l3saddr,16);
 	}else{
 		octx->diagnostic(L"DNS on %s:0x%x",op->i->name,op->l3proto);
 		op->noproto = 1;
