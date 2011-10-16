@@ -13,13 +13,22 @@
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
 
+#define ETH_P_LLDP	0x88cc	// Link Layer Discovery Protocol
 #define ETH_P_ECTP	0x9000	// Ethernet Configuration Test Protocol
 
 #define LLC_MAX_LEN	1536 // one more than maximum length of 802.2 LLC
 
 static void
+handle_lldp_packet(const omphalos_iface *octx __attribute__ ((unused)),
+			omphalos_packet *op __attribute__ ((unused)),
+			const void *frame __attribute__ ((unused)),
+			size_t len __attribute__ ((unused))){
+	// FIXME
+}
+
+static void
 handle_ectp_packet(const omphalos_iface *octx __attribute__ ((unused)),
-			interface *i __attribute__ ((unused)),
+			omphalos_packet *op __attribute__ ((unused)),
 			const void *frame __attribute__ ((unused)),
 			size_t len __attribute__ ((unused))){
 	// FIXME
@@ -86,7 +95,7 @@ handle_8021q(const omphalos_iface *octx,omphalos_packet *op,const void *frame,
 	break;}case ETH_P_IPX:{
 		handle_ipx_packet(octx,op,dgram,dlen);
 	break;}case ETH_P_ECTP:{
-		handle_ectp_packet(octx,op->i,dgram,dlen);
+		handle_ectp_packet(octx,op,dgram,dlen);
 	break;}default:{
 		// At least Cisco PVST BDPU's under VLAN use 802.1q to directly
 		// encapsulate IEEE 802.2/SNAP. See:
@@ -142,7 +151,13 @@ handle_snap(const omphalos_iface *octx,omphalos_packet *op,const void *frame,siz
 			handle_eapol_packet(octx,op,dgram,dlen);
 			break;
 		}case ETH_P_ECTP:{
-			handle_ectp_packet(octx,op->i,dgram,dlen);
+			handle_ectp_packet(octx,op,dgram,dlen);
+			break;
+		}case ETH_P_IPX:{
+			handle_ipx_packet(octx,op,dgram,dlen);
+			break;
+		}case ETH_P_LLDP:{
+			handle_lldp_packet(octx,op,dgram,dlen);
 			break;
 		}default:{
 			op->noproto = 1;
@@ -247,10 +262,13 @@ void handle_ethernet_packet(const omphalos_iface *octx,omphalos_packet *op,
 			handle_eapol_packet(octx,op,dgram,dlen);
 			break;
 		}case ETH_P_ECTP:{
-			handle_ectp_packet(octx,op->i,dgram,dlen);
+			handle_ectp_packet(octx,op,dgram,dlen);
 			break;
 		}case ETH_P_IPX:{
 			handle_ipx_packet(octx,op,dgram,dlen);
+			break;
+		}case ETH_P_LLDP:{
+			handle_lldp_packet(octx,op,dgram,dlen);
 			break;
 		}default:{
 			if(proto < LLC_MAX_LEN){ // 802.2 DSAP (and maybe SNAP/802.1q)
