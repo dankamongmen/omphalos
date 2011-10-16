@@ -192,8 +192,11 @@ lookup_l3host_common(const omphalos_iface *octx,interface *i,struct l2host *l2,
 			l3->next = *orig;
 			*orig = l3;
 			l3->l2 = l2; // Update the last l2 FIXME
-			if(l3->name && l3->nlevel >= NAMING_LEVEL_RESOLVING){
+			if(l3->name && l3->nlevel > NAMING_LEVEL_RESOLVING){
 				return l3;
+			}else if(l3->nlevel == NAMING_LEVEL_RESOLVING){
+				// FIXME try again after a period. will require
+				// holding references to lookup object
 			}
 			if(cat != RTN_UNICAST && cat != RTN_LOCAL){
 				return l3;
