@@ -56,6 +56,8 @@ void handle_ipv6_packet(const omphalos_iface *octx,omphalos_packet *op,
 		return;
 	}
 	// FIXME check extension headers...
+	memcpy(op->l3saddr,&ip->ip6_src,16);
+	memcpy(op->l3daddr,&ip->ip6_dst,16);
 	op->l3s = lookup_l3host(octx,op->i,op->l2s,AF_INET6,&ip->ip6_src);
 	op->l3d = lookup_l3host(octx,op->i,op->l2d,AF_INET6,&ip->ip6_dst);
 	const void *nhdr = (const unsigned char *)frame + (len - plen);
@@ -138,6 +140,8 @@ void handle_ipv4_packet(const omphalos_iface *octx,omphalos_packet *op,
 				op->i->name,len,ntohs(ip->tot_len));
 		return;
 	}
+	memcpy(op->l3saddr,&ip->saddr,4);
+	memcpy(op->l3daddr,&ip->daddr,4);
 	op->l3s = lookup_l3host(octx,op->i,op->l2s,AF_INET,&ip->saddr);
 	op->l3d = lookup_l3host(octx,op->i,op->l2d,AF_INET,&ip->daddr);
 
@@ -197,7 +201,7 @@ int prep_ipv6_header(void *frame,size_t flen,uint128_t src,uint128_t dst,unsigne
 	}
 	ip = frame;
 	memset(ip,0,sizeof(*ip));
-	ip->ip6_ctlun.ip6_un1.ip6_un1_flow = (6u << 28u);
+	ip->ip6_ctlun.ip6_un1.ip6_un1_flow = htonl(6u << 28u);
 	ip->ip6_ctlun.ip6_un1.ip6_un1_hlim = DEFAULT_IP6_TTL;
 	ip->ip6_ctlun.ip6_un1.ip6_un1_nxt = proto;
 	memcpy(ip->ip6_src.s6_addr32,&src,sizeof(src));

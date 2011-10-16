@@ -10,7 +10,7 @@ extern "C" {
 #include <pcap/pcap.h>
 
 #define PROGNAME "omphalos"	// FIXME
-#define VERSION  "0.98-pre"	// FIXME
+#define VERSION  "0.99-pre"	// FIXME
 
 struct l2host;
 struct l3host;
@@ -25,12 +25,9 @@ typedef struct omphalos_packet {
 	struct l2host *l2s,*l2d;
 	uint16_t l3proto;
 	struct l3host *l3s,*l3d;
+	uint32_t l3saddr[4],l3daddr[4];	// FIXME workaround libbluetooth's def
 	unsigned malformed;
 	unsigned noproto;
-	/*union {
-		struct iphost *ip4;
-		struct ipv6host *ip6;
-	} l3s,l3d;*/
 } omphalos_packet;
 
 // UI callback interface. Any number may be NULL, save diagnostic.
