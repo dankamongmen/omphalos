@@ -5,6 +5,7 @@
 extern "C" {
 #endif
 
+#include <wchar.h>
 #include <stdint.h>
 #include <sys/time.h>
 #include <pcap/pcap.h>
@@ -33,7 +34,7 @@ typedef struct omphalos_packet {
 // UI callback interface. Any number may be NULL, save diagnostic.
 typedef struct omphalos_iface {
 	// Free-form diagnostics using standard print(3)-style format strings.
-	void (*diagnostic)(const char *,...);
+	void (*diagnostic)(const wchar_t *,...);
 
 	// Device event callback. Called upon device detection or change. A
 	// value returned will be associated with the interface's "opaque"

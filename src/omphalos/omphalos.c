@@ -54,17 +54,17 @@ version(const char *arg0){
 }
 
 static void
-default_diagnostic(const char *fmt,...){
+default_diagnostic(const wchar_t *fmt,...){
 	va_list va;
 
 	va_start(va,fmt);
-	if(vfprintf(stderr,fmt,va) < 0){
-		abort();
-	}
-	if(fputc('\n',stderr) < 0){
+	if(vfwprintf(stderr,fmt,va) < 0){
 		abort();
 	}
 	va_end(va);
+	if(fputwc('\n',stderr) == WEOF){
+		abort();
+	}
 }
 
 // If we add any other signals to this list, be sure to update the signal
@@ -254,7 +254,7 @@ int omphalos_init(const omphalos_ctx *pctx){
 		}
 	}else{
 		if(init_pci_support()){
-			pctx->iface.diagnostic("Warning: no PCI support available");
+			pctx->iface.diagnostic(L"Warning: no PCI support available");
 		}
 		if(init_usb_support()){
 			return -1;

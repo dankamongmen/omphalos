@@ -21,16 +21,16 @@ void handle_eapol_packet(const omphalos_iface *octx,omphalos_packet *op,
 	const struct eapolhdr *eaphdr = frame;
 
 	if(len < sizeof(*eaphdr)){
-		octx->diagnostic("%s truncated (%zu < %zu)",__func__,len,sizeof(*eaphdr));
+		octx->diagnostic(L"%s truncated (%zu < %zu)",__func__,len,sizeof(*eaphdr));
 		op->malformed = 1;
 		return;
 	}
 	if(eaphdr->version != 1 && eaphdr->version != 2){
-		octx->diagnostic("Unknown EAPOL version %u",eaphdr->version);
+		octx->diagnostic(L"Unknown EAPOL version %u",eaphdr->version);
 		op->noproto = 1;
 	}
 	if(ntohs(eaphdr->len) != len - sizeof(*eaphdr)){
-		octx->diagnostic("%s malformed (%u != %zu)",__func__,
+		octx->diagnostic(L"%s malformed (%u != %zu)",__func__,
 			ntohs(eaphdr->len),len - sizeof(*eaphdr));
 		op->malformed = 1;
 		return;
@@ -42,7 +42,7 @@ void handle_eapol_packet(const omphalos_iface *octx,omphalos_packet *op,
 	break;}case EAPOL_KEY:{
 	break;}case EAPOL_ALERT:{
 	break;}default:{
-		octx->diagnostic("%s noproto %u",__func__,eaphdr->type);
+		octx->diagnostic(L"%s noproto %u",__func__,eaphdr->type);
 		op->noproto = 1;
 	break;} }
 }

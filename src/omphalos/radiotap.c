@@ -101,7 +101,7 @@ handle_ieee80211_mgmtfix(const omphalos_iface *octx,omphalos_packet *op,
 
 	if(len < sizeof(*imgmt)){
 		op->malformed = 1;
-		octx->diagnostic("%s mgmt frame too small (%zu) on %s",
+		octx->diagnostic(L"%s mgmt frame too small (%zu) on %s",
 				__func__,len,op->i->name);
 		return;
 	}
@@ -113,7 +113,7 @@ handle_ieee80211_mgmtfix(const omphalos_iface *octx,omphalos_packet *op,
 		unsigned tag = tags[0];
 
 		if(len < 2 + taglen){
-			octx->diagnostic("%s bad mgmt taglen (%zu/%u) on %s",
+			octx->diagnostic(L"%s bad mgmt taglen (%zu/%u) on %s",
 					__func__,len,taglen,op->i->name);
 			break;
 		}
@@ -131,7 +131,7 @@ handle_ieee80211_mgmtfix(const omphalos_iface *octx,omphalos_packet *op,
 	}
 	if(len){
 		if(len < 2){
-			octx->diagnostic("%s bad mgmt tags (%zu) on %s",
+			octx->diagnostic(L"%s bad mgmt tags (%zu) on %s",
 					__func__,len,op->i->name);
 		}
 		op->malformed = 1;
@@ -163,7 +163,7 @@ handle_ieee80211_mgmt(const omphalos_iface *octx,omphalos_packet *op,
 
 	if(len < sizeof(*ibec)){
 		op->malformed = 1;
-		octx->diagnostic("%s Packet too small (%zu) on %s",
+		octx->diagnostic(L"%s Packet too small (%zu) on %s",
 				__func__,len,op->i->name);
 		return;
 	}
@@ -180,7 +180,7 @@ handle_ieee80211_ctrl(const omphalos_iface *octx,omphalos_packet *op,
 
 	if(len < sizeof(*ictrl)){
 		op->malformed = 1;
-		octx->diagnostic("%s Packet too small (%zu) on %s",
+		octx->diagnostic(L"%s Packet too small (%zu) on %s",
 				__func__,len,op->i->name);
 		return;
 	}
@@ -195,7 +195,7 @@ handle_ieee80211_data(const omphalos_iface *octx,omphalos_packet *op,
 
 	if(len < sizeof(*idata)){
 		op->malformed = 1;
-		octx->diagnostic("%s Packet too small (%zu) on %s",
+		octx->diagnostic(L"%s Packet too small (%zu) on %s",
 				__func__,len,op->i->name);
 		return;
 	}
@@ -214,13 +214,13 @@ handle_ieee80211_packet(const omphalos_iface *octx,omphalos_packet *op,
 	// control/duration/h_dest, seems to be the minimum).
 	if(len < sizeof(ieee80211hdr)){
 		op->malformed = 1;
-		octx->diagnostic("%s Packet too small (%zu) on %s",
+		octx->diagnostic(L"%s Packet too small (%zu) on %s",
 				__func__,len,op->i->name);
 		return;
 	}
 	if(IEEE80211_VERSION(ihdr->control) != 0){
 		op->noproto = 1;
-		octx->diagnostic("%s Unknown version (%zu) on %s",__func__,
+		octx->diagnostic(L"%s Unknown version (%zu) on %s",__func__,
 				IEEE80211_VERSION(ihdr->control),op->i->name);
 		return;
 	}
@@ -240,7 +240,7 @@ handle_ieee80211_packet(const omphalos_iface *octx,omphalos_packet *op,
 		}break;
 		default:{
 			op->noproto = 1;
-			octx->diagnostic("%s Unknown type %zu on %s",__func__,
+			octx->diagnostic(L"%s Unknown type %zu on %s",__func__,
 					IEEE80211_TYPE(ihdr->control),op->i->name);
 			return;
 		}break;
@@ -301,20 +301,20 @@ void handle_radiotap_packet(const omphalos_iface *octx,omphalos_packet *op,
 	// control/duration/h_dest, seems to be the minimum).
 	if(len < sizeof(radiotaphdr)){
 		op->malformed = 1;
-		octx->diagnostic("%s Packet too small (%zu) on %s",
+		octx->diagnostic(L"%s Packet too small (%zu) on %s",
 				__func__,len,op->i->name);
 		return;
 	}
 	if(rhdr->version != 0){
 		op->noproto = 1;
-		octx->diagnostic("%s Unknown radiotap version %zu on %s",
+		octx->diagnostic(L"%s Unknown radiotap version %zu on %s",
 				__func__,rhdr->version,op->i->name);
 		return;
 	}
 	rlen = rhdr->len;
 	if(len < rlen){
 		op->malformed = 1;
-		octx->diagnostic("%s Radiotap too small (%zu < %zu) on %s",
+		octx->diagnostic(L"%s Radiotap too small (%zu < %zu) on %s",
 				__func__,len,rlen,op->i->name);
 		return;
 	}
@@ -384,6 +384,6 @@ void handle_radiotap_packet(const omphalos_iface *octx,omphalos_packet *op,
 
 malformed:
 	op->malformed = 1;
-	octx->diagnostic("%s Packet too small (%zu) on %s",
+	octx->diagnostic(L"%s Packet too small (%zu) on %s",
 			__func__,len,op->i->name);
 }

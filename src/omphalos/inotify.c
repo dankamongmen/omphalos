@@ -19,7 +19,7 @@ static int
 watch_init_locked(const omphalos_iface *octx){
 	if(inotify_fd < 0){
 		if((inotify_fd = inotify_init1(IN_NONBLOCK|IN_CLOEXEC)) < 0){
-			octx->diagnostic("Couldn't open inotify fd (%s?)",strerror(errno));
+			octx->diagnostic(L"Couldn't open inotify fd (%s?)",strerror(errno));
 			return -1;
 		}
 	}
@@ -46,13 +46,13 @@ int watch_file(const omphalos_iface *octx,const char *fn,watchcbfxn fxn){
 		int wd;
 
 		if((wd = inotify_add_watch(inotify_fd,fn,IN_DELETE_SELF|IN_MODIFY)) < 0){
-			octx->diagnostic("Couldn't register %s (%s?)",fn,strerror(errno));
+			octx->diagnostic(L"Couldn't register %s (%s?)",fn,strerror(errno));
 		}else{
 			if(wd >= watchcbmax){
 				void *tmp;
 
 				if((tmp = realloc(fxns,(wd + 1) * sizeof(*fxns))) == NULL){
-					octx->diagnostic("Couldn't register %d (%s?)",wd,strerror(errno));
+					octx->diagnostic(L"Couldn't register %d (%s?)",wd,strerror(errno));
 					inotify_rm_watch(inotify_fd,wd);
 				}else{
 					fxns = tmp;
@@ -78,17 +78,17 @@ int handle_watch_event(const omphalos_iface *octx,int fd){
 		if(fxns[event.wd]){
 			fxns[event.wd](octx);
 		}else{
-			octx->diagnostic("No handler for %08x on %d",event.mask,event.wd);
+			octx->diagnostic(L"No handler for %08x on %d",event.mask,event.wd);
 		}
 	}
 	if(r < 0){
 		if(errno == EAGAIN){
 			return 0;
 		}
-		octx->diagnostic("Error reading inotify socket %d (%s?)",fd,strerror(errno));
+		octx->diagnostic(L"Error reading inotify socket %d (%s?)",fd,strerror(errno));
 		// FIXME do what?
 	}else{
-		octx->diagnostic("Short read on inotify socket %d (%zd)",fd,r);
+		octx->diagnostic(L"Short read on inotify socket %d (%zd)",fd,r);
 		// FIXME do what?
 	}
 	return -1;
@@ -103,7 +103,7 @@ int watch_stop(const omphalos_iface *octx){
 	pthread_mutex_unlock(&ilock);
 	if(fd >= 0){
 		if(close(fd) != 0){
-			octx->diagnostic("Couldn't close inotify fd %d",fd);
+			octx->diagnostic(L"Couldn't close inotify fd %d",fd);
 			ret = -1;
 		}
 	}

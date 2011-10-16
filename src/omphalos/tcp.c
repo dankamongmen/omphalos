@@ -14,7 +14,7 @@ void handle_tcp_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 	const struct tcphdr *tcp = frame;
 
 	if(len < sizeof(*tcp)){
-		octx->diagnostic("%s malformed with %zu",__func__,len);
+		octx->diagnostic(L"%s malformed with %zu",__func__,len);
 		op->malformed = 1;
 		return;
 	}

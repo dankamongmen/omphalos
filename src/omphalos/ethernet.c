@@ -67,7 +67,7 @@ handle_8021q(const omphalos_iface *octx,omphalos_packet *op,const void *frame,
 	
 	if(len < IEEE8021QHDRLEN){
 		op->malformed = 1;
-		octx->diagnostic("%s malformed with %zu",__func__,len);
+		octx->diagnostic(L"%s malformed with %zu",__func__,len);
 		return;
 	}
 	type = ((const unsigned char *)frame + 4);
@@ -95,7 +95,7 @@ handle_8021q(const omphalos_iface *octx,omphalos_packet *op,const void *frame,
 			handle_8022(octx,op,frame,len);
 		}else{
 			op->noproto = 1;
-			octx->diagnostic("%s %s noproto for 0x%x",__func__,
+			octx->diagnostic(L"%s %s noproto for 0x%x",__func__,
 					op->i->name,op->l3proto);
 		}
 	break;} }
@@ -110,13 +110,13 @@ handle_snap(const omphalos_iface *octx,omphalos_packet *op,const void *frame,siz
 
 	if(len < sizeof(*snap)){
 		op->malformed = 1;
-		octx->diagnostic("%s malformed with %zu",__func__,len);
+		octx->diagnostic(L"%s malformed with %zu",__func__,len);
 		return;
 	}
 	dgram = (const char *)frame + sizeof(*snap);
 	if(snap->ssap != LLC_SAP_SNAP || snap->ctrl != 0x03){
 		op->malformed = 1;
-		octx->diagnostic("%s malformed ssap/ctrl %zu/%zu",__func__,snap->ssap,snap->ctrl);
+		octx->diagnostic(L"%s malformed ssap/ctrl %zu/%zu",__func__,snap->ssap,snap->ctrl);
 		return;
 	}
 	dlen = len - sizeof(*snap);
@@ -146,7 +146,7 @@ handle_snap(const omphalos_iface *octx,omphalos_packet *op,const void *frame,siz
 			break;
 		}default:{
 			op->noproto = 1;
-			octx->diagnostic("%s %s noproto for 0x%x",__func__,
+			octx->diagnostic(L"%s %s noproto for 0x%x",__func__,
 					op->i->name,proto);
 			break;
 		}
@@ -160,7 +160,7 @@ handle_8022(const omphalos_iface *octx,omphalos_packet *op,const void *frame,siz
 
 	if(len < sizeof(*llc)){
 		op->malformed = 1;
-		octx->diagnostic("%s malformed with %zu",__func__,len);
+		octx->diagnostic(L"%s malformed with %zu",__func__,len);
 		return;
 	}
 	sap = llc->dsap;
@@ -176,7 +176,7 @@ handle_8022(const omphalos_iface *octx,omphalos_packet *op,const void *frame,siz
 		if(((llc->ctrl & 0x3u) == 0x1u) || ((llc->ctrl & 0x3u) == 0x0)){
 			if(dlen == 0){
 				op->malformed = 1;
-				octx->diagnostic("%s malformed with %zu",__func__,len);
+				octx->diagnostic(L"%s malformed with %zu",__func__,len);
 				return;
 			}
 			++dgram;
@@ -201,7 +201,7 @@ handle_8022(const omphalos_iface *octx,omphalos_packet *op,const void *frame,siz
 				break;
 			}default:{ // IPv6 always uses SNAP per RFC2019
 				op->noproto = 1;
-				octx->diagnostic("%s %s noproto for 0x%x",__func__,
+				octx->diagnostic(L"%s %s noproto for 0x%x",__func__,
 						op->i->name,sap);
 				break;
 			}
@@ -218,7 +218,7 @@ void handle_ethernet_packet(const omphalos_iface *octx,omphalos_packet *op,
 
 	if(len < sizeof(*hdr)){
 		op->malformed = 1;
-		octx->diagnostic("%s malformed with %zu",__func__,len);
+		octx->diagnostic(L"%s malformed with %zu",__func__,len);
 		return;
 	}
 	// Source and dest immediately follow the preamble in all frame types
@@ -258,7 +258,7 @@ void handle_ethernet_packet(const omphalos_iface *octx,omphalos_packet *op,
 				handle_8022(octx,op,(const char *)dgram,dlen); // modifies op->l3proto
 			}else{
 				op->noproto = 1;
-				octx->diagnostic("%s %s noproto for 0x%x",__func__,
+				octx->diagnostic(L"%s %s noproto for 0x%x",__func__,
 						op->i->name,proto);
 			}
 			break;

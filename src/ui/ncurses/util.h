@@ -23,7 +23,7 @@ extern "C" {
 // FIXME eliminate all callers!
 static inline void
 unimplemented(WINDOW *w,const void *v){
-	wstatus_locked(w,"Sorry bro; that ain't implemented yet (%p)!",v);
+	wstatus_locked(w,L"Sorry bro; that ain't implemented yet (%p)!",v);
 }
 
 static inline int

@@ -156,7 +156,7 @@ lookup_l3host_common(const omphalos_iface *octx,interface *i,struct l2host *l2,
 			revstrfxn = NULL;
 			break;
 		}default:{
-			octx->diagnostic("Don't support l3 type %d",fam);
+			octx->diagnostic(L"Don't support l3 type %d",fam);
 			return NULL; // FIXME
 		}
 	}

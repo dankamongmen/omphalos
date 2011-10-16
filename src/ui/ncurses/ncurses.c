@@ -79,7 +79,7 @@ unlock_ncurses(void){
 // NULL fmt clears the status bar. wvstatus is an unlocked entry point, and
 // thus calls screen_update() on exit.
 static int
-wvstatus(WINDOW *w,const char *fmt,va_list va){
+wvstatus(WINDOW *w,const wchar_t *fmt,va_list va){
 	int ret;
 
 	lock_ncurses();
@@ -92,7 +92,7 @@ wvstatus(WINDOW *w,const char *fmt,va_list va){
 // NULL fmt clears the status bar. wstatus is an unlocked entry point, and thus
 // calls screen_update() on exit.
 static int
-wstatus(WINDOW *w,const char *fmt,...){
+wstatus(WINDOW *w,const wchar_t *fmt,...){
 	va_list va;
 	int ret;
 
@@ -342,15 +342,15 @@ ncurses_input_thread(void *unsafe_marsh){
 			const char *hstr = !help.p ? " ('h' for help)" : "";
 			// wstatus() locks/unlocks, and calls screen_update()
 			if(isprint(ch)){
-				wstatus(w,"unknown command '%c'%s",ch,hstr);
+				wstatus(w,L"unknown command '%c'%s",ch,hstr);
 			}else{
-				wstatus(w,"unknown scancode %d%s",ch,hstr);
+				wstatus(w,L"unknown scancode %d%s",ch,hstr);
 			}
 			break;
 		}
 	}
 	}
-	wstatus(w,"%s","shutting down");
+	wstatus(w,L"%s","shutting down");
 	// we can't use raise() here, as that sends the signal only
 	// to ourselves, and we have it masked.
 	kill(getpid(),SIGINT);
@@ -585,7 +585,7 @@ interface_removed_callback(const interface *i __attribute__ ((unused)),void *uns
 }
 
 static void
-diag_callback(const char *fmt,...){
+diag_callback(const wchar_t *fmt,...){
 	va_list va;
 
 	va_start(va,fmt);

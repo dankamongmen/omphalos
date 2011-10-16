@@ -17,7 +17,7 @@ void handle_udp_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 	uint16_t ulen;
 
 	if(len < sizeof(*udp)){
-		octx->diagnostic("%s malformed with %zu",__func__,len);
+		octx->diagnostic(L"%s malformed with %zu",__func__,len);
 		op->malformed = 1;
 		return;
 	}

@@ -23,7 +23,7 @@ void handle_gre_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 	unsigned glen;
 
 	if(len < sizeof(*gre)){
-		octx->diagnostic("%s malformed with %zu on %s",__func__,len,op->i->name);
+		octx->diagnostic(L"%s malformed with %zu on %s",__func__,len,op->i->name);
 		op->malformed = 1;
 		return;
 	}
@@ -42,12 +42,12 @@ void handle_gre_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 		glen += 4;
 	}
 	if(len < sizeof(*gre) + glen){
-		octx->diagnostic("%s malformed with %zu on %s",__func__,len,op->i->name);
+		octx->diagnostic(L"%s malformed with %zu on %s",__func__,len,op->i->name);
 		op->malformed = 1;
 		return;
 	}
 	if(gre->version != GRE_VERSION_NORMAL && gre->version != GRE_VERSION_PPTP){
-		octx->diagnostic("%s noproto for %zu on %s",__func__,gre->version,op->i->name);
+		octx->diagnostic(L"%s noproto for %zu on %s",__func__,gre->version,op->i->name);
 		op->malformed = 1;
 		return;
 	}

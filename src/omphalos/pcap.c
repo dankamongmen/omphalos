@@ -74,7 +74,7 @@ handle_pcap_direct(u_char *gi,const struct pcap_pkthdr *h,const u_char *bytes){
 	++iface->frames;
 	if(h->caplen != h->len){
 		++iface->truncated;
-		pm->octx->diagnostic("Partial capture (%u/%ub)",h->caplen,h->len);
+		pm->octx->diagnostic(L"Partial capture (%u/%ub)",h->caplen,h->len);
 		return;
 	}
 	memset(&packet,0,sizeof(packet));
@@ -103,7 +103,7 @@ handle_pcap_cooked(u_char *gi,const struct pcap_pkthdr *h,const u_char *bytes){
 
 	++iface->frames;
 	if(h->caplen != h->len || h->caplen < sizeof(*sll)){
-		pm->octx->diagnostic("Partial capture (%u/%ub)",h->caplen,h->len);
+		pm->octx->diagnostic(L"Partial capture (%u/%ub)",h->caplen,h->len);
 		++iface->truncated;
 		return;
 	}

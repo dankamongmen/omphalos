@@ -316,7 +316,7 @@ void handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 	int nsfam;
 
 	if(len < sizeof(*dns)){
-		octx->diagnostic("%s malformed with %zu on %s",
+		octx->diagnostic(L"%s malformed with %zu on %s",
 				__func__,len,op->i->name);
 		op->malformed = 1;
 		return;
@@ -330,7 +330,7 @@ void handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 		nsaddru.addr6 = get_l3addr_in6(op->l3s);
 		nsaddr = &nsaddru.addr6;
 	}else{
-		octx->diagnostic("DNS on %s:0x%x",op->i->name,op->l3proto);
+		octx->diagnostic(L"DNS on %s:0x%x",op->i->name,op->l3proto);
 		op->noproto = 1;
 		return;
 	}
@@ -341,7 +341,7 @@ void handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 	ar = ntohs(dns->arcount);
 	len -= sizeof(*dns);
 	sec = (const unsigned char *)frame + sizeof(*dns);
-	// octx->diagnostic("q/a/n/a: %hu/%hu/%hu/%hu",qd,an,ns,ar);
+	// octx->diagnostic(L"q/a/n/a: %hu/%hu/%hu/%hu",qd,an,ns,ar);
 	while(qd--){
 		buf = extract_dns_record(len,sec,&class,&type,&bsize,frame);
 		if(buf == NULL){
@@ -359,7 +359,7 @@ void handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 		if(buf == NULL){
 			goto malformed;
 		}
-		//octx->diagnostic("lookup [%s]",buf);
+		//octx->diagnostic(L"lookup [%s]",buf);
 		sec += bsize;
 		len -= bsize;
 		data = extract_dns_extra(len,sec,&ttl,&bsize,frame,type);
@@ -398,7 +398,7 @@ void handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 			}else if(type == DNS_TYPE_HINFO){
 				// FIXME do what?
 			}
-			//octx->diagnostic("TYPE: %hu CLASS: %hu",
+			//octx->diagnostic(L"TYPE: %hu CLASS: %hu",
 			//		,ntohs(*((uint16_t *)sec + 1)));
 		}
 		// FIXME handle A/AAAA
@@ -420,7 +420,7 @@ void handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 	return;
 
 malformed:
-	octx->diagnostic("%s malformed with %zu on %s",
+	octx->diagnostic(L"%s malformed with %zu on %s",
 			__func__,len,op->i->name);
 	op->malformed = 1;
 	return;

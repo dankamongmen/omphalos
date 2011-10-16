@@ -172,7 +172,7 @@ int offer_resolution(const omphalos_iface *octx,int fam,const void *addr,
 
 		inet_ntop(fam,addr,abuf,sizeof(abuf));
 		inet_ntop(nsfam,nameserver,rbuf,sizeof(rbuf));
-		octx->diagnostic("Resolved %s @%s as %s",abuf,rbuf,name);
+		octx->diagnostic(L"Resolved %s @%s as %s",abuf,rbuf,name);
 	}
 	return 0;
 }
@@ -187,7 +187,7 @@ parse_resolv_conf(const omphalos_iface *octx){
 	int l;
 
 	if((fp = fopen(resolvconf_fn,"r")) == NULL){
-		octx->diagnostic("Couldn't open %s",resolvconf_fn);
+		octx->diagnostic(L"Couldn't open %s",resolvconf_fn);
 		return;
 	}
 	b = NULL;
@@ -242,7 +242,7 @@ parse_resolv_conf(const omphalos_iface *octx){
 		resolvers = revs;
 		pthread_mutex_unlock(&resolver_lock);
 		free_resolvers(&r);
-		octx->diagnostic("Reloaded %u resolver%s from %s",count,
+		octx->diagnostic(L"Reloaded %u resolver%s from %s",count,
 				count == 1 ? "" : "s",resolvconf_fn);
 	}
 }
@@ -272,12 +272,12 @@ int cleanup_naming(const omphalos_iface *octx){
 		free(r);
 		++er;
 	}
-	octx->diagnostic("%d outstanding resolution%s",er,er == 1 ? "" : "s");
+	octx->diagnostic(L"%d outstanding resolution%s",er,er == 1 ? "" : "s");
 	if( (er = pthread_mutex_destroy(&rqueue_lock)) ){
-		octx->diagnostic("Error destroying resolvq lock (%s)",strerror(er));
+		octx->diagnostic(L"Error destroying resolvq lock (%s)",strerror(er));
 	}
 	if( (er = pthread_mutex_destroy(&resolver_lock)) ){
-		octx->diagnostic("Error destroying resolver lock (%s)",strerror(er));
+		octx->diagnostic(L"Error destroying resolver lock (%s)",strerror(er));
 	}
 	free_resolvers(&resolvers6);
 	free_resolvers(&resolvers);

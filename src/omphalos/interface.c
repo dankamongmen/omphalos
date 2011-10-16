@@ -102,12 +102,12 @@ void free_iface(const omphalos_iface *octx,interface *i){
 	}
 	if(i->rfd >= 0){
 		if(close(i->rfd)){
-			octx->diagnostic("Error closing %d: %s",i->rfd,strerror(errno));
+			octx->diagnostic(L"Error closing %d: %s",i->rfd,strerror(errno));
 		}
 	}
 	if(i->fd >= 0){
 		if(close(i->fd)){
-			octx->diagnostic("Error closing %d: %s",i->fd,strerror(errno));
+			octx->diagnostic(L"Error closing %d: %s",i->fd,strerror(errno));
 		}
 	}
 	if(i->opaque && octx->iface_removed){
@@ -147,11 +147,11 @@ void cleanup_interfaces(const omphalos_iface *pctx){
 		int r;
 
 		if(interfaces[i].name){
-			pctx->diagnostic("Shutting down %s",interfaces[i].name);
+			pctx->diagnostic(L"Shutting down %s",interfaces[i].name);
 		}
 		free_iface(pctx,&interfaces[i]);
 		if( (r = pthread_mutex_destroy(&interfaces[i].lock)) ){
-			pctx->diagnostic("Couldn't destroy lock on %d (%s?)",r,strerror(r));
+			pctx->diagnostic(L"Couldn't destroy lock on %d (%s?)",r,strerror(r));
 		}
 	}
 }
@@ -474,7 +474,7 @@ int disable_promiscuity(const omphalos_iface *octx,const interface *i){
 		return -1;
 	}
 	if(close(fd)){
-		octx->diagnostic("couldn't close netlink socket %d (%s?)",fd,strerror(errno));
+		octx->diagnostic(L"couldn't close netlink socket %d (%s?)",fd,strerror(errno));
 		return -1;
 	}
 	// FIXME we're not necessarily out of promiscuous mode yet...i->flags

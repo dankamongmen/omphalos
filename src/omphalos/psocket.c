@@ -29,7 +29,7 @@ int packet_socket(const omphalos_iface *pctx,unsigned protocol){
 	int fd;
 
 	if((fd = socket(AF_PACKET,SOCK_RAW,ntohs(protocol))) < 0){
-		pctx->diagnostic("Couldn't open packet socket (%s?)",strerror(errno));
+		pctx->diagnostic(L"Couldn't open packet socket (%s?)",strerror(errno));
 		return -1;
 	}
 	return fd;
@@ -43,13 +43,13 @@ get_block_size(const omphalos_iface *octx,unsigned fsize,unsigned *bsize){
 	// page size. Ought be a multiple of tp_frame_size for efficiency.
 	b = getpagesize();
 	if(b < 0){
-		octx->diagnostic("Couldn't get page size (%s?)",strerror(errno));
+		octx->diagnostic(L"Couldn't get page size (%s?)",strerror(errno));
 		return -1;
 	}
 	*bsize = b;
 	while(*bsize < fsize){
 		if((*bsize << 1u) < *bsize){
-			octx->diagnostic("No valid configurations found");
+			octx->diagnostic(L"No valid configurations found");
 			return -1;
 		}
 		*bsize <<= 1u;
@@ -98,25 +98,25 @@ mmap_psocket(const omphalos_iface *octx,int op,int idx,int fd,
 		sll.sll_family = AF_PACKET;
 		sll.sll_ifindex = idx;
 		if(bind(fd,(struct sockaddr *)&sll,sizeof(sll)) < 0){
-			octx->diagnostic("Couldn't bind idx %d (%s?)",idx,strerror(errno));
+			octx->diagnostic(L"Couldn't bind idx %d (%s?)",idx,strerror(errno));
 			return 0;
 		}
 	}else if(op == PACKET_TX_RING){
-		octx->diagnostic("Invalid idx with op %d: %d",op,idx);
+		octx->diagnostic(L"Invalid idx with op %d: %d",op,idx);
 		return -1;
 	}
 	if(setsockopt(fd,SOL_PACKET,op,treq,sizeof(*treq)) < 0){
-		octx->diagnostic("Couldn't set socket option (%s?)",strerror(errno));
+		octx->diagnostic(L"Couldn't set socket option (%s?)",strerror(errno));
 		return 0;
 	}
 	if((*map = mmap(0,size,PROT_READ|PROT_WRITE,MAP_SHARED,fd,0)) == MAP_FAILED){
-		octx->diagnostic("Couldn't mmap %zub (%s?)",size,strerror(errno));
+		octx->diagnostic(L"Couldn't mmap %zub (%s?)",size,strerror(errno));
 		return 0;
 	}
 	// FIXME MADV_HUGEPAGE support was dropped in 2.6.38.4, it seems.
 #ifdef MADV_HUGEPAGE
 	if(madvise(*map,size,MADV_HUGEPAGE)){
-		//octx->diagnostic("Couldn't advise hugepages for %zu (%s?)",size,strerror(errno));
+		//octx->diagnostic(L"Couldn't advise hugepages for %zu (%s?)",size,strerror(errno));
 	}
 #endif
 	return size;
@@ -130,7 +130,7 @@ size_t mmap_tx_psocket(const omphalos_iface *octx,int fd,int idx,
 
 int unmap_psocket(const omphalos_iface *octx,void *map,size_t size){
 	if(munmap(map,size)){
-		octx->diagnostic("Couldn't unmap %zub ring buffer (%s?)",size,strerror(errno));
+		octx->diagnostic(L"Couldn't unmap %zub ring buffer (%s?)",size,strerror(errno));
 		return -1;
 	}
 	return 0;
@@ -150,11 +150,11 @@ recover_truncated_packet(const omphalos_iface *octx,interface *iface,int fd,unsi
 		iface->truncbuflen = tlen;
 	}
 	if((r = recvfrom(fd,iface->truncbuf,iface->truncbuflen,MSG_DONTWAIT|MSG_TRUNC,NULL,0)) <= 0){
-		octx->diagnostic("Error in recvfrom(%s): %s",iface->name,strerror(errno));
+		octx->diagnostic(L"Error in recvfrom(%s): %s",iface->name,strerror(errno));
 		return r;
 	}
 	if((unsigned)r > iface->truncbuflen){
-		octx->diagnostic("Couldn't recover truncated packet (%d > %zu)",r,iface->truncbuflen);
+		octx->diagnostic(L"Couldn't recover truncated packet (%d > %zu)",r,iface->truncbuflen);
 		return -1;
 	}
 	return r;
@@ -194,7 +194,7 @@ int handle_ring_packet(const omphalos_iface *octx,interface *iface,int fd,void *
 			return 1;
 		}else if(events < 0){
 			if(errno != EINTR){
-				octx->diagnostic("Error in poll() on %s (%s?)",
+				octx->diagnostic(L"Error in poll() on %s (%s?)",
 						iface->name,strerror(errno));
 				return -1;
 			}
@@ -204,7 +204,7 @@ int handle_ring_packet(const omphalos_iface *octx,interface *iface,int fd,void *
 			// is removed from underneath us, but also don't want
 			// to race against notification...check to see if
 			// device is down here? FIXME
-			//octx->diagnostic("Error polling psocket %d on %s",fd,i->name);
+			//octx->diagnostic(L"Error polling psocket %d on %s",fd,i->name);
 			return -1;
 		}
 	}
@@ -219,17 +219,17 @@ int handle_ring_packet(const omphalos_iface *octx,interface *iface,int fd,void *
 		// FIXME only call once for each burst of TP_STATUS_LOSING
 		slen = sizeof(tstats);
 		if(getsockopt(fd,SOL_PACKET,PACKET_STATISTICS,&tstats,&slen)){
-			octx->diagnostic("Error reading stats on %s (%s?)",iface->name,strerror(errno));
+			octx->diagnostic(L"Error reading stats on %s (%s?)",iface->name,strerror(errno));
 		}else if(tstats.tp_drops){
 			iface->drops += tstats.tp_drops;
-			octx->diagnostic("FUCK ME; THE RINGBUFFER'S FULL (%ju/%ju drops)!",
+			octx->diagnostic(L"FUCK ME; THE RINGBUFFER'S FULL (%ju/%ju drops)!",
 					tstats.tp_drops,iface->drops);
 		}
 	}
 	if((thdr->tp_status & TP_STATUS_COPY) || thdr->tp_snaplen != thdr->tp_len){
 		++iface->truncated;
 		if((len = recover_truncated_packet(octx,iface,fd,thdr->tp_len)) <= 0){
-			octx->diagnostic("Partial capture on %s (%u/%ub)",
+			octx->diagnostic(L"Partial capture on %s (%u/%ub)",
 				iface->name,thdr->tp_snaplen,thdr->tp_len);
 			frame = (char *)frame + thdr->tp_mac;
 			len = thdr->tp_snaplen;

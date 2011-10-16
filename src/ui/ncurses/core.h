@@ -92,8 +92,10 @@ iface_lines_unbounded(const struct iface_state *is){
 // graphics).
 int draw_main_window(WINDOW *);
 int setup_statusbar(int);
-int wstatus_locked(WINDOW *,const char *fmt,...) __attribute__ ((format (printf,2,3)));
-int wvstatus_locked(WINDOW *w,const char *,va_list);
+// FIXME can't use format attribute, see http://gcc.gnu.org/ml/gcc-patches/2001-12/msg01626.html
+// __attribute__ ((format (printf,2,3)));
+int wstatus_locked(WINDOW *,const wchar_t *,...);
+int wvstatus_locked(WINDOW *w,const wchar_t *,va_list);
 struct l3obj *host_callback_locked(const struct interface *,struct l2host *,
 					struct l3host *,struct panel_state *);
 struct l2obj *neighbor_callback_locked(const struct interface *,struct l2host *,

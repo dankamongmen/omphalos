@@ -57,7 +57,7 @@ parse_file(const omphalos_iface *octx){
 	int l;
 
 	if((fp = fopen(ianafn,"r")) == NULL){
-		octx->diagnostic("Coudln't open %s (%s?)",ianafn,strerror(errno));
+		octx->diagnostic(L"Coudln't open %s (%s?)",ianafn,strerror(errno));
 		return;
 	}
 	clearerr(fp);
@@ -117,12 +117,12 @@ parse_file(const omphalos_iface *octx){
 	}
 	free(b);
 	if(allocerr){
-		octx->diagnostic("Couldn't allocate for %s",ianafn);
+		octx->diagnostic(L"Couldn't allocate for %s",ianafn);
 	}else if(ferror(fp)){
-		octx->diagnostic("Error reading %s",ianafn);
+		octx->diagnostic(L"Error reading %s",ianafn);
 	}
 	fclose(fp);
-	octx->diagnostic("Reloaded %u OUI%s from %s",count,
+	octx->diagnostic(L"Reloaded %u OUI%s from %s",count,
 				count == 1 ? "" : "s",ianafn);
 }
 

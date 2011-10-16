@@ -18,14 +18,14 @@ ethtool_docmd(const omphalos_iface *octx,const char *name,void *unsafe){
 	int fd;
 
 	if(strlen(name) >= sizeof(ifr.ifr_name)){
-		octx->diagnostic("Bad name: %s",name);
+		octx->diagnostic(L"Bad name: %s",name);
 		return -1;
 	}
 	memset(&ifr,0,sizeof(&ifr));
 	strcpy(ifr.ifr_name,name);
 	ifr.ifr_data = (caddr_t)unsafe;
 	if((fd = socket(AF_INET,SOCK_DGRAM,0)) < 0){
-		octx->diagnostic("Couldn't open ethtool fd (%s?)",strerror(errno));
+		octx->diagnostic(L"Couldn't open ethtool fd (%s?)",strerror(errno));
 		return -1;
 	}
 	if(ioctl(fd,SIOCETHTOOL,&ifr)){ // no diagnostic here; specialize
@@ -33,7 +33,7 @@ ethtool_docmd(const omphalos_iface *octx,const char *name,void *unsafe){
 		return -1;
 	}
 	if(close(fd)){
-		octx->diagnostic("Couldn't close ethtool fd %d (%s?)",fd,strerror(errno));
+		octx->diagnostic(L"Couldn't close ethtool fd %d (%s?)",fd,strerror(errno));
 		return -1;
 	}
 	return 0;

@@ -23,12 +23,12 @@ void *get_tx_frame(const omphalos_iface *octx,interface *i,size_t *fsize){
 		struct tpacket_hdr *thdr = i->curtxm;
 
 		if(thdr == NULL){
-			octx->diagnostic("Can't transmit on %s (fd %d)",i->name,i->fd);
+			octx->diagnostic(L"Can't transmit on %s (fd %d)",i->name,i->fd);
 			return NULL;
 		}
 		// FIXME need also check for TP_WRONG_FORMAT methinks?
 		if(thdr->tp_status != TP_STATUS_AVAILABLE){
-			octx->diagnostic("No available TX frames on %s",i->name);
+			octx->diagnostic(L"No available TX frames on %s",i->name);
 			return NULL;
 		}
 		// FIXME we ought be able to set this once for each packet, and be done
@@ -45,7 +45,7 @@ void *get_tx_frame(const omphalos_iface *octx,interface *i,size_t *fsize){
 		if( (thdr = ret) ){
 			thdr->tp_net = thdr->tp_mac = TPACKET_ALIGN(sizeof(struct tpacket_hdr));
 		}else{
-			octx->diagnostic("Can't transmit on %s (fd %d)",i->name,i->fd);
+			octx->diagnostic(L"Can't transmit on %s (fd %d)",i->name,i->fd);
 			*fsize = 0;
 		}
 	}
@@ -113,13 +113,13 @@ void send_tx_frame(const omphalos_iface *octx,interface *i,void *frame){
 		if(ret == 0){
 			ret = tplen;
 		}
-		//octx->diagnostic("Transmitted %d on %s",ret,i->name);
+		//octx->diagnostic(L"Transmitted %d on %s",ret,i->name);
 	}else{
 		ret = send_loopback_frame(octx,i,frame);
 		free(frame);
 	}
 	if(ret < 0){
-		octx->diagnostic("Error transmitting on %s",i->name);
+		octx->diagnostic(L"Error transmitting on %s",i->name);
 		++i->txerrors;
 	}else{
 		i->txbytes += ret;
@@ -137,7 +137,7 @@ void abort_tx_frame(const omphalos_iface *octx,interface *i,void *frame){
 	}else{
 		free(frame);
 	}
-	octx->diagnostic("Aborted TX %llu on %s",i->txaborts,i->name);
+	octx->diagnostic(L"Aborted TX %llu on %s",i->txaborts,i->name);
 }
 
 // FIXME
@@ -157,13 +157,13 @@ void prepare_arp_probe(const omphalos_iface *octx,const interface *i,
 
 	thdr = frame;
 	if(*flen < sizeof(*thdr)){
-		octx->diagnostic("%s %s frame too small for tx",__func__,i->name);
+		octx->diagnostic(L"%s %s frame too small for tx",__func__,i->name);
 		return;
 	}
 	tlen = thdr->tp_mac + sizeof(*ehdr) + sizeof(*ahdr)
 			+ 2 * hln + 2 * pln;
 	if(*flen < tlen){
-		octx->diagnostic("%s %s frame too small for tx",__func__,i->name);
+		octx->diagnostic(L"%s %s frame too small for tx",__func__,i->name);
 		return;
 	}
 	assert(hln == i->addrlen); // FIXME handle this case

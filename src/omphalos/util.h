@@ -16,7 +16,7 @@ MMalloc(const omphalos_iface *octx,size_t s,const char *fname){
 	void *r;
 
 	if((r = malloc(s)) == NULL){
-		octx->diagnostic("%s|couldn't allocate %zu bytes",fname,s);
+		octx->diagnostic(L"%s|couldn't allocate %zu bytes",fname,s);
 	}
 	return r;
 }
