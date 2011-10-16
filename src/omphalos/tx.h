@@ -10,13 +10,13 @@ extern "C" {
 struct interface;
 struct omphalos_iface;
 
-// Acquire a frame from the ringbuffer
+// Acquire a frame from the ringbuffer. Interface lock must be held.
 void *get_tx_frame(const struct omphalos_iface *,struct interface *,size_t *);
 
-// Mark a frame as ready-to-send
+// Mark a frame as ready-to-send. Interface lock must be held.
 void send_tx_frame(const struct omphalos_iface *,struct interface *,void *);
 
-// Release a frame for reuse without transmitting it
+// Release a frame for reuse without transmitting it. Interface lock must be held.
 void abort_tx_frame(const struct omphalos_iface *,struct interface *,void *);
 
 // Frame preparation
