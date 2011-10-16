@@ -99,7 +99,8 @@ int queue_for_naming(const struct omphalos_iface *octx,struct interface *i,
 		ret = dnsfxn(octx,AF_INET6,&resolvers6->addr.ip6,revstr);
 	}
 	pthread_mutex_unlock(&resolver_lock);
-	ret |= tx_mdns_ptr(octx,i,family,revstr);
+	assert(family);
+	//ret |= tx_mdns_ptr(octx,i,family,revstr);
 	return ret;
 }
 
@@ -134,8 +135,7 @@ offer_nameserver(int nsfam,const void *nameserver){
 
 int offer_resolution(const omphalos_iface *octx,int fam,const void *addr,
 				const char *name,namelevel nlevel,
-				int nsfam __attribute__ ((unused)),
-				const void *nameserver __attribute__ ((unused))){
+				int nsfam,const void *nameserver){
 	resolvq *r,**p;
 
 	// FIXME don't call until we filter offers better
@@ -152,6 +152,13 @@ int offer_resolution(const omphalos_iface *octx,int fam,const void *addr,
 		}
 	}
 	pthread_mutex_unlock(&rqueue_lock);
+	if(r){
+		char abuf[INET6_ADDRSTRLEN],rbuf[INET6_ADDRSTRLEN];
+
+		inet_ntop(fam,addr,abuf,sizeof(abuf));
+		inet_ntop(nsfam,nameserver,rbuf,sizeof(rbuf));
+		octx->diagnostic("Resolved %s via %s to %s",abuf,rbuf,name);
+	}
 	return 0;
 }
 
