@@ -68,27 +68,32 @@ create_resolvq(struct interface *i,struct l2host *l2,struct l3host *l3){
 		r->l2 = l2;
 		r->i = i;
 		r->next = NULL;
-		pthread_mutex_lock(&rqueue_lock);
-		r->next = rqueue;
-		rqueue = r;
-		pthread_mutex_unlock(&rqueue_lock);
 	}
 	return r;
+}
+
+// Must already have been pulled from the queue, or never placed on it
+static void
+free_resolvq(resolvq *r){
+	if(r){
+		free(r);
+	}
 }
 
 int queue_for_naming(const struct omphalos_iface *octx,struct interface *i,
 			struct l2host *l2,struct l3host *l3,int family,
 			dnstxfxn dnsfxn,const char *revstr){
 	int ret = 0;
+	resolvq *r;
 
-	// FIXME uhhh, do something with result when it's not NULL!
-	if(create_resolvq(i,l2,l3) == NULL){
+	if((r = create_resolvq(i,l2,l3)) == NULL){
 		return -1;
 	}
 	if(!ret){
 		name_l3host_absolute(octx,i,l2,l3,"Resolving...",NAMING_LEVEL_RESOLVING);
 	}
 	if(pthread_mutex_lock(&resolver_lock)){
+		free_resolvq(r);
 		return -1;
 	}
 	// FIXME round-robin or even use the simple resolv.conf algorithm
@@ -99,8 +104,17 @@ int queue_for_naming(const struct omphalos_iface *octx,struct interface *i,
 		ret = dnsfxn(octx,AF_INET6,&resolvers6->addr.ip6,revstr);
 	}
 	pthread_mutex_unlock(&resolver_lock);
-	assert(family);
-	//ret |= tx_mdns_ptr(octx,i,family,revstr);
+	pthread_mutex_lock(&rqueue_lock);
+	if(!ret){
+		r->next = rqueue;
+		rqueue = r;
+	}else{
+		// FIXME put it on a fail queue and retry when we have a route
+		free_resolvq(r);
+		r = NULL;
+	}
+	pthread_mutex_unlock(&rqueue_lock);
+	ret |= tx_mdns_ptr(octx,i,family,revstr);
 	return ret;
 }
 
@@ -143,6 +157,7 @@ int offer_resolution(const omphalos_iface *octx,int fam,const void *addr,
 	pthread_mutex_lock(&rqueue_lock);
 	for(p = &rqueue ; (r = *p) ; p = &r->next){
 		if(l3addr_eq_p(r->l3,fam,addr)){
+			// FIXME needs to lock the interface to touch l3 objs
 			name_l3host_absolute(octx,r->i,r->l2,r->l3,name,nlevel);
 			if(nlevel >= NAMING_LEVEL_REVDNS){
 				*p = r->next;

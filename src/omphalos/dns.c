@@ -487,6 +487,7 @@ int setup_dns_ptr(const struct routepath *rp,int fam,unsigned port,
 		*totlen = tlen + r;
 	}
 	if(r < 0){
+		assert(0);
 		return -1;
 	}
 	tlen += r;
