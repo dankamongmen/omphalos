@@ -45,8 +45,7 @@ uint16_t udp4_csum(const void *hdr){
 	const void *data = (const char *)uh + sizeof(*uh);
 	uint16_t dlen = ntohs(uh->len);
 	const uint16_t *cur;
-	uint16_t fold;
-	uint32_t sum;
+	uint32_t sum,fold;
 	unsigned z;
 
 	sum = 0;
@@ -69,10 +68,11 @@ uint16_t udp4_csum(const void *hdr){
 		fold += sum & 0xffffu;
 		sum >>= 16u;
 	}
-	if((fold = ~fold) == 0u){
-		fold = 0xffffu;
+	fold = ~(fold & 0xffffu);
+	if(fold == 0u){
+		return 0xffffu;
 	}
-	return fold;
+	return ~fold;
 }
 
 // hdr must be a valid ipv6 header
@@ -106,8 +106,9 @@ uint16_t udp6_csum(const void *hdr){
 		fold += sum & 0xffffu;
 		sum >>= 16u;
 	}
-	if((fold = ~fold) == 0u){
-		fold = 0xffffu;
+	fold = ~(fold & 0xffffu);
+	if(fold == 0u){
+		return 0xffffu;
 	}
-	return fold;
+	return ~fold;
 }
