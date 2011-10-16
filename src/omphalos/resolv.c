@@ -172,7 +172,7 @@ int offer_resolution(const omphalos_iface *octx,int fam,const void *addr,
 
 		inet_ntop(fam,addr,abuf,sizeof(abuf));
 		inet_ntop(nsfam,nameserver,rbuf,sizeof(rbuf));
-		octx->diagnostic("Resolved %s via %s to %s",abuf,rbuf,name);
+		octx->diagnostic("Resolved %s @%s as %s",abuf,rbuf,name);
 	}
 	return 0;
 }
