@@ -129,11 +129,7 @@ void send_tx_frame(const omphalos_iface *octx,interface *i,void *frame){
 
 void abort_tx_frame(const omphalos_iface *octx,interface *i,void *frame){
 	if(i->arptype != ARPHRD_LOOPBACK){
-		struct tpacket_hdr *thdr = frame;
-
 		++i->txaborts;
-		thdr->tp_status = TP_STATUS_AVAILABLE;
-		assert(octx);
 	}else{
 		free(frame);
 	}
