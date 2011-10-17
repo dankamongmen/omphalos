@@ -954,8 +954,8 @@ err:
 }
 
 static void
-reset_interface_stats(WINDOW *w,const interface *i){
-	unimplemented(w,i);
+reset_interface_stats(WINDOW *w,const interface *i __attribute__ ((unused))){
+	unimplemented(w);
 }
 
 void reset_all_interface_stats(WINDOW *w){

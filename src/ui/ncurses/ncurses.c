@@ -184,17 +184,17 @@ err:
 
 static void
 configure_prefs(WINDOW *w){
-	unimplemented(w,NULL);
+	unimplemented(w);
 }
 
 static void
 change_mac(WINDOW *w){
-	unimplemented(w,NULL);
+	unimplemented(w);
 }
 
 static void
 change_mtu(WINDOW *w){
-	unimplemented(w,NULL);
+	unimplemented(w);
 }
 
 static void
