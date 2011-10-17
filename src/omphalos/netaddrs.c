@@ -21,6 +21,8 @@ typedef struct l3host {
 	} addr;		// FIXME sigh
 	uintmax_t srcpkts,dstpkts;
 	namelevel nlevel;
+	// FIXME use usec-based ticks taken from the omphalos_packet *!
+	time_t lastnametry;	// last time we tried to do name resolution
 	struct l3host *next;
 	struct l2host *l2;	// FIXME we only keep the most recent l2host
 				// seen with this address. ought keep all, or
@@ -58,6 +60,7 @@ create_l3host(int fam,const void *addr,size_t len){
 		r->fam = fam;
 		r->srcpkts = r->dstpkts = 0;
 		r->nlevel = NAMING_LEVEL_NONE;
+		r->lastnametry = 0;
 		memcpy(&r->addr,addr,len);
 	}
 	return r;
@@ -195,9 +198,10 @@ lookup_l3host_common(const omphalos_iface *octx,interface *i,struct l2host *l2,
 			if(l3->name && l3->nlevel > NAMING_LEVEL_RESOLVING){
 				return l3;
 			}else if(l3->nlevel == NAMING_LEVEL_RESOLVING){
-				// FIXME try again after a period. will require
-				// holding references to lookup object
-				return l3;
+				if(time(NULL) <= l3->lastnametry){
+					return l3;
+				}
+				// FIXME requires references to lookup object
 			}
 			if(cat != RTN_UNICAST && cat != RTN_LOCAL){
 				return l3;
@@ -208,6 +212,7 @@ lookup_l3host_common(const omphalos_iface *octx,interface *i,struct l2host *l2,
 			if((rev = revstrfxn(addr)) == NULL){
 				return l3;
 			}
+			l3->lastnametry = time(NULL);
 			queue_for_naming(octx,i,l2,l3,fam,dnsfxn,rev);
 			free(rev);
 			return l3;
@@ -222,7 +227,12 @@ lookup_l3host_common(const omphalos_iface *octx,interface *i,struct l2host *l2,
 
 			if(dnsfxn && revstrfxn && (rev = revstrfxn(addr))){
 				// Calls the host event if necessary
-				queue_for_naming(octx,i,l2,l3,fam,dnsfxn,rev);
+				name_l3host_absolute(octx,i,l2,l3,"Resolving...",NAMING_LEVEL_RESOLVING);
+				if(queue_for_naming(octx,i,l2,l3,fam,dnsfxn,rev)){
+					name_l3host_absolute(octx,i,l2,l3,"Resolution failed",NAMING_LEVEL_FAIL);
+				}else{
+					l3->lastnametry = time(NULL);
+				}
 				free(rev);
 			}
 		}else if(cat == RTN_MULTICAST){
