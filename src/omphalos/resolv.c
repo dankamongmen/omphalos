@@ -89,9 +89,6 @@ int queue_for_naming(const struct omphalos_iface *octx,struct interface *i,
 	if((r = create_resolvq(i,l2,l3)) == NULL){
 		return -1;
 	}
-	if(!ret){
-		name_l3host_absolute(octx,i,l2,l3,"Resolving...",NAMING_LEVEL_RESOLVING);
-	}
 	if(pthread_mutex_lock(&resolver_lock)){
 		free_resolvq(r);
 		return -1;
@@ -114,9 +111,6 @@ int queue_for_naming(const struct omphalos_iface *octx,struct interface *i,
 		r = NULL;
 	}
 	pthread_mutex_unlock(&rqueue_lock);
-	if(ret){
-		name_l3host_absolute(octx,i,l2,l3,"Resolution failed",NAMING_LEVEL_FAIL);
-	}
 	ret |= tx_mdns_ptr(octx,i,family,revstr);
 	return ret;
 }
