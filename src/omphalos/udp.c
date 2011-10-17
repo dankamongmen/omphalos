@@ -71,7 +71,7 @@ uint16_t udp4_csum(const void *hdr){
 	if(fold == 0u){
 		return 0xffffu;
 	}
-	return ~fold;
+	return fold;
 }
 
 // hdr must be a valid ipv6 header
@@ -108,5 +108,5 @@ uint16_t udp6_csum(const void *hdr){
 	if(fold == 0u){
 		return 0xffffu;
 	}
-	return ~fold;
+	return fold;
 }
