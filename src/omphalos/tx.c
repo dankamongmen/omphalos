@@ -26,10 +26,12 @@ void *get_tx_frame(const omphalos_iface *octx,interface *i,size_t *fsize){
 			octx->diagnostic(L"Can't transmit on %s (fd %d)",i->name,i->fd);
 			return NULL;
 		}
-		// FIXME need also check for TP_WRONG_FORMAT methinks?
 		if(thdr->tp_status != TP_STATUS_AVAILABLE){
-			octx->diagnostic(L"No available TX frames on %s",i->name);
-			return NULL;
+			if(thdr->tp_status != TP_STATUS_WRONG_FORMAT){
+				octx->diagnostic(L"No available TX frames on %s",i->name);
+				return NULL;
+			}
+			thdr->tp_status = TP_STATUS_AVAILABLE;
 		}
 		// FIXME we ought be able to set this once for each packet, and be done
 		thdr->tp_net = thdr->tp_mac = TPACKET_ALIGN(sizeof(struct tpacket_hdr));

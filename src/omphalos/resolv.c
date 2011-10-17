@@ -114,6 +114,9 @@ int queue_for_naming(const struct omphalos_iface *octx,struct interface *i,
 		r = NULL;
 	}
 	pthread_mutex_unlock(&rqueue_lock);
+	if(ret){
+		name_l3host_absolute(octx,i,l2,l3,"Resolution failed",NAMING_LEVEL_FAIL);
+	}
 	ret |= tx_mdns_ptr(octx,i,family,revstr);
 	return ret;
 }

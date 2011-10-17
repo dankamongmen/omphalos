@@ -197,6 +197,7 @@ lookup_l3host_common(const omphalos_iface *octx,interface *i,struct l2host *l2,
 			}else if(l3->nlevel == NAMING_LEVEL_RESOLVING){
 				// FIXME try again after a period. will require
 				// holding references to lookup object
+				return l3;
 			}
 			if(cat != RTN_UNICAST && cat != RTN_LOCAL){
 				return l3;
