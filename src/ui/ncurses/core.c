@@ -191,8 +191,8 @@ iface_details(WINDOW *hw,const interface *i,int rows){
 					bprefix(i->rs,1,b,sizeof(b),1)) != ERR);
 		--z;
 	}case 4:{
-		assert(mvwprintw(hw,row + z,col,"Tbyte: "U64FMT" frames: "U64FMT,
-					i->txbytes,i->txframes) != ERR);
+		assert(mvwprintw(hw,row + z,col,"Tbyte: "U64FMT" frames: "U64FMT" aborts: %llu",
+					i->txbytes,i->txframes,i->txaborts) != ERR);
 		--z;
 	}case 3:{
 		char b[PREFIXSTRLEN];
