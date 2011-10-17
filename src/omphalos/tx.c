@@ -105,13 +105,8 @@ void send_tx_frame(const omphalos_iface *octx,interface *i,void *frame){
 
 		assert(thdr->tp_status == TP_STATUS_AVAILABLE);
 		thdr->tp_status = TP_STATUS_SEND_REQUEST;
-		// FIXME zero-copy wants NULL, 0, 0 AFAICT
-		{struct pcap_pkthdr phdr;
-
-	phdr.caplen = phdr.len = thdr->tp_len;
-	gettimeofday(&phdr.ts,NULL);
-	log_pcap_packet(&phdr,(char *)frame + thdr->tp_mac);}
-		ret = send(i->fd,(char *)frame + TPACKET_ALIGN(sizeof(*thdr)),tplen,0);
+		//ret = send(i->fd,(char *)frame + TPACKET_ALIGN(sizeof(*thdr)),tplen,0);
+		ret = send(i->fd,NULL,0,0);
 		if(ret == 0){
 			ret = tplen;
 		}
