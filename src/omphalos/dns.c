@@ -435,15 +435,15 @@ int tx_dns_ptr(const omphalos_iface *octx,int fam,const void *addr,
 
 	assert(fam == AF_INET || fam == AF_INET6);
 	if(get_router(fam,addr,&rp)){
-		return -1;;
+		return -1;
 	}
 	if((frame = get_tx_frame(octx,rp.i,&flen)) == NULL){
-		return -1;;
+		return -1;
 	}
 	r = setup_dns_ptr(&rp,fam,DNS_TARGET_PORT,flen,frame,question);
 	if(r){
 		abort_tx_frame(octx,rp.i,frame);
-		return -1;;
+		return -1;
 	}
 	send_tx_frame(octx,rp.i,frame);
 	return 0;
