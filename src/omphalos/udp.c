@@ -60,7 +60,7 @@ uint16_t udp4_csum(const void *hdr){
 		sum += cur[z];
 	}
 	if(dlen % 2){
-		sum += ((uint16_t)(((const unsigned char *)uh)[dlen - 1])) << 8u;
+		sum += ((uint16_t)(((const unsigned char *)uh)[dlen - 1]));
 	}
 	fold = 0;
 	for(z = 0 ; z < sizeof(sum) / 2 ; ++z){
@@ -97,7 +97,7 @@ uint16_t udp6_csum(const void *hdr){
 		sum += cur[z];
 	}
 	if(dlen % 2){
-		sum += ((uint16_t)(((const unsigned char *)uh)[dlen - 1])) << 8u;
+		sum += ((uint16_t)(((const unsigned char *)uh)[dlen - 1]));
 	}
 	fold = 0;
 	for(z = 0 ; z < sizeof(sum) / 2 ; ++z){
