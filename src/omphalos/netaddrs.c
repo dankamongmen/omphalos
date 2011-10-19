@@ -213,7 +213,7 @@ lookup_l3host_common(const omphalos_iface *octx,interface *i,struct l2host *l2,
 				return l3;
 			}
 			l3->lastnametry = time(NULL);
-			queue_for_naming(octx,i,l2,l3,fam,dnsfxn,rev);
+			queue_for_naming(octx,i,l2,l3,dnsfxn,rev);
 			free(rev);
 			return l3;
 		}
@@ -228,7 +228,7 @@ lookup_l3host_common(const omphalos_iface *octx,interface *i,struct l2host *l2,
 			if(dnsfxn && revstrfxn && (rev = revstrfxn(addr))){
 				// Calls the host event if necessary
 				name_l3host_absolute(octx,i,l2,l3,"Resolving...",NAMING_LEVEL_RESOLVING);
-				if(queue_for_naming(octx,i,l2,l3,fam,dnsfxn,rev)){
+				if(queue_for_naming(octx,i,l2,l3,dnsfxn,rev)){
 					name_l3host_absolute(octx,i,l2,l3,"Resolution failed",NAMING_LEVEL_FAIL);
 				}else{
 					l3->lastnametry = time(NULL);

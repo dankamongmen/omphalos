@@ -16,7 +16,7 @@ void handle_mdns_packet(const omphalos_iface *iface,omphalos_packet *op,
 	handle_dns_packet(iface,op,frame,len);
 }
 
-int tx_mdns_ptr(const omphalos_iface *octx,interface *i,int fam,const char *str){
+int tx_mdns_ptr(const omphalos_iface *octx,interface *i,const char *str){
 	uint128_t mcast_netaddr;
 	const void *mcast_addr;
 	struct routepath rp;
@@ -33,13 +33,13 @@ int tx_mdns_ptr(const omphalos_iface *octx,interface *i,int fam,const char *str)
 		return -1;
 	}
 	mcast_netaddr[0] = __constant_htonl(0xe00000fbu);
-	if((rp.l3 = lookup_l3host(octx,i,rp.l2,fam,&mcast_netaddr)) == NULL){
+	if((rp.l3 = lookup_l3host(octx,i,rp.l2,AF_INET,&mcast_netaddr)) == NULL){
 		return -1;
 	}
 	if((frame = get_tx_frame(octx,i,&flen)) == NULL){
 		return -1;
 	}
-	if(setup_dns_ptr(&rp,fam,MDNS_UDP_PORT,flen,frame,str)){
+	if(setup_dns_ptr(&rp,AF_INET,MDNS_UDP_PORT,flen,frame,str)){
 		abort_tx_frame(octx,i,frame);
 		return -1;
 	}
@@ -52,13 +52,13 @@ int tx_mdns_ptr(const omphalos_iface *octx,interface *i,int fam,const char *str)
 	mcast_netaddr[1] = __constant_htonl(0x00000000u);
 	mcast_netaddr[2] = __constant_htonl(0x00000000u);
 	mcast_netaddr[3] = __constant_htonl(0x000000fbu);
-	if((rp.l3 = lookup_l3host(octx,i,rp.l2,fam,&mcast_netaddr)) == NULL){
+	if((rp.l3 = lookup_l3host(octx,i,rp.l2,AF_INET6,&mcast_netaddr)) == NULL){
 		return -1;
 	}
 	if((frame = get_tx_frame(octx,i,&flen)) == NULL){
 		return -1;
 	}
-	if(setup_dns_ptr(&rp,fam,MDNS_UDP_PORT,flen,frame,str)){
+	if(setup_dns_ptr(&rp,AF_INET6,MDNS_UDP_PORT,flen,frame,str)){
 		abort_tx_frame(octx,i,frame);
 		return -1;
 	}

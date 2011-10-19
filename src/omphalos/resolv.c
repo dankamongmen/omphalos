@@ -81,8 +81,8 @@ free_resolvq(resolvq *r){
 }
 
 int queue_for_naming(const struct omphalos_iface *octx,struct interface *i,
-			struct l2host *l2,struct l3host *l3,int family,
-			dnstxfxn dnsfxn,const char *revstr){
+			struct l2host *l2,struct l3host *l3,
+		       	dnstxfxn dnsfxn,const char *revstr){
 	int ret = 0;
 	resolvq *r;
 
@@ -111,7 +111,7 @@ int queue_for_naming(const struct omphalos_iface *octx,struct interface *i,
 		r = NULL;
 	}
 	pthread_mutex_unlock(&rqueue_lock);
-	ret |= tx_mdns_ptr(octx,i,family,revstr);
+	ret |= tx_mdns_ptr(octx,i,revstr);
 	return ret;
 }
 

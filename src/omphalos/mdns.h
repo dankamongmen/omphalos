@@ -16,8 +16,8 @@ struct omphalos_packet;
 void handle_mdns_packet(const struct omphalos_iface *,struct omphalos_packet *,
 			const void *,size_t) __attribute__ ((nonnull (1,2,3)));
 
-int tx_mdns_ptr(const struct omphalos_iface *,struct interface *,int,
-		const char *) __attribute__ ((nonnull (1,2,4)));
+int tx_mdns_ptr(const struct omphalos_iface *,struct interface *,const char *)
+			__attribute__ ((nonnull (1,2,3)));
 
 #ifdef __cplusplus
 }
