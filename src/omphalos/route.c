@@ -298,7 +298,7 @@ int get_router(int fam,const void *addr,struct routepath *rp){
 	}else if(fam == AF_INET6){
 		rt = ip_table6;
 		len = 16;
-		maskaddr = *(const uint128_t *)addr;
+		memcpy(&maskaddr,&addr,len);
 		gwoffset = offsetof(struct sockaddr_in6,sin6_addr);
 	}else{
 		return -1;

@@ -513,6 +513,34 @@ get_route6(const interface *i,const void *ip){
 }
 
 const void *
+get_source_address(const struct omphalos_iface *octx,interface *i,
+			int fam,const void *addr,void *s){
+	assert(octx); // FIXME
+	switch(fam){
+		case AF_INET:{
+			const ip4route *i4r = get_route4(i,addr);
+
+			if(i4r == NULL){
+				return NULL;
+			}
+			memcpy(s,&i4r->src,sizeof(uint32_t));
+			break;
+		}case AF_INET6:{
+			const ip6route *i6r = get_route6(i,addr);
+
+			if(i6r == NULL){
+				return NULL;
+			}
+			// FIXME ipv6 routes very rarely set their src :/
+			memcpy(s,&i6r->src,sizeof(uint128_t));
+			break;
+		}default:
+			return NULL;
+	}
+	return s;
+}
+
+const void *
 get_unicast_address(const struct omphalos_iface *octx,interface *i,
 			const void *hwaddr,int fam,const void *addr,void *r){
 	int ret = 0;

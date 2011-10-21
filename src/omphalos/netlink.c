@@ -827,24 +827,19 @@ netlink_thread(const omphalos_iface *octx){
 		return -1;
 	}
 	if(discover_bluetooth(octx)){
-		close(pfd[0].fd);
-		watch_stop(octx);
-		return -1;
+		goto done;
 	}
 	if(discover_links(octx,pfd[0].fd)){
-		close(pfd[0].fd);
-		watch_stop(octx);
-		return -1;
+		goto done;
 	}
 	if(discover_neighbors(octx,pfd[0].fd)){
-		close(pfd[0].fd);
-		watch_stop(octx);
-		return -1;
+		goto done;
+	}
+	if(discover_addrs(octx,pfd[0].fd)){
+		goto done;
 	}
 	if(discover_routes(octx,pfd[0].fd)){
-		close(pfd[0].fd);
-		watch_stop(octx);
-		return -1;
+		goto done;
 	}
 	while(!cancelled){
 		unsigned z;
@@ -868,10 +863,11 @@ netlink_thread(const omphalos_iface *octx){
 			pfd[z].revents = 0;
 		}
 	}
+done:
 	octx->diagnostic(L"Shutting down (cancelled = %u)...",cancelled);
 	watch_stop(octx);
 	close(pfd[0].fd);
-	return 0;
+	return cancelled ? 0 : -1;
 }
 
 static int

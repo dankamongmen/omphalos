@@ -162,6 +162,9 @@ int add_route6(const struct omphalos_iface *,interface *,const struct in6_addr *
 int del_route4(interface *,const struct in_addr *,unsigned);
 int del_route6(interface *,const struct in6_addr *,unsigned);
 
+const void *get_source_address(const struct omphalos_iface *,interface *,
+				int,const void *,void *);
+
 const void *get_unicast_address(const struct omphalos_iface *,interface *,
 				const void *,int,const void *,void *);
 

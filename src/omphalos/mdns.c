@@ -16,7 +16,8 @@ void handle_mdns_packet(const omphalos_iface *iface,omphalos_packet *op,
 	handle_dns_packet(iface,op,frame,len);
 }
 
-int tx_mdns_ptr(const omphalos_iface *octx,interface *i,const char *str){
+int tx_mdns_ptr(const omphalos_iface *octx,interface *i,const char *str,
+		int fam,const void *lookup){
 	uint128_t mcast_netaddr;
 	const void *mcast_addr;
 	struct routepath rp;
@@ -26,42 +27,47 @@ int tx_mdns_ptr(const omphalos_iface *octx,interface *i,const char *str){
 	if(!(i->flags & IFF_MULTICAST)){
 		return 0;
 	}
+	if(!get_source_address(octx,i,fam,lookup,&rp.src)){
+		return 0;
+	}
 	rp.i = i;
-	memset(&rp.src,0,sizeof(rp.src)); // FIXME need valid address for target
-	mcast_addr = "\x01\x00\x5e\x00\x00\xfb";
-	if((rp.l2 = lookup_l2host(octx,i,mcast_addr)) == NULL){
-		return -1;
+	if(fam == AF_INET){
+		mcast_addr = "\x01\x00\x5e\x00\x00\xfb";
+		if((rp.l2 = lookup_l2host(octx,i,mcast_addr)) == NULL){
+			return -1;
+		}
+		mcast_netaddr[0] = __constant_htonl(0xe00000fbu);
+		if((rp.l3 = lookup_l3host(octx,i,rp.l2,AF_INET,&mcast_netaddr)) == NULL){
+			return -1;
+		}
+		if((frame = get_tx_frame(octx,i,&flen)) == NULL){
+			return -1;
+		}
+		if(setup_dns_ptr(&rp,AF_INET,MDNS_UDP_PORT,flen,frame,str)){
+			abort_tx_frame(octx,i,frame);
+			return -1;
+		}
+		send_tx_frame(octx,i,frame);
+	}else if(fam == AF_INET6){
+		mcast_addr = "\x33\x33\x00\x00\x00\xfb";
+		if((rp.l2 = lookup_l2host(octx,i,mcast_addr)) == NULL){
+			return -1;
+		}
+		mcast_netaddr[0] = __constant_htonl(0xff020000u);
+		mcast_netaddr[1] = __constant_htonl(0x00000000u);
+		mcast_netaddr[2] = __constant_htonl(0x00000000u);
+		mcast_netaddr[3] = __constant_htonl(0x000000fbu);
+		if((rp.l3 = lookup_l3host(octx,i,rp.l2,AF_INET6,&mcast_netaddr)) == NULL){
+			return -1;
+		}
+		if((frame = get_tx_frame(octx,i,&flen)) == NULL){
+			return -1;
+		}
+		if(setup_dns_ptr(&rp,AF_INET6,MDNS_UDP_PORT,flen,frame,str)){
+			abort_tx_frame(octx,i,frame);
+			return -1;
+		}
+		send_tx_frame(octx,i,frame);
 	}
-	mcast_netaddr[0] = __constant_htonl(0xe00000fbu);
-	if((rp.l3 = lookup_l3host(octx,i,rp.l2,AF_INET,&mcast_netaddr)) == NULL){
-		return -1;
-	}
-	if((frame = get_tx_frame(octx,i,&flen)) == NULL){
-		return -1;
-	}
-	if(setup_dns_ptr(&rp,AF_INET,MDNS_UDP_PORT,flen,frame,str)){
-		abort_tx_frame(octx,i,frame);
-		return -1;
-	}
-	send_tx_frame(octx,i,frame);
-	mcast_addr = "\x33\x33\x00\x00\x00\xfb";
-	if((rp.l2 = lookup_l2host(octx,i,mcast_addr)) == NULL){
-		return -1;
-	}
-	mcast_netaddr[0] = __constant_htonl(0xff020000u);
-	mcast_netaddr[1] = __constant_htonl(0x00000000u);
-	mcast_netaddr[2] = __constant_htonl(0x00000000u);
-	mcast_netaddr[3] = __constant_htonl(0x000000fbu);
-	if((rp.l3 = lookup_l3host(octx,i,rp.l2,AF_INET6,&mcast_netaddr)) == NULL){
-		return -1;
-	}
-	if((frame = get_tx_frame(octx,i,&flen)) == NULL){
-		return -1;
-	}
-	if(setup_dns_ptr(&rp,AF_INET6,MDNS_UDP_PORT,flen,frame,str)){
-		abort_tx_frame(octx,i,frame);
-		return -1;
-	}
-	send_tx_frame(octx,i,frame);
 	return 0;
 }
