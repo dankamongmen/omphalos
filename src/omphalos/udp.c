@@ -1,6 +1,7 @@
 #include <linux/ip.h>
 #include <sys/types.h>
 #include <linux/udp.h>
+#include <netinet/ip6.h>
 #include <omphalos/udp.h>
 #include <omphalos/dns.h>
 #include <omphalos/dhcp.h>
@@ -51,9 +52,14 @@ uint16_t udp4_csum(const void *hdr){
 	// UDP4 checksum is over UDP header, UDP data (zero padded to make it a
 	// multiple of 16 bits), and 12-byte IPv4 pseudoheader containing
 	// source addr, dest addr, 8 bits of 0, protocol, and total UDP length.
-	sum += (ih->saddr & 0xffffu) + (ih->saddr >> 16u); // saddr
-	sum += (ih->daddr & 0xffffu) + (ih->daddr >> 16u); // daddr
+	cur = (const uint16_t *)&ih->saddr;
+	sum += cur[0];
+	sum += cur[1];
+	cur = (const uint16_t *)&ih->daddr;
+	sum += cur[0];
+	sum += cur[1];
 	sum += htons(ih->protocol); // zeroes and protocol
+
 	sum += htons(dlen); // total length
 	cur = (const uint16_t *)uh; // now checksum over UDP header + data
 	for(z = 0 ; z < dlen / sizeof(*cur) ; ++z){
@@ -76,8 +82,9 @@ uint16_t udp4_csum(const void *hdr){
 
 // hdr must be a valid ipv6 header
 uint16_t udp6_csum(const void *hdr){
-	const struct iphdr *ih = hdr;
-	const struct udphdr *uh = (const void *)((const char *)hdr + (ih->ihl << 2u));
+	const struct ip6_hdr *ih = hdr;
+	// FIXME doesn't work for more than one IPv6 header!
+	const struct udphdr *uh = (const struct udphdr *)((const unsigned char *)hdr + 40);
 	uint16_t dlen = ntohs(uh->len);
 	const uint16_t *cur;
 	uint16_t fold;
@@ -85,13 +92,27 @@ uint16_t udp6_csum(const void *hdr){
 	unsigned z;
 
 	sum = 0;
-	// UDP4 checksum is over UDP header, UDP data (zero padded to make it a
-	// multiple of 16 bits), and 12-byte IPv4 pseudoheader containing
-	// source addr, dest addr, 8 bits of 0, protocol, and total UDP length.
-	sum += (ih->saddr & 0xffffu) + (ih->saddr >> 16u); // saddr
-	sum += (ih->daddr & 0xffffu) + (ih->daddr >> 16u); // daddr
-	sum += htons(ih->protocol); // zeroes and protocol
-	sum += htons(dlen); // total length
+	// UDP6 checksum is over UDP header, UDP data (zero padded to make it a
+	// multiple of 16 bits), and 40-byte IPv6 pseudoheader containing
+	// source addr, dest addr, UDP length, 24 bits of 0 and next header
+	sum += ih->ip6_src.s6_addr16[0];
+	sum += ih->ip6_src.s6_addr16[1];
+	sum += ih->ip6_src.s6_addr16[2];
+	sum += ih->ip6_src.s6_addr16[3];
+	sum += ih->ip6_src.s6_addr16[4];
+	sum += ih->ip6_src.s6_addr16[5];
+	sum += ih->ip6_src.s6_addr16[6];
+	sum += ih->ip6_src.s6_addr16[7]; // saddr
+	sum += ih->ip6_dst.s6_addr16[0];
+	sum += ih->ip6_dst.s6_addr16[1];
+	sum += ih->ip6_dst.s6_addr16[2];
+	sum += ih->ip6_dst.s6_addr16[3];
+	sum += ih->ip6_dst.s6_addr16[4];
+	sum += ih->ip6_dst.s6_addr16[5];
+	sum += ih->ip6_dst.s6_addr16[6];
+	sum += ih->ip6_dst.s6_addr16[7]; // daddr
+	sum += ih->ip6_ctlun.ip6_un1.ip6_un1_plen;
+	sum += htons(17); // zeroes and protocol
 	cur = (const uint16_t *)uh; // now checksum over UDP header + data
 	for(z = 0 ; z < dlen / sizeof(*cur) ; ++z){
 		sum += cur[z];

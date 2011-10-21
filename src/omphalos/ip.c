@@ -16,7 +16,7 @@
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
 
-#define DEFAULT_IP4_TTL 64
+#define DEFAULT_IP4_TTL 255 /*64*/
 #define DEFAULT_IP6_TTL 64
 
 static void
