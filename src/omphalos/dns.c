@@ -561,7 +561,7 @@ char *rev_dns_aaaa(const void *i6){
 		unsigned z;
 
 		for(z = 0 ; z < 4 ; ++z){
-			const uint32_t ip = ((const uint32_t *)i6)[z];
+			const uint32_t ip = ((const uint32_t *)i6)[(3 - z)];
 			uint32_t mask = 0xf,shr = 28;
 			unsigned y;
 
