@@ -185,7 +185,7 @@ int prep_ipv4_header(void *frame,size_t flen,uint32_t src,uint32_t dst,unsigned 
 	ip->ttl = DEFAULT_IP4_TTL;
 	ip->id = random();
 	ip->saddr = src;
-	if((ntohl(ip->daddr = dst) & 0xe0000000u) == 0xe0000000){
+	if((ntohl(ip->daddr = dst) & 0xf0000000u) == 0xe0000000){
 		ip->ttl = 1;
 	}
 	ip->protocol = proto;
