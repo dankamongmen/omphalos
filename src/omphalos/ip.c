@@ -16,7 +16,7 @@
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
 
-#define DEFAULT_IP4_TTL 255 /*64*/
+#define DEFAULT_IP4_TTL 64
 #define DEFAULT_IP6_TTL 64
 
 static void
@@ -185,7 +185,9 @@ int prep_ipv4_header(void *frame,size_t flen,uint32_t src,uint32_t dst,unsigned 
 	ip->ttl = DEFAULT_IP4_TTL;
 	ip->id = random();
 	ip->saddr = src;
-	ip->daddr = dst;
+	if((ntohl(ip->daddr = dst) & 0xe0000000u) == 0xe0000000){
+		ip->ttl = 1;
+	}
 	ip->protocol = proto;
 	return ip->ihl << 2u;
 }
