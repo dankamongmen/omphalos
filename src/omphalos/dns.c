@@ -565,9 +565,8 @@ char *rev_dns_aaaa(const void *i6){
 			uint32_t mask = 0xf,shr = 28;
 			unsigned y;
 
-			for(y = 0 ; y < sizeof(ip) / 4 ; ++y){
-				sprintf(&buf[z * 16 + y * 2],"%x.",(ip & mask) >> shr);
-				mask >>= 4;
+			for(y = 0 ; y < 32 / 4 ; ++y){
+				sprintf(&buf[z * 16 + y * 2],"\x01%x",(ip >> shr) & mask);
 				shr -= 4;
 			}
 		}
