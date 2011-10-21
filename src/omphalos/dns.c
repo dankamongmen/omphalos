@@ -58,10 +58,13 @@ process_reverse6_lookup(const char *buf,int *fam,void *addr,size_t len){
 	wantdigit = 1;
 	while(len){
 		if(wantdigit){
+			unsigned val;
+
 			if(!isxdigit(*buf)){
 				return -1;
 			}
-			// FIXME set it
+			val = strtoul(buf,NULL,16);
+			addr6[len / 16] = htonl(ntohl(addr6[len / 16]) | (val << (28 - ((len % 16) / 2 * 4))));
 		}else{
 			if(*buf != '.'){
 				return -1;
@@ -561,13 +564,13 @@ char *rev_dns_aaaa(const void *i6){
 		unsigned z;
 
 		for(z = 0 ; z < 4 ; ++z){
-			const uint32_t ip = ((const uint32_t *)i6)[(3 - z)];
-			uint32_t mask = 0xf,shr = 28;
+			const uint32_t ip = ntohl(((const uint32_t *)i6)[(3 - z)]);
+			uint32_t mask = 0xf,shr = 0;
 			unsigned y;
 
 			for(y = 0 ; y < 32 / 4 ; ++y){
 				sprintf(&buf[z * 16 + y * 2],"\x01%x",(ip >> shr) & mask);
-				shr -= 4;
+				shr += 4;
 			}
 		}
 		sprintf(buf + 64,IP6_REVSTR);
