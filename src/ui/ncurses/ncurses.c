@@ -250,6 +250,16 @@ ncurses_input_thread(void *unsafe_marsh){
 				redraw_screen_locked();
 			}unlock_ncurses();
 			break;
+		case 13: // Enter FIXME
+			lock_ncurses();{
+				select_iface_locked();
+			}unlock_ncurses();
+			break;
+		case 27: // Escape FIXME
+			lock_ncurses();{
+				deselect_iface_locked();
+			}unlock_ncurses();
+			break;
 		case 'C':
 			lock_ncurses();
 				configure_prefs(w);

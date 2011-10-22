@@ -117,6 +117,13 @@ void use_prev_iface_locked(WINDOW *,struct panel_state *);
 int expand_iface_locked(struct panel_state *);
 int collapse_iface_locked(struct panel_state *);
 
+// Select the current interface for host-granularity browsing (up and down now
+// move within the interface rather than among interfaces).
+int select_iface_locked(void);
+
+// Go back to interface-granularity browsing.
+int deselect_iface_locked(void);
+
 void check_consistency(void); // Debugging -- all assert()s
 
 #ifdef __cplusplus

@@ -1278,3 +1278,11 @@ void check_consistency(void){
 			(!top_reelbox && !last_reelbox && !current_iface));
 	//fprintf(stderr,"CONSISTENT\n");
 }
+
+int select_iface_locked(void){
+	return -1;
+}
+
+int deselect_iface_locked(void){
+	return -1;
+}
