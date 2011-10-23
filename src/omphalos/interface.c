@@ -231,6 +231,7 @@ int add_route6(const omphalos_iface *octx,interface *i,const struct in6_addr *s,
 	}
 	r->addrs = 0;
 	memcpy(&r->dst,s,sizeof(*s));
+	assert(src);
 	if(src){
 		struct l2host *l2;
 

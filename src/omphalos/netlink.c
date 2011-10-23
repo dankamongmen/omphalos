@@ -4,6 +4,7 @@
 #include <signal.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <assert.h>
 #include <pthread.h>
 #include <sys/uio.h>
 #include <sys/poll.h>
@@ -275,6 +276,9 @@ handle_rtm_newaddr(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	const struct ifaddrmsg *ia = NLMSG_DATA(nl);
 	struct rtattr *ra;
 	interface *iface;
+	void *as = NULL;
+	uint128_t addr;
+	size_t alen;
 	int rlen;
 
 	if((iface = iface_by_idx(ia->ifa_index)) == NULL){
@@ -284,9 +288,23 @@ handle_rtm_newaddr(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	octx->diagnostic(L"[%8s] ADDRESS ADDED\n",iface->name);
 	rlen = nl->nlmsg_len - NLMSG_LENGTH(sizeof(*ia));
 	ra = (struct rtattr *)((char *)(NLMSG_DATA(nl)) + sizeof(*ia));
+	if(ia->ifa_family == AF_INET){
+		alen = 4;
+	}else if(ia->ifa_family == AF_INET6){
+		alen = 16;
+	}else{
+		return 0;
+	}
 	while(RTA_OK(ra,rlen)){
 		switch(ra->rta_type){
-			case IFA_ADDRESS: octx->diagnostic(L"IFA_ADDRESS"); break;
+			case IFA_ADDRESS:
+				if(RTA_PAYLOAD(ra) != alen){
+					octx->diagnostic(L"Bad payload len for addr (%zu != %zu)",alen,RTA_PAYLOAD(ra));
+					return -1;
+				}
+				as = &addr;
+				memcpy(as,RTA_DATA(ra),alen);
+				break;
 			case IFA_LOCAL: octx->diagnostic(L"IFA_LOCAL"); break;
 			case IFA_BROADCAST: octx->diagnostic(L"IFA_BROADCAST"); break;
 			case IFA_ANYCAST: octx->diagnostic(L"IFA_ANYCAST"); break;
@@ -294,7 +312,9 @@ handle_rtm_newaddr(const omphalos_iface *octx,const struct nlmsghdr *nl){
 		}
 		ra = RTA_NEXT(ra,rlen);
 	}
-	// FIXME
+	if(ia->ifa_family == AF_INET6 && as){
+		set_default_ipv6src(iface,*(const uint128_t *)as);
+	}
 	return 0;
 }
 
@@ -382,7 +402,6 @@ pmarsh_destroy(const omphalos_iface *octx,psocket_marsh *pm){
 	free(pm);
 }
 
-#include <assert.h>
 void reap_thread(const omphalos_iface *octx,interface *i){
 	void *ret;
 
