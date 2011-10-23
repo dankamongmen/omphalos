@@ -204,6 +204,11 @@ int handle_rtm_newroute(const omphalos_iface *octx,const struct nlmsghdr *nl){
 			}else{
 				assert(0);
 			}
+		}else{ // FIXME vicious hackery!
+			if(r->family == AF_INET6){
+				memcpy(as,&r->iface->ip6defsrc,flen);
+				r->sss.ss_family = AF_INET6;
+			}
 		}
 	}
 	if(r->family == AF_INET){

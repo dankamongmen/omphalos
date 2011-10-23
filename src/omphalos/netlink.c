@@ -256,10 +256,7 @@ handle_rtm_delneigh(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	}
 	return 0;
 }
-
-/*static int
-handle_rtm_deladdr(const omphalos_iface *octx,const struct nlmsghdr *nl){
-	const struct ifaddrmsg *ia = NLMSG_DATA(nl);
+/*static int handle_rtm_deladdr(const omphalos_iface *octx,const struct nlmsghdr *nl){ const struct ifaddrmsg *ia = NLMSG_DATA(nl);
 	interface *iface;
 
 	if((iface = iface_by_idx(ia->ifa_index)) == NULL){
@@ -269,21 +266,37 @@ handle_rtm_deladdr(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	octx->diagnostic(L"[%8s] ADDRESS DELETED\n",iface->name);
 	// FIXME
 	return 0;
-}
+}*/
 
+// FIXME Currently used solely as backup source addresses for routes which
+// don't define one.
 static int
 handle_rtm_newaddr(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	const struct ifaddrmsg *ia = NLMSG_DATA(nl);
+	struct rtattr *ra;
 	interface *iface;
+	int rlen;
 
 	if((iface = iface_by_idx(ia->ifa_index)) == NULL){
 		octx->diagnostic(L"Invalid interface index: %d\n",ia->ifa_index);
 		return -1;
 	}
 	octx->diagnostic(L"[%8s] ADDRESS ADDED\n",iface->name);
+	rlen = nl->nlmsg_len - NLMSG_LENGTH(sizeof(*ia));
+	ra = (struct rtattr *)((char *)(NLMSG_DATA(nl)) + sizeof(*ia));
+	while(RTA_OK(ra,rlen)){
+		switch(ra->rta_type){
+			case IFA_ADDRESS: octx->diagnostic(L"IFA_ADDRESS"); break;
+			case IFA_LOCAL: octx->diagnostic(L"IFA_LOCAL"); break;
+			case IFA_BROADCAST: octx->diagnostic(L"IFA_BROADCAST"); break;
+			case IFA_ANYCAST: octx->diagnostic(L"IFA_ANYCAST"); break;
+			default: octx->diagnostic(L"%d",ra->rta_type); break;
+		}
+		ra = RTA_NEXT(ra,rlen);
+	}
 	// FIXME
 	return 0;
-}*/
+}
 
 static int
 handle_rtm_dellink(const omphalos_iface *octx,const struct nlmsghdr *nl){
@@ -773,6 +786,7 @@ handle_netlink_event(const omphalos_iface *octx,int fd){
 			break;}case RTM_DELROUTE:{
 				res |= handle_rtm_delroute(octx,nh);
 			break;}case RTM_NEWADDR:{
+				res |= handle_rtm_newaddr(octx,nh);
 			break;}case RTM_DELADDR:{
 			break;}case NLMSG_DONE:{
 				if(!inmulti){

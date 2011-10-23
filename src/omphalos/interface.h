@@ -132,6 +132,8 @@ typedef struct interface {
 	struct ip4route *ip4r;	// list of IPv4 routes
 	struct ip6route *ip6r;	// list of IPv6 routes
 
+	uint128_t ip6defsrc;	// default ipv6 source FIXME
+
 	struct l2host *l2hosts;
 	struct l3host *ip4hosts,*ip6hosts,*cells;
 
@@ -161,6 +163,8 @@ int add_route6(const struct omphalos_iface *,interface *,const struct in6_addr *
 		const struct in6_addr *,const struct in6_addr *,unsigned,int);
 int del_route4(interface *,const struct in_addr *,unsigned);
 int del_route6(interface *,const struct in6_addr *,unsigned);
+
+void set_default_ipv6src(interface *,const uint128_t);
 
 const void *get_source_address(const struct omphalos_iface *,interface *,
 				int,const void *,void *);

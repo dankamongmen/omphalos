@@ -596,3 +596,8 @@ get_unicast_address(const struct omphalos_iface *octx,interface *i,
 	}
 	return (ret != 1) ? NULL : r;
 }
+
+// FIXME need support multiple addresses, and match best up with each route
+void set_default_ipv6src(interface *i,const uint128_t ip){
+	i->ip6defsrc = ip;
+}
