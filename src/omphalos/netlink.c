@@ -187,7 +187,7 @@ handle_rtm_newneigh(const omphalos_iface *octx,const struct nlmsghdr *nl){
 
 			lock_interface(iface);
 			l2 = lookup_l2host(octx,iface,ll);
-			lookup_l3host(octx,iface,l2,nd->ndm_family,ad);
+			lookup_local_l3host(octx,iface,l2,nd->ndm_family,ad);
 			unlock_interface(iface);
 		}
 	}
