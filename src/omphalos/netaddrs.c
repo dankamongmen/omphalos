@@ -163,6 +163,7 @@ lookup_l3host_common(const omphalos_iface *octx,interface *i,struct l2host *l2,
 			return NULL; // FIXME
 		}
 	}
+	// Should probably skip this on NOARP interfaces? FIXME
 	if(routed_family_p(fam)){
 		cat = l2categorize(i,l2);
 		if(cat == RTN_UNICAST || cat == RTN_LOCAL){
@@ -222,6 +223,7 @@ lookup_l3host_common(const omphalos_iface *octx,interface *i,struct l2host *l2,
 		l3->l2 = l2;
                 l3->next = *orig;
                 *orig = l3;
+		// FIXME handle 127.0.0.1 and ::1 as special cases
 		if(cat == RTN_UNICAST || cat == RTN_LOCAL){
 			char *rev;
 
