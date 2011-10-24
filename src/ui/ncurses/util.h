@@ -69,6 +69,11 @@ bprefix(uintmax_t val,unsigned decimal,char *buf,size_t bsize,int omitdec){
 }
 
 enum {
+	COLOR_BLUE_75 = 16,
+	COLOR_CYAN_75,
+};
+
+enum {
 	BORDER_COLOR = 1,		// main window
 	HEADER_COLOR,
 	FOOTER_COLOR,
@@ -85,6 +90,10 @@ enum {
 	MCAST_COLOR,			// multicast addresses
 	BCAST_COLOR,			// broadcast addresses
 	ROUTER_COLOR,			// routing l3 addresses / access points
+	LCAST_L3_COLOR,			// local l3
+	UCAST_L3_COLOR,			// unicast l3
+	MCAST_L3_COLOR,			// multicast l3
+	BCAST_L3_COLOR,			// broadcast l3
 	MAX_OMPHALOS_COLOR
 };
 

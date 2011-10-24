@@ -119,14 +119,14 @@ int setup_extended_colors(void){
 	// #3465A4:#75507B:#06989A:#D3D7CF:
 	// #555753:#EF2929:#8AE234:#FCE94F:
 	// #729FCF:#AD7FA8:#34E2E2:#EEEEEC
-	ret |= init_color(0,156,203,211); // COLOR_BLACK
-	ret |= init_color(1,796,0,0); // COLOR_RED
-	ret |= init_color(2,304,601,23); // COLOR_GREEN
-	ret |= init_color(3,765,624,0); // COLOR_YELLOW
-	ret |= init_color(4,203,394,640); // COLOR_BLUE
-	ret |= init_color(5,457,312,480); // COLOR_MAGENTA
-	ret |= init_color(6,23,593,601); // COLOR_CYAN
-	ret |= init_color(7,823,839,808); // COLOR_WHITE
+	ret |= init_color(COLOR_BLACK,156,203,211);
+	ret |= init_color(COLOR_RED,796,0,0);
+	ret |= init_color(COLOR_GREEN,304,601,23);
+	ret |= init_color(COLOR_YELLOW,765,624,0);
+	ret |= init_color(COLOR_BLUE,203,394,640);
+	ret |= init_color(COLOR_MAGENTA,457,312,480);
+	ret |= init_color(COLOR_CYAN,23,593,601);
+	ret |= init_color(COLOR_WHITE,823,839,808);
 	ret |= init_color(8,332,340,324);
 	ret |= init_color(9,933,160,160);
 	ret |= init_color(10,539,882,203);
@@ -135,6 +135,8 @@ int setup_extended_colors(void){
 	ret |= init_color(13,675,496,656);
 	ret |= init_color(14,203,882,882);
 	ret |= init_color(15,929,929,921);
+	ret |= init_color(COLOR_BLUE_75,152,296,480);
+	ret |= init_color(COLOR_CYAN_75,17,445,451);
 	ret |= wrefresh(curscr);
 	for(q = 0 ; q < colors_allowed ; ++q){
 		assert(color_content(q,or + q,og + q,ob + q) == OK);
