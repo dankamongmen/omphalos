@@ -142,7 +142,7 @@ lookup_l3host_common(const omphalos_iface *octx,interface *i,struct l2host *l2,
 			}
 			break;
 		}case AF_INET6:{
-			const uint128_t zaddr = { 0, 0, 0, 0 };
+			const uint128_t zaddr = ZERO128;
 
 			len = 16;
 			orig = &i->ip6hosts;

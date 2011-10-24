@@ -10,6 +10,12 @@ extern "C" {
 // Use GCC vector extensions to drive SIMD
 typedef uint32_t uint128_t __attribute__ ((vector_size(16)))
 			__attribute__ ((aligned (16)));
+ 
+#define ZERO128 { 0, 0, 0, 0 }
+
+/*typedef __int128 uint128_t;
+
+#define ZERO128 0*/
 
 int equal128(uint128_t,uint128_t);
 
