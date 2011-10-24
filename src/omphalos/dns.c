@@ -261,7 +261,12 @@ extract_dns_record(size_t len,const unsigned char *sec,unsigned *class,
 		*idx += rlen;
 	}
 	if(buf == NULL){
-		return NULL;
+		if(rlen == 0){
+			buf = strdup("");
+		}
+		if(buf == NULL){
+			return NULL;
+		}
 	}
 	if(class || type){
 		if(len < *idx + 4){
