@@ -7,8 +7,12 @@
 #define COLORPAIR_CEILING 65536 // FIXME
 
 static int colors_allowed = -1,colorpairs_allowed = -1;
+// Original color pairs. We don't change these in a fade.
 static short ofg[COLORPAIR_CEILING],obg[COLORPAIR_CEILING];
+// Original palette (after we've initialized it, ie pre-fading)
 static short or[COLOR_CEILING],og[COLOR_CEILING],ob[COLOR_CEILING];
+// Truly original palette (that taken from the terminal on startup)
+static short oor[COLOR_CEILING],oog[COLOR_CEILING],oob[COLOR_CEILING];
 
 int bevel_notop(WINDOW *w){
 	static const cchar_t bchr[] = {
@@ -110,14 +114,17 @@ int restore_colors(void){
 	int ret = OK,q;
 
 	if(colorpairs_allowed < 0 || colors_allowed < 0){
-		return -1;
-	}
-	for(q = 0 ; q < colors_allowed ; ++q){
-		ret |= init_color(q,or[q],og[q],ob[q]);
+		return ERR;
 	}
 	for(q = 0 ; q < colorpairs_allowed ; ++q){
 		ret |= init_pair(q,ofg[q],obg[q]);
 	}
+	// FIXME messes up gnome-terminal, whose palette we're hijacking by
+	// default. most likely messes up all other terminals by being
+	// commented out :/
+	/*for(q = 0 ; q < colors_allowed ; ++q){
+		ret |= init_color(q,oor[q],oog[q],oob[q]);
+	}*/
 	ret |= wrefresh(curscr);
 	return ret;
 }
@@ -138,6 +145,9 @@ int preserve_colors(void){
 	}
 	for(q = 0 ; q < colorpairs_allowed ; ++q){
 		ret |= pair_content(q,ofg + q,obg + q);
+	}
+	for(q = 0 ; q < colors_allowed ; ++q){
+		ret |= color_content(q,oor + q,oog + q,oob + q);
 	}
 	return ret;
 }
@@ -172,8 +182,22 @@ int setup_extended_colors(void){
 	ret |= init_color(COLOR_CYAN_75,17,445,451);
 	ret |= wrefresh(curscr);
 	for(q = 0 ; q < colors_allowed ; ++q){
-		assert(color_content(q,or + q,og + q,ob + q) == OK);
+		ret |= color_content(q,or + q,og + q,ob + q);
 	}
+	return ret;
+}
+
+static int
+restore_our_colors(void){
+	int ret = OK,q;
+
+	if(colorpairs_allowed < 0 || colors_allowed < 0){
+		return ERR;
+	}
+	for(q = 0 ; q < colors_allowed ; ++q){
+		ret |= init_color(q,or[q],og[q],ob[q]);
+	}
+	ret |= wrefresh(curscr);
 	return ret;
 }
 
@@ -209,6 +233,6 @@ void fade(unsigned sec){
 		// flicker in all circumstances, becoming a single palette fade
 		// in the limit (ie, no fade at all).
 	}
-	setup_extended_colors();
+	restore_our_colors();
 	wrefresh(curscr);
 }
