@@ -234,7 +234,7 @@ print_iface_hosts(const interface *i,const iface_state *is,WINDOW *w,
 		if(is->expansion >= EXPANSION_HOSTS){
 			for(l3 = l->l3objs ; l3 ; l3 = l3->next){
 				char nw[INET6_ADDRSTRLEN + 1]; // FIXME
-				const char *name;
+				const wchar_t *name;
 
 				assert(wattrset(w,l3attrs) != ERR);
 				if(line >= rows - (partial <= 0)){
@@ -243,9 +243,9 @@ print_iface_hosts(const interface *i,const iface_state *is,WINDOW *w,
 				if(line >= 0){
 					l3ntop(l3->l3,nw,sizeof(nw));
 					if((name = get_l3name(l3->l3)) == NULL){
-						name = "";
+						name = L"";
 					}
-					assert(mvwprintw(w,line,5,"%s %s",nw,name) != ERR);
+					assert(mvwprintw(w,line,5,"%s %ls",nw,name) != ERR);
 					{
 						char sbuf[PREFIXSTRLEN + 1];
 						char dbuf[PREFIXSTRLEN + 1];
