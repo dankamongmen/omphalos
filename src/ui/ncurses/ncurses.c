@@ -503,7 +503,7 @@ ncurses_setup(const omphalos_iface *octx){
 	}
 	if(setup_extended_colors() != OK){
 		errstr = L"Couldn't initialize extended colors\n";
-		goto err;
+		// don't exit
 	}
 	assert(init_pair(LCAST_L3_COLOR,COLOR_CYAN_75,-1) == OK);
 	assert(init_pair(UCAST_L3_COLOR,COLOR_CYAN_75,-1) == OK);
@@ -530,8 +530,8 @@ ncurses_setup(const omphalos_iface *octx){
 	}
 	nim->octx = octx;
 	nim->w = w;
-	// Panels aren't yet being used, so we need call refresh() to paint the
-	// main window.
+	// Panels aren't yet being used, so we need call refresh() to
+	// paint the main window.
 	refresh();
 	if(pthread_create(&inputtid,NULL,ncurses_input_thread,nim)){
 		errstr = L"Couldn't create UI thread\n";
@@ -543,7 +543,7 @@ ncurses_setup(const omphalos_iface *octx){
 
 err:
 	mandatory_cleanup(&w);
-	fwprintf(stderr,L"%s",errstr);
+	fwprintf(stderr,L"%ls",errstr);
 	return NULL;
 }
 
