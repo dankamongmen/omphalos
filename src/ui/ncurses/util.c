@@ -3,9 +3,11 @@
 #include <ui/ncurses/util.h>
 #include <ncursesw/ncurses.h>
 
-#define COLOR_CEILING 256 // FIXME
+#define COLOR_CEILING 65536 // FIXME
+#define COLORPAIR_CEILING 65536 // FIXME
 
-static int colors_allowed = -1;
+static int colors_allowed = -1,colorpairs_allowed = -1;
+static short ofg[COLORPAIR_CEILING],obg[COLORPAIR_CEILING];
 static short or[COLOR_CEILING],og[COLOR_CEILING],ob[COLOR_CEILING];
 
 int bevel_notop(WINDOW *w){
@@ -104,15 +106,46 @@ char *genprefix(uintmax_t val,unsigned decimal,char *buf,size_t bsize,
 	return buf;
 }
 
+int restore_colors(void){
+	int ret = OK,q;
+
+	if(colorpairs_allowed < 0 || colors_allowed < 0){
+		return -1;
+	}
+	for(q = 0 ; q < colors_allowed ; ++q){
+		ret |= init_color(q,or[q],og[q],ob[q]);
+	}
+	for(q = 0 ; q < colorpairs_allowed ; ++q){
+		ret |= init_pair(q,ofg[q],obg[q]);
+	}
+	ret |= wrefresh(curscr);
+	return ret;
+}
+
+int preserve_colors(void){
+	int ret = OK,q;
+
+	if(can_change_color() != TRUE){
+		return ERR;
+	}
+	if(colorpairs_allowed >= 0 || colors_allowed >= 0){
+		return ERR;
+	}
+	colors_allowed = COLORS;
+	colorpairs_allowed = COLOR_PAIRS;
+	if(colors_allowed > COLOR_CEILING || colorpairs_allowed > COLORPAIR_CEILING){
+		return ERR;
+	}
+	for(q = 0 ; q < colorpairs_allowed ; ++q){
+		ret |= pair_content(q,ofg + q,obg + q);
+	}
+	return ret;
+}
+
 // FIXME dark evil hackery aieeeee
 int setup_extended_colors(void){
 	int ret = OK,q;
 
-	colors_allowed = COLORS;
-	assert(colors_allowed <= COLOR_CEILING);
-	if(can_change_color() != TRUE){
-		return ERR;
-	}
 	// rgb of 0->0, 85->333, 128->500, 170->666, 192->750, 255->999
 	// Gnome-terminal palette:
 	// #2E3436:#CC0000:#4E9A06:#C4A000:

@@ -445,6 +445,10 @@ ncurses_setup(const omphalos_iface *octx){
 		errstr = L"Couldn't set blocking input\n";
 		goto err;
 	}
+	if(preserve_colors() != OK){
+		errstr = L"Couldn't preserve initial colors\n";
+		goto err;
+	}
 	if(init_pair(BORDER_COLOR,COLOR_GREEN,-1) != OK){
 		errstr = L"Couldn't initialize ncurses colorpair\n";
 		goto err;
@@ -652,6 +656,7 @@ int main(int argc,char * const *argv){
 	}
 	lock_ncurses();
 	fade(1);
+	restore_colors();
 	unlock_ncurses();
 	omphalos_cleanup(&pctx);
 	if(mandatory_cleanup(&stdscr)){

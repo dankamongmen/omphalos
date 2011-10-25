@@ -97,6 +97,9 @@ enum {
 	MAX_OMPHALOS_COLOR
 };
 
+int restore_colors(void);
+int preserve_colors(void);
+
 int setup_extended_colors(void);
 
 void fade(unsigned);
