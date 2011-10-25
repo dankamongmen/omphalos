@@ -5,6 +5,7 @@
 extern "C" {
 #endif
 
+#include <wchar.h>
 #include <stdint.h>
 #include <omphalos/128.h>
 
@@ -44,6 +45,10 @@ void name_l3host_absolute(const struct omphalos_iface *,const struct interface *
 			struct l2host *,struct l3host *,const char *,namelevel)
 				__attribute__ ((nonnull (1,2,3,4,5)));
 
+void wname_l3host_absolute(const struct omphalos_iface *,const struct interface *,
+			struct l2host *,struct l3host *,const wchar_t *,namelevel)
+				__attribute__ ((nonnull (1,2,3,4,5)));
+
 char *l3addrstr(const struct l3host *) __attribute__ ((nonnull (1)));
 char *netaddrstr(int,const void *) __attribute__ ((nonnull (2)));
 
@@ -52,7 +57,7 @@ int l3ntop(const struct l3host *,char *,size_t) __attribute__ ((nonnull (1,2)));
 void cleanup_l3hosts(struct l3host **list) __attribute__ ((nonnull (1)));
 
 // Accessors
-const char *get_l3name(const struct l3host *) __attribute__ ((nonnull (1)));
+const wchar_t *get_l3name(const struct l3host *) __attribute__ ((nonnull (1)));
 void *l3host_get_opaque(struct l3host *) __attribute__ ((nonnull (1)));
 uintmax_t l3_get_srcpkt(const struct l3host *) __attribute__ ((nonnull (1)));
 uintmax_t l3_get_dstpkt(const struct l3host *) __attribute__ ((nonnull (1)));
