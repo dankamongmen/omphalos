@@ -403,89 +403,90 @@ mandatory_cleanup(WINDOW **w){
 static WINDOW *
 ncurses_setup(const omphalos_iface *octx){
 	struct ncurses_input_marshal *nim;
-	const char *errstr = NULL;
+	const wchar_t *errstr = NULL;
 	WINDOW *w = NULL;
 
+	fwprintf(stderr,L"Entering ncurses mode...\n");
 	if(initscr() == NULL){
-		fprintf(stderr,"Couldn't initialize ncurses\n");
+		fwprintf(stderr,L"Couldn't initialize ncurses\n");
 		return NULL;
 	}
 	if(cbreak() != OK){
-		errstr = "Couldn't disable input buffering\n";
+		errstr = L"Couldn't disable input buffering\n";
 		goto err;
 	}
 	if(noecho() != OK){
-		errstr = "Couldn't disable input echoing\n";
+		errstr = L"Couldn't disable input echoing\n";
 		goto err;
 	}
 	if(intrflush(stdscr,TRUE) != OK){
-		errstr = "Couldn't set flush-on-interrupt\n";
+		errstr = L"Couldn't set flush-on-interrupt\n";
 		goto err;
 	}
 	if(scrollok(stdscr,FALSE) != OK){
-		errstr = "Couldn't disable scrolling\n";
+		errstr = L"Couldn't disable scrolling\n";
 		goto err;
 	}
 	if(nonl() != OK){
-		errstr = "Couldn't disable nl translation\n";
+		errstr = L"Couldn't disable nl translation\n";
 		goto err;
 	}
 	if(start_color() != OK){
-		errstr = "Couldn't initialize ncurses color\n";
+		errstr = L"Couldn't initialize ncurses color\n";
 		goto err;
 	}
 	if(use_default_colors()){
-		errstr = "Couldn't initialize ncurses colordefs\n";
+		errstr = L"Couldn't initialize ncurses colordefs\n";
 		goto err;
 	}
 	w = stdscr;
 	keypad(stdscr,TRUE);
 	if(nodelay(stdscr,FALSE) != OK){
-		errstr = "Couldn't set blocking input\n";
+		errstr = L"Couldn't set blocking input\n";
 		goto err;
 	}
 	if(init_pair(BORDER_COLOR,COLOR_GREEN,-1) != OK){
-		errstr = "Couldn't initialize ncurses colorpair\n";
+		errstr = L"Couldn't initialize ncurses colorpair\n";
 		goto err;
 	}
 	if(init_pair(HEADER_COLOR,COLOR_BLUE,-1) != OK){
-		errstr = "Couldn't initialize ncurses colorpair\n";
+		errstr = L"Couldn't initialize ncurses colorpair\n";
 		goto err;
 	}
 	if(init_pair(FOOTER_COLOR,COLOR_YELLOW,-1) != OK){
-		errstr = "Couldn't initialize ncurses colorpair\n";
+		errstr = L"Couldn't initialize ncurses colorpair\n";
 		goto err;
 	}
 	if(init_pair(DBORDER_COLOR,COLOR_WHITE,-1) != OK){
-		errstr = "Couldn't initialize ncurses colorpair\n";
+		errstr = L"Couldn't initialize ncurses colorpair\n";
 		goto err;
 	}
 	if(init_pair(DHEADING_COLOR,COLOR_WHITE,-1) != OK){
-		errstr = "Couldn't initialize ncurses colorpair\n";
+		errstr = L"Couldn't initialize ncurses colorpair\n";
 		goto err;
 	}
 	if(init_pair(UBORDER_COLOR,COLOR_YELLOW,-1) != OK){
-		errstr = "Couldn't initialize ncurses colorpair\n";
+		errstr = L"Couldn't initialize ncurses colorpair\n";
 		goto err;
 	}
 	if(init_pair(UHEADING_COLOR,COLOR_GREEN,-1) != OK){
-		errstr = "Couldn't initialize ncurses colorpair\n";
+		errstr = L"Couldn't initialize ncurses colorpair\n";
 		goto err;
 	}
 	if(init_pair(PBORDER_COLOR,COLOR_CYAN,-1) != OK){
-		errstr = "Couldn't initialize ncurses colorpair\n";
+		errstr = L"Couldn't initialize ncurses colorpair\n";
 		goto err;
 	}
 	if(init_pair(PHEADING_COLOR,COLOR_RED,-1) != OK){
-		errstr = "Couldn't initialize ncurses colorpair\n";
+		errstr = L"Couldn't initialize ncurses colorpair\n";
 		goto err;
 	}
 	if(init_pair(BULKTEXT_COLOR,COLOR_WHITE,-1) != OK){
-		errstr = "Couldn't initialize ncurses colorpair\n";
+		errstr = L"Couldn't initialize ncurses colorpair\n";
 		goto err;
 	}
 	if(init_pair(IFACE_COLOR,COLOR_WHITE,-1) != OK){
-		errstr = "Couldn't initialize ncurses colorpair\n";
+		errstr = L"Couldn't initialize ncurses colorpair\n";
 		goto err;
 	}
 	assert(init_pair(LCAST_COLOR,COLOR_CYAN,-1) == OK);
@@ -493,27 +494,31 @@ ncurses_setup(const omphalos_iface *octx){
 	assert(init_pair(MCAST_COLOR,COLOR_BLUE,-1) == OK);
 	assert(init_pair(BCAST_COLOR,COLOR_BLUE,-1) == OK);
 	if(init_pair(ROUTER_COLOR,COLOR_YELLOW,-1) != OK){
-		errstr = "Couldn't initialize ncurses colorpair\n";
+		errstr = L"Couldn't initialize ncurses colorpair\n";
 		goto err;
 	}
 	if(setup_extended_colors() != OK){
-		errstr = "Couldn't initialize extended colors\n";
+		errstr = L"Couldn't initialize extended colors\n";
 		goto err;
 	}
 	assert(init_pair(LCAST_L3_COLOR,COLOR_CYAN_75,-1) == OK);
 	assert(init_pair(UCAST_L3_COLOR,COLOR_CYAN_75,-1) == OK);
 	assert(init_pair(MCAST_L3_COLOR,COLOR_BLUE_75,-1) == OK);
 	assert(init_pair(BCAST_L3_COLOR,COLOR_BLUE_75,-1) == OK);
+	assert(init_pair(LCAST_L3_COLOR,COLOR_CYAN,-1) == OK);
+	assert(init_pair(UCAST_L3_COLOR,COLOR_CYAN,-1) == OK);
+	assert(init_pair(MCAST_L3_COLOR,COLOR_BLUE,-1) == OK);
+	assert(init_pair(BCAST_L3_COLOR,COLOR_BLUE,-1) == OK);
 	if(curs_set(0) == ERR){
-		errstr = "Couldn't disable cursor\n";
+		errstr = L"Couldn't disable cursor\n";
 		goto err;
 	}
 	if(setup_statusbar(COLS)){
-		errstr = "Couldn't setup status bar\n";
+		errstr = L"Couldn't setup status bar\n";
 		goto err;
 	}
 	if(draw_main_window(w)){
-		errstr = "Couldn't use ncurses\n";
+		errstr = L"Couldn't use ncurses\n";
 		goto err;
 	}
 	if((nim = malloc(sizeof(*nim))) == NULL){
@@ -525,7 +530,7 @@ ncurses_setup(const omphalos_iface *octx){
 	// main window.
 	refresh();
 	if(pthread_create(&inputtid,NULL,ncurses_input_thread,nim)){
-		errstr = "Couldn't create UI thread\n";
+		errstr = L"Couldn't create UI thread\n";
 		free(nim);
 		goto err;
 	}
@@ -534,7 +539,7 @@ ncurses_setup(const omphalos_iface *octx){
 
 err:
 	mandatory_cleanup(&w);
-	fprintf(stderr,"%s",errstr);
+	fwprintf(stderr,L"%s",errstr);
 	return NULL;
 }
 
