@@ -493,19 +493,29 @@ ncurses_setup(const omphalos_iface *octx){
 		errstr = L"Couldn't initialize ncurses colorpair\n";
 		goto err;
 	}
-	assert(init_pair(UCAST_COLOR,COLOR_CYAN,-1) == OK);
-	assert(init_pair(MCAST_COLOR,COLOR_BLUE,-1) == OK);
 	if(init_pair(ROUTER_COLOR,COLOR_YELLOW,-1) != OK){
 		errstr = L"Couldn't initialize ncurses colorpair\n";
 		goto err;
 	}
 	if(setup_extended_colors() != OK){
 		errstr = L"Couldn't initialize extended colors\n";
+		assert(init_pair(LCAST_COLOR,COLOR_CYAN,-1) == OK);
+		assert(init_pair(UCAST_COLOR,COLOR_CYAN,-1) == OK);
+		assert(init_pair(MCAST_COLOR,COLOR_BLUE,-1) == OK);
+		assert(init_pair(BCAST_COLOR,COLOR_BLUE,-1) == OK);
+		assert(init_pair(LCAST_L3_COLOR,COLOR_CYAN,-1) == OK);
 		assert(init_pair(UCAST_L3_COLOR,COLOR_CYAN,-1) == OK);
 		assert(init_pair(MCAST_L3_COLOR,COLOR_BLUE,-1) == OK);
+		assert(init_pair(BCAST_L3_COLOR,COLOR_BLUE,-1) == OK);
 	}else{
+		assert(init_pair(LCAST_COLOR,COLOR_ORANGE,-1) == OK);
+		assert(init_pair(UCAST_COLOR,COLOR_CYAN,-1) == OK);
+		assert(init_pair(MCAST_COLOR,COLOR_BLUE,-1) == OK);
+		assert(init_pair(BCAST_COLOR,COLOR_PURPLE,-1) == OK);
+		assert(init_pair(LCAST_L3_COLOR,COLOR_ORANGE_75,-1) == OK);
 		assert(init_pair(UCAST_L3_COLOR,COLOR_CYAN_75,-1) == OK);
 		assert(init_pair(MCAST_L3_COLOR,COLOR_BLUE_75,-1) == OK);
+		assert(init_pair(BCAST_L3_COLOR,COLOR_PURPLE_75,-1) == OK);
 	}
 	if(curs_set(0) == ERR){
 		errstr = L"Couldn't disable cursor\n";
