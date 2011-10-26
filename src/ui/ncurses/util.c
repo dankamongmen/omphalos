@@ -230,8 +230,8 @@ void fade(unsigned sec){
 			b[p] = b[p] < 0 ? 0 : b[p];
 			init_color(p,r[p],g[p],b[p]);
 		}
-		wrefresh(curscr);
 		usleep(us);
+		wrefresh(curscr);
 		// We ought feed back the actual time interval and perhaps
 		// fade more rapidly based on the result. This ought control
 		// flicker in all circumstances, becoming a single palette fade
