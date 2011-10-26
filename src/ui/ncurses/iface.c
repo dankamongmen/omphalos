@@ -178,8 +178,8 @@ print_iface_hosts(const interface *i,const iface_state *is,WINDOW *w,
 				legend = 'U';
 				break;
 			case RTN_LOCAL:
-				attrs = A_BOLD | COLOR_PAIR(LCAST_COLOR);
-				l3attrs = A_BOLD | COLOR_PAIR(LCAST_L3_COLOR);
+				attrs = A_BOLD | COLOR_PAIR(UCAST_COLOR);
+				l3attrs = A_BOLD | COLOR_PAIR(UCAST_L3_COLOR);
 				if(interface_virtual_p(i) ||
 					(devname = get_devname(l->l2)) == NULL){
 					devname = i->topinfo.devname;
@@ -193,8 +193,8 @@ print_iface_hosts(const interface *i,const iface_state *is,WINDOW *w,
 				legend = 'M';
 				break;
 			case RTN_BROADCAST:
-				attrs = COLOR_PAIR(BCAST_COLOR);
-				l3attrs = COLOR_PAIR(BCAST_L3_COLOR);
+				attrs = COLOR_PAIR(MCAST_COLOR);
+				l3attrs = COLOR_PAIR(MCAST_L3_COLOR);
 				devname = get_devname(l->l2);
 				legend = 'B';
 				break;
