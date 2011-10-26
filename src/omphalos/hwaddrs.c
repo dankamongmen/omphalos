@@ -132,6 +132,7 @@ int l2categorize(const interface *i,const l2host *l2){
 					return RTN_BROADCAST;
 				}
 			}
+			return RTN_MULTICAST;
 		}
 		return RTN_UNICAST;
 	}
