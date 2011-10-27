@@ -2,6 +2,7 @@
 #include <unistd.h>
 #include <ui/ncurses/core.h>
 #include <ui/ncurses/util.h>
+#include <ui/ncurses/color.h>
 #include <ui/ncurses/iface.h>
 #include <omphalos/ethtool.h>
 #include <omphalos/netaddrs.h>

@@ -30,6 +30,7 @@
 #include <ui/ncurses/util.h>
 #include <ui/ncurses/core.h>
 #include <omphalos/timing.h>
+#include <ui/ncurses/color.h>
 #include <ncursesw/ncurses.h>
 #include <omphalos/hwaddrs.h>
 #include <ui/ncurses/iface.h>

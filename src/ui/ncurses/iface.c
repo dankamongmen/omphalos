@@ -7,6 +7,7 @@
 #include <linux/rtnetlink.h>
 #include <ui/ncurses/core.h>
 #include <ui/ncurses/util.h>
+#include <ui/ncurses/color.h>
 #include <omphalos/hwaddrs.h>
 #include <ncursesw/ncurses.h>
 #include <ui/ncurses/iface.h>
