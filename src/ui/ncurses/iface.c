@@ -255,6 +255,7 @@ print_iface_hosts(const interface *i,const iface_state *is,WINDOW *w,
 						assert(wattrset(w,rattrs) != ERR);
 					}
 					assert(wprintw(w,"%ls",name) != ERR);
+					assert(wattrset(w,l3attrs) != ERR);
 					{
 						char sbuf[PREFIXSTRLEN + 1];
 						char dbuf[PREFIXSTRLEN + 1];
