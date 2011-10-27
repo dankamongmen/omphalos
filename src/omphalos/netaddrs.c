@@ -348,6 +348,10 @@ const wchar_t *get_l3name(const l3host *l3){
 	return l3->name;
 }
 
+namelevel get_l3nlevel(const l3host *l3){
+	return l3->nlevel;
+}
+
 void *l3host_get_opaque(l3host *l3){
 	return l3->opaque;
 }

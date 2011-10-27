@@ -163,8 +163,8 @@ print_iface_hosts(const interface *i,const iface_state *is,WINDOW *w,
 	}
 	for(l = is->l2objs ; l ; l = l->next){
 		char hw[HWADDRSTRLEN(i->addrlen)];
+		int attrs,l3attrs,rattrs;
 		const char *devname;
-		int attrs,l3attrs;
 		char legend;
 		l3obj *l3;
 		
@@ -175,12 +175,14 @@ print_iface_hosts(const interface *i,const iface_state *is,WINDOW *w,
 			case RTN_UNICAST:
 				attrs = COLOR_PAIR(UCAST_COLOR);
 				l3attrs = COLOR_PAIR(UCAST_L3_COLOR);
+				rattrs = COLOR_PAIR(UCAST_RES_COLOR);
 				devname = get_devname(l->l2);
 				legend = 'U';
 				break;
 			case RTN_LOCAL:
 				attrs = COLOR_PAIR(LCAST_COLOR);
 				l3attrs = COLOR_PAIR(LCAST_L3_COLOR);
+				rattrs = COLOR_PAIR(LCAST_RES_COLOR);
 				if(interface_virtual_p(i) ||
 					(devname = get_devname(l->l2)) == NULL){
 					devname = i->topinfo.devname;
@@ -190,12 +192,14 @@ print_iface_hosts(const interface *i,const iface_state *is,WINDOW *w,
 			case RTN_MULTICAST:
 				attrs = COLOR_PAIR(MCAST_COLOR);
 				l3attrs = COLOR_PAIR(MCAST_L3_COLOR);
+				rattrs = COLOR_PAIR(MCAST_RES_COLOR);
 				devname = get_devname(l->l2);
 				legend = 'M';
 				break;
 			case RTN_BROADCAST:
 				attrs = COLOR_PAIR(BCAST_COLOR);
 				l3attrs = COLOR_PAIR(BCAST_L3_COLOR);
+				rattrs = COLOR_PAIR(BCAST_RES_COLOR);
 				devname = get_devname(l->l2);
 				legend = 'B';
 				break;
@@ -246,7 +250,11 @@ print_iface_hosts(const interface *i,const iface_state *is,WINDOW *w,
 					if((name = get_l3name(l3->l3)) == NULL){
 						name = L"";
 					}
-					assert(mvwprintw(w,line,5,"%s %ls",nw,name) != ERR);
+					assert(mvwprintw(w,line,5,"%s ",nw) != ERR);
+					if(get_l3nlevel(l3->l3) != NAMING_LEVEL_RESOLVING){
+						assert(wattrset(w,rattrs) != ERR);
+					}
+					assert(wprintw(w,"%ls",name) != ERR);
 					{
 						char sbuf[PREFIXSTRLEN + 1];
 						char dbuf[PREFIXSTRLEN + 1];

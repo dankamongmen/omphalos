@@ -71,6 +71,7 @@ int preserve_colors(void){
 #define _ORANGE_B 0x16
 #define CURSES_RGB(x) ((x) * 1000 / 255)
 #define CURSES75_RGB(x) ((x) * 750 / 255)
+#define CURSES50_RGB(x) ((x) * 500 / 255)
 
 // FIXME dark evil hackery aieeeee
 int setup_extended_colors(void){
@@ -85,6 +86,7 @@ int setup_extended_colors(void){
 #define GNOME_BLUE_G 394
 #define GNOME_BLUE_B 640
 #define GNOME75(x) ((x) * 3 / 4)
+#define GNOME50(x) ((x) * 2 / 4)
 	// #2E3436:#CC0000:#4E9A06:#C4A000:
 	// #3465A4:#75507B:#06989A:#D3D7CF:
 	// #555753:#EF2929:#8AE234:#FCE94F:
@@ -107,6 +109,8 @@ int setup_extended_colors(void){
 	ret |= init_color(15,929,929,921);
 	ret |= init_color(COLOR_BLUE_75,GNOME75(GNOME_BLUE_R),GNOME75(GNOME_BLUE_G),GNOME75(GNOME_BLUE_B));
 	ret |= init_color(COLOR_CYAN_75,17,445,451);
+	ret |= init_color(COLOR_BLUE_50,GNOME50(GNOME_BLUE_R),GNOME50(GNOME_BLUE_G),GNOME50(GNOME_BLUE_B));
+	ret |= init_color(COLOR_CYAN_50,17 * 2 / 3,445 * 2 / 3,451 * 2 /3);
 	ret |= init_color(COLOR_BONE,CURSES_RGB(_BONE_R),CURSES_RGB(_BONE_G),CURSES_RGB(_BONE_B));
 	ret |= init_color(COLOR_PURPLE,CURSES_RGB(_PURPLE_R),CURSES_RGB(_PURPLE_G),CURSES_RGB(_PURPLE_B));
 	ret |= init_color(COLOR_BGREEN,CURSES_RGB(_BGREEN_R),CURSES_RGB(_BGREEN_G),CURSES_RGB(_BGREEN_B));
@@ -115,6 +119,10 @@ int setup_extended_colors(void){
 	ret |= init_color(COLOR_PURPLE_75,CURSES75_RGB(_PURPLE_R),CURSES75_RGB(_PURPLE_G),CURSES75_RGB(_PURPLE_B));
 	ret |= init_color(COLOR_BGREEN_75,CURSES75_RGB(_BGREEN_R),CURSES75_RGB(_BGREEN_G),CURSES75_RGB(_BGREEN_B));
 	ret |= init_color(COLOR_ORANGE_75,CURSES75_RGB(_ORANGE_R),CURSES75_RGB(_ORANGE_G),CURSES75_RGB(_ORANGE_B));
+	ret |= init_color(COLOR_BONE_50,CURSES50_RGB(_BONE_R),CURSES50_RGB(_BONE_G),CURSES50_RGB(_BONE_B));
+	ret |= init_color(COLOR_PURPLE_50,CURSES50_RGB(_PURPLE_R),CURSES50_RGB(_PURPLE_G),CURSES50_RGB(_PURPLE_B));
+	ret |= init_color(COLOR_BGREEN_50,CURSES50_RGB(_BGREEN_R),CURSES50_RGB(_BGREEN_G),CURSES50_RGB(_BGREEN_B));
+	ret |= init_color(COLOR_ORANGE_50,CURSES50_RGB(_ORANGE_R),CURSES50_RGB(_ORANGE_G),CURSES50_RGB(_ORANGE_B));
 	ret |= wrefresh(curscr);
 	for(q = 0 ; q < colors_allowed ; ++q){
 		ret |= color_content(q,or + q,og + q,ob + q);

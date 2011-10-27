@@ -58,6 +58,7 @@ void cleanup_l3hosts(struct l3host **list) __attribute__ ((nonnull (1)));
 
 // Accessors
 const wchar_t *get_l3name(const struct l3host *) __attribute__ ((nonnull (1)));
+namelevel get_l3nlevel(const struct l3host *) __attribute__ ((nonnull (1)));
 void *l3host_get_opaque(struct l3host *) __attribute__ ((nonnull (1)));
 uintmax_t l3_get_srcpkt(const struct l3host *) __attribute__ ((nonnull (1)));
 uintmax_t l3_get_dstpkt(const struct l3host *) __attribute__ ((nonnull (1)));
