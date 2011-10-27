@@ -285,7 +285,6 @@ handle_rtm_newaddr(const omphalos_iface *octx,const struct nlmsghdr *nl){
 		octx->diagnostic(L"Invalid interface index: %d\n",ia->ifa_index);
 		return -1;
 	}
-	octx->diagnostic(L"[%8s] ADDRESS ADDED\n",iface->name);
 	rlen = nl->nlmsg_len - NLMSG_LENGTH(sizeof(*ia));
 	ra = (struct rtattr *)((char *)(NLMSG_DATA(nl)) + sizeof(*ia));
 	if(ia->ifa_family == AF_INET){
@@ -305,9 +304,9 @@ handle_rtm_newaddr(const omphalos_iface *octx,const struct nlmsghdr *nl){
 				as = &addr;
 				memcpy(as,RTA_DATA(ra),alen);
 				break;
-			case IFA_LOCAL: octx->diagnostic(L"IFA_LOCAL"); break;
-			case IFA_BROADCAST: octx->diagnostic(L"IFA_BROADCAST"); break;
-			case IFA_ANYCAST: octx->diagnostic(L"IFA_ANYCAST"); break;
+			case IFA_LOCAL: break;
+			case IFA_BROADCAST: break;
+			case IFA_ANYCAST: break;
 			default: octx->diagnostic(L"%d",ra->rta_type); break;
 		}
 		ra = RTA_NEXT(ra,rlen);
