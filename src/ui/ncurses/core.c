@@ -28,8 +28,8 @@ create_reelbox(iface_state *is,int rows,int scrline,int cols){
 	int lines;
 
 	lines = iface_lines_bounded(is,rows);
-	if(lines > rows - scrline){
-		lines = rows - scrline;
+	if(lines >= rows - scrline){
+		lines = rows - scrline - 1;
 	}
 	if( (ret = malloc(sizeof(*ret))) ){
 		if(((ret->subwin = newwin(lines,PAD_COLS(cols),scrline,START_COL)) == NULL)
@@ -343,6 +343,7 @@ pull_interfaces_up(reelbox *puller,int rows,int cols,int delta){
 		last_reelbox->next = rb;
 		rb->next = NULL;
 		last_reelbox = rb;
+		redraw_iface_generic(rb);
 	}
 }
 
