@@ -18,8 +18,9 @@ struct omphalos_iface;
 
 typedef enum {
 	NAMING_LEVEL_NONE,	// No name
-	NAMING_LEVEL_FAIL,	// Failure result
+	NAMING_LEVEL_FAIL,	// Failure sending query
 	NAMING_LEVEL_RESOLVING,	// Currently being looked up
+	NAMING_LEVEL_NXDOMAIN,	// Server returned Name Error
 	NAMING_LEVEL_DNS,	// Direct lookup maps multiple names to an IP
 	NAMING_LEVEL_REVDNS,	// Reverse lookup is unique for each IP
 	NAMING_LEVEL_GLOBAL,	// Globally-assigned address

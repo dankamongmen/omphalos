@@ -369,7 +369,20 @@ void handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 			goto malformed;
 		}
 		if((flags & RESPONSE_CODE_MASK) == RESPONSE_CODE_NXDOMAIN){
-			// FIXME offer NXDOMAIN
+			if(class == DNS_CLASS_IN){
+				if(type == DNS_TYPE_PTR){
+					char ss[16]; // FIXME
+					int fam;
+
+					if(process_reverse_lookup(buf,&fam,ss) == 0){
+						// FIXME perform routing lookup on ss to get
+						// the desired interface and see whether we care
+						// about this address
+						offer_wresolution(octx,fam,ss,L"name error",
+							NAMING_LEVEL_NXDOMAIN,nsfam,nsaddr);
+					}
+				}
+			}
 		}
 		free(buf);
 		sec += bsize;
