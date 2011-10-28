@@ -383,7 +383,7 @@ static arptype arptypes[] = {
 		.analyze = handle_irda_packet,
 	},{
 		.ifi_type = ARPHRD_TUNNEL6,
-		.name = "TunnelV6",
+		.name = "Tunnelv6",
 		.analyze = handle_ethernet_packet,
 	},{
 		.ifi_type = ARPHRD_NONE,
