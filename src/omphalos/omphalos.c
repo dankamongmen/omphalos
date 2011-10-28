@@ -24,6 +24,7 @@
 #include <omphalos/interface.h>
 
 #define DEFAULT_USERNAME "nobody"
+#define DEFAULT_MODESTRING "active"
 #define DEFAULT_IANA_FILENAME "ieee-oui.txt" // from arp-scan's 'get-oui'
 #define DEFAULT_RESOLVCONF_FILENAME "/etc/resolv.conf"
 
@@ -38,6 +39,8 @@ usage(const char *arg0,int ret){
 	fprintf(fp,"-u username: user name to take after creating packet socket.\n");
 	fprintf(fp,"\t'%s' by default. provide empty string to disable.\n",DEFAULT_USERNAME);
 	fprintf(fp,"-f filename: libpcap-format save file for input.\n");
+	fprintf(fp,"--mode silent|stealthy|active|aggressive|forceful|hostile\n");
+	fprintf(fp,"\t'%s' by default. See documentation for details.\n",DEFAULT_MODESTRING);
 	fprintf(fp,"--ouis filename: IANA's OUI mapping in get-oui(1) format.\n");
 	fprintf(fp,"\t'%s' by default. provide empty string to disable.\n",DEFAULT_IANA_FILENAME);
 	fprintf(fp,"--resolv filename: resolv.conf-format nameserver list.\n");
@@ -89,6 +92,7 @@ enum {
 	OPT_VERSION,
 	OPT_PLOG,
 	OPT_RESOLV,
+	OPT_MODE,
 };
 
 int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
@@ -113,6 +117,11 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 			.has_arg = 1,
 			.flag = NULL,
 			.val = OPT_RESOLV,
+		},{
+			.name = "mode",
+			.has_arg = 1,
+			.flag = NULL,
+			.val = OPT_MODE,
 		},
 		{
 			.name = NULL,
@@ -149,6 +158,13 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 				usage(argv[0],EXIT_FAILURE);
 			}
 			pctx->resolvconf = optarg;
+			break;
+		}case OPT_MODE:{
+			if(pctx->mode){
+				fprintf(stderr,"Provided --mode twice\n");
+				usage(argv[0],EXIT_FAILURE);
+			}
+			pctx->mode = optarg;
 			break;
 		}case OPT_PLOG:{
 			if(pctx->plog){
@@ -207,6 +223,9 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 	}
 	if(pctx->resolvconf == NULL){
 		pctx->resolvconf = DEFAULT_RESOLVCONF_FILENAME;
+	}
+	if(pctx->mode == NULL){
+		pctx->mode = DEFAULT_MODESTRING;
 	}
 	// Drop privileges (possibly requiring a setuid()), and mask
 	// cancellation signals, before creating other threads.
