@@ -49,6 +49,41 @@ usage(const char *arg0,int ret){
 	exit(ret);
 }
 
+typedef enum {
+	OMPHALOS_MODE_NONE,
+	OMPHALOS_MODE_SILENT,
+	OMPHALOS_MODE_STEALTHY,
+	OMPHALOS_MODE_ACTIVE,
+	OMPHALOS_MODE_AGGRESSIVE,
+	OMPHALOS_MODE_FORCEFUL,
+	OMPHALOS_MODE_HOSTILE
+} omphalos_mode_enum;
+
+static const struct omphalos_mode {
+	omphalos_mode_enum level;
+	const char *str;	
+} omphalos_modes[] = {
+	{ OMPHALOS_MODE_SILENT,		"silent",	},
+	{ OMPHALOS_MODE_STEALTHY,	"stealthy",	},
+	{ OMPHALOS_MODE_ACTIVE,		"active",	},
+	{ OMPHALOS_MODE_AGGRESSIVE,	"aggressive",	},
+	{ OMPHALOS_MODE_FORCEFUL,	"forceful",	},
+	{ OMPHALOS_MODE_HOSTILE,	"hostile",	},
+	{ OMPHALOS_MODE_NONE,		NULL,		}
+};
+
+static omphalos_mode_enum
+lex_omphalos_mode(const char *str){
+	const typeof(*omphalos_modes) *m;
+
+	for(m = omphalos_modes ; m->str ; ++m){
+		if(strcmp(str,m->str) == 0){
+			return m->level;
+		}
+	}
+	return OMPHALOS_MODE_NONE;
+}
+
 static void
 version(const char *arg0){
 	fprintf(stdout,"%s %s\n",PROGNAME,VERSION);
@@ -132,7 +167,7 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 	};
 	// FIXME maybe CAP_SETPCAP as well?
 	const cap_value_t caparray[] = { CAP_NET_RAW, };
-	const char *user = NULL;
+	const char *user = NULL,*mode = NULL;
 	int opt,longidx;
 	
 	memset(pctx,0,sizeof(*pctx));
@@ -160,11 +195,11 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 			pctx->resolvconf = optarg;
 			break;
 		}case OPT_MODE:{
-			if(pctx->mode){
+			if(mode){
 				fprintf(stderr,"Provided --mode twice\n");
 				usage(argv[0],EXIT_FAILURE);
 			}
-			pctx->mode = optarg;
+			mode = optarg;
 			break;
 		}case OPT_PLOG:{
 			if(pctx->plog){
@@ -214,6 +249,7 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 	if(argv[optind]){ // don't allow trailing arguments
 		fprintf(stderr,"Trailing argument: %s\n",argv[optind]);
 		usage(argv[0],-1);
+		return -1;
 	}
 	if(user == NULL){
 		user = DEFAULT_USERNAME;
@@ -224,8 +260,13 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 	if(pctx->resolvconf == NULL){
 		pctx->resolvconf = DEFAULT_RESOLVCONF_FILENAME;
 	}
-	if(pctx->mode == NULL){
-		pctx->mode = DEFAULT_MODESTRING;
+	if(mode == NULL){
+		mode = DEFAULT_MODESTRING;
+	}
+	if((pctx->mode = lex_omphalos_mode(mode)) == OMPHALOS_MODE_NONE){
+		fprintf(stderr,"Invalid operating mode: %s\n",mode);
+		usage(argv[0],-1);
+		return -1;
 	}
 	// Drop privileges (possibly requiring a setuid()), and mask
 	// cancellation signals, before creating other threads.
