@@ -7,6 +7,7 @@
 #include <linux/rtnetlink.h>
 #include <ui/ncurses/core.h>
 #include <ui/ncurses/util.h>
+#include <ui/ncurses/color.h>
 #include <omphalos/hwaddrs.h>
 #include <ncursesw/ncurses.h>
 #include <ui/ncurses/iface.h>
@@ -162,8 +163,8 @@ print_iface_hosts(const interface *i,const iface_state *is,WINDOW *w,
 	}
 	for(l = is->l2objs ; l ; l = l->next){
 		char hw[HWADDRSTRLEN(i->addrlen)];
+		int attrs,l3attrs,rattrs;
 		const char *devname;
-		int attrs,l3attrs;
 		char legend;
 		l3obj *l3;
 		
@@ -174,12 +175,14 @@ print_iface_hosts(const interface *i,const iface_state *is,WINDOW *w,
 			case RTN_UNICAST:
 				attrs = COLOR_PAIR(UCAST_COLOR);
 				l3attrs = COLOR_PAIR(UCAST_L3_COLOR);
+				rattrs = COLOR_PAIR(UCAST_RES_COLOR);
 				devname = get_devname(l->l2);
 				legend = 'U';
 				break;
 			case RTN_LOCAL:
-				attrs = A_BOLD | COLOR_PAIR(LCAST_COLOR);
-				l3attrs = A_BOLD | COLOR_PAIR(LCAST_L3_COLOR);
+				attrs = COLOR_PAIR(LCAST_COLOR);
+				l3attrs = COLOR_PAIR(LCAST_L3_COLOR);
+				rattrs = COLOR_PAIR(LCAST_RES_COLOR);
 				if(interface_virtual_p(i) ||
 					(devname = get_devname(l->l2)) == NULL){
 					devname = i->topinfo.devname;
@@ -187,14 +190,16 @@ print_iface_hosts(const interface *i,const iface_state *is,WINDOW *w,
 				legend = 'L';
 				break;
 			case RTN_MULTICAST:
-				attrs = A_BOLD | COLOR_PAIR(MCAST_COLOR);
-				l3attrs = A_BOLD | COLOR_PAIR(MCAST_L3_COLOR);
+				attrs = COLOR_PAIR(MCAST_COLOR);
+				l3attrs = COLOR_PAIR(MCAST_L3_COLOR);
+				rattrs = COLOR_PAIR(MCAST_RES_COLOR);
 				devname = get_devname(l->l2);
 				legend = 'M';
 				break;
 			case RTN_BROADCAST:
 				attrs = COLOR_PAIR(BCAST_COLOR);
 				l3attrs = COLOR_PAIR(BCAST_L3_COLOR);
+				rattrs = COLOR_PAIR(BCAST_RES_COLOR);
 				devname = get_devname(l->l2);
 				legend = 'B';
 				break;
@@ -234,7 +239,7 @@ print_iface_hosts(const interface *i,const iface_state *is,WINDOW *w,
 		if(is->expansion >= EXPANSION_HOSTS){
 			for(l3 = l->l3objs ; l3 ; l3 = l3->next){
 				char nw[INET6_ADDRSTRLEN + 1]; // FIXME
-				const char *name;
+				const wchar_t *name;
 
 				assert(wattrset(w,l3attrs) != ERR);
 				if(line >= rows - (partial <= 0)){
@@ -243,9 +248,14 @@ print_iface_hosts(const interface *i,const iface_state *is,WINDOW *w,
 				if(line >= 0){
 					l3ntop(l3->l3,nw,sizeof(nw));
 					if((name = get_l3name(l3->l3)) == NULL){
-						name = "";
+						name = L"";
 					}
-					assert(mvwprintw(w,line,5,"%s %s",nw,name) != ERR);
+					assert(mvwprintw(w,line,5,"%s ",nw) != ERR);
+					if(get_l3nlevel(l3->l3) != NAMING_LEVEL_RESOLVING){
+						assert(wattrset(w,rattrs) != ERR);
+					}
+					assert(wprintw(w,"%ls",name) != ERR);
+					assert(wattrset(w,l3attrs) != ERR);
 					{
 						char sbuf[PREFIXSTRLEN + 1];
 						char dbuf[PREFIXSTRLEN + 1];

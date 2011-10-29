@@ -9,6 +9,7 @@
 #include <linux/if_arp.h>
 #include <omphalos/128.h>
 #include <omphalos/util.h>
+#include <omphalos/irda.h>
 #include <omphalos/hwaddrs.h>
 #include <omphalos/netlink.h>
 #include <omphalos/psocket.h>
@@ -377,8 +378,12 @@ static arptype arptypes[] = {
 		.name = "TunnelGRE",
 		.analyze = handle_ethernet_packet,
 	},{
+		.ifi_type = ARPHRD_IRDA,
+		.name = "IrDA",
+		.analyze = handle_irda_packet,
+	},{
 		.ifi_type = ARPHRD_TUNNEL6,
-		.name = "TunnelV6",
+		.name = "Tunnelv6",
 		.analyze = handle_ethernet_packet,
 	},{
 		.ifi_type = ARPHRD_NONE,

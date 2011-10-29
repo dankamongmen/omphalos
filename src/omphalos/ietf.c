@@ -41,94 +41,94 @@
 #define IPV4_ADMINSCOPED_SLP		__constant_htonl(0xeffffffd)
 
 #include <stdio.h>
-static const char *
+static const wchar_t *
 ietf_multicast_ipv4(const uint32_t *ip){
 	if((*ip & RFC1112_MASK) != RFC1112_BASE){
 		return NULL;
 	}
 	if((*ip & RFC1112_LOCAL_MASK) == RFC1112_LOCAL_BASE){
 		if(*ip == RFC1112_LOCAL_ALL_HOSTS){
-			return "All segment hosts (RFC 1112)";
+			return L"All segment hosts (RFC 1112)";
 		}else if(*ip == RFC1112_LOCAL_ALL_ROUTERS){
-			return "All segment routers (RFC 1112)";
+			return L"All segment routers (RFC 1112)";
 		}else if(*ip == RFC1112_LOCAL_DVMRP){
-			return "DVMRP (RFC 1075)";
+			return L"DVMRP (RFC 1075)";
 		}else if(*ip == RFC1112_LOCAL_OSPFIGP_ROUTERS){
-			return "OSPFIGP all routers (RFC 1583)";
+			return L"OSPFIGP all routers (RFC 1583)";
 		}else if(*ip == RFC1112_LOCAL_OSPFIGP_DESIGNATED){
-			return "OSPFIGP designated routers (RFC 1583)";
+			return L"OSPFIGP designated routers (RFC 1583)";
 		}else if(*ip == RFC1112_LOCAL_ST_ROUTERS){
-			return "ST2 routers (RFC 1190)";
+			return L"ST2 routers (RFC 1190)";
 		}else if(*ip == RFC1112_LOCAL_ST_HOSTS){
-			return "ST2 hosts (RFC 1190)";
+			return L"ST2 hosts (RFC 1190)";
 		}else if(*ip == RFC1112_LOCAL_IGRP_ROUTERS){
-			return "[E]IGRP routers (Cisco)";
+			return L"[E]IGRP routers (Cisco)";
 		}else if(*ip == RFC1112_LOCAL_DHCP_REPLAY){
-			return "DHCP relay (RFC 1884)";
+			return L"DHCP relay (RFC 1884)";
 		}else if(*ip == RFC1112_LOCAL_IGMP3){
-			return "IGMPv3 (RFC 1054)";
+			return L"IGMPv3 (RFC 1054)";
 		}else if(*ip == RFC1112_LOCAL_MDNS){
-			return "mDNS (IANA)";
+			return L"mDNS (IANA)";
 		}else if(*ip == RFC1112_LOCAL_LLMNR){
-			return "LLMNR (RFC 4795)";
+			return L"LLMNR (RFC 4795)";
 		}
-		return "RFC 5771 local network multicast";
+		return L"RFC 5771 local network multicast";
 	}else if((*ip & IPV4_INTERNETWORK_MASK) == IPV4_INTERNETWORK_BASE){
 		if(*ip == IPV4_INTERNETWORK_NTP){
-			return "SNTPv4 (RFC 4330)";
+			return L"SNTPv4 (RFC 4330)";
 		}else if(*ip == IPV4_INTERNETWORK_MDHCPDISC){
-			return "mdhcpdiscover (RFC 2730)";
+			return L"mdhcpdiscover (RFC 2730)";
 		}
-		return "RFC 5771 internetwork multicast";
+		return L"RFC 5771 internetwork multicast";
 	}else if((*ip & IPV4_ADMINSCOPED_MASK) == IPV4_ADMINSCOPED_BASE){
 		if(*ip == IPV4_ADMINSCOPED_SSDP){
-			return "SSDP (UPnP 1.1)";
+			return L"SSDP (UPnP 1.1)";
 		}else if(*ip == IPV4_ADMINSCOPED_SLP){
-			return "Admin-scoped SLPv2 (RFC 2608)";
+			return L"Admin-scoped SLPv2 (RFC 2608)";
 		}
-		return "RFC 5771 admin-scoped multicast";
+		return L"RFC 5771 admin-scoped multicast";
 	}
-	return "RFC 5771 multicast";
+	return L"RFC 5771 multicast";
 }
 
 static const struct {
 	uint128_t ip;
-	const char *name;
+	const wchar_t *name;
 } ip6mcasts[] = {
 	{ // ff02::1
 		.ip = { __constant_htonl(0xff020000), __constant_htonl(0x00000000),
 			__constant_htonl(0x00000000), __constant_htonl(0x00000001), },
-		.name = "All segment hosts (RFC 2375)",
+		.name = L"All segment hosts (RFC 2375)",
 	},
 	{ // ff02::2
 		.ip = { __constant_htonl(0xff020000), __constant_htonl(0x00000000),
 			__constant_htonl(0x00000000), __constant_htonl(0x00000002), },
-		.name = "All segment routers (RFC 2375)",
+		.name = L"All segment routers (RFC 2375)",
 	},
 	{ // ff02::16
 		.ip = { __constant_htonl(0xff020000), __constant_htonl(0x00000000),
 			__constant_htonl(0x00000000), __constant_htonl(0x00000016), },
-		.name = "MLDv2 (RFC 4604)",
+		.name = L"MLDv2 (RFC 4604)",
 	},
 	{ // ff02::fb
 		.ip = { __constant_htonl(0xff020000), __constant_htonl(0x00000000),
 			__constant_htonl(0x00000000), __constant_htonl(0x000000fb), },
-		.name = "mDNS (IANA)",
+		.name = L"mDNS (IANA)",
 	},
 	{ // ff02::1:3
 		.ip = { __constant_htonl(0xff020000), __constant_htonl(0x00000000),
 			__constant_htonl(0x00000000), __constant_htonl(0x00010003), },
-		.name = "LLMNR (RFC 4795)",
+		.name = L"LLMNR (RFC 4795)",
 	},
 	{ // ff05::2
 		.ip = { __constant_htonl(0xff050000), __constant_htonl(0x00000000),
 			__constant_htonl(0x00000000), __constant_htonl(0x00000002), },
-		.name = "All site routers (RFC 2375)",
+		.name = L"All site routers (RFC 2375)",
 	},
 	{ .name = NULL, }
 };
 
-static const char *
+static const wchar_t *
 ietf_multicast_ipv6(const uint32_t *ip){
 	uint128_t alignedip = { ip[0], ip[1], ip[2], ip[3] };
 	const typeof(*ip6mcasts) *mcast;
@@ -141,10 +141,10 @@ ietf_multicast_ipv6(const uint32_t *ip){
 			return (*mcast).name;
 		}
 	}
-	return "RFC 4291 multicast";
+	return L"RFC 4291 multicast";
 }
 
-const char *ietf_multicast_lookup(int fam,const void *addr){
+const wchar_t *ietf_multicast_lookup(int fam,const void *addr){
 	if(fam == AF_INET){
 		return ietf_multicast_ipv4(addr);
 	}else if(fam == AF_INET6){
@@ -153,17 +153,17 @@ const char *ietf_multicast_lookup(int fam,const void *addr){
 	return NULL;
 }
 
-static const char *
+static const wchar_t *
 ietf_bcast_ipv4(const uint32_t *ip){
 	const uint32_t localb = 0xffffffffu;
 
 	if(memcmp(ip,&localb,sizeof(localb)) == 0){
-		return "Local IPv4 broadcast (RFC 919)";
+		return L"Local IPv4 broadcast (RFC 919)";
 	}
 	return NULL;
 }
 
-const char *ietf_bcast_lookup(int fam,const void *addr){
+const wchar_t *ietf_bcast_lookup(int fam,const void *addr){
 	if(fam == AF_INET){
 		return ietf_bcast_ipv4(addr);
 	}

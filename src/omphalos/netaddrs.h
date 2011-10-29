@@ -5,6 +5,7 @@
 extern "C" {
 #endif
 
+#include <wchar.h>
 #include <stdint.h>
 #include <omphalos/128.h>
 
@@ -17,8 +18,9 @@ struct omphalos_iface;
 
 typedef enum {
 	NAMING_LEVEL_NONE,	// No name
-	NAMING_LEVEL_FAIL,	// Failure result
+	NAMING_LEVEL_FAIL,	// Failure sending query
 	NAMING_LEVEL_RESOLVING,	// Currently being looked up
+	NAMING_LEVEL_NXDOMAIN,	// Server returned Name Error
 	NAMING_LEVEL_DNS,	// Direct lookup maps multiple names to an IP
 	NAMING_LEVEL_REVDNS,	// Reverse lookup is unique for each IP
 	NAMING_LEVEL_GLOBAL,	// Globally-assigned address
@@ -44,6 +46,10 @@ void name_l3host_absolute(const struct omphalos_iface *,const struct interface *
 			struct l2host *,struct l3host *,const char *,namelevel)
 				__attribute__ ((nonnull (1,2,3,4,5)));
 
+void wname_l3host_absolute(const struct omphalos_iface *,const struct interface *,
+			struct l2host *,struct l3host *,const wchar_t *,namelevel)
+				__attribute__ ((nonnull (1,2,3,4,5)));
+
 char *l3addrstr(const struct l3host *) __attribute__ ((nonnull (1)));
 char *netaddrstr(int,const void *) __attribute__ ((nonnull (2)));
 
@@ -52,7 +58,8 @@ int l3ntop(const struct l3host *,char *,size_t) __attribute__ ((nonnull (1,2)));
 void cleanup_l3hosts(struct l3host **list) __attribute__ ((nonnull (1)));
 
 // Accessors
-const char *get_l3name(const struct l3host *) __attribute__ ((nonnull (1)));
+const wchar_t *get_l3name(const struct l3host *) __attribute__ ((nonnull (1)));
+namelevel get_l3nlevel(const struct l3host *) __attribute__ ((nonnull (1)));
 void *l3host_get_opaque(struct l3host *) __attribute__ ((nonnull (1)));
 uintmax_t l3_get_srcpkt(const struct l3host *) __attribute__ ((nonnull (1)));
 uintmax_t l3_get_dstpkt(const struct l3host *) __attribute__ ((nonnull (1)));

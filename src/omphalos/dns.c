@@ -34,6 +34,18 @@
 #define DNS_TYPE_AAAA	__constant_ntohs(28u)
 #define DNS_TYPE_SRV	__constant_ntohs(33u)
 
+// Mask against the flags field of the dnshdr struct
+#define RESPONSE_CODE_MASK 0x7
+enum {
+	RESPONSE_CODE_OK = 0,
+	RESPONSE_CODE_FORMAT = 1,
+	RESPONSE_CODE_SERVER = 2,
+	RESPONSE_CODE_NXDOMAIN = 3,
+	RESPONSE_CODE_NOTIMPLEMENTED = 4,
+	RESPONSE_CODE_REFUSED = 5,
+	// FIXME more...
+} response_codes;
+
 #define DNS_TARGET_PORT 53	// FIXME terrible
 
 struct dnshdr {
@@ -312,9 +324,9 @@ extract_dns_extra(size_t len,const unsigned char *sec,unsigned *ttl,
 
 void handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void *frame,size_t len){
 	const struct dnshdr *dns = frame;
+	uint16_t qd,an,ns,ar,flags;
 	unsigned class,type,bsize;
 	const unsigned char *sec;
-	uint16_t qd,an,ns,ar;
 	union {
 		uint128_t addr6;
 		uint32_t addr4;
@@ -347,6 +359,7 @@ void handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 	an = ntohs(dns->ancount);
 	ns = ntohs(dns->nscount);
 	ar = ntohs(dns->arcount);
+	flags = ntohs(dns->flags);
 	len -= sizeof(*dns);
 	sec = (const unsigned char *)frame + sizeof(*dns);
 	// octx->diagnostic(L"q/a/n/a: %hu/%hu/%hu/%hu",qd,an,ns,ar);
@@ -354,6 +367,22 @@ void handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 		buf = extract_dns_record(len,sec,&class,&type,&bsize,frame);
 		if(buf == NULL){
 			goto malformed;
+		}
+		if((flags & RESPONSE_CODE_MASK) == RESPONSE_CODE_NXDOMAIN){
+			if(class == DNS_CLASS_IN){
+				if(type == DNS_TYPE_PTR){
+					char ss[16]; // FIXME
+					int fam;
+
+					if(process_reverse_lookup(buf,&fam,ss) == 0){
+						// FIXME perform routing lookup on ss to get
+						// the desired interface and see whether we care
+						// about this address
+						offer_wresolution(octx,fam,ss,L"name error",
+							NAMING_LEVEL_NXDOMAIN,nsfam,nsaddr);
+					}
+				}
+			}
 		}
 		free(buf);
 		sec += bsize;

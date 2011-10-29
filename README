@@ -12,6 +12,7 @@ I. Requirements
 II. Building and installation
 III. Usage
 IV. Hacking
+V. FAQs
 
 ===================================================================
 I. Requirements
@@ -140,3 +141,15 @@ minimum:
  - a means of dropping general privileges, but retaining those capabilities
     necessary for network activity (perhaps a client/server process pair'
     communicating over PF_UNIX sockets).
+
+=======================================
+V. FAQs
+=======================================
+
+1. omphalos-ncurses exits immediately after printing "Entering ncurses mode..."
+1A. initscr() is probably calling exit() because it couldn't set up your
+    terminal. Ensure the TERM environment variable is exported, and correctly
+    set for your terminal type.
+
+2. I see hosts with 0 packets sent or transmitted.
+2A. Most likely they were present in your system's ARP cache.

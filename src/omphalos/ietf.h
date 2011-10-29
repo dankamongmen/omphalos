@@ -5,8 +5,10 @@
 extern "C" {
 #endif
 
-const char *ietf_multicast_lookup(int,const void *);
-const char *ietf_bcast_lookup(int,const void *);
+#include <wchar.h>
+
+const wchar_t *ietf_multicast_lookup(int,const void *);
+const wchar_t *ietf_bcast_lookup(int,const void *);
 
 #ifdef __cplusplus
 }

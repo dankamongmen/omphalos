@@ -12,7 +12,7 @@
 #include <omphalos/interface.h>
 
 typedef struct l3host {
-	char *name;
+	wchar_t *name;
 	int fam;	// FIXME kill determine from addr relative to arenas
 	union {
 		uint32_t ip4;
@@ -31,19 +31,19 @@ typedef struct l3host {
 } l3host;
 
 static l3host external_l3 = {
-	.name = "external",
+	.name = L"external",
 	.fam = AF_INET,
 }; // FIXME augh
 
 // RFC 3513 notes :: (all zeros) to be the "unspecified" address. It ought
 // never appear as a destination address.
 static l3host unspecified_ipv6 = {
-	.name = "unspec6",
+	.name = L"unspec6",
 	.fam = AF_INET6,
 };
 
 static l3host unspecified_ipv4 = {
-	.name = "unspec4",
+	.name = L"unspec4",
 	.fam = AF_INET,
 };
 
@@ -69,10 +69,25 @@ create_l3host(int fam,const void *addr,size_t len){
 void name_l3host_absolute(const omphalos_iface *octx,const interface *i,
 			struct l2host *l2,l3host *l3,const char *name,
 			namelevel nlevel){
-	if(l3->nlevel < nlevel){
-		char *tmp;
+	wchar_t *wname;
+	size_t len;
 
-		if( (tmp = strdup(name)) ){
+	len = strlen(name);
+	if( (wname = malloc((len + 1) * sizeof(*wname))) ){
+		mbsrtowcs(wname,&name,len,NULL);
+		wname[len] = L'\0';
+		wname_l3host_absolute(octx,i,l2,l3,wname,nlevel);
+		free(wname);
+	}
+}
+
+void wname_l3host_absolute(const omphalos_iface *octx,const interface *i,
+			struct l2host *l2,l3host *l3,const wchar_t *name,
+			namelevel nlevel){
+	if(l3->nlevel < nlevel){
+		wchar_t *tmp;
+
+		if( (tmp = wcsdup(name)) ){
 			free(l3->name);
 			l3->name = tmp;
 			l3->nlevel = nlevel;
@@ -229,23 +244,23 @@ lookup_l3host_common(const omphalos_iface *octx,interface *i,struct l2host *l2,
 
 			if(dnsfxn && revstrfxn && (rev = revstrfxn(addr))){
 				// Calls the host event if necessary
-				name_l3host_absolute(octx,i,l2,l3,"Resolving...",NAMING_LEVEL_RESOLVING);
+				wname_l3host_absolute(octx,i,l2,l3,L"Resolving...",NAMING_LEVEL_RESOLVING);
 				if(queue_for_naming(octx,i,l2,l3,dnsfxn,rev,fam,addr)){
-					name_l3host_absolute(octx,i,l2,l3,"Resolution failed",NAMING_LEVEL_FAIL);
+					wname_l3host_absolute(octx,i,l2,l3,L"Resolution failed",NAMING_LEVEL_FAIL);
 				}else{
 					l3->lastnametry = time(NULL);
 				}
 				free(rev);
 			}
 		}else if(cat == RTN_MULTICAST){
-			const char *mname = ietf_multicast_lookup(fam,addr);
+			const wchar_t *mname = ietf_multicast_lookup(fam,addr);
 			if(mname){
-				name_l3host_absolute(octx,i,l2,l3,mname,NAMING_LEVEL_GLOBAL);
+				wname_l3host_absolute(octx,i,l2,l3,mname,NAMING_LEVEL_GLOBAL);
 			}
 		}else if(cat == RTN_BROADCAST){
-			const char *mname = ietf_bcast_lookup(fam,addr);
+			const wchar_t *mname = ietf_bcast_lookup(fam,addr);
 			if(mname){
-				name_l3host_absolute(octx,i,l2,l3,mname,NAMING_LEVEL_GLOBAL);
+				wname_l3host_absolute(octx,i,l2,l3,mname,NAMING_LEVEL_GLOBAL);
 			}
 		}
         }
@@ -273,10 +288,16 @@ void name_l3host_local(const omphalos_iface *octx,const interface *i,
 		struct l2host *l2,l3host *l3,int family,const void *name,
 		namelevel nlevel){
 	if(l3->name == NULL){
+		wchar_t wb[INET6_ADDRSTRLEN];
 		char b[INET6_ADDRSTRLEN];
 
 		if(inet_ntop(family,name,b,sizeof(b)) == b){
-			name_l3host_absolute(octx,i,l2,l3,b,nlevel);
+			size_t q;
+
+			for(q = 0 ; q < sizeof(b) ; ++q){
+				wb[q] = btowc(b[q]);
+			}
+			wname_l3host_absolute(octx,i,l2,l3,wb,nlevel);
 		}
 	}
 }
@@ -323,8 +344,12 @@ uint128_t get_l3addr_in6(const l3host *l3){
 	return l3->addr.ip6;
 }
 
-const char *get_l3name(const l3host *l3){
+const wchar_t *get_l3name(const l3host *l3){
 	return l3->name;
+}
+
+namelevel get_l3nlevel(const l3host *l3){
+	return l3->nlevel;
 }
 
 void *l3host_get_opaque(l3host *l3){

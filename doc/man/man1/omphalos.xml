@@ -71,6 +71,7 @@
 			<arg>--ouis filename</arg>
 			<arg>--resolv filename</arg>
 			<arg>--plog filename</arg>
+			<arg>--mode modestr</arg>
 		</cmdsynopsis>
 	</refsynopsisdiv>
 	<refsect1 id="description">
@@ -142,6 +143,12 @@
 				<para>Packets which omphalos couldn't completely
 				analyze will be written, in libpcap savefile format,
 				to the specified filename.</para>
+			</listitem>
+		</varlistentry>
+		<varlistentry>
+			<term><option>--mode modestr</option></term>
+			<listitem>
+				<para>FIXME</para>
 			</listitem>
 		</varlistentry>
 	</refsect1>

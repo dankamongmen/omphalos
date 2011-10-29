@@ -3,11 +3,6 @@
 #include <ui/ncurses/util.h>
 #include <ncursesw/ncurses.h>
 
-#define COLOR_CEILING 256 // FIXME
-
-static int colors_allowed = -1;
-static short or[COLOR_CEILING],og[COLOR_CEILING],ob[COLOR_CEILING];
-
 int bevel_notop(WINDOW *w){
 	static const cchar_t bchr[] = {
 		{ .attr = 0, .chars = L"╰", },
@@ -102,80 +97,4 @@ char *genprefix(uintmax_t val,unsigned decimal,char *buf,size_t bsize,
 		}
 	}
 	return buf;
-}
-
-// FIXME dark evil hackery aieeeee
-int setup_extended_colors(void){
-	int ret = OK,q;
-
-	colors_allowed = COLORS;
-	assert(colors_allowed <= COLOR_CEILING);
-	if(can_change_color() != TRUE){
-		return ERR;
-	}
-	// rgb of 0->0, 85->333, 128->500, 170->666, 192->750, 255->999
-	// Gnome-terminal palette:
-	// #2E3436:#CC0000:#4E9A06:#C4A000:
-	// #3465A4:#75507B:#06989A:#D3D7CF:
-	// #555753:#EF2929:#8AE234:#FCE94F:
-	// #729FCF:#AD7FA8:#34E2E2:#EEEEEC
-	ret |= init_color(COLOR_BLACK,156,203,211);
-	ret |= init_color(COLOR_RED,796,0,0);
-	ret |= init_color(COLOR_GREEN,304,601,23);
-	ret |= init_color(COLOR_YELLOW,765,624,0);
-	ret |= init_color(COLOR_BLUE,203,394,640);
-	ret |= init_color(COLOR_MAGENTA,457,312,480);
-	ret |= init_color(COLOR_CYAN,23,593,601);
-	ret |= init_color(COLOR_WHITE,823,839,808);
-	ret |= init_color(8,332,340,324);
-	ret |= init_color(9,933,160,160);
-	ret |= init_color(10,539,882,203);
-	ret |= init_color(11,983,909,308);
-	ret |= init_color(12,445,620,808);
-	ret |= init_color(13,675,496,656);
-	ret |= init_color(14,203,882,882);
-	ret |= init_color(15,929,929,921);
-	ret |= init_color(COLOR_BLUE_75,152,296,480);
-	ret |= init_color(COLOR_CYAN_75,17,445,451);
-	ret |= wrefresh(curscr);
-	for(q = 0 ; q < colors_allowed ; ++q){
-		assert(color_content(q,or + q,og + q,ob + q) == OK);
-	}
-	return ret;
-}
-
-#define REFRESH 60 // Screen refresh rate in Hz FIXME
-#include <unistd.h>
-void fade(unsigned sec){
-	const int quanta = sec * (REFRESH / 4);
-	const int us = sec * 1000000 / quanta;
-	short r[colors_allowed],g[colors_allowed],b[colors_allowed];
-	int q;
-
-	for(q = 0 ; q < colors_allowed ; ++q){
-		r[q] = or[q];
-		g[q] = og[q];
-		b[q] = ob[q];
-	}
-	for(q = 0 ; q < quanta ; ++q){
-		unsigned p;
-
-		for(p = 0 ; p < sizeof(r) / sizeof(*r) ; ++p){
-			r[p] -= or[p] / quanta;
-			g[p] -= og[p] / quanta;
-			b[p] -= ob[p] / quanta;
-			r[p] = r[p] < 0 ? 0 : r[p];
-			g[p] = g[p] < 0 ? 0 : g[p];
-			b[p] = b[p] < 0 ? 0 : b[p];
-			init_color(p,r[p],g[p],b[p]);
-		}
-		wrefresh(curscr);
-		usleep(us);
-		// We ought feed back the actual time interval and perhaps
-		// fade more rapidly based on the result. This ought control
-		// flicker in all circumstances, becoming a single palette fade
-		// in the limit (ie, no fade at all).
-	}
-	setup_extended_colors();
-	wrefresh(curscr);
 }

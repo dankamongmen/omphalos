@@ -148,6 +148,24 @@ offer_nameserver(int nsfam,const void *nameserver){
 int offer_resolution(const omphalos_iface *octx,int fam,const void *addr,
 				const char *name,namelevel nlevel,
 				int nsfam,const void *nameserver){
+	wchar_t *wname;
+	size_t len;
+	int r;
+
+	len = strlen(name);
+	if((wname = malloc((len + 1) * sizeof(*wname))) == NULL){
+		return -1;
+	}
+	assert(mbsrtowcs(wname,&name,len,NULL) == len);
+	wname[len] = L'\0';
+	r = offer_wresolution(octx,fam,addr,wname,nlevel,nsfam,nameserver);
+	free(wname);
+	return r;
+}
+
+int offer_wresolution(const omphalos_iface *octx,int fam,const void *addr,
+				const wchar_t *name,namelevel nlevel,
+				int nsfam,const void *nameserver){
 	resolvq *r,**p;
 
 	// FIXME don't call until we filter offers better
@@ -156,7 +174,7 @@ int offer_resolution(const omphalos_iface *octx,int fam,const void *addr,
 	for(p = &rqueue ; (r = *p) ; p = &r->next){
 		if(l3addr_eq_p(r->l3,fam,addr)){
 			// FIXME needs to lock the interface to touch l3 objs
-			name_l3host_absolute(octx,r->i,r->l2,r->l3,name,nlevel);
+			wname_l3host_absolute(octx,r->i,r->l2,r->l3,name,nlevel);
 			if(nlevel >= NAMING_LEVEL_REVDNS){
 				*p = r->next;
 				free(r);
@@ -170,7 +188,7 @@ int offer_resolution(const omphalos_iface *octx,int fam,const void *addr,
 
 		inet_ntop(fam,addr,abuf,sizeof(abuf));
 		inet_ntop(nsfam,nameserver,rbuf,sizeof(rbuf));
-		octx->diagnostic(L"Resolved %s @%s as %s",abuf,rbuf,name);
+		octx->diagnostic(L"Resolved %s @%s as %ls",abuf,rbuf,name);
 	}
 	return 0;
 }

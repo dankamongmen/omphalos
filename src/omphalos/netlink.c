@@ -285,7 +285,6 @@ handle_rtm_newaddr(const omphalos_iface *octx,const struct nlmsghdr *nl){
 		octx->diagnostic(L"Invalid interface index: %d\n",ia->ifa_index);
 		return -1;
 	}
-	//octx->diagnostic(L"[%8s] ADDRESS ADDED\n",iface->name);
 	rlen = nl->nlmsg_len - NLMSG_LENGTH(sizeof(*ia));
 	ra = (struct rtattr *)((char *)(NLMSG_DATA(nl)) + sizeof(*ia));
 	if(ia->ifa_family == AF_INET){
@@ -865,10 +864,10 @@ netlink_thread(const omphalos_iface *octx){
 	if(discover_links(octx,pfd[0].fd)){
 		goto done;
 	}
-	if(discover_neighbors(octx,pfd[0].fd)){
+	if(discover_addrs(octx,pfd[0].fd)){
 		goto done;
 	}
-	if(discover_addrs(octx,pfd[0].fd)){
+	if(discover_neighbors(octx,pfd[0].fd)){
 		goto done;
 	}
 	if(discover_routes(octx,pfd[0].fd)){

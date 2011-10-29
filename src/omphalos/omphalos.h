@@ -75,6 +75,7 @@ typedef struct omphalos_ctx {
 	const char *pcapfn;	// PCAP-format filename FIXME support multiple?
 	const char *ianafn;	// IANA's OUI mappings in get-oui(1) format
 	const char *resolvconf;	// resolver configuration file
+	const char *mode;	// operating mode
 	omphalos_iface iface;
 	pcap_t *plogp;
 	pcap_dumper_t *plog;
