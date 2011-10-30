@@ -85,7 +85,6 @@ wvstatus(WINDOW *w,const wchar_t *fmt,va_list va){
 
 	lock_ncurses();
 	ret = wvstatus_locked(w,fmt,va);
-	screen_update();
 	unlock_ncurses();
 	return ret;
 }
