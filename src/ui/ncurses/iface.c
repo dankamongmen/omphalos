@@ -17,7 +17,7 @@
 
 typedef struct l4obj {
 	struct l4obj *next;
-	struct l4host *l4;
+	const service *l4;
 } l4obj;
 
 typedef struct l3obj {
@@ -49,7 +49,7 @@ iface_state *create_interface_state(interface *i){
 		return NULL;
 	}
 	if( (ret = malloc(sizeof(*ret))) ){
-		ret->hosts = ret->nodes = 0;
+		ret->srvs = ret->hosts = ret->nodes = 0;
 		ret->l2objs = NULL;
 		ret->devaction = 0;
 		ret->typestr = tstr;
@@ -99,6 +99,16 @@ free_l2obj(l2obj *l2){
 		l3 = tmp;
 	}
 	free(l2);
+}
+
+static l4obj *
+get_l4obj(const service *srv){
+	l4obj *l;
+
+	if( (l = malloc(sizeof(*l))) ){
+		l->l4 = srv;
+	}
+	return l;
 }
 
 static l3obj *
@@ -163,6 +173,17 @@ l3obj *add_l3_to_iface(iface_state *is,l2obj *l2,struct l3host *l3h){
 		++is->hosts;
 	}
 	return l3;
+}
+
+l4obj *add_service_to_iface(iface_state *is,struct l3obj *l3,const service *srv){
+	l4obj *l4;
+
+	if( (l4 = get_l4obj(srv)) ){
+		l4->next = l3->l4objs;
+		l3->l4objs = l4;
+		++is->srvs;
+	}
+	return l4;
 }
 
 static void

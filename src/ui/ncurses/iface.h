@@ -29,12 +29,17 @@ typedef struct iface_state {
 	unsigned hosts;			// number of hosts (a node MAY have one
 					//  or more hosts; a host MUST have one
 					//  or more nodes)
+	unsigned srvs;			// number of services (same relations
+					//  to hosts as hosts have to nodes)
 	struct l2obj *l2objs;		// l2 entity list
 	unsigned expansion;		// degree of expansion/collapse
 	struct iface_state *next,*prev;	// circular list; all ifaces are here
 	struct reelbox *rb;		// our reelbox (UI elements). if we're
 					// entirely offscreen, this is NULL.
 } iface_state;
+
+typedef struct service {
+} service;
 
 int redraw_iface(const struct iface_state *,const struct reelbox *,int);
 
@@ -48,6 +53,7 @@ void move_interface(struct reelbox *,int,int,int,int);
 
 struct l2obj *add_l2_to_iface(const struct interface *,struct iface_state *,struct l2host *);
 struct l3obj *add_l3_to_iface(struct iface_state *,struct l2obj *,struct l3host *);
+struct l4obj *add_service_to_iface(struct iface_state *,struct l3obj *,const service *);
 
 void expand_interface(struct iface_state *);
 void collapse_interface(struct iface_state *);
