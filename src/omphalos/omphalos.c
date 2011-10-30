@@ -268,6 +268,7 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 		usage(argv[0],-1);
 		return -1;
 	}
+	printf("Operating mode: %s\n",mode);
 	// Drop privileges (possibly requiring a setuid()), and mask
 	// cancellation signals, before creating other threads.
 	if(pctx->pcapfn){
