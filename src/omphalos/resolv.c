@@ -85,33 +85,36 @@ int queue_for_naming(const struct omphalos_iface *octx,struct interface *i,
 		       	dnstxfxn dnsfxn,const char *revstr,
 			int fam,const void *lookup){
 	int ret = 0;
-	resolvq *r;
 
-	if((r = create_resolvq(i,l2,l3)) == NULL){
-		return -1;
+	if(get_l3nlevel(l3) < NAMING_LEVEL_NXDOMAIN){
+		resolvq *r;
+
+		if((r = create_resolvq(i,l2,l3)) == NULL){
+			return -1;
+		}
+		if(pthread_mutex_lock(&resolver_lock)){
+			free_resolvq(r);
+			return -1;
+		}
+		// FIXME round-robin or even use the simple resolv.conf algorithm
+		if(resolvers){
+			ret = dnsfxn(octx,AF_INET,&resolvers->addr.ip4,revstr);
+		}
+		if(resolvers6){
+			ret = dnsfxn(octx,AF_INET6,&resolvers6->addr.ip6,revstr);
+		}
+		pthread_mutex_unlock(&resolver_lock);
+		pthread_mutex_lock(&rqueue_lock);
+		if(!ret){
+			r->next = rqueue;
+			rqueue = r;
+		}else{
+			// FIXME put it on a fail queue and retry when we have a route
+			free_resolvq(r);
+			r = NULL;
+		}
+		pthread_mutex_unlock(&rqueue_lock);
 	}
-	if(pthread_mutex_lock(&resolver_lock)){
-		free_resolvq(r);
-		return -1;
-	}
-	// FIXME round-robin or even use the simple resolv.conf algorithm
-	if(resolvers){
-		ret = dnsfxn(octx,AF_INET,&resolvers->addr.ip4,revstr);
-	}
-	if(resolvers6){
-		ret = dnsfxn(octx,AF_INET6,&resolvers6->addr.ip6,revstr);
-	}
-	pthread_mutex_unlock(&resolver_lock);
-	pthread_mutex_lock(&rqueue_lock);
-	if(!ret){
-		r->next = rqueue;
-		rqueue = r;
-	}else{
-		// FIXME put it on a fail queue and retry when we have a route
-		free_resolvq(r);
-		r = NULL;
-	}
-	pthread_mutex_unlock(&rqueue_lock);
 	ret |= tx_mdns_ptr(octx,i,revstr,fam,lookup);
 	return ret;
 }
@@ -175,6 +178,7 @@ int offer_wresolution(const omphalos_iface *octx,int fam,const void *addr,
 		if(l3addr_eq_p(r->l3,fam,addr)){
 			// FIXME needs to lock the interface to touch l3 objs
 			wname_l3host_absolute(octx,r->i,r->l2,r->l3,name,nlevel);
+			// Leaves NXDOMAIN entries on the list
 			if(nlevel >= NAMING_LEVEL_REVDNS){
 				*p = r->next;
 				free(r);

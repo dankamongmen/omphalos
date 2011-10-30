@@ -139,17 +139,18 @@ update_l3name(const omphalos_iface *octx,struct l2host *l2,l3host *l3,
 		const void *addr,interface *i,int fam){
 	char *rev;
 
-	if(l3->name && l3->nlevel > NAMING_LEVEL_RESOLVING){
+	// Multicast and broadcast addresses are statically named only
+	if(cat != RTN_UNICAST && cat != RTN_LOCAL){
 		return;
-	}else if(l3->nlevel == NAMING_LEVEL_RESOLVING){
+	}
+	if(l3->name && l3->nlevel > NAMING_LEVEL_NXDOMAIN){
+		return;
+	}else if(l3->nlevel <= NAMING_LEVEL_NXDOMAIN){
+		// FIXME need an exponential backoff; retransmits too often!
 		if(time(NULL) <= l3->lastnametry){
 			return;
 		}
-		// FIXME requires references to lookup object
-	}
-	// Multicast and broadcast addresses are statically named
-	if(cat != RTN_UNICAST && cat != RTN_LOCAL){
-		return;
+		// FIXME requires references to lookup object?
 	}
 	if(dnsfxn == NULL || revstrfxn == NULL){
 		return;
