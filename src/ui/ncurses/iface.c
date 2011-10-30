@@ -15,9 +15,15 @@
 #include <omphalos/wireless.h>
 #include <omphalos/interface.h>
 
+typedef struct l4obj {
+	struct l4obj *next;
+	struct l4host *l4;
+} l4obj;
+
 typedef struct l3obj {
 	struct l3obj *next;
 	struct l3host *l3;
+	struct l4obj *l4objs;
 } l3obj;
 
 typedef struct l2obj {
@@ -67,7 +73,19 @@ get_l2obj(const interface *i,struct l2host *l2){
 }
 
 static inline void
+free_l4obj(l4obj *l4){
+	free(l4);
+}
+
+static inline void
 free_l3obj(l3obj *l){
+	l4obj *l4 = l->l4objs;
+
+	while(l4){
+		l4obj *tmp = l4->next;
+		free_l4obj(l4);
+		l4 = tmp;
+	}
 	free(l);
 }
 
@@ -89,6 +107,7 @@ get_l3obj(struct l3host *l3){
 
 	if( (l = malloc(sizeof(*l))) ){
 		l->l3 = l3;
+		l->l4objs = NULL;
 	}
 	return l;
 }
