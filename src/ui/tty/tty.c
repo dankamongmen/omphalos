@@ -86,7 +86,7 @@ print_stats(FILE *fp){
 	interface total;
 
 	memset(&total,0,sizeof(total));
-	if(wprintf(L"<stats>") < 0){
+	if(fprintf(fp,"<stats>") < 0){
 		return -1;
 	}
 	if(print_all_iface_stats(fp,&total) < 0){
@@ -98,7 +98,7 @@ print_stats(FILE *fp){
 	if(print_iface_stats(fp,&total,NULL,"total") < 0){
 		return -1;
 	}
-	if(wprintf(L"</stats>") < 0){
+	if(fprintf(fp,"</stats>") < 0){
 		return -1;
 	}
 	return 0;
@@ -106,13 +106,14 @@ print_stats(FILE *fp){
 
 static int
 dump_output(FILE *fp){
-	if(fwprintf(fp,L"<omphalos>") < 0){
+	assert(fp == stdout);
+	if(fprintf(fp,"<omphalos>") < 0){
 		return -1;
 	}
 	if(print_stats(fp)){
 		return -1;
 	}
-	if(fwprintf(fp,L"</omphalos>\n") < 0 || fflush(fp)){
+	if(fprintf(fp,"</omphalos>\n") < 0 || fflush(fp)){
 		return -1;
 	}
 	return 0;
