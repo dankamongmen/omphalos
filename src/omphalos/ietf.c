@@ -169,3 +169,25 @@ const wchar_t *ietf_bcast_lookup(int fam,const void *addr){
 	}
 	return NULL;
 }
+
+const wchar_t *ietf_local_lookup(int fam,const void *addr){
+	if(fam == AF_INET){
+		const uint32_t loopback = htonl(INADDR_LOOPBACK);
+
+		if(memcmp(addr,&loopback,sizeof(loopback)) == 0){
+			return L"Internal IPv4 loopback (RFC 3330)";
+		}
+	}else if(fam == AF_INET6){
+		const uint128_t loopback = {
+			__constant_htonl(0x0),
+			__constant_htonl(0x0),
+			__constant_htonl(0x0),
+			__constant_htonl(0x1),
+		};
+
+		if(memcmp(addr,&loopback,sizeof(loopback)) == 0){
+			return L"Internal IPv6 loopback (RFC 4291)";
+		}
+	}
+	return NULL;
+}

@@ -237,39 +237,48 @@ lookup_l3host_common(const omphalos_iface *octx,interface *i,struct l2host *l2,
 			*prev = l3->next;
 			l3->next = *orig;
 			*orig = l3;
-			l3->l2 = l2; // Update the last l2 FIXME
+			l3->l2 = l2; // FIXME ought indicate a change!
 			update_l3name(octx,l2,l3,dnsfxn,revstrfxn,cat,addr,i,fam);
 			return l3;
 		}
 	}
         if( (l3 = create_l3host(fam,addr,len)) ){
-		l3->l2 = l2;
+		char *rev;
+
                 l3->next = *orig;
                 *orig = l3;
-		// FIXME handle 127.0.0.1 and ::1 as special cases
-		if(cat == RTN_UNICAST || cat == RTN_LOCAL){
-			char *rev;
-
-			if(dnsfxn && revstrfxn && (rev = revstrfxn(addr))){
-				// Calls the host event if necessary
-				wname_l3host_absolute(octx,i,l2,l3,L"Resolving...",NAMING_LEVEL_RESOLVING);
-				if(queue_for_naming(octx,i,l2,l3,dnsfxn,rev,fam,addr)){
-					wname_l3host_absolute(octx,i,l2,l3,L"Resolution failed",NAMING_LEVEL_FAIL);
-				}else{
-					l3->lastnametry = time(NULL);
-				}
-				free(rev);
-			}
+		l3->l2 = l2;
+		// handle 127.0.0.1 and ::1 as special cases, but look up local
+		// addresses otherwise. multicast and broadcast are only named
+		// via special case static lookups.
+		if(cat == RTN_LOCAL){
+			const wchar_t *lname = ietf_local_lookup(fam,addr);
+			if(lname){
+				wname_l3host_absolute(octx,i,l2,l3,lname,NAMING_LEVEL_GLOBAL);
+				return l3;
+			} // try to look locals up if they're not special cases
 		}else if(cat == RTN_MULTICAST){
 			const wchar_t *mname = ietf_multicast_lookup(fam,addr);
 			if(mname){
 				wname_l3host_absolute(octx,i,l2,l3,mname,NAMING_LEVEL_GLOBAL);
 			}
+			return l3; // static multicast naming only
 		}else if(cat == RTN_BROADCAST){
-			const wchar_t *mname = ietf_bcast_lookup(fam,addr);
-			if(mname){
-				wname_l3host_absolute(octx,i,l2,l3,mname,NAMING_LEVEL_GLOBAL);
+			const wchar_t *bname = ietf_bcast_lookup(fam,addr);
+			if(bname){
+				wname_l3host_absolute(octx,i,l2,l3,bname,NAMING_LEVEL_GLOBAL);
 			}
+			return l3; // static broadcast naming only
+		}
+		if(dnsfxn && revstrfxn && (rev = revstrfxn(addr))){
+			// Calls the host event if necessary
+			wname_l3host_absolute(octx,i,l2,l3,L"Resolving...",NAMING_LEVEL_RESOLVING);
+			if(queue_for_naming(octx,i,l2,l3,dnsfxn,rev,fam,addr)){
+				wname_l3host_absolute(octx,i,l2,l3,L"Resolution failed",NAMING_LEVEL_FAIL);
+			}else{
+				l3->lastnametry = time(NULL);
+			}
+			free(rev);
 		}
         }
         return l3;
