@@ -378,7 +378,7 @@ void handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 						// FIXME perform routing lookup on ss to get
 						// the desired interface and see whether we care
 						// about this address
-						offer_wresolution(octx,fam,ss,L"name error",
+						offer_wresolution(octx,fam,ss,L"name unknown",
 							NAMING_LEVEL_NXDOMAIN,nsfam,nsaddr);
 					}
 				}
