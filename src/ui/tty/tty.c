@@ -1,11 +1,14 @@
 #include <stdio.h>
+#include <wchar.h>
 #include <errno.h>
+#include <locale.h>
 #include <unistd.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
 #include <signal.h>
 #include <pthread.h>
+#include <langinfo.h>
 #include <sys/socket.h>
 #include <linux/if.h>
 #include <omphalos/pcap.h>
@@ -37,10 +40,10 @@ print_iface(FILE *fp,const interface *iface){
 	int n = 0;
 
 	if((at = lookup_arptype(iface->arptype,NULL)) == NULL){
-		fprintf(stderr,"Unknown dev type %u\n",iface->arptype);
+		fwprintf(stderr,L"Unknown dev type %u\n",iface->arptype);
 		return -1;
 	}
-	n = fprintf(fp,"[%8s][%s] %d %s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s\n",
+	n = fwprintf(fp,L"[%8s][%s] %d %s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s\n",
 		iface->name,at,iface->mtu,
 		IFF_FLAG(iface->flags,UP),
 		IFF_FLAG(iface->flags,BROADCAST),
@@ -67,7 +70,7 @@ print_iface(FILE *fp,const interface *iface){
 	if(!(iface->flags & IFF_LOOPBACK)){
 		int nn;
 
-		nn = fprintf(fp,"\t   driver: %s %s @ %s\n",iface->drv.driver,
+		nn = fwprintf(fp,L"\t   driver: %s %s @ %s\n",iface->drv.driver,
 				iface->drv.version,iface->drv.bus_info);
 		if(nn < 0){
 			return -1;
@@ -83,7 +86,7 @@ print_stats(FILE *fp){
 	interface total;
 
 	memset(&total,0,sizeof(total));
-	if(printf("<stats>") < 0){
+	if(wprintf(L"<stats>") < 0){
 		return -1;
 	}
 	if(print_all_iface_stats(fp,&total) < 0){
@@ -95,7 +98,7 @@ print_stats(FILE *fp){
 	if(print_iface_stats(fp,&total,NULL,"total") < 0){
 		return -1;
 	}
-	if(printf("</stats>") < 0){
+	if(wprintf(L"</stats>") < 0){
 		return -1;
 	}
 	return 0;
@@ -103,13 +106,13 @@ print_stats(FILE *fp){
 
 static int
 dump_output(FILE *fp){
-	if(fprintf(fp,"<omphalos>") < 0){
+	if(fwprintf(fp,L"<omphalos>") < 0){
 		return -1;
 	}
 	if(print_stats(fp)){
 		return -1;
 	}
-	if(fprintf(fp,"</omphalos>\n") < 0 || fflush(fp)){
+	if(fwprintf(fp,L"</omphalos>\n") < 0 || fflush(fp)){
 		return -1;
 	}
 	return 0;
@@ -121,9 +124,9 @@ print_neigh(const interface *iface,const struct l2host *l2){
 	int n;
 
 	hwaddr = l2addrstr(l2);
-	n = printf("[%8s] neighbor %s\n",iface->name,hwaddr);
+	n = wprintf(L"[%8s] neighbor %s\n",iface->name,hwaddr);
 	free(hwaddr);
-	/* FIXME printf("[%8s] neighbor %s %s%s%s%s%s%s%s%s\n",iface->name,str,
+	/* FIXME wprintf(L"[%8s] neighbor %s %s%s%s%s%s%s%s%s\n",iface->name,str,
 			nd->ndm_state & NUD_INCOMPLETE ? "INCOMPLETE" : "",
 			nd->ndm_state & NUD_REACHABLE ? "REACHABLE" : "",
 			nd->ndm_state & NUD_STALE ? "STALE" : "",
@@ -146,10 +149,10 @@ print_host(const interface *iface,const struct l2host *l2,const struct l3host *l
 	hwaddr = l2addrstr(l2);
 	netaddr = l3addrstr(l3);
 	if( (l3name = get_l3name(l3)) ){
-		n = printf("[%8s] host %s \"%ls\" (addr %s)\n",iface->name,hwaddr,l3name,netaddr);
+		n = wprintf(L"[%8s] host %s \"%ls\" (addr %s)\n",iface->name,hwaddr,l3name,netaddr);
 	}else{
 		n = 0;
-	//	n = printf("[%8s] host %s addr %s\n",iface->name,hwaddr,netaddr);
+	//	n = wprintf(L"[%8s] host %s addr %s\n",iface->name,hwaddr,netaddr);
 	}
 	free(netaddr);
 	free(hwaddr);
@@ -163,15 +166,15 @@ print_wireless_event(FILE *fp,const interface *i,unsigned cmd){
 	switch(cmd){
 	case SIOCGIWSCAN:{
 		// FIXME handle scan results
-		n = fprintf(fp,"\t   Scan results on %s\n",i->name);
+		n = fwprintf(fp,L"\t   Scan results on %s\n",i->name);
 	break;}case SIOCGIWAP:{
 		// FIXME handle AP results
-		n = fprintf(fp,"\t   Access point on %s\n",i->name);
+		n = fwprintf(fp,L"\t   Access point on %s\n",i->name);
 	break;}case IWEVASSOCRESPIE:{
 		// FIXME handle IE reassociation results
-		n = fprintf(fp,"\t   Reassociation on %s\n",i->name);
+		n = fwprintf(fp,L"\t   Reassociation on %s\n",i->name);
 	break;}default:{
-		n = fprintf(fp,"\t   Unknown wireless event on %s: 0x%x\n",i->name,cmd);
+		n = fwprintf(fp,L"\t   Unknown wireless event on %s: 0x%x\n",i->name,cmd);
 		break;
 	} }
 	return n;
@@ -188,13 +191,13 @@ packet_cb(omphalos_packet *op){
 		ns = ns ? ns : get_devname(op->l2s);
 		//nd = get_name(op->l2d);
 		nd = nd ? nd : get_devname(op->l2d);
-		//printf("[%s] %s -> %s %04hx\n",op->i->name,ns,nd,op->l3proto);
+		//wprintf(L"[%s] %s -> %s %04hx\n",op->i->name,ns,nd,op->l3proto);
 	}
 }
 
 static inline void
 clear_for_output(FILE *fp){
-	fprintf(fp,"\r");
+	fputwc(L'\r',fp);
 }
 
 #define PROMPTDELIM "> "
@@ -280,7 +283,7 @@ tty_handler(void *v){
 				}
 			}
 #define HELPSTR "help"
-#define HELP(cmd,help) printf("%s\t%s\n",cmd,help)
+#define HELP(cmd,help) wprintf(L"%s\t%s\n",cmd,help)
 			if(c->cmd == NULL){
 				if(strcmp(l,HELPSTR) == 0){
 					for(c = cmdtable ; c->cmd ; ++c){
@@ -288,7 +291,7 @@ tty_handler(void *v){
 					}
 					HELP(HELPSTR,"this list");
 				}else{
-					fprintf(stderr,"Unknown command: '%s'. Use '"HELPSTR"' for help.\n",l);
+					fwprintf(stderr,L"Unknown command: '%s'. Use '"HELPSTR"' for help.\n",l);
 				}
 #undef HELP
 #undef HELPSTR
@@ -296,7 +299,7 @@ tty_handler(void *v){
 		}
 		free(l);
 	}
-	printf("Shutting down...\n");
+	wprintf(L"Shutting down...\n");
 	/*kill(getpid(),SIGINT);
 	pthread_exit(NULL);*/
 	exit(0); // FIXME
@@ -308,7 +311,7 @@ init_tty_ui(pthread_t *tid){
 
 	rl_prep_terminal(1); // 1 == read eight-bit input
 	if( (err = pthread_create(tid,NULL,tty_handler,NULL)) ){
-		fprintf(stderr,"Couldn't launch input thread (%s?)\n",strerror(err));
+		fwprintf(stderr,L"Couldn't launch input thread (%s?)\n",strerror(err));
 		return -1;
 	}
 	return 0;
@@ -320,9 +323,18 @@ cleanup_tty_ui(void){
 }
 
 int main(int argc,char * const *argv){
+	const char *codeset;
 	omphalos_ctx pctx;
 	pthread_t tid;
 
+	if(setlocale(LC_ALL,"") == NULL || ((codeset = nl_langinfo(CODESET)) == NULL)){
+		fprintf(stderr,"Couldn't initialize locale (%s?)\n",strerror(errno));
+		return EXIT_FAILURE;
+	}
+	if(strcmp(codeset,"UTF-8")){
+		fprintf(stderr,"Only UTF-8 is supported; got %s\n",codeset);
+		return EXIT_FAILURE;
+	}
 	if(omphalos_setup(argc,argv,&pctx)){
 		return EXIT_FAILURE;
 	}
@@ -344,7 +356,7 @@ int main(int argc,char * const *argv){
 	}
 	if(dump_output(stdout) < 0){
 		if(errno != ENOMEM){
-			fprintf(stderr,"Couldn't write output (%s?)\n",strerror(errno));
+			fwprintf(stderr,L"Couldn't write output (%s?)\n",strerror(errno));
 		}
 		return EXIT_FAILURE;
 	}
