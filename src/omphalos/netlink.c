@@ -307,7 +307,10 @@ handle_rtm_newaddr(const omphalos_iface *octx,const struct nlmsghdr *nl){
 			case IFA_LOCAL: break;
 			case IFA_BROADCAST: break;
 			case IFA_ANYCAST: break;
-			default: octx->diagnostic(L"%d",ra->rta_type); break;
+			case IFA_LABEL: break;
+			case IFA_MULTICAST: break;
+			case IFA_CACHEINFO: break;
+			default: break;
 		}
 		ra = RTA_NEXT(ra,rlen);
 	}
