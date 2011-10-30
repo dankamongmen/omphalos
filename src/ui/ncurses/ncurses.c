@@ -137,9 +137,7 @@ helpstrs(WINDOW *hw,int row,int rows){
 	int z;
 
 	for(z = 0 ; (hs = helps[z]) && z < rows ; ++z){
-		if(mvwaddwstr(hw,row + z,1,hs) == ERR){
-			return ERR;
-		}
+		assert(mvwaddwstr(hw,row + z,1,hs) != ERR);
 	}
 	return OK;
 }
@@ -163,24 +161,9 @@ display_help_locked(WINDOW *mainw,struct panel_state *ps){
 	const int helpcols = max_helpstr_len(helps) + 4; // spacing + borders
 
 	memset(ps,0,sizeof(*ps));
-	if(new_display_panel(mainw,ps,helprows,helpcols,L"press 'h' to dismiss help")){
-		ERREXIT;
-	}
-	if(helpstrs(panel_window(ps->p),1,ps->ysize) != OK){
-		ERREXIT;
-	}
-	return 0;
-
-err:
-	if(ps->p){
-		WINDOW *psw = panel_window(ps->p);
-
-		hide_panel(ps->p);
-		del_panel(ps->p);
-		delwin(psw);
-	}
-	memset(ps,0,sizeof(*ps));
-	return -1;
+	new_display_panel(mainw,ps,helprows,helpcols,L"press 'h' to dismiss help");
+	helpstrs(panel_window(ps->p),1,ps->ysize);
+	return OK;
 }
 
 static void
@@ -392,11 +375,11 @@ mandatory_cleanup(WINDOW **w){
 	}
 	pthread_mutex_unlock(&bfl);
 	switch(ret){
-	case -3: fprintf(stderr,"Couldn't end main window\n"); break;
-	case -2: fprintf(stderr,"Couldn't delete main window\n"); break;
-	case -1: fprintf(stderr,"Couldn't delete main pad\n"); break;
+	case -3: fwprintf(stderr,L"Couldn't end main window\n"); break;
+	case -2: fwprintf(stderr,L"Couldn't delete main window\n"); break;
+	case -1: fwprintf(stderr,L"Couldn't delete main pad\n"); break;
 	case 0: break;
-	default: fprintf(stderr,"Couldn't cleanup ncurses\n"); break;
+	default: fwprintf(stderr,L"Couldn't cleanup ncurses\n"); break;
 	}
 	return ret;
 }
@@ -634,15 +617,15 @@ int main(int argc,char * const *argv){
 	omphalos_ctx pctx;
 
 	if(setlocale(LC_ALL,"") == NULL || ((codeset = nl_langinfo(CODESET)) == NULL)){
-		fprintf(stderr,"Couldn't initialize locale (%s?)\n",strerror(errno));
+		fwprintf(stderr,L"Couldn't initialize locale (%s?)\n",strerror(errno));
 		return EXIT_FAILURE;
 	}
 	if(strcmp(codeset,"UTF-8")){
-		fprintf(stderr,"Only UTF-8 is supported; got %s\n",codeset);
+		fwprintf(stderr,L"Only UTF-8 is supported; got %s\n",codeset);
 		return EXIT_FAILURE;
 	}
 	if(uname(&sysuts)){
-		fprintf(stderr,"Coudln't get OS info (%s?)\n",strerror(errno));
+		fwprintf(stderr,L"Coudln't get OS info (%s?)\n",strerror(errno));
 		return EXIT_FAILURE;
 	}
 	glibc_version = gnu_get_libc_version();
@@ -664,7 +647,7 @@ int main(int argc,char * const *argv){
 		int err = errno;
 
 		mandatory_cleanup(&stdscr);
-		fprintf(stderr,"Error in omphalos_init() (%s?)\n",strerror(err));
+		fwprintf(stderr,L"Error in omphalos_init() (%s?)\n",strerror(err));
 		return EXIT_FAILURE;
 	}
 	lock_ncurses();
