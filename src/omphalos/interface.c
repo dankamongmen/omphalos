@@ -524,7 +524,7 @@ get_source_address(const struct omphalos_iface *octx,interface *i,
 	assert(octx); // FIXME
 	switch(fam){
 		case AF_INET:{
-			const ip4route *i4r = get_route4(i,addr);
+			const ip4route *i4r = addr ? get_route4(i,addr) : i->ip4r;
 
 			if(i4r == NULL){
 				return NULL;
@@ -532,7 +532,7 @@ get_source_address(const struct omphalos_iface *octx,interface *i,
 			memcpy(s,&i4r->src,sizeof(uint32_t));
 			break;
 		}case AF_INET6:{
-			const ip6route *i6r = get_route6(i,addr);
+			const ip6route *i6r = addr ? get_route6(i,addr) : i->ip6r;
 
 			if(i6r == NULL){
 				return NULL;
