@@ -18,5 +18,7 @@ void handle_tcp_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 		op->malformed = 1;
 		return;
 	}
+	op->l4src = tcp->source;
+	op->l4dst = tcp->dest;
 	// FIXME check header len etc...
 }

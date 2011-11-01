@@ -24,6 +24,8 @@ void handle_udp_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 	}
 	ubdy = (const char *)udp + sizeof(*udp);
 	ulen = len - sizeof(*udp);
+	op->l4src = udp->source;
+	op->l4dst = udp->dest;
 	switch(udp->source){
 		case __constant_htons(DNS_UDP_PORT):{
 			handle_dns_packet(octx,op,ubdy,ulen);
