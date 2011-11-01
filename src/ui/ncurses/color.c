@@ -6,6 +6,10 @@
 #define COLOR_CEILING 65536 // FIXME
 #define COLORPAIR_CEILING 65536 // FIXME
 
+// This exists because sometimes can_change_colors() will return 1, but then
+// any actual attempt to change the colors via init_color() will return ERR :/.
+int modified_colors = 0;
+
 static int colors_allowed = -1,colorpairs_allowed = -1;
 // Original color pairs. We don't change these in a fade.
 static short ofg[COLORPAIR_CEILING],obg[COLORPAIR_CEILING];
@@ -124,6 +128,9 @@ int setup_extended_colors(void){
 	ret |= init_color(COLOR_BGREEN_50,CURSES50_RGB(_BGREEN_R),CURSES50_RGB(_BGREEN_G),CURSES50_RGB(_BGREEN_B));
 	ret |= init_color(COLOR_ORANGE_50,CURSES50_RGB(_ORANGE_R),CURSES50_RGB(_ORANGE_G),CURSES50_RGB(_ORANGE_B));
 	ret |= wrefresh(curscr);
+	if(ret == OK){
+		modified_colors = 1;
+	}
 	for(q = 0 ; q < colors_allowed ; ++q){
 		ret |= color_content(q,or + q,og + q,ob + q);
 	}
@@ -152,7 +159,7 @@ void fade(unsigned sec){
 	short r[colors_allowed],g[colors_allowed],b[colors_allowed];
 	int q;
 
-	if(!can_change_color()){
+	if(!modified_colors){
 		return;
 	}
 	for(q = 0 ; q < colors_allowed ; ++q){
