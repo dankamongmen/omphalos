@@ -11,6 +11,8 @@ extern "C" {
 
 struct l2obj;
 struct l3obj;
+struct l4obj;
+struct l4srv;
 struct l2host;
 struct l3host;
 struct reelbox;
@@ -38,9 +40,6 @@ typedef struct iface_state {
 					// entirely offscreen, this is NULL.
 } iface_state;
 
-typedef struct service {
-} service;
-
 int redraw_iface(const struct iface_state *,const struct reelbox *,int);
 
 struct iface_state *create_interface_state(struct interface *);
@@ -53,7 +52,7 @@ void move_interface(struct reelbox *,int,int,int,int);
 
 struct l2obj *add_l2_to_iface(const struct interface *,struct iface_state *,struct l2host *);
 struct l3obj *add_l3_to_iface(struct iface_state *,struct l2obj *,struct l3host *);
-struct l4obj *add_service_to_iface(struct iface_state *,struct l3obj *,const service *);
+struct l4obj *add_service_to_iface(struct iface_state *,struct l3obj *,struct l4srv *);
 
 void expand_interface(struct iface_state *);
 void collapse_interface(struct iface_state *);

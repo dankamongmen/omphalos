@@ -5,6 +5,7 @@
 #include <ui/ncurses/color.h>
 #include <ui/ncurses/iface.h>
 #include <omphalos/ethtool.h>
+#include <omphalos/service.h>
 #include <omphalos/netaddrs.h>
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
@@ -856,8 +857,7 @@ void interface_removed_locked(iface_state *is,struct panel_state **ps){
 	draw_main_window(stdscr); // Update the device count
 }
 
-struct l2obj *neighbor_callback_locked(const interface *i,struct l2host *l2,
-					struct panel_state *ps){
+struct l2obj *neighbor_callback_locked(const interface *i,struct l2host *l2){
 	struct l2obj *ret;
 	iface_state *is;
 	reelbox *rb;
@@ -877,15 +877,41 @@ struct l2obj *neighbor_callback_locked(const interface *i,struct l2host *l2,
 	if( (rb = is->rb) ){
 		resize_iface(rb);
 		redraw_iface_generic(rb);
-		if(ps->p){
-			assert(top_panel(ps->p) != ERR);
+	}
+	return ret;
+}
+
+struct l4obj *service_callback_locked(const struct interface *i,struct l2host *l2,
+					struct l3host *l3,struct l4srv *l4){
+	struct l2obj *l2o;
+	struct l3obj *l3o;
+	struct l4obj *ret;
+	iface_state *is;
+	reelbox *rb;
+
+	if(((is = i->opaque) == NULL) || !l2){
+		return NULL;
+	}
+	if((l2o = l2host_get_opaque(l2)) == NULL){
+		return NULL;
+	}
+	if((l3o = l3host_get_opaque(l3)) == NULL){
+		return NULL;
+	}
+	if((ret = l4host_get_opaque(l4)) == NULL){
+		if((ret = add_service_to_iface(is,l3o,l4)) == NULL){
+			return NULL;
 		}
+	}
+	if( (rb = is->rb) ){
+		resize_iface(rb);
+		redraw_iface_generic(rb);
 	}
 	return ret;
 }
 
 struct l3obj *host_callback_locked(const interface *i,struct l2host *l2,
-		struct l3host *l3,struct panel_state *ps){
+					struct l3host *l3){
 	struct l2obj *l2o;
 	struct l3obj *ret;
 	iface_state *is;
@@ -905,9 +931,6 @@ struct l3obj *host_callback_locked(const interface *i,struct l2host *l2,
 	if( (rb = is->rb) ){
 		resize_iface(rb);
 		redraw_iface_generic(rb);
-		if(ps->p){
-			assert(top_panel(ps->p) != ERR);
-		}
 	}
 	return ret;
 }

@@ -96,10 +96,11 @@ int setup_statusbar(int);
 // __attribute__ ((format (printf,2,3)));
 int wstatus_locked(WINDOW *,const wchar_t *,...);
 int wvstatus_locked(WINDOW *w,const wchar_t *,va_list);
+struct l4obj *service_callback_locked(const struct interface *,struct l2host *,
+					struct l3host *,struct l4srv *);
 struct l3obj *host_callback_locked(const struct interface *,struct l2host *,
-					struct l3host *,struct panel_state *);
-struct l2obj *neighbor_callback_locked(const struct interface *,struct l2host *,
-					struct panel_state *);
+					struct l3host *);
+struct l2obj *neighbor_callback_locked(const struct interface *,struct l2host *);
 void interface_removed_locked(iface_state *,struct panel_state **);
 void *interface_cb_locked(struct interface *,iface_state *,struct panel_state *);
 int packet_cb_locked(const struct interface *,struct omphalos_packet *,struct panel_state *);

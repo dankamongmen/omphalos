@@ -3,11 +3,13 @@
 #include <stdlib.h>
 #include <omphalos/service.h>
 #include <omphalos/netaddrs.h>
+#include <omphalos/omphalos.h>
 
 typedef struct l4srv {
 	unsigned proto,port;
-	char *srv,*srvver;
+	char *srv,*srvver;		// srvver might be NULL
 	struct l4srv *next;
+	void *opaque;			// callback state
 } l4srv;
 
 static l4srv *
@@ -17,6 +19,7 @@ new_service(unsigned proto,unsigned port,const char *srv,const char *srvver){
 	if( (r = malloc(sizeof(*r))) ){
 		if( (r->srvver = strdup(srvver)) ){
 			if( (r->srv = strdup(srv)) ){
+				r->opaque = NULL;
 				r->proto = proto;
 				r->port = port;
 				return r;
@@ -37,7 +40,8 @@ free_service(l4srv *l){
 	}
 }
 
-void observe_service(struct l3host *l3,unsigned proto,unsigned port,
+void observe_service(const omphalos_iface *octx,struct l3host *l3,
+			unsigned proto,unsigned port,
 			const char *srv,const char *srvver){
 	l4srv *services,*curs;
 
@@ -50,6 +54,7 @@ void observe_service(struct l3host *l3,unsigned proto,unsigned port,
 	curs = new_service(proto,port,srv,srvver);
 	curs->next = services;
 	l3_setservices(l3,curs);
+	octx->srv_event(NULL,NULL,l3,curs);
 }
 
 // Destroy a services structure.
@@ -64,4 +69,8 @@ void free_services(l4srv *l){
 
 const char *l4srvstr(const l4srv *l){
 	return l->srv;
+}
+
+void *l4host_get_opaque(l4srv *l4){
+	return l4->opaque;
 }

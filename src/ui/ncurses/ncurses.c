@@ -572,11 +572,30 @@ wireless_callback(interface *i,unsigned wcmd __attribute__ ((unused)),void *unsa
 }
 
 static void *
+service_callback(const interface *i,struct l2host *l2,struct l3host *l3,
+				struct l4srv *l4){
+	void *ret;
+
+	pthread_mutex_lock(&bfl);
+	if( (ret = service_callback_locked(i,l2,l3,l4)) ){
+		if(details.p){
+			assert(top_panel(details.p) != ERR);
+		}
+		screen_update();
+	}
+	pthread_mutex_unlock(&bfl);
+	return ret;
+}
+
+static void *
 host_callback(const interface *i,struct l2host *l2,struct l3host *l3){
 	void *ret;
 
 	pthread_mutex_lock(&bfl);
-	if( (ret = host_callback_locked(i,l2,l3,&details)) ){
+	if( (ret = host_callback_locked(i,l2,l3)) ){
+		if(details.p){
+			assert(top_panel(details.p) != ERR);
+		}
 		screen_update();
 	}
 	pthread_mutex_unlock(&bfl);
@@ -588,7 +607,10 @@ neighbor_callback(const interface *i,struct l2host *l2){
 	void *ret;
 
 	pthread_mutex_lock(&bfl);
-	if( (ret = neighbor_callback_locked(i,l2,&details)) ){
+	if( (ret = neighbor_callback_locked(i,l2)) ){
+		if(details.p){
+			assert(top_panel(details.p) != ERR);
+		}
 		screen_update();
 	}
 	pthread_mutex_unlock(&bfl);
@@ -637,6 +659,7 @@ int main(int argc,char * const *argv){
 	pctx.iface.iface_removed = interface_removed_callback;
 	pctx.iface.diagnostic = diag_callback;
 	pctx.iface.wireless_event = wireless_callback;
+	pctx.iface.srv_event = service_callback;
 	pctx.iface.neigh_event = neighbor_callback;
 	pctx.iface.host_event = host_callback;
 	if(ncurses_setup(&pctx.iface) == NULL){
