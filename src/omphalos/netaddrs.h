@@ -67,6 +67,16 @@ uint32_t get_l3addr_in(const struct l3host *) __attribute__ ((nonnull (1)));
 uint128_t get_l3addr_in6(const struct l3host *) __attribute__ ((nonnull (1)));
 struct l2host *l3_getlastl2(struct l3host *) __attribute__ ((nonnull (1)));
 
+// Services (UDP/TCP, generally). l3_getservices() returns the head of the
+// structure. l3_setservices() sets the head of the structure. The structure
+// itself is managed by services.c. Obviously, some locking must be active
+// across the calls to l3_getservices() and a subsequenct l3_setservices() or
+// any other use of the service structure. If you'll only be walking the
+// structure, use l3_getconstservices() for const enforcement.
+struct l4srv *l3_getservices(struct l3host *);
+const struct l4srv *l3_getconstservices(const struct l3host *);
+void l3_setservices(struct l3host *,struct l4srv *);
+
 // Predicates
 int l3addr_eq_p(const struct l3host *,int,const void *) __attribute__ ((nonnull (1,3)));
 

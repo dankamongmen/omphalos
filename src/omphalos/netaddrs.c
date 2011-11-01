@@ -5,6 +5,7 @@
 #include <omphalos/util.h>
 #include <omphalos/ietf.h>
 #include <omphalos/resolv.h>
+#include <omphalos/service.h>
 #include <omphalos/hwaddrs.h>
 #include <omphalos/netaddrs.h>
 #include <omphalos/omphalos.h>
@@ -23,11 +24,12 @@ typedef struct l3host {
 	namelevel nlevel;
 	// FIXME use usec-based ticks taken from the omphalos_packet *!
 	time_t lastnametry;	// last time we tried to do name resolution
+	struct l4srv *services;	// services observed providing
 	struct l3host *next;
 	struct l2host *l2;	// FIXME we only keep the most recent l2host
 				// seen with this address. ought keep all, or
 				// at the very least one per interface...
-	void *opaque;
+	void *opaque;		// UI state
 } l3host;
 
 static l3host external_l3 = {
@@ -61,6 +63,7 @@ create_l3host(int fam,const void *addr,size_t len){
 		r->srcpkts = r->dstpkts = 0;
 		r->nlevel = NAMING_LEVEL_NONE;
 		r->lastnametry = 0;
+		r->services = NULL;
 		memcpy(&r->addr,addr,len);
 	}
 	return r;
@@ -415,4 +418,16 @@ uintmax_t l3_get_dstpkt(const l3host *l3){
 
 struct l2host *l3_getlastl2(l3host *l3){
 	return l3->l2;
+}
+
+struct l4srv *l3_getservices(l3host *l3){
+	return l3->services;
+}
+
+const struct l4srv *l3_getconstservices(const l3host *l3){
+	return l3->services;
+}
+
+void l3_setservices(l3host *l3,struct l4srv *l4){
+	l3->services = l4;
 }
