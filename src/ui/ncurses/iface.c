@@ -8,6 +8,7 @@
 #include <ui/ncurses/core.h>
 #include <ui/ncurses/util.h>
 #include <ui/ncurses/color.h>
+#include <omphalos/service.h>
 #include <omphalos/hwaddrs.h>
 #include <ncursesw/ncurses.h>
 #include <ui/ncurses/iface.h>
@@ -36,10 +37,12 @@ typedef struct l2obj {
 enum {
 	EXPANSION_NONE,
 	EXPANSION_NODES,
-	EXPANSION_HOSTS
+	EXPANSION_HOSTS,
+	EXPANSION_SERVICES
+	// Update EXPANSION_MAX if you add one at the end
 };
 
-#define EXPANSION_MAX EXPANSION_HOSTS
+#define EXPANSION_MAX EXPANSION_SERVICES
 
 iface_state *create_interface_state(interface *i){
 	iface_state *ret;
@@ -187,6 +190,21 @@ l4obj *add_service_to_iface(iface_state *is,struct l3obj *l3,struct l4srv *srv){
 }
 
 static void
+print_host_services(WINDOW *w,const l3obj *l,int *line,int rows){
+	const struct l4obj *l4;
+
+	if(*line >= rows){
+		return;
+	}
+	for(l4 = l->l4objs ; l4 ; l4 = l4->next){
+		mvwprintw(w,*line,6,"%s",l4srvstr(l4->l4));
+	}
+	if(l->l4objs){
+		++*line;
+	}
+}
+
+static void
 print_iface_hosts(const interface *i,const iface_state *is,WINDOW *w,
 			int rows,int cols,int partial){
 	const l2obj *l;
@@ -281,10 +299,10 @@ print_iface_hosts(const interface *i,const iface_state *is,WINDOW *w,
 				char nw[INET6_ADDRSTRLEN + 1]; // FIXME
 				const wchar_t *name;
 
-				assert(wattrset(w,l3attrs) != ERR);
 				if(line >= rows - (partial <= 0)){
 					break;
 				}
+				assert(wattrset(w,l3attrs) != ERR);
 				if(line >= 0){
 					l3ntop(l3->l3,nw,sizeof(nw));
 					if((name = get_l3name(l3->l3)) == NULL){
@@ -308,9 +326,15 @@ print_iface_hosts(const interface *i,const iface_state *is,WINDOW *w,
 									prefix(l3_get_dstpkt(l3->l3),1,dbuf,sizeof(dbuf),1));
 						}
 					}
+					++line;
+					if(is->expansion >= EXPANSION_SERVICES){
+						print_host_services(w,l3,&line,
+							rows - (partial <= 0));
+					}
 					assert(wattrset(w,attrs) != ERR);
+				}else{
+					++line;
 				}
-				++line;
 			}
 		}
 	}
