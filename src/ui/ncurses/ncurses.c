@@ -147,8 +147,6 @@ ncurses_input_thread(void *unsafe_marsh){
 	int ch;
 
 	active = NULL; // No subpanels initially
-	memset(&help,0,sizeof(help));
-	memset(&details,0,sizeof(details));
 	while((ch = getch()) != 'q' && ch != 'Q'){
 	switch(ch){
 		case KEY_UP: case 'k':
