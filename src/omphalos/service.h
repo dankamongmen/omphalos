@@ -19,6 +19,9 @@ void observe_service(struct l3host *,unsigned,unsigned,const char *,const char *
 // Cleanup a services structure.
 void free_services(struct l4srv *);
 
+// Accessors
+const char *l4srvstr(const struct l4srv *);
+
 #ifdef __cplusplus
 }
 #endif

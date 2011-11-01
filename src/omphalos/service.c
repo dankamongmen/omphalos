@@ -53,11 +53,15 @@ void observe_service(struct l3host *l3,unsigned proto,unsigned port,
 }
 
 // Destroy a services structure.
-void free_services(struct l4srv *l){
+void free_services(l4srv *l){
 	l4srv *tmp;
 
 	while( (tmp = l) ){
 		l = l->next;
 		free_service(tmp);
 	}
+}
+
+const char *l4srvstr(const l4srv *l){
+	return l->srv;
 }

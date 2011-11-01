@@ -13,6 +13,7 @@ extern "C" {
 #define PROGNAME "omphalos"	// FIXME
 #define VERSION  "0.99-pre"	// FIXME
 
+struct l4srv;
 struct l2host;
 struct l3host;
 struct iphost;
@@ -67,6 +68,11 @@ typedef struct omphalos_iface {
 	// neighbor cache events. The return value is treated similarly to that
 	// of the device event callback.
 	void *(*host_event)(const struct interface *,struct l2host *,struct l3host *);
+
+	// L4 service event callback, fed by packet analysis. The return value
+	// is treated similarly to that of the device event callback.
+	void *(*srv_event)(const struct interface *,struct l2host *,
+				struct l3host *,struct l4srv *);
 } omphalos_iface;
 
 // Process-scope settings, generally configured on startup based off

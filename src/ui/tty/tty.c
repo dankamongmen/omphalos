@@ -15,6 +15,7 @@
 #include <linux/wireless.h>
 #include <readline/readline.h>
 #include <readline/history.h>
+#include <omphalos/service.h>
 #include <omphalos/hwaddrs.h>
 #include <omphalos/netaddrs.h>
 #include <omphalos/wireless.h>
@@ -152,8 +153,28 @@ print_host(const interface *iface,const struct l2host *l2,const struct l3host *l
 	if( (l3name = get_l3name(l3)) ){
 		n = wprintf(L"[%8s] host %s \"%ls\" (addr %s)\n",iface->name,hwaddr,l3name,netaddr);
 	}else{
-		n = 0;
-	//	n = wprintf(L"[%8s] host %s addr %s\n",iface->name,hwaddr,netaddr);
+		n = wprintf(L"[%8s] host %s addr %s\n",iface->name,hwaddr,netaddr);
+	}
+	free(netaddr);
+	free(hwaddr);
+	return n;
+}
+
+static int
+print_service(const interface *iface,const struct l2host *l2,
+			const struct l3host *l3,const struct l4srv *l4){
+	char *hwaddr,*netaddr;
+	const wchar_t *l3name;
+	const char *srv;
+	int n;
+
+	hwaddr = l2addrstr(l2);
+	netaddr = l3addrstr(l3);
+	srv = l4srvstr(l4);
+	if( (l3name = get_l3name(l3)) ){
+		n = wprintf(L"[%8s] %s served by host %s \"%ls\" (addr %s)\n",iface->name,srv,hwaddr,l3name,netaddr);
+	}else{
+		n = wprintf(L"[%8s] %s served by host %s addr %s\n",iface->name,srv,hwaddr,netaddr);
 	}
 	free(netaddr);
 	free(hwaddr);
@@ -230,6 +251,15 @@ static void *
 host_event(const struct interface *i,struct l2host *l2,struct l3host *l3){
 	clear_for_output(stdout);
 	print_host(i,l2,l3);
+	wake_input_thread();
+	return NULL;
+}
+
+static void *
+service_event(const struct interface *i,struct l2host *l2,struct l3host *l3,
+					struct l4srv *l4){
+	clear_for_output(stdout);
+	print_service(i,l2,l3,l4);
 	wake_input_thread();
 	return NULL;
 }
@@ -342,6 +372,7 @@ int main(int argc,char * const *argv){
 	pctx.iface.iface_event = iface_event;
 	pctx.iface.neigh_event = neigh_event;
 	pctx.iface.host_event = host_event;
+	pctx.iface.srv_event = service_event;
 	pctx.iface.wireless_event = wireless_event;
 	pctx.iface.packet_read = packet_cb;
 	if(!pctx.pcapfn){ // FIXME, ought be able to use UI with pcaps
