@@ -44,7 +44,7 @@ print_iface(FILE *fp,const interface *iface){
 		fwprintf(stderr,L"Unknown dev type %u\n",iface->arptype);
 		return -1;
 	}
-	n = fwprintf(fp,L"[%8s][%s] %d %s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s\n",
+	n = fprintf(fp,"[%8s][%s] %d %s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s\n",
 		iface->name,at,iface->mtu,
 		IFF_FLAG(iface->flags,UP),
 		IFF_FLAG(iface->flags,BROADCAST),
@@ -71,7 +71,7 @@ print_iface(FILE *fp,const interface *iface){
 	if(!(iface->flags & IFF_LOOPBACK)){
 		int nn;
 
-		nn = fwprintf(fp,L"\t   driver: %s %s @ %s\n",iface->drv.driver,
+		nn = fwprintf(fp,"\t   driver: %s %s @ %s\n",iface->drv.driver,
 				iface->drv.version,iface->drv.bus_info);
 		if(nn < 0){
 			return -1;
@@ -128,7 +128,7 @@ print_neigh(const interface *iface,const struct l2host *l2){
 	hwaddr = l2addrstr(l2);
 	n = printf("[%8s] neighbor %s\n",iface->name,hwaddr);
 	free(hwaddr);
-	/* FIXME wprintf(L"[%8s] neighbor %s %s%s%s%s%s%s%s%s\n",iface->name,str,
+	/* FIXME printf("[%8s] neighbor %s %s%s%s%s%s%s%s%s\n",iface->name,str,
 			nd->ndm_state & NUD_INCOMPLETE ? "INCOMPLETE" : "",
 			nd->ndm_state & NUD_REACHABLE ? "REACHABLE" : "",
 			nd->ndm_state & NUD_STALE ? "STALE" : "",
@@ -216,7 +216,7 @@ packet_cb(omphalos_packet *op){
 		ns = ns ? ns : get_devname(op->l2s);
 		//nd = get_name(op->l2d);
 		nd = nd ? nd : get_devname(op->l2d);
-		//wprintf(L"[%s] %s -> %s %04hx\n",op->i->name,ns,nd,op->l3proto);
+		//printf("[%s] %s -> %s %04hx\n",op->i->name,ns,nd,op->l3proto);
 	}
 }
 
@@ -317,7 +317,7 @@ tty_handler(void *v){
 				}
 			}
 #define HELPSTR "help"
-#define HELP(cmd,help) wprintf(L"%s\t%s\n",cmd,help)
+#define HELP(cmd,help) printf("%s\t%s\n",cmd,help)
 			if(c->cmd == NULL){
 				if(strcmp(l,HELPSTR) == 0){
 					for(c = cmdtable ; c->cmd ; ++c){
@@ -333,7 +333,7 @@ tty_handler(void *v){
 		}
 		free(l);
 	}
-	wprintf(L"Shutting down...\n");
+	printf("Shutting down...\n");
 	/*kill(getpid(),SIGINT);
 	pthread_exit(NULL);*/
 	exit(0); // FIXME
