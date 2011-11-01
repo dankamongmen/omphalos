@@ -189,19 +189,32 @@ l4obj *add_service_to_iface(iface_state *is,struct l3obj *l3,struct l4srv *srv){
 	return l4;
 }
 
-static void
+// Returns the number of characters printed
+static int
 print_host_services(WINDOW *w,const l3obj *l,int *line,int rows){
 	const struct l4obj *l4;
+	int n = 0;
 
 	if(*line >= rows){
-		return;
+		return 0;
+	}
+	if(*line < 0){
+		++*line;
+		return 0;
 	}
 	for(l4 = l->l4objs ; l4 ; l4 = l4->next){
-		mvwprintw(w,*line,6,"%s",l4srvstr(l4->l4));
+		int n2 = mvwprintw(w,*line,6,"%s%s",n == 0 ? "" : ", ",
+						l4srvstr(l4->l4));
+		assert(n2 >= 0);
+		if(n2 < 0){
+			return -1;
+		}
+		n += n2;
 	}
 	if(l->l4objs){
 		++*line;
 	}
+	return n;
 }
 
 static void
