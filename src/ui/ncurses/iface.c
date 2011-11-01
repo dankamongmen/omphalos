@@ -203,16 +203,19 @@ print_host_services(WINDOW *w,const l3obj *l,int *line,int rows){
 		return 0;
 	}
 	for(l4 = l->l4objs ; l4 ; l4 = l4->next){
-		int n2 = mvwprintw(w,*line,6,"%s%s",n == 0 ? "" : ", ",
-						l4srvstr(l4->l4));
+		int n2;
+
+		if(n){
+			n2 = wprintw(w,", %s",l4srvstr(l4->l4));
+		}else{
+			n2 = mvwprintw(w,*line,6,"%s",l4srvstr(l4->l4));
+			++*line;
+		}
 		assert(n2 >= 0);
 		if(n2 < 0){
 			return -1;
 		}
 		n += n2;
-	}
-	if(l->l4objs){
-		++*line;
 	}
 	return n;
 }
