@@ -394,6 +394,7 @@ void cleanup_l3hosts(l3host **list){
 
 	for(l3 = *list ; l3 ; l3 = tmp){
 		tmp = l3->next;
+		free_services(l3->services);
 		free(l3->name);
 		free(l3);
 	}

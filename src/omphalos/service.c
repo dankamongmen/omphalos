@@ -48,5 +48,16 @@ void observe_service(struct l3host *l3,unsigned proto,unsigned port,
 		}
 	}
 	curs = new_service(proto,port,srv,srvver);
-	free_service(curs); // FIXME do something with new service entry
+	curs->next = services;
+	l3_setservices(l3,curs);
+}
+
+// Destroy a services structure.
+void free_services(struct l4srv *l){
+	l4srv *tmp;
+
+	while( (tmp = l) ){
+		l = l->next;
+		free_service(tmp);
+	}
 }

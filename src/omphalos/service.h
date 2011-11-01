@@ -16,6 +16,9 @@ struct l3host;
 //  - server version (may be NULL)
 void observe_service(struct l3host *,unsigned,unsigned,const char *,const char *);
 
+// Cleanup a services structure.
+void free_services(struct l4srv *);
+
 #ifdef __cplusplus
 }
 #endif
