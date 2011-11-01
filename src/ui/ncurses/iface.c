@@ -311,8 +311,8 @@ print_iface_hosts(const interface *i,const iface_state *is,WINDOW *w,
 				if(line >= rows - (partial <= 0)){
 					break;
 				}
-				assert(wattrset(w,l3attrs) != ERR);
 				if(line >= 0){
+					assert(wattrset(w,l3attrs) != ERR);
 					l3ntop(l3->l3,nw,sizeof(nw));
 					if((name = get_l3name(l3->l3)) == NULL){
 						name = L"";
@@ -343,6 +343,10 @@ print_iface_hosts(const interface *i,const iface_state *is,WINDOW *w,
 					assert(wattrset(w,attrs) != ERR);
 				}else{
 					++line;
+					if(is->expansion >= EXPANSION_SERVICES){
+						print_host_services(w,l3,&line,
+							rows - (partial <= 0));
+					}
 				}
 			}
 		}
