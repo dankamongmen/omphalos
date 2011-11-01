@@ -638,7 +638,8 @@ void move_interface(reelbox *rb,int rows,int cols,int delta,int active){
 int lines_for_interface(const iface_state *is){
 	return 2 + interface_up_p(is->iface) +
 		((is->expansion < EXPANSION_NODES) ? 0 : is->nodes) +
-		((is->expansion < EXPANSION_HOSTS) ? 0 : is->hosts);
+		((is->expansion < EXPANSION_HOSTS) ? 0 : is->hosts) +
+		((is->expansion < EXPANSION_SERVICES) ? 0 : !!is->srvs);
 }
 
 // Is the interface window entirely visible? We can't draw it otherwise, as it
