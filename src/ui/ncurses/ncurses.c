@@ -529,6 +529,9 @@ service_callback(const interface *i,struct l2host *l2,struct l3host *l3,
 
 	pthread_mutex_lock(&bfl);
 	if( (ret = service_callback_locked(i,l2,l3,l4)) ){
+		if(active){
+			assert(top_panel(active->p) != ERR);
+		}
 		screen_update();
 	}
 	pthread_mutex_unlock(&bfl);
@@ -541,6 +544,9 @@ host_callback(const interface *i,struct l2host *l2,struct l3host *l3){
 
 	pthread_mutex_lock(&bfl);
 	if( (ret = host_callback_locked(i,l2,l3)) ){
+		if(active){
+			assert(top_panel(active->p) != ERR);
+		}
 		screen_update();
 	}
 	pthread_mutex_unlock(&bfl);
@@ -553,6 +559,9 @@ neighbor_callback(const interface *i,struct l2host *l2){
 
 	pthread_mutex_lock(&bfl);
 	if( (ret = neighbor_callback_locked(i,l2)) ){
+		if(active){
+			assert(top_panel(active->p) != ERR);
+		}
 		screen_update();
 	}
 	pthread_mutex_unlock(&bfl);

@@ -1290,7 +1290,8 @@ env_details(WINDOW *hw,int rows){
 	}
 	switch(z){ // Intentional fallthroughs all the way to 0
 	case (ENVROWS - 1):{
-		assert(mvwprintw(hw,row + z,col,"colors: "U64FMT,COLORS) != ERR);
+		assert(mvwprintw(hw,row + z,col,"colors: "U64FMT"palette: %s",
+				COLORS,can_change_color() ? "dynamic" : "fixed") != ERR);
 		--z;
 		break;
 	}default:{
