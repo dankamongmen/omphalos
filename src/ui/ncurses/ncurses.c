@@ -73,6 +73,9 @@ lock_ncurses(void){
 
 static inline void
 unlock_ncurses(void){
+	if(active){
+		assert(top_panel(active->p) != ERR);
+	}
 	screen_update();
 	check_consistency();
 	assert(pthread_mutex_unlock(&bfl) == 0);
@@ -147,8 +150,6 @@ ncurses_input_thread(void *unsafe_marsh){
 	int ch;
 
 	active = NULL; // No subpanels initially
-	memset(&help,0,sizeof(help));
-	memset(&details,0,sizeof(details));
 	while((ch = getch()) != 'q' && ch != 'Q'){
 	switch(ch){
 		case KEY_UP: case 'k':
@@ -219,13 +220,13 @@ ncurses_input_thread(void *unsafe_marsh){
 		case '+':
 		case KEY_RIGHT:
 			lock_ncurses();
-				expand_iface_locked(&details);
+				expand_iface_locked();
 			unlock_ncurses();
 			break;
 		case '-':
 		case KEY_LEFT:
 			lock_ncurses();
-				collapse_iface_locked(&details);
+				collapse_iface_locked();
 			unlock_ncurses();
 			break;
 		case 'm':
@@ -253,7 +254,7 @@ ncurses_input_thread(void *unsafe_marsh){
 				}else{
 					hide_panel_locked(active);
 					active = (display_network_locked(w,&network) == OK)
-						? &details : NULL;
+						? &network : NULL;
 				}
 			unlock_ncurses();
 			break;
@@ -265,7 +266,7 @@ ncurses_input_thread(void *unsafe_marsh){
 				}else{
 					hide_panel_locked(active);
 					active = (display_env_locked(w,&environment) == OK)
-						? &details : NULL;
+						? &environment : NULL;
 				}
 			unlock_ncurses();
 			break;
@@ -528,9 +529,6 @@ service_callback(const interface *i,struct l2host *l2,struct l3host *l3,
 
 	pthread_mutex_lock(&bfl);
 	if( (ret = service_callback_locked(i,l2,l3,l4)) ){
-		if(details.p){
-			assert(top_panel(details.p) != ERR);
-		}
 		screen_update();
 	}
 	pthread_mutex_unlock(&bfl);
@@ -543,9 +541,6 @@ host_callback(const interface *i,struct l2host *l2,struct l3host *l3){
 
 	pthread_mutex_lock(&bfl);
 	if( (ret = host_callback_locked(i,l2,l3)) ){
-		if(details.p){
-			assert(top_panel(details.p) != ERR);
-		}
 		screen_update();
 	}
 	pthread_mutex_unlock(&bfl);
@@ -558,9 +553,6 @@ neighbor_callback(const interface *i,struct l2host *l2){
 
 	pthread_mutex_lock(&bfl);
 	if( (ret = neighbor_callback_locked(i,l2)) ){
-		if(details.p){
-			assert(top_panel(details.p) != ERR);
-		}
 		screen_update();
 	}
 	pthread_mutex_unlock(&bfl);

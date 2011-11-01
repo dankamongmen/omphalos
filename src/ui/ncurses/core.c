@@ -1004,7 +1004,6 @@ void use_next_iface_locked(WINDOW *w,struct panel_state *ps){
 			}
 			redraw_iface_generic(is->rb);
 			if(ps->p){
-				assert(top_panel(ps->p) != ERR);
 				iface_details(panel_window(ps->p),is->iface,ps->ysize);
 			}
 			return;
@@ -1081,7 +1080,6 @@ void use_next_iface_locked(WINDOW *w,struct panel_state *ps){
 		pull_interfaces_up(NULL,rows,cols,delta);
 	}
 	if(ps->p){
-		assert(top_panel(ps->p) != ERR);
 		iface_details(panel_window(ps->p),rb->is->iface,ps->ysize);
 	}
 }
@@ -1121,7 +1119,6 @@ void use_prev_iface_locked(WINDOW *w,struct panel_state *ps){
 			top_reelbox = current_iface;
 			redraw_iface_generic(current_iface);
 			if(ps->p){
-				assert(top_panel(ps->p) != ERR);
 				iface_details(panel_window(ps->p),is->iface,ps->ysize);
 			}
 			return;
@@ -1185,7 +1182,6 @@ void use_prev_iface_locked(WINDOW *w,struct panel_state *ps){
 		}
 	}
 	if(ps->p){
-		assert(top_panel(ps->p) != ERR);
 		iface_details(panel_window(ps->p),rb->is->iface,ps->ysize);
 	}
 }
