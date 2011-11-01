@@ -7,6 +7,7 @@
 #include <omphalos/dhcp.h>
 #include <omphalos/mdns.h>
 #include <asm/byteorder.h>
+#include <omphalos/service.h>
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
 
@@ -28,14 +29,17 @@ void handle_udp_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 	op->l4dst = udp->dest;
 	switch(udp->source){
 		case __constant_htons(DNS_UDP_PORT):{
-			handle_dns_packet(octx,op,ubdy,ulen);
+			if(handle_dns_packet(octx,op,ubdy,ulen) == 0){
+				observe_service(octx,op->i,op->l2s,op->l3s,op->l3proto,
+					op->l4src,"DNS",NULL);
+			}
 		}break;
 		case __constant_htons(MDNS_UDP_PORT):{
-			// FIXME also check daddr?
+			// FIXME also check dest?
 			handle_mdns_packet(octx,op,ubdy,ulen);
 		}break;
 		case __constant_htons(DHCP_UDP_PORT):{
-			// FIXME also check daddr?
+			// FIXME also check dest?
 			handle_dhcp_packet(octx,op,ubdy,ulen);
 		}break;
 	}

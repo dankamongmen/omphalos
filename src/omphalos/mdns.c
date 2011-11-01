@@ -6,14 +6,18 @@
 #include <omphalos/mdns.h>
 #include <asm/byteorder.h>
 #include <omphalos/route.h>
+#include <omphalos/service.h>
 #include <omphalos/hwaddrs.h>
 #include <omphalos/netaddrs.h>
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
 
-void handle_mdns_packet(const omphalos_iface *iface,omphalos_packet *op,
+void handle_mdns_packet(const omphalos_iface *octx,omphalos_packet *op,
 			const void *frame,size_t len){
-	handle_dns_packet(iface,op,frame,len);
+	if(handle_dns_packet(octx,op,frame,len) == 0){
+		observe_service(octx,op->i,op->l2s,op->l3s,op->l3proto,
+				op->l4src,"mDNS",NULL);
+	}
 }
 
 int tx_mdns_ptr(const omphalos_iface *octx,interface *i,const char *str,

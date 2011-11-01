@@ -323,7 +323,7 @@ extract_dns_extra(size_t len,const unsigned char *sec,unsigned *ttl,
 	return buf;
 }
 
-void handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void *frame,size_t len){
+int handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void *frame,size_t len){
 	const struct dnshdr *dns = frame;
 	uint16_t qd,an,ns,ar,flags;
 	unsigned class,type,bsize;
@@ -337,10 +337,7 @@ void handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 	int nsfam;
 
 	if(len < sizeof(*dns)){
-		octx->diagnostic(L"%s malformed with %zu on %s",
-				__func__,len,op->i->name);
-		op->malformed = 1;
-		return;
+		goto malformed;
 	}
 	if(op->l3proto == ETH_P_IP){
 		nsfam = AF_INET;
@@ -353,7 +350,7 @@ void handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 	}else{
 		octx->diagnostic(L"DNS on %s:0x%x",op->i->name,op->l3proto);
 		op->noproto = 1;
-		return;
+		return 0;
 	}
 	//opcode = (ntohs(dns->flags) & 0x7800) >> 11u;
 	qd = ntohs(dns->qdcount);
@@ -454,15 +451,13 @@ void handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 			goto malformed;
 		}
 	}
-	observe_service(octx,op->i,op->l2s,op->l3s,op->l3proto,op->l4src,
-				"DNS",NULL);
-	return;
+	return 0;
 
 malformed:
 	octx->diagnostic(L"%s malformed with %zu on %s",
 			__func__,len,op->i->name);
 	op->malformed = 1;
-	return;
+	return -1;
 }
 
 int tx_dns_ptr(const omphalos_iface *octx,int fam,const void *addr,

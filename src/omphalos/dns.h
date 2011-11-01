@@ -11,7 +11,9 @@ struct routepath;
 struct omphalos_iface;
 struct omphalos_packet;
 
-void handle_dns_packet(const struct omphalos_iface *,struct omphalos_packet *,
+// Return value is 0 if packet was processed entirely, without error, as DNS.
+// Takes the frame where DNS is expected to begin (UDP/TCP payload).
+int handle_dns_packet(const struct omphalos_iface *,struct omphalos_packet *,
 			const void *,size_t) __attribute__ ((nonnull (1,2,3)));
 
 int tx_dns_ptr(const struct omphalos_iface *,int,const void *,const char *)
