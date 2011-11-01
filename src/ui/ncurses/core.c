@@ -111,7 +111,9 @@ offload_details(WINDOW *w,const interface *i,int row,int col,const char *name,
 	int r;
 
 	r = iface_offloaded_p(i,val);
-	return mvwprintw(w,row,col,"%s%c",name,r > 0 ? '+' : r < 0 ? '?' : '-');
+	// these checkboxes don't really look that great at small size
+	//return mvwprintw(w,row,col,"%lc%s",r > 0 ? L'☑' : r < 0 ? L'?' : L'☐',name);
+	return mvwprintw(w,row,col,"%s%c",r > 0 ? '+' : r < 0 ? '?' : '-',name);
 }
 
 // Create a panel at the bottom of the window, referred to as the "subdisplay".
