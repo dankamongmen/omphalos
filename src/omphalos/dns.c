@@ -13,6 +13,7 @@
 #include <omphalos/csum.h>
 #include <omphalos/route.h>
 #include <omphalos/resolv.h>
+#include <omphalos/service.h>
 #include <omphalos/ethernet.h>
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
@@ -431,14 +432,13 @@ void handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 			}else if(type == DNS_TYPE_TXT){
 				// FIXME do what?
 			}else if(type == DNS_TYPE_SRV){
-				// FIXME do what?
+				// FIXME do what? add a service?
 			}else if(type == DNS_TYPE_HINFO){
 				// FIXME do what?
 			}
 			//octx->diagnostic(L"TYPE: %hu CLASS: %hu",
 			//		,ntohs(*((uint16_t *)sec + 1)));
 		}
-		// FIXME handle A/AAAA
 		free(buf);
 		free(data);
 		sec += bsize;
@@ -454,6 +454,8 @@ void handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 			goto malformed;
 		}
 	}
+	observe_service(octx,op->i,op->l2s,op->l3s,op->l3proto,op->l4src,
+				"DNS",NULL);
 	return;
 
 malformed:

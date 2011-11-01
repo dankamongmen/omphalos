@@ -17,7 +17,8 @@ new_service(unsigned proto,unsigned port,const char *srv,const char *srvver){
 	l4srv *r;
 
 	if( (r = malloc(sizeof(*r))) ){
-		if( (r->srvver = strdup(srvver)) ){
+		r->srvver = NULL;
+		if(!srvver ||  (r->srvver = strdup(srvver)) ){
 			if( (r->srv = strdup(srv)) ){
 				r->opaque = NULL;
 				r->proto = proto;
@@ -40,7 +41,8 @@ free_service(l4srv *l){
 	}
 }
 
-void observe_service(const omphalos_iface *octx,struct l3host *l3,
+void observe_service(const omphalos_iface *octx,struct interface *i,
+			struct l2host *l2,struct l3host *l3,
 			unsigned proto,unsigned port,
 			const char *srv,const char *srvver){
 	l4srv *services,*curs;
@@ -54,7 +56,7 @@ void observe_service(const omphalos_iface *octx,struct l3host *l3,
 	curs = new_service(proto,port,srv,srvver);
 	curs->next = services;
 	l3_setservices(l3,curs);
-	octx->srv_event(NULL,NULL,l3,curs);
+	octx->srv_event(i,l2,l3,curs);
 }
 
 // Destroy a services structure.

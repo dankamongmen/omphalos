@@ -28,6 +28,7 @@ typedef struct omphalos_packet {
 	uint16_t l3proto;
 	struct l3host *l3s,*l3d;
 	uint32_t l3saddr[4],l3daddr[4];	// FIXME workaround libbluetooth's def
+	uint16_t l4src,l4dst;
 	unsigned malformed;
 	unsigned noproto;
 } omphalos_packet;

@@ -126,7 +126,7 @@ print_neigh(const interface *iface,const struct l2host *l2){
 	int n;
 
 	hwaddr = l2addrstr(l2);
-	n = wprintf(L"[%8s] neighbor %s\n",iface->name,hwaddr);
+	n = printf("[%8s] neighbor %s\n",iface->name,hwaddr);
 	free(hwaddr);
 	/* FIXME wprintf(L"[%8s] neighbor %s %s%s%s%s%s%s%s%s\n",iface->name,str,
 			nd->ndm_state & NUD_INCOMPLETE ? "INCOMPLETE" : "",
@@ -151,12 +151,13 @@ print_host(const interface *iface,const struct l2host *l2,const struct l3host *l
 	hwaddr = l2addrstr(l2);
 	netaddr = l3addrstr(l3);
 	if( (l3name = get_l3name(l3)) ){
-		n = wprintf(L"[%8s] host %s \"%ls\" (addr %s)\n",iface->name,hwaddr,l3name,netaddr);
+		n = printf("[%8s] host %s \"%ls\" (addr %s)\n",iface->name,hwaddr,l3name,netaddr);
 	}else{
-		n = wprintf(L"[%8s] host %s addr %s\n",iface->name,hwaddr,netaddr);
+		n = printf("[%8s] host %s addr %s\n",iface->name,hwaddr,netaddr);
 	}
 	free(netaddr);
 	free(hwaddr);
+	assert(n >= 0);
 	return n;
 }
 
@@ -172,12 +173,13 @@ print_service(const interface *iface,const struct l2host *l2,
 	netaddr = l3addrstr(l3);
 	srv = l4srvstr(l4);
 	if( (l3name = get_l3name(l3)) ){
-		n = wprintf(L"[%8s] %s served by host %s \"%ls\" (addr %s)\n",iface->name,srv,hwaddr,l3name,netaddr);
+		n = printf("[%8s] %s served by host %s \"%ls\" (addr %s)\n",iface->name,srv,hwaddr,l3name,netaddr);
 	}else{
-		n = wprintf(L"[%8s] %s served by host %s addr %s\n",iface->name,srv,hwaddr,netaddr);
+		n = printf("[%8s] %s served by host %s addr %s\n",iface->name,srv,hwaddr,netaddr);
 	}
 	free(netaddr);
 	free(hwaddr);
+	assert(n >= 0);
 	return n;
 }
 
@@ -188,17 +190,18 @@ print_wireless_event(FILE *fp,const interface *i,unsigned cmd){
 	switch(cmd){
 	case SIOCGIWSCAN:{
 		// FIXME handle scan results
-		n = fwprintf(fp,L"\t   Scan results on %s\n",i->name);
+		n = fprintf(fp,"\t   Scan results on %s\n",i->name);
 	break;}case SIOCGIWAP:{
 		// FIXME handle AP results
-		n = fwprintf(fp,L"\t   Access point on %s\n",i->name);
+		n = fprintf(fp,"\t   Access point on %s\n",i->name);
 	break;}case IWEVASSOCRESPIE:{
 		// FIXME handle IE reassociation results
-		n = fwprintf(fp,L"\t   Reassociation on %s\n",i->name);
+		n = fprintf(fp,"\t   Reassociation on %s\n",i->name);
 	break;}default:{
-		n = fwprintf(fp,L"\t   Unknown wireless event on %s: 0x%x\n",i->name,cmd);
+		n = fprintf(fp,"\t   Unknown wireless event on %s: 0x%x\n",i->name,cmd);
 		break;
 	} }
+	assert(n >= 0);
 	return n;
 }
 
@@ -219,7 +222,7 @@ packet_cb(omphalos_packet *op){
 
 static inline void
 clear_for_output(FILE *fp){
-	fputwc(L'\r',fp);
+	assert(putwc(L'\r',fp) != WEOF);
 }
 
 #define PROMPTDELIM "> "
@@ -242,7 +245,7 @@ iface_event(interface *i,void *unsafe __attribute__ ((unused))){
 static void *
 neigh_event(const struct interface *i,struct l2host *l2){
 	clear_for_output(stdout);
-	print_neigh(i,l2);
+	assert(print_neigh(i,l2) >= 0);
 	wake_input_thread();
 	return NULL;
 }
@@ -250,7 +253,7 @@ neigh_event(const struct interface *i,struct l2host *l2){
 static void *
 host_event(const struct interface *i,struct l2host *l2,struct l3host *l3){
 	clear_for_output(stdout);
-	print_host(i,l2,l3);
+	assert(print_host(i,l2,l3) >= 0);
 	wake_input_thread();
 	return NULL;
 }
@@ -259,7 +262,7 @@ static void *
 service_event(const struct interface *i,struct l2host *l2,struct l3host *l3,
 					struct l4srv *l4){
 	clear_for_output(stdout);
-	print_service(i,l2,l3,l4);
+	assert(print_service(i,l2,l3,l4) >= 0);
 	wake_input_thread();
 	return NULL;
 }
@@ -267,7 +270,7 @@ service_event(const struct interface *i,struct l2host *l2,struct l3host *l3,
 static void *
 wireless_event(interface *i,unsigned cmd,void *unsafe __attribute__ ((unused))){
 	clear_for_output(stdout);
-	print_wireless_event(stdout,i,cmd);
+	assert(print_wireless_event(stdout,i,cmd) >= 0);
 	wake_input_thread();
 	return NULL;
 }
