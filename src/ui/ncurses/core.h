@@ -107,16 +107,19 @@ int packet_cb_locked(const struct interface *,struct omphalos_packet *,struct pa
 void toggle_promisc_locked(const struct omphalos_iface *,WINDOW *w);
 void sniff_interface_locked(const struct omphalos_iface *,WINDOW *w);
 void down_interface_locked(const struct omphalos_iface *,WINDOW *w);
-void hide_panel_locked(struct panel_state *ps);
-int display_network_locked(WINDOW *,struct panel_state *);
-int display_details_locked(WINDOW *,struct panel_state *);
-int new_display_panel(WINDOW *,struct panel_state *,int,int,const wchar_t *);
 void reset_all_interface_stats(WINDOW *);
 void reset_current_interface_stats(WINDOW *);
 void use_next_iface_locked(WINDOW *,struct panel_state *);
 void use_prev_iface_locked(WINDOW *,struct panel_state *);
 int expand_iface_locked(struct panel_state *);
 int collapse_iface_locked(struct panel_state *);
+
+// Subpanels
+void hide_panel_locked(struct panel_state *ps);
+int display_env_locked(WINDOW *,struct panel_state *);
+int display_help_locked(WINDOW *,struct panel_state *);
+int display_network_locked(WINDOW *,struct panel_state *);
+int display_details_locked(WINDOW *,struct panel_state *);
 
 // Select the current interface for host-granularity browsing (up and down now
 // move within the interface rather than among interfaces).

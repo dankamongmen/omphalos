@@ -597,52 +597,6 @@ int setup_statusbar(int cols){
 	return 0;
 }
 
-#define NETWORKROWS 1	// FIXME
-
-int display_network_locked(WINDOW *mainw,struct panel_state *ps){
-	memset(ps,0,sizeof(*ps));
-	if(new_display_panel(mainw,ps,NETWORKROWS,0,L"press 'n' to dismiss display")){
-		goto err;
-	}
-	// FIXME display network info
-	return OK;
-
-err:
-	if(ps->p){
-		WINDOW *psw = panel_window(ps->p);
-
-		hide_panel(ps->p);
-		del_panel(ps->p);
-		delwin(psw);
-	}
-	memset(ps,0,sizeof(*ps));
-	return ERR;
-}
-
-int display_details_locked(WINDOW *mainw,struct panel_state *ps){
-	memset(ps,0,sizeof(*ps));
-	if(new_display_panel(mainw,ps,DETAILROWS,0,L"press 'v' to dismiss details")){
-		goto err;
-	}
-	if(current_iface){
-		if(iface_details(panel_window(ps->p),current_iface->is->iface,ps->ysize)){
-			goto err;
-		}
-	}
-	return 0;
-
-err:
-	if(ps->p){
-		WINDOW *psw = panel_window(ps->p);
-
-		hide_panel(ps->p);
-		del_panel(ps->p);
-		delwin(psw);
-	}
-	memset(ps,0,sizeof(*ps));
-	return ERR;
-}
-
 void toggle_promisc_locked(const omphalos_iface *octx,WINDOW *w){
 	const interface *i = get_current_iface();
 
@@ -1310,4 +1264,149 @@ int select_iface_locked(void){
 
 int deselect_iface_locked(void){
 	return -1;
+}
+
+#define NETWORKROWS 1	// FIXME
+
+int display_network_locked(WINDOW *mainw,struct panel_state *ps){
+	memset(ps,0,sizeof(*ps));
+	if(new_display_panel(mainw,ps,NETWORKROWS,0,L"press 'n' to dismiss display")){
+		goto err;
+	}
+	// FIXME display network info
+	return OK;
+
+err:
+	if(ps->p){
+		WINDOW *psw = panel_window(ps->p);
+
+		hide_panel(ps->p);
+		del_panel(ps->p);
+		delwin(psw);
+	}
+	memset(ps,0,sizeof(*ps));
+	return ERR;
+}
+
+#define ENVROWS 1 // FIXME
+
+int display_env_locked(WINDOW *mainw,struct panel_state *ps){
+	memset(ps,0,sizeof(*ps));
+	if(new_display_panel(mainw,ps,ENVROWS,0,L"press 'e' to dismiss display")){
+		goto err;
+	}
+	// FIXME display environment info
+	return OK;
+
+err:
+	if(ps->p){
+		WINDOW *psw = panel_window(ps->p);
+
+		hide_panel(ps->p);
+		del_panel(ps->p);
+		delwin(psw);
+	}
+	memset(ps,0,sizeof(*ps));
+	return ERR;
+}
+
+int display_details_locked(WINDOW *mainw,struct panel_state *ps){
+	memset(ps,0,sizeof(*ps));
+	if(new_display_panel(mainw,ps,DETAILROWS,0,L"press 'v' to dismiss details")){
+		goto err;
+	}
+	if(current_iface){
+		if(iface_details(panel_window(ps->p),current_iface->is->iface,ps->ysize)){
+			goto err;
+		}
+	}
+	return 0;
+
+err:
+	if(ps->p){
+		WINDOW *psw = panel_window(ps->p);
+
+		hide_panel(ps->p);
+		del_panel(ps->p);
+		delwin(psw);
+	}
+	memset(ps,0,sizeof(*ps));
+	return ERR;
+}
+
+static const wchar_t *helps[] = {
+	/*L"'n': network configuration",
+	L"       configure addresses, routes, bridges, and wireless",
+	L"'a': attack configuration",
+	L"       configure quenching, assassinations, and deauth/disassoc",
+	L"'J': hijack configuration",
+	L"       configure fake APs, rogue DHCP/DNS, and ARP MitM",
+	L"'D': defense configuration",
+	L"       define authoritative configurations to enforce",
+	L"'S': secrets database",
+	L"       export pilfered passwords, cookies, and identifying data",
+	L"'c': crypto configuration",
+	L"       configure algorithm stepdown, WEP/WPA cracking, SSL MitM", */
+	L"'C': configuration",
+	L"'⏎Enter': browse interface    '␛Esc': leave interface browser",
+	L"'k'/'↑': previous interface   'j'/'↓': next interface",
+	L"'-'/'←': collapse interface   '+'/'→': expand interface",
+	L"'m': change device MAC        'u': change device MTU",
+	L"'r': reset interface's stats  'R': reset all interfaces' stats",
+	L"'d': bring down device        'p': toggle promiscuity",
+	L"'s': toggle sniffing, bringing up interface if down",
+	L"'v': view interface details   'n': view networking details",
+	L"'e': view environment details 'h': toggle this help display",
+	L"'q': quit                     ctrl+'L': redraw the screen",
+	NULL
+};
+
+static size_t
+max_helpstr_len(const wchar_t **helps){
+	size_t max = 0;
+
+	while(*helps){
+		if(wcslen(*helps) > max){
+			max = wcslen(*helps);
+		}
+		++helps;
+	}
+	return max;
+}
+
+// FIXME need to support scrolling through the list
+static int
+helpstrs(WINDOW *hw,int row,int rows){
+	const wchar_t *hs;
+	int z;
+
+	for(z = 0 ; (hs = helps[z]) && z < rows ; ++z){
+		assert(mvwaddwstr(hw,row + z,1,hs) != ERR);
+	}
+	return OK;
+}
+
+int display_help_locked(WINDOW *mainw,struct panel_state *ps){
+	static const int helprows = sizeof(helps) / sizeof(*helps) - 1; // NULL != row
+	const int helpcols = max_helpstr_len(helps) + 4; // spacing + borders
+
+	memset(ps,0,sizeof(*ps));
+	if(new_display_panel(mainw,ps,helprows,helpcols,L"press 'h' to dismiss help")){
+		goto err;
+	}
+	if(helpstrs(panel_window(ps->p),1,ps->ysize)){
+		goto err;
+	}
+	return OK;
+
+err:
+	if(ps->p){
+		WINDOW *psw = panel_window(ps->p);
+
+		hide_panel(ps->p);
+		del_panel(ps->p);
+		delwin(psw);
+	}
+	memset(ps,0,sizeof(*ps));
+	return ERR;
 }

@@ -47,6 +47,7 @@
 static struct panel_state help = PANEL_STATE_INITIALIZER;
 static struct panel_state details = PANEL_STATE_INITIALIZER;
 static struct panel_state network = PANEL_STATE_INITIALIZER;
+static struct panel_state environment = PANEL_STATE_INITIALIZER;
 
 // Add ((format (printf))) attributes to ncurses functions, which sadly
 // lack them (at least as of Debian's 5.9-1).
@@ -100,69 +101,6 @@ wstatus(WINDOW *w,const wchar_t *fmt,...){
 	ret = wvstatus(w,fmt,va); // calls screen_update()
 	va_end(va);
 	return ret;
-}
-
-static const wchar_t *helps[] = {
-	/*L"'n': network configuration",
-	L"       configure addresses, routes, bridges, and wireless",
-	L"'a': attack configuration",
-	L"       configure quenching, assassinations, and deauth/disassoc",
-	L"'J': hijack configuration",
-	L"       configure fake APs, rogue DHCP/DNS, and ARP MitM",
-	L"'D': defense configuration",
-	L"       define authoritative configurations to enforce",
-	L"'S': secrets database",
-	L"       export pilfered passwords, cookies, and identifying data",
-	L"'c': crypto configuration",
-	L"       configure algorithm stepdown, WEP/WPA cracking, SSL MitM", */
-	L"'C': configuration",
-	L"'⏎Enter': browse interface    '␛Esc': leave interface browser",
-	L"'k'/'↑': previous interface   'j'/'↓': next interface",
-	L"'-'/'←': collapse interface   '+'/'→': expand interface",
-	L"'m': change device MAC        'u': change device MTU",
-	L"'r': reset interface's stats  'R': reset all interfaces' stats",
-	L"'d': bring down device        'p': toggle promiscuity",
-	L"'s': toggle sniffing, bringing up interface if down",
-	L"'v': view interface details   'n': view networking details",
-	L"'h': toggle this help display",
-	L"'q': quit                     ctrl+'L': redraw the screen",
-	NULL
-};
-
-// FIXME need to support scrolling through the list
-static int
-helpstrs(WINDOW *hw,int row,int rows){
-	const wchar_t *hs;
-	int z;
-
-	for(z = 0 ; (hs = helps[z]) && z < rows ; ++z){
-		assert(mvwaddwstr(hw,row + z,1,hs) != ERR);
-	}
-	return OK;
-}
-
-static size_t
-max_helpstr_len(const wchar_t **helps){
-	size_t max = 0;
-
-	while(*helps){
-		if(wcslen(*helps) > max){
-			max = wcslen(*helps);
-		}
-		++helps;
-	}
-	return max;
-}
-
-static int
-display_help_locked(WINDOW *mainw,struct panel_state *ps){
-	static const int helprows = sizeof(helps) / sizeof(*helps) - 1; // NULL != row
-	const int helpcols = max_helpstr_len(helps) + 4; // spacing + borders
-
-	memset(ps,0,sizeof(*ps));
-	new_display_panel(mainw,ps,helprows,helpcols,L"press 'h' to dismiss help");
-	helpstrs(panel_window(ps->p),1,ps->ysize);
-	return OK;
 }
 
 static void
@@ -315,6 +253,18 @@ ncurses_input_thread(void *unsafe_marsh){
 				}else{
 					hide_panel_locked(active);
 					active = (display_network_locked(w,&network) == OK)
+						? &details : NULL;
+				}
+			unlock_ncurses();
+			break;
+		}case 'e':{
+			lock_ncurses();
+				if(environment.p){
+					hide_panel_locked(&environment);
+					active = NULL;
+				}else{
+					hide_panel_locked(active);
+					active = (display_env_locked(w,&environment) == OK)
 						? &details : NULL;
 				}
 			unlock_ncurses();
