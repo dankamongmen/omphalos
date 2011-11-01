@@ -111,8 +111,8 @@ void reset_all_interface_stats(WINDOW *);
 void reset_current_interface_stats(WINDOW *);
 void use_next_iface_locked(WINDOW *,struct panel_state *);
 void use_prev_iface_locked(WINDOW *,struct panel_state *);
-int expand_iface_locked(struct panel_state *);
-int collapse_iface_locked(struct panel_state *);
+int expand_iface_locked(void);
+int collapse_iface_locked(void);
 
 // Subpanels
 void hide_panel_locked(struct panel_state *ps);

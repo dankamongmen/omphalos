@@ -155,7 +155,6 @@ int new_display_panel(WINDOW *w,struct panel_state *ps,int rows,int cols,const w
 
 #define DETAILROWS 9
 
-// FIXME need to support scrolling through the output
 static int
 iface_details(WINDOW *hw,const interface *i,int rows){
 	const int col = START_COL;
@@ -1191,29 +1190,23 @@ void use_prev_iface_locked(WINDOW *w,struct panel_state *ps){
 	}
 }
 
-int expand_iface_locked(struct panel_state *ps){
+int expand_iface_locked(void){
 	if(!current_iface){
 		return 0;
 	}
 	expand_interface(current_iface->is);
 	assert(resize_iface(current_iface) == OK);
 	redraw_iface_generic(current_iface);
-	if(ps->p){
-		assert(top_panel(ps->p) != ERR);
-	}
 	return 0;
 }
 
-int collapse_iface_locked(struct panel_state *ps){
+int collapse_iface_locked(void){
 	if(!current_iface){
 		return 0;
 	}
 	collapse_interface(current_iface->is);
 	assert(resize_iface(current_iface) == OK);
 	redraw_iface_generic(current_iface);
-	if(ps->p){
-		assert(top_panel(ps->p) != ERR);
-	}
 	return 0;
 }
 
@@ -1290,12 +1283,35 @@ err:
 
 #define ENVROWS 1 // FIXME
 
+static int
+env_details(WINDOW *hw,int rows){
+	const int col = START_COL;
+	const int row = 1;
+	int z;
+
+	if((z = rows) >= ENVROWS){
+		z = ENVROWS - 1;
+	}
+	switch(z){ // Intentional fallthroughs all the way to 0
+	case (ENVROWS - 1):{
+		assert(mvwprintw(hw,row + z,col,"colors: "U64FMT,COLORS) != ERR);
+		--z;
+		break;
+	}default:{
+		return ERR;
+	}
+	}
+	return OK;
+}
+
 int display_env_locked(WINDOW *mainw,struct panel_state *ps){
 	memset(ps,0,sizeof(*ps));
 	if(new_display_panel(mainw,ps,ENVROWS,0,L"press 'e' to dismiss display")){
 		goto err;
 	}
-	// FIXME display environment info
+	if(env_details(panel_window(ps->p),ps->ysize)){
+		goto err;
+	}
 	return OK;
 
 err:
