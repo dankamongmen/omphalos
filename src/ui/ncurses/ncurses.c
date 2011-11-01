@@ -432,17 +432,16 @@ ncurses_setup(const omphalos_iface *octx){
 		goto err;
 	}
 	if(setup_extended_colors() != OK){
-		// it'd be nice if we could use A_BOLD here... FIXME
 		errstr = L"Couldn't initialize extended colors\n";
-		assert(init_pair(LCAST_COLOR,COLOR_GREEN,-1) == OK);
+		assert(init_pair(LCAST_COLOR,COLOR_CYAN,-1) == OK); // will use A_BOLD via OUR_BOLD
 		assert(init_pair(UCAST_COLOR,COLOR_CYAN,-1) == OK);
 		assert(init_pair(MCAST_COLOR,COLOR_BLUE,-1) == OK);
 		assert(init_pair(BCAST_COLOR,COLOR_MAGENTA,-1) == OK);
-		assert(init_pair(LCAST_L3_COLOR,COLOR_GREEN,-1) == OK);
+		assert(init_pair(LCAST_L3_COLOR,COLOR_CYAN,-1) == OK);
 		assert(init_pair(UCAST_L3_COLOR,COLOR_CYAN,-1) == OK);
 		assert(init_pair(MCAST_L3_COLOR,COLOR_BLUE,-1) == OK);
 		assert(init_pair(BCAST_L3_COLOR,COLOR_MAGENTA,-1) == OK);
-		assert(init_pair(LCAST_RES_COLOR,COLOR_GREEN,-1) == OK);
+		assert(init_pair(LCAST_RES_COLOR,COLOR_CYAN,-1) == OK);
 		assert(init_pair(UCAST_RES_COLOR,COLOR_CYAN,-1) == OK);
 		assert(init_pair(MCAST_RES_COLOR,COLOR_BLUE,-1) == OK);
 		assert(init_pair(BCAST_RES_COLOR,COLOR_MAGENTA,-1) == OK);
