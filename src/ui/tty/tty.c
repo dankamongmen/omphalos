@@ -71,7 +71,7 @@ print_iface(FILE *fp,const interface *iface){
 	if(!(iface->flags & IFF_LOOPBACK)){
 		int nn;
 
-		nn = fwprintf(fp,"\t   driver: %s %s @ %s\n",iface->drv.driver,
+		nn = fprintf(fp,"\t   driver: %s %s @ %s\n",iface->drv.driver,
 				iface->drv.version,iface->drv.bus_info);
 		if(nn < 0){
 			return -1;
