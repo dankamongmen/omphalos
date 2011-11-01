@@ -644,9 +644,9 @@ void hide_panel_locked(struct panel_state *ps){
 
 		psw = panel_window(ps->p);
 		hide_panel(ps->p);
-		del_panel(ps->p);
+		assert(del_panel(ps->p) == OK);
 		ps->p = NULL;
-		delwin(psw);
+		assert(delwin(psw) == OK);
 		ps->ysize = -1;
 	}
 }
