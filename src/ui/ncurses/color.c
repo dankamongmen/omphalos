@@ -152,6 +152,9 @@ void fade(unsigned sec){
 	short r[colors_allowed],g[colors_allowed],b[colors_allowed];
 	int q;
 
+	if(!can_change_color()){
+		return;
+	}
 	for(q = 0 ; q < colors_allowed ; ++q){
 		r[q] = or[q];
 		g[q] = og[q];
