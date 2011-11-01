@@ -570,24 +570,6 @@ int redraw_iface(const iface_state *is,const reelbox *rb,int active){
 	return OK;
 }
 
-// Will even a line of the interface be visible as stands, post-move?
-int iface_visible_p(int rows,const reelbox *rb){
-	if(rb->scrline < 1){
-		if(rb->next && rb->next->scrline > 2){
-			return 1;
-		}
-		return 0;
-	}
-	if(rb->scrline < rows - 1){
-		return 1; // at least partially visible at the bottom
-	}else if(rb->next && rb->next->scrline < rb->scrline){
-		if(rb->next->scrline < rows - 1 && rb->next->scrline > 2){
-			return 1; // we're partially visible at the top
-		}
-	}
-	return 0;
-}
-
 // Move this interface, possibly hiding it. Negative delta indicates movement
 // up, positive delta moves down. rows and cols describe the containing window.
 void move_interface(reelbox *rb,int rows,int cols,int delta,int active){
