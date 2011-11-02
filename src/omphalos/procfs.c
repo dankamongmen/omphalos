@@ -1,12 +1,23 @@
+#include <errno.h>
+#include <string.h>
 #include <limits.h>
 #include <omphalos/procfs.h>
 #include <omphalos/inotify.h>
 #include <omphalos/omphalos.h>
 
 static int
-proc_ipv4_ip_forward(const omphalos_iface *octx){
-	octx->diagnostic(L"hrmmm...");
-	return -1;
+proc_ipv4_ip_forward(const omphalos_iface *octx,const char *fn){
+	FILE *fp;
+
+	if((fp = fopen(fn,"r")) == NULL){
+		octx->diagnostic(L"Couldn't open %s (%s?)",fn,strerror(errno));
+		return -1;
+	}
+	if(fclose(fp)){
+		octx->diagnostic(L"Error closing %s (%s?)",fn,strerror(errno));
+		return -1;
+	}
+	return 0;
 }
 
 static const struct procent {

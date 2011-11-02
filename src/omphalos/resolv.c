@@ -28,7 +28,6 @@ typedef struct resolver {
 	struct resolver *next;
 } resolver;
 
-static char *resolvconf_fn;
 static resolver *resolvers,*resolvers6;
 static pthread_mutex_t resolver_lock = PTHREAD_MUTEX_INITIALIZER;
 
@@ -198,7 +197,7 @@ int offer_wresolution(const omphalos_iface *octx,int fam,const void *addr,
 }
 
 static int
-parse_resolv_conf(const omphalos_iface *octx){
+parse_resolv_conf(const omphalos_iface *octx,const char *fn){
 	resolver *revs = NULL;
 	unsigned count = 0;
 	int l,ret = -1;
@@ -206,8 +205,8 @@ parse_resolv_conf(const omphalos_iface *octx){
 	FILE *fp;
 	char *b;
 
-	if((fp = fopen(resolvconf_fn,"r")) == NULL){
-		octx->diagnostic(L"Couldn't open %s",resolvconf_fn);
+	if((fp = fopen(fn,"r")) == NULL){
+		octx->diagnostic(L"Couldn't open %s",fn);
 		return -1;
 	}
 	b = NULL;
@@ -263,25 +262,17 @@ parse_resolv_conf(const omphalos_iface *octx){
 		pthread_mutex_unlock(&resolver_lock);
 		free_resolvers(&r);
 		octx->diagnostic(L"Reloaded %u resolver%s from %s",count,
-				count == 1 ? "" : "s",resolvconf_fn);
+				count == 1 ? "" : "s",fn);
 		ret = 0;
 	}
 	return ret;
 }
 
 int init_naming(const omphalos_iface *octx,const char *resolvconf){
-	if((resolvconf_fn = strdup(resolvconf)) == NULL){
-		goto err;
-	}
 	if(watch_file(octx,resolvconf,parse_resolv_conf)){
-		goto err;
+		return -1;
 	}
 	return 0;
-
-err:
-	free(resolvconf_fn);
-	resolvconf_fn = NULL;
-	return -1;
 }
 
 int cleanup_naming(const omphalos_iface *octx){
@@ -303,7 +294,5 @@ int cleanup_naming(const omphalos_iface *octx){
 	}
 	free_resolvers(&resolvers6);
 	free_resolvers(&resolvers);
-	free(resolvconf_fn);
-	resolvconf_fn = NULL;
 	return er;
 }

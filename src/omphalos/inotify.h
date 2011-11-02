@@ -7,7 +7,7 @@ extern "C" {
 
 struct omphalos_iface;
 
-typedef int (*watchcbfxn)(const struct omphalos_iface *);
+typedef int (*watchcbfxn)(const struct omphalos_iface *,const char *);
 
 int watch_init(const struct omphalos_iface *);
 int watch_file(const struct omphalos_iface *,const char *,watchcbfxn);

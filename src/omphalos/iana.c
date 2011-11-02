@@ -17,7 +17,6 @@ typedef struct ouitrie {
 	void *next[OUITRIE_SIZE];
 } ouitrie;
 
-static char *ianafn;
 static ouitrie *trie[OUITRIE_SIZE];
 
 static void
@@ -49,15 +48,15 @@ free_ouitries(ouitrie **tries){
 }
 
 static int
-parse_file(const omphalos_iface *octx){
+parse_file(const omphalos_iface *octx,const char *fn){
 	unsigned allocerr,count = 0;
 	const char *line;
 	int l,ret = -1;
 	FILE *fp;
 	char *b;
 
-	if((fp = fopen(ianafn,"r")) == NULL){
-		octx->diagnostic(L"Coudln't open %s (%s?)",ianafn,strerror(errno));
+	if((fp = fopen(fn,"r")) == NULL){
+		octx->diagnostic(L"Coudln't open %s (%s?)",fn,strerror(errno));
 		return -1;
 	}
 	clearerr(fp);
@@ -117,16 +116,16 @@ parse_file(const omphalos_iface *octx){
 	}
 	free(b);
 	if(allocerr){
-		octx->diagnostic(L"Couldn't allocate for %s",ianafn);
+		octx->diagnostic(L"Couldn't allocate for %s",fn);
 	}else if(ferror(fp)){
-		octx->diagnostic(L"Error reading %s",ianafn);
+		octx->diagnostic(L"Error reading %s",fn);
 	}else{
 		ret = 0;
 	}
 	fclose(fp);
 	if(count){
 		octx->diagnostic(L"Reloaded %u OUI%s from %s",count,
-					count == 1 ? "" : "s",ianafn);
+					count == 1 ? "" : "s",fn);
 	}
 	return ret;
 }
@@ -162,18 +161,11 @@ make_oui(const char *broadcast){
 int init_iana_naming(const omphalos_iface *octx,const char *fn){
 	ouitrie *path,*p;
 
-	if((ianafn = strdup(fn)) == NULL){
-		return -1;
-	}
 	if(((p = make_oui(NULL)) == NULL)){
-		free(ianafn);
-		ianafn = NULL;
 		return -1;
 	}
 	if((path = make_oui("RFC 2464 IPv6 multicast")) == NULL){
 		free(p);
-		free(ianafn);
-		ianafn = NULL;
 		return -1;
 	}
 	trie[51u] = p;
@@ -278,6 +270,4 @@ const char *iana_lookup(const void *unsafe_oui,size_t addrlen){
 
 void cleanup_iana_naming(void){
 	free_ouitries(trie);
-	free(ianafn);
-	ianafn = NULL;
 }

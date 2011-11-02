@@ -1,4 +1,5 @@
 #include <errno.h>
+#include <limits.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
@@ -11,7 +12,10 @@ static int inotify_fd = -1;
 
 // Callback table, indexed by watch descriptors returned by inotify_add_watch()
 static int watchcbmax;
-static watchcbfxn *fxns;
+static struct watch {
+	watchcbfxn fxn;
+	char path[PATH_MAX];
+} *fxns;
 
 static pthread_mutex_t ilock = PTHREAD_MUTEX_INITIALIZER;
 
@@ -41,7 +45,7 @@ int watch_init(const omphalos_iface *octx){
 int watch_file(const omphalos_iface *octx,const char *fn,watchcbfxn fxn){
 	int ret = -1;
 
-	if(fxn(octx)){
+	if(fxn(octx,fn)){
 		return -1;
 	}
 	// FIXME shouldn't be calling diagnostics etc within critical section!
@@ -61,13 +65,11 @@ int watch_file(const omphalos_iface *octx,const char *fn,watchcbfxn fxn){
 				}else{
 					fxns = tmp;
 					watchcbmax = wd + 1;
-					ret = 0;
-					fxns[wd] = fxn;
 				}
-			}else{
-				ret = 0;
-				fxns[wd] = fxn;
 			}
+			ret = 0;
+			fxns[wd].fxn = fxn;
+			strcpy(fxns[wd].path,fn);
 		}
 	}
 	pthread_mutex_unlock(&ilock);
@@ -79,10 +81,15 @@ int handle_watch_event(const omphalos_iface *octx,int fd){
 	ssize_t r;
 
 	while((r = read(fd,&event,sizeof(event))) == sizeof(event)){
-		if(fxns[event.wd]){
-			fxns[event.wd](octx);
+		if(event.wd >= watchcbmax){
+			octx->diagnostic(L"%08x event %d too large on %d",
+					event.mask,event.wd,event.wd);
+		}
+		if(fxns[event.wd].fxn){
+			fxns[event.wd].fxn(octx,fxns[event.wd].path);
 		}else{
-			octx->diagnostic(L"No handler for %08x on %d",event.mask,event.wd);
+			octx->diagnostic(L"No handler for %d (%08x) on %d",
+						event.wd,event.mask,event.wd);
 		}
 	}
 	if(r < 0){
@@ -111,5 +118,7 @@ int watch_stop(const omphalos_iface *octx){
 			ret = -1;
 		}
 	}
+	free(fxns);
+	fxns = NULL;
 	return ret;
 }
