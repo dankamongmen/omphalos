@@ -5,6 +5,7 @@
 extern "C" {
 #endif
 
+#include <assert.h>
 #include <stdint.h>
 #include <ncursesw/panel.h>
 #include <ui/ncurses/core.h>
