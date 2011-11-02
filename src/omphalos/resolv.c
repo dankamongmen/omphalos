@@ -197,18 +197,18 @@ int offer_wresolution(const omphalos_iface *octx,int fam,const void *addr,
 	return 0;
 }
 
-static void
+static int
 parse_resolv_conf(const omphalos_iface *octx){
 	resolver *revs = NULL;
 	unsigned count = 0;
+	int l,ret = -1;
 	char *line;
 	FILE *fp;
 	char *b;
-	int l;
 
 	if((fp = fopen(resolvconf_fn,"r")) == NULL){
 		octx->diagnostic(L"Couldn't open %s",resolvconf_fn);
-		return;
+		return -1;
 	}
 	b = NULL;
 	l = 0;
@@ -264,7 +264,9 @@ parse_resolv_conf(const omphalos_iface *octx){
 		free_resolvers(&r);
 		octx->diagnostic(L"Reloaded %u resolver%s from %s",count,
 				count == 1 ? "" : "s",resolvconf_fn);
+		ret = 0;
 	}
+	return ret;
 }
 
 int init_naming(const omphalos_iface *octx,const char *resolvconf){

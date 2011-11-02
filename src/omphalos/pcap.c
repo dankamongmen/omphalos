@@ -158,7 +158,7 @@ int handle_pcap_file(const omphalos_ctx *pctx){
 		return -1;
 	}
 	if((pcap = pcap_open_offline(pctx->pcapfn,ebuf)) == NULL){
-		fprintf(stderr,"Couldn't open %s (%s?)\n",pctx->pcapfn,ebuf);
+		fprintf(stderr,"Couldn't open pcap input %s (%s?)\n",pctx->pcapfn,ebuf);
 		return -1;
 	}
 	fxn = NULL;

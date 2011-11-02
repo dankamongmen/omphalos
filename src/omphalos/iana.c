@@ -48,17 +48,17 @@ free_ouitries(ouitrie **tries){
 	}
 }
 
-static void
+static int
 parse_file(const omphalos_iface *octx){
 	unsigned allocerr,count = 0;
 	const char *line;
+	int l,ret = -1;
 	FILE *fp;
 	char *b;
-	int l;
 
 	if((fp = fopen(ianafn,"r")) == NULL){
 		octx->diagnostic(L"Coudln't open %s (%s?)",ianafn,strerror(errno));
-		return;
+		return -1;
 	}
 	clearerr(fp);
 	allocerr = 0;
@@ -120,10 +120,15 @@ parse_file(const omphalos_iface *octx){
 		octx->diagnostic(L"Couldn't allocate for %s",ianafn);
 	}else if(ferror(fp)){
 		octx->diagnostic(L"Error reading %s",ianafn);
+	}else{
+		ret = 0;
 	}
 	fclose(fp);
-	octx->diagnostic(L"Reloaded %u OUI%s from %s",count,
-				count == 1 ? "" : "s",ianafn);
+	if(count){
+		octx->diagnostic(L"Reloaded %u OUI%s from %s",count,
+					count == 1 ? "" : "s",ianafn);
+	}
+	return ret;
 }
 
 // A value can be passed which will be "broadcast" out to all children of this
