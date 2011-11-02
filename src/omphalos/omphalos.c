@@ -17,6 +17,7 @@
 #include <omphalos/privs.h>
 #include <omphalos/route.h>
 #include <omphalos/resolv.h>
+#include <omphalos/procfs.h>
 #include <omphalos/hwaddrs.h>
 #include <omphalos/netlink.h>
 #include <omphalos/omphalos.h>
@@ -24,6 +25,7 @@
 #include <omphalos/interface.h>
 
 #define DEFAULT_USERNAME "nobody"
+#define DEFAULT_PROCROOT "/proc/"
 #define DEFAULT_MODESTRING "active"
 #define DEFAULT_IANA_FILENAME "ieee-oui.txt" // from arp-scan's 'get-oui'
 #define DEFAULT_RESOLVCONF_FILENAME "/etc/resolv.conf"
@@ -291,12 +293,15 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 		return -1;
 	}
 	pctx->iface.diagnostic = default_diagnostic;
-	if(pctx->ianafn && strcmp(pctx->ianafn,"")){
+	if(init_procfs(&pctx->iface,DEFAULT_PROCROOT)){
+		return -1;
+	}
+	if(strcmp(pctx->ianafn,"")){
 		if(init_iana_naming(&pctx->iface,pctx->ianafn)){
 			return -1;
 		}
 	}
-	if(pctx->resolvconf && strcmp(pctx->resolvconf,"")){
+	if(strcmp(pctx->resolvconf,"")){
 		if(init_naming(&pctx->iface,pctx->resolvconf)){
 			return -1;
 		}
