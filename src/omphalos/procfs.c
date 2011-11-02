@@ -24,7 +24,7 @@ static const struct procent {
 	const char *path;
 	watchcbfxn fxn;
 } procents[] = {
-	{ .path = "net/ipv4/ip_forward",	.fxn = proc_ipv4_ip_forward,		},
+	{ .path = "sys/net/ipv4/ip_forward",	.fxn = proc_ipv4_ip_forward,		},
 	{ .path = NULL,				.fxn = NULL,		}
 };
 
