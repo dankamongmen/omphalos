@@ -36,10 +36,14 @@ int watch_init(const omphalos_iface *octx){
 	return ret;
 }
 
+// Failures are allowed during runtime reprocessing, but not during init -- if
+// the watchcbfxn returns non-zero on init, no watch is registered.
 int watch_file(const omphalos_iface *octx,const char *fn,watchcbfxn fxn){
 	int ret = -1;
 
-	fxn(octx);
+	if(fxn(octx)){
+		return -1;
+	}
 	// FIXME shouldn't be calling diagnostics etc within critical section!
 	pthread_mutex_lock(&ilock);
 	if(watch_init_locked(octx) >= 0){
