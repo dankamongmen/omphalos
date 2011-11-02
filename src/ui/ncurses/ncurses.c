@@ -38,6 +38,7 @@
 #include <omphalos/ethtool.h>
 #include <omphalos/netaddrs.h>
 #include <omphalos/omphalos.h>
+#include <ui/ncurses/network.h>
 #include <omphalos/interface.h>
 
 #define ERREXIT endwin() ; fprintf(stderr,"ncurses failure|%s|%d\n",__func__,__LINE__); abort() ; goto err

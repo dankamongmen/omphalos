@@ -118,8 +118,8 @@ int collapse_iface_locked(void);
 void hide_panel_locked(struct panel_state *ps);
 int display_env_locked(WINDOW *,struct panel_state *);
 int display_help_locked(WINDOW *,struct panel_state *);
-int display_network_locked(WINDOW *,struct panel_state *);
 int display_details_locked(WINDOW *,struct panel_state *);
+int new_display_panel(WINDOW *,struct panel_state *,int,int,const wchar_t *);
 
 // Select the current interface for host-granularity browsing (up and down now
 // move within the interface rather than among interfaces).
