@@ -43,7 +43,11 @@ update_network_details(WINDOW *w){
 	}
 	switch(z){ // Intentional fallthroughs all the way to 0
 	case (NETWORKROWS - 1):{
-		assert(mvwprintw(w,row + z,col,"TCP: %s",ps.tcp_ccalg) != ERR);
+		assert(mvwprintw(w,row + z,col,"TCP [%s]: SACK%lc DSACK%lc FACK%lc FRTO%lc",
+					ps.tcp_ccalg,state3char(ps.tcp_sack),
+					state3char(ps.tcp_dsack),
+					state3char(ps.tcp_fack),
+					state3char(ps.tcp_frto)) != ERR);
 		--z;
 	}case 1:{
 		assert(mvwprintw(w,row + z,col,"Forwarding: IPv4%lc IPv6%lc",
@@ -51,7 +55,7 @@ update_network_details(WINDOW *w){
 					state3char(ps.ipv6_forwarding)) != ERR);
 		--z;
 	}case 0:{
-		assert(mvwprintw(w,row + z,col,"Proxy ARP default: %ls",state3str(ps.proxyarp)) != ERR);
+		assert(mvwprintw(w,row + z,col,"Proxy ARP: %ls",state3str(ps.proxyarp)) != ERR);
 		--z;
 		break;
 	}default:{
