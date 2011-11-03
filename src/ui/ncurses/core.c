@@ -368,7 +368,6 @@ push_interfaces_below(reelbox *pusher,int rows,int cols,int delta){
 		rb->scrline += delta;
 		move_interface_generic(rb,rows,cols,delta);
 		if(panel_hidden(rb->panel)){
-			//fprintf(stderr,"HID THE LAST (%s)!\n",rb->is->iface->name);
 			if((last_reelbox = rb->prev) == NULL){
 				top_reelbox = NULL;
 			}else{
@@ -411,7 +410,6 @@ push_interfaces_above(reelbox *pusher,int rows,int cols,int delta){
 		rb->scrline += delta;
 		move_interface_generic(rb,rows,cols,delta);
 		if(panel_hidden(rb->panel)){
-			//fprintf(stderr,"HID THE TOP!\n");
 			if((top_reelbox = rb->next) == NULL){
 				last_reelbox = NULL;
 			}else{
@@ -471,7 +469,6 @@ resize_iface(reelbox *rb){
 	assert(subcols); // FIXME
 	if(nlines < subrows){ // Shrink the interface
 		assert(werase(rb->subwin) == OK);
-		screen_update(); // FIXME surely unnecessary?
 		assert(wresize(rb->subwin,nlines,PAD_COLS(cols)) != ERR);
 		assert(replace_panel(rb->panel,rb->subwin) != ERR);
 		if(rb->scrline < current_iface->scrline){
