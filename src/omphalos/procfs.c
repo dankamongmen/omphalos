@@ -1,5 +1,6 @@
 #include <ctype.h>
 #include <errno.h>
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
@@ -13,6 +14,10 @@ static procfs_state netstate = {
 	.ipv6_forwarding = -1,
 	.proxyarp = -1,
 	.tcp_ccalg = NULL,
+	.tcp_frto = -1,
+	.tcp_sack = -1,
+	.tcp_dsack = -1,
+	.tcp_fack = -1,
 };
 
 static pthread_mutex_t netlock = PTHREAD_MUTEX_INITIALIZER;
@@ -56,33 +61,31 @@ lex_string(FILE *fp){
 	return strdup(buf);
 }
 
-// Return the lexed value as a { -1, 0, 1} value
+// Return the lexed value as a { -1, 0, 1, ... n} value
 static inline int
-lex_binary(FILE *fp){
+lex_state(FILE *fp,unsigned n){
 	unsigned long val;
 
 	if(lex_unsigned(fp,&val)){
 		return -1;
 	}
-	if(val == 0){
-		return 0;
-	}
-	if(val == 1){
-		return 1;
+	if(val <= n){
+		return val;
 	}
 	return -1;
 }
 
 static int
-lex_binary_file(const omphalos_iface *octx,const char *fn){
+lex_unsigned_file(const omphalos_iface *octx,const char *fn,unsigned long n){
 	FILE *fp;
 	int val;
 
+	assert(n <= INT_MAX);
 	if((fp = fopen(fn,"r")) == NULL){
 		octx->diagnostic(L"Couldn't open %s (%s?)",fn,strerror(errno));
 		return -1;
 	}
-	if((val = lex_binary(fp)) < 0){
+	if((val = lex_state(fp,n)) < 0){
 		octx->diagnostic(L"Error parsing %s",fn);
 		fclose(fp);
 		return -1;
@@ -120,7 +123,7 @@ static int
 proc_ipv4_ip_forward(const omphalos_iface *octx,const char *fn){
 	int ipv4f;
 
-	if((ipv4f = lex_binary_file(octx,fn)) < 0){
+	if((ipv4f = lex_unsigned_file(octx,fn,1)) < 0){
 		return -1;
 	}
 	pthread_mutex_lock(&netlock);
@@ -133,7 +136,7 @@ static int
 proc_ipv6_ip_forward(const omphalos_iface *octx,const char *fn){
 	int ipv6f;
 
-	if((ipv6f = lex_binary_file(octx,fn)) < 0){
+	if((ipv6f = lex_unsigned_file(octx,fn,1)) < 0){
 		return -1;
 	}
 	pthread_mutex_lock(&netlock);
@@ -146,11 +149,63 @@ static int
 proc_proxy_arp(const omphalos_iface *octx,const char *fn){
 	int parp;
 
-	if((parp = lex_binary_file(octx,fn)) < 0){
+	if((parp = lex_unsigned_file(octx,fn,1)) < 0){
 		return -1;
 	}
 	pthread_mutex_lock(&netlock);
 		netstate.proxyarp = parp;
+	pthread_mutex_unlock(&netlock);
+	return 0;
+}
+
+static int
+proc_tcp_fack(const omphalos_iface *octx,const char *fn){
+	int fack;
+
+	if((fack = lex_unsigned_file(octx,fn,1)) < 0){
+		return -1;
+	}
+	pthread_mutex_lock(&netlock);
+		netstate.tcp_fack = fack;
+	pthread_mutex_unlock(&netlock);
+	return 0;
+}
+
+static int
+proc_tcp_frto(const omphalos_iface *octx,const char *fn){
+	int frto;
+
+	if((frto = lex_unsigned_file(octx,fn,2)) < 0){
+		return -1;
+	}
+	pthread_mutex_lock(&netlock);
+		netstate.tcp_frto = frto;
+	pthread_mutex_unlock(&netlock);
+	return 0;
+}
+
+static int
+proc_tcp_sack(const omphalos_iface *octx,const char *fn){
+	int sack;
+
+	if((sack = lex_unsigned_file(octx,fn,1)) < 0){
+		return -1;
+	}
+	pthread_mutex_lock(&netlock);
+		netstate.tcp_sack = sack;
+	pthread_mutex_unlock(&netlock);
+	return 0;
+}
+
+static int
+proc_tcp_dsack(const omphalos_iface *octx,const char *fn){
+	int dsack;
+
+	if((dsack = lex_unsigned_file(octx,fn,1)) < 0){
+		return -1;
+	}
+	pthread_mutex_lock(&netlock);
+		netstate.tcp_dsack = dsack;
 	pthread_mutex_unlock(&netlock);
 	return 0;
 }
@@ -177,6 +232,10 @@ static const struct procent {
 	{ .path = "sys/net/ipv6/conf/all/forwarding",	.fxn = proc_ipv6_ip_forward,	},
 	{ .path = "sys/net/ipv4/conf/all/proxy_arp",	.fxn = proc_proxy_arp,		},
 	{ .path = "sys/net/ipv4/tcp_congestion_control",.fxn = proc_tcp_ccalg,		},
+	{ .path = "sys/net/ipv4/tcp_fack",		.fxn = proc_tcp_fack,		},
+	{ .path = "sys/net/ipv4/tcp_frto",		.fxn = proc_tcp_frto,		},
+	{ .path = "sys/net/ipv4/tcp_sack",		.fxn = proc_tcp_sack,		},
+	{ .path = "sys/net/ipv4/tcp_dsack",		.fxn = proc_tcp_dsack,		},
 	{ .path = NULL,					.fxn = NULL,			}
 };
 

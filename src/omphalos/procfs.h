@@ -17,7 +17,9 @@ int init_procfs(const struct omphalos_iface *,const char *);
 typedef struct procfs_state {
 	int ipv4_forwarding,ipv6_forwarding;	// global forwarding
 	int proxyarp;				// global proxy arp
-	char *tcp_ccalg;
+	char *tcp_ccalg;			// tcp congestion control
+	int tcp_sack,tcp_fack;			// selective ACKs, forward ACK
+	int tcp_dsack,tcp_frto;			// dup SACK, forward RTO recov
 } procfs_state;
 
 int get_procfs_state(procfs_state *);
