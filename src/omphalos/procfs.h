@@ -15,7 +15,8 @@ int init_procfs(const struct omphalos_iface *,const char *);
 
 // -1 -- unknown, 0 -- no, 1 -- yes
 typedef struct procfs_state {
-	int ipv4_forwarding,ipv6_forwarding;
+	int ipv4_forwarding,ipv6_forwarding;	// global forwarding
+	int proxyarp;				// global proxy arp
 } procfs_state;
 
 int get_procfs_state(procfs_state *);

@@ -1,10 +1,8 @@
 #include <string.h>
+#include <omphalos/procfs.h>
 #include <ui/ncurses/util.h>
 #include <ui/ncurses/core.h>
 #include <ui/ncurses/network.h>
-
-// FIXME get this from omphalos proper
-static int ipv4_forwarding,ipv6_forwarding,proxyarp;
 
 static const wchar_t *
 state3str(int state){
@@ -32,8 +30,12 @@ static int
 update_network_details(WINDOW *w){
 	const int col = START_COL;
 	const int row = 1;
+	procfs_state ps;
 	int r,c,z;
 
+	if(get_procfs_state(&ps)){
+		return ERR;
+	}
 	getmaxyx(w,r,c);
 	assert(c > col);
 	if((z = r) >= NETWORKROWS){
@@ -42,11 +44,11 @@ update_network_details(WINDOW *w){
 	switch(z){ // Intentional fallthroughs all the way to 0
 	case (NETWORKROWS - 1):{
 		assert(mvwprintw(w,row + z,col,"Forwarding defaults: IPv4%lc IPv6%lc",
-					state3char(ipv4_forwarding),
-					state3char(ipv6_forwarding)) != ERR);
+					state3char(ps.ipv4_forwarding),
+					state3char(ps.ipv6_forwarding)) != ERR);
 		--z;
 	}case 0:{
-		assert(mvwprintw(w,row + z,col,"Proxy ARP default: %ls",state3str(proxyarp)) != ERR);
+		assert(mvwprintw(w,row + z,col,"Proxy ARP default: %ls",state3str(ps.proxyarp)) != ERR);
 		--z;
 		break;
 	}default:{
