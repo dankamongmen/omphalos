@@ -24,7 +24,7 @@ state3char(int state){
 	return L'?';
 }
 
-#define NETWORKROWS 2	// FIXME
+#define NETWORKROWS 3
 
 static int
 update_network_details(WINDOW *w){
@@ -43,7 +43,10 @@ update_network_details(WINDOW *w){
 	}
 	switch(z){ // Intentional fallthroughs all the way to 0
 	case (NETWORKROWS - 1):{
-		assert(mvwprintw(w,row + z,col,"Forwarding defaults: IPv4%lc IPv6%lc",
+		assert(mvwprintw(w,row + z,col,"TCP: %s",ps.tcp_ccalg) != ERR);
+		--z;
+	}case 1:{
+		assert(mvwprintw(w,row + z,col,"Forwarding: IPv4%lc IPv6%lc",
 					state3char(ps.ipv4_forwarding),
 					state3char(ps.ipv6_forwarding)) != ERR);
 		--z;
