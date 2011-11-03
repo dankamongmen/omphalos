@@ -97,13 +97,27 @@ proc_ipv6_ip_forward(const omphalos_iface *octx,const char *fn){
 	return 0;
 }
 
+static int
+proc_proxy_arp(const omphalos_iface *octx,const char *fn){
+	int parp;
+
+	if((parp = lex_binary_file(octx,fn)) < 0){
+		return -1;
+	}
+	pthread_mutex_lock(&netlock);
+		netstate.proxyarp = parp;
+	pthread_mutex_unlock(&netlock);
+	return 0;
+}
+
 static const struct procent {
 	const char *path;
 	watchcbfxn fxn;
 } procents[] = {
-	{ .path = "sys/net/ipv4/conf/all/forwarding",	.fxn = proc_ipv4_ip_forward,		},
-	{ .path = "sys/net/ipv6/conf/all/forwarding",	.fxn = proc_ipv6_ip_forward,		},
-	{ .path = NULL,				.fxn = NULL,		}
+	{ .path = "sys/net/ipv4/conf/all/forwarding",	.fxn = proc_ipv4_ip_forward,	},
+	{ .path = "sys/net/ipv6/conf/all/forwarding",	.fxn = proc_ipv6_ip_forward,	},
+	{ .path = "sys/net/ipv4/conf/all/proxy_arp",	.fxn = proc_proxy_arp,		},
+	{ .path = NULL,					.fxn = NULL,			}
 };
 
 int init_procfs(const omphalos_iface *octx,const char *procroot){
