@@ -340,4 +340,5 @@ void omphalos_cleanup(const omphalos_ctx *pctx){
 	stop_pci_support();
 	stop_usb_support();
 	cleanup_naming(&pctx->iface);
+	cleanup_procfs(&pctx->iface);
 }
