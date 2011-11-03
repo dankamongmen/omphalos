@@ -52,6 +52,7 @@ lex_string(FILE *fp){
 	if(e == buf || *e != '\n'){
 		return NULL;
 	}
+	*e = '\0';
 	return strdup(buf);
 }
 
