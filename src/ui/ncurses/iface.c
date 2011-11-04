@@ -58,7 +58,7 @@ iface_state *create_interface_state(interface *i){
 		ret->typestr = tstr;
 		ret->lastprinted.tv_sec = ret->lastprinted.tv_usec = 0;
 		ret->iface = i;
-		ret->expansion = EXPANSION_MAX;
+		ret->expansion = EXPANSION_HOSTS; // FIXME
 	}
 	return ret;
 }
@@ -182,9 +182,10 @@ l4obj *add_service_to_iface(iface_state *is,struct l3obj *l3,struct l4srv *srv){
 	l4obj *l4;
 
 	if( (l4 = get_l4obj(srv)) ){
-		l4->next = l3->l4objs;
+		if((l4->next = l3->l4objs) == NULL){
+			++is->srvs; // Collapsed onto one line per l3host
+		}
 		l3->l4objs = l4;
-		++is->srvs;
 	}
 	return l4;
 }
@@ -210,7 +211,6 @@ print_host_services(WINDOW *w,const l3obj *l,int *line,int rows){
 			++n;
 		}
 	}
-	return;
 }
 
 static void
@@ -636,10 +636,19 @@ void move_interface(reelbox *rb,int rows,int cols,int delta,int active){
 // This is the number of lines we'd have in an optimal world; we might have
 // fewer available to us on this screen at this time.
 int lines_for_interface(const iface_state *is){
-	return 2 + interface_up_p(is->iface) +
-		((is->expansion < EXPANSION_NODES) ? 0 : is->nodes) +
-		((is->expansion < EXPANSION_HOSTS) ? 0 : is->hosts) +
-		((is->expansion < EXPANSION_SERVICES) ? 0 : !!is->srvs);
+	int lines = 2 + interface_up_p(is->iface);
+
+	switch(is->expansion){ // Intentional fallthrus
+		case EXPANSION_SERVICES:
+			lines += is->srvs;
+		case EXPANSION_HOSTS:
+			lines += is->hosts;
+		case EXPANSION_NODES:
+			lines += is->nodes;
+		case EXPANSION_NONE:
+			return lines;
+	}
+	return -1;
 }
 
 // Is the interface window entirely visible? We can't draw it otherwise, as it
