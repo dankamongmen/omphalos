@@ -335,18 +335,12 @@ print_iface_hosts(const interface *i,const iface_state *is,WINDOW *w,
 									prefix(l3_get_dstpkt(l3->l3),1,dbuf,sizeof(dbuf),1));
 						}
 					}
-					++line;
-					if(is->expansion >= EXPANSION_SERVICES){
-						print_host_services(w,l3,&line,
-							rows - (partial <= 0));
-					}
 					assert(wattrset(w,attrs) != ERR);
-				}else{
-					++line;
-					if(is->expansion >= EXPANSION_SERVICES){
-						print_host_services(w,l3,&line,
-							rows - (partial <= 0));
-					}
+				}
+				++line;
+				if(is->expansion >= EXPANSION_SERVICES){
+					print_host_services(w,l3,&line,
+						rows - (partial <= 0));
 				}
 			}
 		}
@@ -648,6 +642,7 @@ int lines_for_interface(const iface_state *is){
 		case EXPANSION_NONE:
 			return lines;
 	}
+	assert(0);
 	return -1;
 }
 
