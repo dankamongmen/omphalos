@@ -18,16 +18,17 @@ typedef struct l2host {
 	const char *devname;		// text description based off lladdress
 	struct l2host *next;
 	uintmax_t srcpkts,dstpkts;	// stats
+	interface *i;
 	void *opaque;
 } l2host;
 
 static inline l2host *
-create_l2host(const interface *,const void *) __attribute__ ((malloc));
+create_l2host(interface *,const void *) __attribute__ ((malloc));
 
 // FIXME replace internals with LRU acquisition...
 // FIXME caller must set ->next
 static inline l2host *
-create_l2host(const interface *i,const void *hwaddr){
+create_l2host(interface *i,const void *hwaddr){
 	l2host *l2;
 
 	if( (l2 = malloc(sizeof(*l2))) ){
@@ -35,6 +36,7 @@ create_l2host(const interface *i,const void *hwaddr){
 		l2->hwaddr = 0;
 		memcpy(&l2->hwaddr,hwaddr,i->addrlen);
 		l2->opaque = NULL;
+		l2->i = i;
 		if((i->flags & IFF_BROADCAST) && i->bcast &&
 				memcmp(hwaddr,i->bcast,i->addrlen) == 0){
 			l2->devname = "Link broadcast";
@@ -166,4 +168,8 @@ uintmax_t get_srcpkts(const l2host *l2){
 
 uintmax_t get_dstpkts(const l2host *l2){
 	return l2->dstpkts;
+}
+
+interface *l2_getiface(l2host *l2){
+	return l2->i;
 }

@@ -31,6 +31,9 @@ void *l2host_get_opaque(struct l2host *) __attribute__ ((nonnull (1)));
 hwaddrint get_hwaddr(const struct l2host *) __attribute__ ((nonnull (1)));
 const char *get_devname(const struct l2host *) __attribute__ ((nonnull (1)));
 
+// Problematic accessors -- return unlocked, unsafe objects FIXME
+struct interface *l2_getiface(struct l2host *) __attribute__ ((nonnull (1)));
+
 // Predicates and comparators
 int l2hostcmp(const struct l2host *,const struct l2host *,size_t)
 				__attribute__ ((nonnull (1,2)));
