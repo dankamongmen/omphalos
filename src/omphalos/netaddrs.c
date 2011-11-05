@@ -208,10 +208,9 @@ update_l3name(const omphalos_iface *octx,struct l2host *l2,l3host *l3,
 	if((rev = revstrfxn(addr)) == NULL){
 		return;
 	}
-	if(queue_for_naming(octx,i,l2,l3,dnsfxn,rev,fam,addr)){
+	l3->lastnametry = time(NULL);
+	if(queue_for_naming(octx,i,l3,dnsfxn,rev,fam,addr)){
 		wname_l3host_absolute(octx,i,l2,l3,L"Resolution failed",NAMING_LEVEL_FAIL);
-	}else{
-		l3->lastnametry = time(NULL);
 	}
 	free(rev);
 }
@@ -325,10 +324,9 @@ lookup_l3host_common(const omphalos_iface *octx,interface *i,struct l2host *l2,
 		if(dnsfxn && revstrfxn && (rev = revstrfxn(addr))){
 			// Calls the host event if necessary
 			wname_l3host_absolute(octx,i,l2,l3,L"Resolving...",NAMING_LEVEL_RESOLVING);
-			if(queue_for_naming(octx,i,l2,l3,dnsfxn,rev,fam,addr)){
+			l3->lastnametry = time(NULL);
+			if(queue_for_naming(octx,i,l3,dnsfxn,rev,fam,addr)){
 				wname_l3host_absolute(octx,i,l2,l3,L"Resolution failed",NAMING_LEVEL_FAIL);
-			}else{
-				l3->lastnametry = time(NULL);
 			}
 			free(rev);
 		}
@@ -336,12 +334,15 @@ lookup_l3host_common(const omphalos_iface *octx,interface *i,struct l2host *l2,
         return l3;
 }
 
-// Browse the global list...
+// Browse the global list. Don't create the host if it doesn't exist. Since
+// references are handed out without a lock held, we cannot destroy an l3host
+// which is on the global list! This is fundamentally unsafe, really FIXME.
 struct l3host *lookup_global_l3host(int fam,const void *addr){
 	struct globalhosts *gh;
 	l3host *l3;
 	typeof(l3->addr) cmp;
 
+	// locks the globalhosts entry on success
 	if((gh = get_global_hosts(fam)) == NULL){
 		return NULL;
 	}
@@ -467,6 +468,7 @@ void cleanup_l3hosts(l3host **list){
 		free(l3);
 	}
 	*list = NULL;
+	// FIXME ensure all globall3host lists are empty
 }
 
 void l3_srcpkt(l3host *l3){
