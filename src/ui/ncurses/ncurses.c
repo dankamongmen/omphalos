@@ -143,6 +143,18 @@ struct ncurses_input_marshal {
 	const omphalos_iface *octx;
 };
 
+
+static void
+toggle_panel(WINDOW *w,struct panel_state *ps,int (*psfxn)(WINDOW *,struct panel_state *)){
+	if(ps->p){
+		hide_panel_locked(ps);
+		active = NULL;
+	}else{
+		hide_panel_locked(active);
+		active = ((psfxn(w,ps) == OK) ? ps : NULL);
+	}
+}
+
 static void *
 ncurses_input_thread(void *unsafe_marsh){
 	struct ncurses_input_marshal *nim = unsafe_marsh;
@@ -237,50 +249,22 @@ ncurses_input_thread(void *unsafe_marsh){
 			break;
 		case 'v':{
 			lock_ncurses();
-				if(details.p){
-					hide_panel_locked(&details);
-					active = NULL;
-				}else{
-					hide_panel_locked(active);
-					active = (display_details_locked(w,&details) == OK)
-						? &details : NULL;
-				}
+				toggle_panel(w,&details,display_details_locked);
 			unlock_ncurses();
 			break;
 		}case 'n':{
 			lock_ncurses();
-				if(network.p){
-					hide_panel_locked(&network);
-					active = NULL;
-				}else{
-					hide_panel_locked(active);
-					active = (display_network_locked(w,&network) == OK)
-						? &network : NULL;
-				}
+				toggle_panel(w,&network,display_network_locked);
 			unlock_ncurses();
 			break;
 		}case 'e':{
 			lock_ncurses();
-				if(environment.p){
-					hide_panel_locked(&environment);
-					active = NULL;
-				}else{
-					hide_panel_locked(active);
-					active = (display_env_locked(w,&environment) == OK)
-						? &environment : NULL;
-				}
+				toggle_panel(w,&environment,display_env_locked);
 			unlock_ncurses();
 			break;
 		}case 'h':{
 			lock_ncurses();
-				if(help.p){
-					hide_panel_locked(&help);
-					active = NULL;
-				}else{
-					hide_panel_locked(active);
-					active = (display_help_locked(w,&help) == OK)
-						? &help : NULL;
-				}
+				toggle_panel(w,&help,display_help_locked);
 			unlock_ncurses();
 			break;
 		}default:{
@@ -498,6 +482,9 @@ static void
 packet_callback(omphalos_packet *op){
 	pthread_mutex_lock(&bfl); // don't always want screen_update()
 	if(packet_cb_locked(op->i,op,&details)){
+		if(active){
+			assert(top_panel(active->p) != ERR);
+		}
 		screen_update();
 	}
 	pthread_mutex_unlock(&bfl);
