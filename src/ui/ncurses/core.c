@@ -469,6 +469,9 @@ resize_iface(reelbox *rb){
 	assert(subcols); // FIXME
 	if(nlines < subrows){ // Shrink the interface
 		assert(werase(rb->subwin) == OK);
+		// Without screen_update(), the werase() doesn't take effect,
+		// even if wclear() is used.
+		screen_update();
 		assert(wresize(rb->subwin,nlines,PAD_COLS(cols)) != ERR);
 		assert(replace_panel(rb->panel,rb->subwin) != ERR);
 		if(rb->scrline < current_iface->scrline){
