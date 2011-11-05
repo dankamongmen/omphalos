@@ -153,3 +153,9 @@ V. FAQs
 
 2. I see hosts with 0 packets sent or transmitted.
 2A. Most likely they were present in your system's ARP cache.
+
+3. I see a lot of "protocol 0800 is buggy, dev XXX" messages in dmesg.
+3A. This is a diagnostic issued by the kernel's packet socket mechanism. It
+    will show up if you run tcpdump, wireshark, or any other user of PF_PACKET
+    sockets on the interface. It has nothing to do with omphalos or the packets
+    it generates.
