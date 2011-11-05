@@ -37,6 +37,7 @@ typedef struct omphalos_packet {
 // UI callback interface. Any number may be NULL, save diagnostic.
 typedef struct omphalos_iface {
 	// Free-form diagnostics using standard print(3)-style format strings.
+	//void (*diagnostic)(const wchar_t *,va_list);
 	void (*diagnostic)(const wchar_t *,...);
 
 	// Device event callback. Called upon device detection or change. A
