@@ -30,6 +30,8 @@
 #define DEFAULT_IANA_FILENAME "ieee-oui.txt" // from arp-scan's 'get-oui'
 #define DEFAULT_RESOLVCONF_FILENAME "/etc/resolv.conf"
 
+pthread_key_t omphalos_ctx_key;
+
 static void
 usage(const char *arg0,int ret){
 	FILE *fp = ret == EXIT_SUCCESS ? stdout : stderr;
@@ -292,6 +294,9 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 	if(mask_cancel_sigs(NULL)){
 		return -1;
 	}
+	if(pthread_key_create(&omphalos_ctx_key,NULL)){
+		return -1;
+	}
 	pctx->iface.diagnostic = default_diagnostic;
 	if(init_procfs(&pctx->iface,DEFAULT_PROCROOT)){
 		return -1;
@@ -312,6 +317,9 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 int omphalos_init(const omphalos_ctx *pctx){
 	if(pctx->iface.diagnostic == NULL){
 		fprintf(stderr,"No diagnostic callback function defined, exiting\n");
+		return -1;
+	}
+	if(pthread_setspecific(omphalos_ctx_key,pctx)){
 		return -1;
 	}
 	if(pctx->pcapfn){

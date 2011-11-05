@@ -377,6 +377,9 @@ psocket_thread(void *unsafe){
 	psocket_marsh *pm = unsafe;
 	int r;
 
+	if(pthread_setspecific(omphalos_ctx_key,pm->octx)){
+		return "couldn't set TSD";
+	}
 	// We control thread exit via the global cancelled value, set in the
 	// signal handler. We don't want actual pthread cancellation, as it's
 	// unsafe for the user callback's duration, and thus we'd need switch

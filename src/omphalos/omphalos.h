@@ -7,6 +7,7 @@ extern "C" {
 
 #include <wchar.h>
 #include <stdint.h>
+#include <pthread.h>
 #include <sys/time.h>
 #include <pcap/pcap.h>
 
@@ -87,6 +88,9 @@ typedef struct omphalos_ctx {
 	pcap_t *plogp;
 	pcap_dumper_t *plog;
 } omphalos_ctx;
+
+// The omphalos_ctx for a given thread can be accessed via this TSD.
+extern pthread_key_t omphalos_ctx_key;
 
 // Parse the command line for common arguments (a UI introducing its own
 // CLI arguments would need to extract them before calling, as stands
