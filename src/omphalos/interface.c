@@ -36,8 +36,16 @@ handle_void_packet(const omphalos_iface *octx,omphalos_packet *op,
 }
 
 int init_interfaces(void){
+	pthread_mutexattr_t attr;
 	unsigned i;
 
+	if(pthread_mutexattr_init(&attr)){
+		return -1;
+	}
+	if(pthread_mutexattr_settype(&attr,PTHREAD_MUTEX_RECURSIVE_NP)){
+		pthread_mutexattr_destroy(&attr);
+		return -1;
+	}
 	for(i = 0 ; i < sizeof(interfaces) / sizeof(*interfaces) ; ++i){
 		interface *iface = &interfaces[i];
 
@@ -48,6 +56,9 @@ int init_interfaces(void){
 			return -1;
 		}
 		iface->rfd = iface->fd = -1;
+	}
+	if(pthread_mutexattr_destroy(&attr)){
+		return -1;
 	}
 	return 0;
 }
