@@ -133,9 +133,7 @@ int offer_wresolution(const omphalos_iface *octx,int fam,const void *addr,
 	// FIXME needs to lock the interface to touch l3 objs
 	l2 = l3_getlastl2(l3);
 	i = l2_getiface(l2);
-	//lock_interface(i);
 	wname_l3host_absolute(octx,i,l2,l3,name,nlevel);
-	//unlock_interface(i);
 	/*{
 		char abuf[INET6_ADDRSTRLEN],rbuf[INET6_ADDRSTRLEN];
 
