@@ -222,8 +222,8 @@ int handle_ring_packet(const omphalos_iface *octx,interface *iface,int fd,void *
 			octx->diagnostic(L"Error reading stats on %s (%s?)",iface->name,strerror(errno));
 		}else if(tstats.tp_drops){
 			iface->drops += tstats.tp_drops;
-			octx->diagnostic(L"FUCK ME; THE RINGBUFFER'S FULL (%ju/%ju drops)!",
-					tstats.tp_drops,iface->drops);
+			octx->diagnostic(L"[%s] FUCK ME; THE RINGBUFFER'S FULL (%ju/%ju drops)!",
+				iface->name,tstats.tp_drops,iface->drops);
 		}
 	}
 	if((thdr->tp_status & TP_STATUS_COPY) || thdr->tp_snaplen != thdr->tp_len){
