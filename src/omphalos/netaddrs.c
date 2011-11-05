@@ -31,6 +31,7 @@ typedef struct l3host {
 				// at the very least one per interface...
 	void *opaque;		// UI state
 	struct l3host *gnext;	// next globally
+	pthread_mutex_t nlock;	// naming lock
 } l3host;
 
 static l3host external_l3 = {
@@ -96,6 +97,10 @@ create_l3host(int fam,const void *addr,size_t len){
 	if( (r = malloc(sizeof(*r))) ){
 		struct globalhosts *gh;
 
+		if(pthread_mutex_init(&r->nlock,NULL)){
+			free(r);
+			return NULL;
+		}
 		r->opaque = NULL;
 		r->name = NULL;
 		r->l2 = NULL;
@@ -134,6 +139,7 @@ void name_l3host_absolute(const omphalos_iface *octx,const interface *i,
 void wname_l3host_absolute(const omphalos_iface *octx,const interface *i,
 			struct l2host *l2,l3host *l3,const wchar_t *name,
 			namelevel nlevel){
+	pthread_mutex_lock(&l3->nlock);
 	if(l3->nlevel < nlevel){
 		wchar_t *tmp;
 
@@ -146,6 +152,7 @@ void wname_l3host_absolute(const omphalos_iface *octx,const interface *i,
 			}
 		}
 	}
+	pthread_mutex_unlock(&l3->nlock);
 }
 
 static inline int
@@ -463,6 +470,7 @@ void cleanup_l3hosts(l3host **list){
 
 	for(l3 = *list ; l3 ; l3 = tmp){
 		tmp = l3->next;
+		pthread_mutex_destroy(&l3->nlock);
 		free_services(l3->services);
 		free(l3->name);
 		free(l3);
