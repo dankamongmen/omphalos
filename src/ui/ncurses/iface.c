@@ -536,8 +536,9 @@ void free_iface_state(iface_state *is){
 	}
 }
 
-int redraw_iface(const iface_state *is,const reelbox *rb,int active){
+int redraw_iface(const reelbox *rb,int active){
 	int rows,cols,partial,scrrows,scrcols;
+	const iface_state *is = rb->is;
 	const interface *i = is->iface;
 
 	if(panel_hidden(rb->panel)){
@@ -585,7 +586,7 @@ void move_interface(reelbox *rb,int rows,int cols,int delta,int active){
 				assert(show_panel(rb->panel) == OK);
 			}
 		}
-		assert(redraw_iface(is,rb,active) == OK);
+		assert(redraw_iface(rb,active) == OK);
 		return;
 	}
 	rr = getmaxy(rb->subwin);
@@ -622,7 +623,7 @@ void move_interface(reelbox *rb,int rows,int cols,int delta,int active){
 	}else{
 		assert(move_panel(rb->panel,targ,1) == OK);
 	}
-	assert(redraw_iface(is,rb,active) == OK);
+	assert(redraw_iface(rb,active) == OK);
 	assert(show_panel(rb->panel) == OK);
 	return;
 }

@@ -40,7 +40,7 @@ typedef struct iface_state {
 					// entirely offscreen, this is NULL.
 } iface_state;
 
-int redraw_iface(const struct iface_state *,const struct reelbox *,int);
+int redraw_iface(const struct reelbox *,int);
 
 struct iface_state *create_interface_state(struct interface *);
 void free_iface_state(struct iface_state *);

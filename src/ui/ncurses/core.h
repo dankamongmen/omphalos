@@ -61,6 +61,7 @@ typedef struct reelbox {
 	PANEL *panel;			// panel
 	struct reelbox *next,*prev;	// circular list
 	iface_state *is;		// backing interface state
+	int selected;			// selected subentry
 } reelbox;
 
 // FIXME we ought precreate the subwindows, and show/hide them rather than

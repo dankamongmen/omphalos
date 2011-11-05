@@ -40,6 +40,7 @@ create_reelbox(iface_state *is,int rows,int scrline,int cols){
 			return NULL;
 		}
 		ret->scrline = scrline;
+		ret->selected = -1;
 		ret->is = is;
 		is->rb = ret;
 	}
@@ -97,7 +98,7 @@ int wstatus_locked(WINDOW *w,const wchar_t *fmt,...){
 
 static inline int
 redraw_iface_generic(const reelbox *rb){
-	return redraw_iface(rb->is,rb,rb == current_iface);
+	return redraw_iface(rb,rb == current_iface);
 }
 
 static inline void
@@ -1251,12 +1252,41 @@ void check_consistency(void){
 	//fprintf(stderr,"CONSISTENT\n");
 }
 
+static int
+select_interface_node(reelbox *rb,int nidx){
+	assert(nidx != rb->selected);
+	// FIXME undraw old one
+	if((rb->selected = nidx) >= 0){
+		// FIXME draw new one
+	}
+	redraw_iface(rb,1);
+	return 0;
+}
+
 int select_iface_locked(void){
-	return -1;
+	reelbox *rb;
+
+	if((rb = current_iface) == NULL){
+		return 0;
+	}
+	if(rb->selected >= 0){
+		return 0;
+	}
+	select_interface_node(rb,0);
+	return 0;
 }
 
 int deselect_iface_locked(void){
-	return -1;
+	reelbox *rb;
+
+	if((rb = current_iface) == NULL){
+		return 0;
+	}
+	if(rb->selected < 0){
+		return 0;
+	}
+	select_interface_node(rb,-1);
+	return 0;
 }
 
 #define ENVROWS 1 // FIXME
