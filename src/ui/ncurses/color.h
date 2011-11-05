@@ -47,10 +47,11 @@ enum {
 	LCAST_L3_COLOR,			// local l3
 	MCAST_L3_COLOR,			// multicast l3
 	BCAST_L3_COLOR,			// broadcast l3
-	UCAST_RES_COLOR,		// unresolved unicast l3
-	LCAST_RES_COLOR,		// unresolved local l3
-	MCAST_RES_COLOR,		// unresolved multicast l3
-	BCAST_RES_COLOR,		// unresolved broadcast l3
+	UCAST_RES_COLOR,		// unicast name
+	LCAST_RES_COLOR,		// local name
+	MCAST_RES_COLOR,		// multicast name
+	BCAST_RES_COLOR,		// broadcast name
+	SELECTED_COLOR,			// selected node, all components
 	MAX_OMPHALOS_COLOR
 };
 

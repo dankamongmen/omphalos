@@ -206,7 +206,7 @@ print_host_services(WINDOW *w,const l3obj *l,int *line,int rows){
 		if(n){
 			assert(wprintw(w,", %s",l4srvstr(l4->l4)) != ERR);
 		}else{
-			assert(mvwprintw(w,*line,6,"%s",l4srvstr(l4->l4)) != ERR);
+			assert(mvwprintw(w,*line,1,"     %s",l4srvstr(l4->l4)) != ERR);
 			++*line;
 			++n;
 		}
@@ -279,6 +279,9 @@ print_iface_hosts(const interface *i,const iface_state *is,WINDOW *w,
 		}
 		if(l2idx == selectedidx){
 			// FIXME use reverse video
+			attrs = COLOR_PAIR(SELECTED_COLOR);
+			l3attrs = COLOR_PAIR(SELECTED_COLOR);
+			rattrs = COLOR_PAIR(SELECTED_COLOR);
 		}
 		if(!interface_up_p(i)){
 			attrs = (attrs & A_BOLD) | COLOR_PAIR(DBORDER_COLOR);
@@ -294,10 +297,10 @@ print_iface_hosts(const interface *i,const iface_state *is,WINDOW *w,
 				if(len > cols - 5 - HWADDRSTRLEN(i->addrlen)){
 					len = cols - 5 - HWADDRSTRLEN(i->addrlen);
 				}
-				assert(mvwprintw(w,line,2,"%c %s %.*s",
+				assert(mvwprintw(w,line,1," %c %s %.*s",
 					legend,hw,cols - 1,devname) != ERR);
 			}else{
-				assert(mvwprintw(w,line,2,"%c %s",legend,hw) != ERR);
+				assert(mvwprintw(w,line,1," %c %s",legend,hw) != ERR);
 			}
 			if(interface_up_p(i)){
 				char sbuf[PREFIXSTRLEN + 1],dbuf[PREFIXSTRLEN + 1];
@@ -325,10 +328,8 @@ print_iface_hosts(const interface *i,const iface_state *is,WINDOW *w,
 					if((name = get_l3name(l3->l3)) == NULL){
 						name = L"";
 					}
-					assert(mvwprintw(w,line,5,"%s ",nw) != ERR);
-					if(get_l3nlevel(l3->l3) != NAMING_LEVEL_RESOLVING){
-						assert(wattrset(w,rattrs) != ERR);
-					}
+					assert(mvwprintw(w,line,1,"    %s ",nw) != ERR);
+					assert(wattrset(w,rattrs) != ERR);
 					assert(wprintw(w,"%ls",name) != ERR);
 					assert(wattrset(w,l3attrs) != ERR);
 					{
