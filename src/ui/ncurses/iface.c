@@ -215,8 +215,9 @@ print_host_services(WINDOW *w,const l3obj *l,int *line,int rows){
 
 static void
 print_iface_hosts(const interface *i,const iface_state *is,WINDOW *w,
-			int rows,int cols,int partial){
+			int rows,int cols,int partial,int selectedidx){
 	const l2obj *l;
+	int l2idx;
 	int line;
 
 	if(is->expansion < EXPANSION_NODES){
@@ -228,6 +229,7 @@ print_iface_hosts(const interface *i,const iface_state *is,WINDOW *w,
 	}else{
 		line = 1 + !!interface_up_p(i);
 	}
+	l2idx = -1;
 	for(l = is->l2objs ; l ; l = l->next){
 		char hw[HWADDRSTRLEN(i->addrlen)];
 		int attrs,l3attrs,rattrs;
@@ -235,6 +237,7 @@ print_iface_hosts(const interface *i,const iface_state *is,WINDOW *w,
 		char legend;
 		l3obj *l3;
 		
+		++l2idx;
 		if(line >= rows - (partial <= 0)){
 			break;
 		}
@@ -274,8 +277,13 @@ print_iface_hosts(const interface *i,const iface_state *is,WINDOW *w,
 				assert(0 && "Unknown l2 category");
 				break;
 		}
+		if(l2idx == selectedidx){
+			// FIXME use reverse video
+		}
 		if(!interface_up_p(i)){
 			attrs = (attrs & A_BOLD) | COLOR_PAIR(DBORDER_COLOR);
+			l3attrs = (l3attrs & A_BOLD) | COLOR_PAIR(DBORDER_COLOR);
+			rattrs = (rattrs & A_BOLD) | COLOR_PAIR(DBORDER_COLOR);
 		}
 		assert(wattrset(w,attrs) != ERR);
 		if(line >= 0){
@@ -561,7 +569,7 @@ int redraw_iface(const reelbox *rb,int active){
 	if(interface_up_p(i)){
 		print_iface_state(i,is,rb->subwin,rows,cols,partial);
 	}
-	print_iface_hosts(i,is,rb->subwin,rows,cols,partial);
+	print_iface_hosts(i,is,rb->subwin,rows,cols,partial,rb->selected);
 	return OK;
 }
 

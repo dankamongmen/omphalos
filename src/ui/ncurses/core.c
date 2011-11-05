@@ -1101,6 +1101,7 @@ void use_prev_iface_locked(WINDOW *w,struct panel_state *ps){
 	//		current_iface->is->prev->iface->name);
 	getmaxyx(w,rows,cols);
 	oldrb = current_iface;
+	deselect_iface_locked();
 	// Don't redraw the old interface yet; it might have been moved/hidden
 	if(current_iface->prev){
 		current_iface = current_iface->prev;
@@ -1255,12 +1256,8 @@ void check_consistency(void){
 static int
 select_interface_node(reelbox *rb,int nidx){
 	assert(nidx != rb->selected);
-	// FIXME undraw old one
-	if((rb->selected = nidx) >= 0){
-		// FIXME draw new one
-	}
-	redraw_iface(rb,1);
-	return 0;
+	rb->selected = nidx;
+	return redraw_iface(rb,1);
 }
 
 int select_iface_locked(void){
@@ -1272,8 +1269,7 @@ int select_iface_locked(void){
 	if(rb->selected >= 0){
 		return 0;
 	}
-	select_interface_node(rb,0);
-	return 0;
+	return select_interface_node(rb,0);
 }
 
 int deselect_iface_locked(void){
@@ -1285,8 +1281,7 @@ int deselect_iface_locked(void){
 	if(rb->selected < 0){
 		return 0;
 	}
-	select_interface_node(rb,-1);
-	return 0;
+	return select_interface_node(rb,-1);
 }
 
 #define ENVROWS 1 // FIXME
