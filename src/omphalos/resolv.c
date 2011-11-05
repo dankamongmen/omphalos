@@ -9,16 +9,11 @@
 #include <omphalos/util.h>
 #include <asm/byteorder.h>
 #include <omphalos/resolv.h>
+#include <omphalos/hwaddrs.h>
 #include <omphalos/inotify.h>
 #include <omphalos/netaddrs.h>
 #include <omphalos/omphalos.h>
-
-typedef struct resolvq {
-	struct l3host *l3;
-	struct l2host *l2;
-	struct interface *i;
-	struct resolvq *next;
-} resolvq;
+#include <omphalos/interface.h>
 
 typedef struct resolver {
 	union {
@@ -30,11 +25,6 @@ typedef struct resolver {
 
 static resolver *resolvers,*resolvers6;
 static pthread_mutex_t resolver_lock = PTHREAD_MUTEX_INITIALIZER;
-
-// Resolv queue is global to all interfaces, since there's no required mapping
-// between routes to resolvers and interfaces.
-static resolvq *rqueue;
-static pthread_mutex_t rqueue_lock = PTHREAD_MUTEX_INITIALIZER;
 
 static resolver *
 create_resolver(const void *addr,size_t len){
@@ -58,41 +48,13 @@ free_resolvers(resolver **r){
 	}
 }
 
-static inline resolvq *
-create_resolvq(struct interface *i,struct l2host *l2,struct l3host *l3){
-	resolvq *r;
-
-	if( (r = malloc(sizeof(*r))) ){
-		r->l3 = l3;
-		r->l2 = l2;
-		r->i = i;
-		r->next = NULL;
-	}
-	return r;
-}
-
-// Must already have been pulled from the queue, or never placed on it
-static void
-free_resolvq(resolvq *r){
-	if(r){
-		free(r);
-	}
-}
-
 int queue_for_naming(const struct omphalos_iface *octx,struct interface *i,
-			struct l2host *l2,struct l3host *l3,
-		       	dnstxfxn dnsfxn,const char *revstr,
+			struct l3host *l3,dnstxfxn dnsfxn,const char *revstr,
 			int fam,const void *lookup){
 	int ret = 0;
 
 	if(get_l3nlevel(l3) < NAMING_LEVEL_NXDOMAIN){
-		resolvq *r;
-
-		if((r = create_resolvq(i,l2,l3)) == NULL){
-			return -1;
-		}
 		if(pthread_mutex_lock(&resolver_lock)){
-			free_resolvq(r);
 			return -1;
 		}
 		// FIXME round-robin or even use the simple resolv.conf algorithm
@@ -103,16 +65,6 @@ int queue_for_naming(const struct omphalos_iface *octx,struct interface *i,
 			ret = dnsfxn(octx,AF_INET6,&resolvers6->addr.ip6,revstr);
 		}
 		pthread_mutex_unlock(&resolver_lock);
-		pthread_mutex_lock(&rqueue_lock);
-		if(!ret){
-			r->next = rqueue;
-			rqueue = r;
-		}else{
-			// FIXME put it on a fail queue and retry when we have a route
-			free_resolvq(r);
-			r = NULL;
-		}
-		pthread_mutex_unlock(&rqueue_lock);
 	}
 	ret |= tx_mdns_ptr(octx,i,revstr,fam,lookup);
 	return ret;
@@ -167,32 +119,30 @@ int offer_resolution(const omphalos_iface *octx,int fam,const void *addr,
 
 int offer_wresolution(const omphalos_iface *octx,int fam,const void *addr,
 				const wchar_t *name,namelevel nlevel,
-				int nsfam,const void *nameserver){
-	resolvq *r,**p;
+				int nsfam __attribute__ ((unused)),
+				const void *nameserver __attribute__ ((unused))){
+	struct interface *i;
+	struct l3host *l3;
+	struct l2host *l2;
 
 	// FIXME don't call until we filter offers better
 	// offer_nameserver(nsfam,nameserver);
-	pthread_mutex_lock(&rqueue_lock);
-	for(p = &rqueue ; (r = *p) ; p = &r->next){
-		if(l3addr_eq_p(r->l3,fam,addr)){
-			// FIXME needs to lock the interface to touch l3 objs
-			wname_l3host_absolute(octx,r->i,r->l2,r->l3,name,nlevel);
-			// Leaves NXDOMAIN entries on the list
-			if(nlevel >= NAMING_LEVEL_REVDNS){
-				*p = r->next;
-				free(r);
-			}
-			break;
-		}
+	if((l3 = lookup_global_l3host(fam,addr)) == NULL){
+		return 0;
 	}
-	pthread_mutex_unlock(&rqueue_lock);
-	if(r){
+	// FIXME needs to lock the interface to touch l3 objs
+	l2 = l3_getlastl2(l3);
+	i = l2_getiface(l2);
+	//lock_interface(i);
+	wname_l3host_absolute(octx,i,l2,l3,name,nlevel);
+	//unlock_interface(i);
+	/*{
 		char abuf[INET6_ADDRSTRLEN],rbuf[INET6_ADDRSTRLEN];
 
 		inet_ntop(fam,addr,abuf,sizeof(abuf));
 		inet_ntop(nsfam,nameserver,rbuf,sizeof(rbuf));
 		octx->diagnostic(L"Resolved %s @%s as %ls",abuf,rbuf,name);
-	}
+	}*/
 	return 0;
 }
 
@@ -246,7 +196,6 @@ parse_resolv_conf(const omphalos_iface *octx,const char *fn){
 		revs = r;
 		++count;
 		// FIXME
-		//
 #undef NSTOKEN
 	}
 	free(b);
@@ -276,19 +225,9 @@ int init_naming(const omphalos_iface *octx,const char *resolvconf){
 }
 
 int cleanup_naming(const omphalos_iface *octx){
-	resolvq *r;
 	int er;
 
 	er = 0;
-	while( (r = rqueue) ){
-		rqueue = r->next;
-		free(r);
-		++er;
-	}
-	octx->diagnostic(L"%d outstanding resolution%s",er,er == 1 ? "" : "s");
-	if( (er = pthread_mutex_destroy(&rqueue_lock)) ){
-		octx->diagnostic(L"Error destroying resolvq lock (%s)",strerror(er));
-	}
 	if( (er = pthread_mutex_destroy(&resolver_lock)) ){
 		octx->diagnostic(L"Error destroying resolver lock (%s)",strerror(er));
 	}

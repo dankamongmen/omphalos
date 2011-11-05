@@ -16,9 +16,8 @@ typedef int
 (*dnstxfxn)(const struct omphalos_iface *,int,const void *,const char *);
 
 int queue_for_naming(const struct omphalos_iface *,struct interface *i,
-		struct l2host *,struct l3host *,dnstxfxn,const char *,
-		int,const void *)
-			__attribute__ ((nonnull (1,2,3,4,5,6,8)));
+		struct l3host *,dnstxfxn,const char *,int,const void *)
+			__attribute__ ((nonnull (1,2,3,4,5,7)));
 
 int offer_wresolution(const struct omphalos_iface *,int,const void *,const wchar_t *,
 			namelevel,int,const void *) __attribute__ ((nonnull (1,3,4,7)));
