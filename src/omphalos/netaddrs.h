@@ -31,6 +31,10 @@ struct l3host *lookup_l3host(const struct omphalos_iface *,struct interface *,
 				struct l2host *,int,const void *)
 				__attribute__ ((nonnull (1,2,3,5)));
 
+// Doesn't create the l3host if it isn't found (what interface would it bind it
+// to?), but scans all interfaces' nodes for such a host.
+struct l3host *lookup_global_l3host(int,const void *) __attribute__ ((nonnull (2)));
+
 struct l3host *lookup_local_l3host(const struct omphalos_iface *,
 		struct interface *,struct l2host *,int,const void *)
 		__attribute__ ((nonnull (1,2,3,5)));

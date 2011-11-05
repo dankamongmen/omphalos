@@ -25,17 +25,32 @@ typedef struct l3host {
 	// FIXME use usec-based ticks taken from the omphalos_packet *!
 	time_t lastnametry;	// last time we tried to do name resolution
 	struct l4srv *services;	// services observed providing
-	struct l3host *next;
+	struct l3host *next;	// next within the interface
 	struct l2host *l2;	// FIXME we only keep the most recent l2host
 				// seen with this address. ought keep all, or
 				// at the very least one per interface...
 	void *opaque;		// UI state
+	struct l3host *gnext;	// next globally
 } l3host;
 
 static l3host external_l3 = {
 	.name = L"external",
 	.fam = AF_INET,
 }; // FIXME augh
+
+static struct globalhosts {
+	struct l3host *head;
+	pthread_mutex_t lock;
+	size_t addrlen;
+} ipv4hosts = {
+	.head = NULL,
+	.lock = PTHREAD_MUTEX_INITIALIZER,
+	.addrlen = 4,
+},ipv6hosts = {
+	.head = NULL,
+	.lock = PTHREAD_MUTEX_INITIALIZER,
+	.addrlen = 16,
+};
 
 // RFC 3513 notes :: (all zeros) to be the "unspecified" address. It ought
 // never appear as a destination address.
@@ -49,6 +64,29 @@ static l3host unspecified_ipv4 = {
 	.fam = AF_INET,
 };
 
+static inline struct globalhosts *
+get_global_hosts(int fam){
+	struct globalhosts *ret;
+
+	switch(fam){
+		case AF_INET:
+			ret = &ipv4hosts;
+			break;
+		case AF_INET6:
+			ret = &ipv6hosts;
+			break;
+		default:
+			ret = NULL;
+			break;
+	}
+	if(ret){
+		if(pthread_mutex_lock(&ret->lock)){
+			ret = NULL;
+		}
+	}
+	return ret;
+}
+
 // FIXME like the l2addrs, need do this in constant space via LRU or something
 static l3host *
 create_l3host(int fam,const void *addr,size_t len){
@@ -56,6 +94,8 @@ create_l3host(int fam,const void *addr,size_t len){
 
 	assert(len <= sizeof(r->addr));
 	if( (r = malloc(sizeof(*r))) ){
+		struct globalhosts *gh;
+
 		r->opaque = NULL;
 		r->name = NULL;
 		r->l2 = NULL;
@@ -65,6 +105,13 @@ create_l3host(int fam,const void *addr,size_t len){
 		r->lastnametry = 0;
 		r->services = NULL;
 		memcpy(&r->addr,addr,len);
+		if( (gh = get_global_hosts(fam)) ){
+			r->gnext = gh->head;
+			gh->head = r;
+			pthread_mutex_unlock(&gh->lock);
+		}else{
+			r->gnext = NULL;
+		}
 	}
 	return r;
 }
@@ -215,21 +262,19 @@ lookup_l3host_common(const omphalos_iface *octx,interface *i,struct l2host *l2,
 		}
 	}
 	// Should probably skip this on NOARP interfaces? FIXME
-	if(routed_family_p(fam)){
+	if(routed_family_p(fam) && !knownlocal){
 		cat = l2categorize(i,l2);
 		if(cat == RTN_UNICAST || cat == RTN_LOCAL){
-			if(!knownlocal){
-				struct sockaddr_storage ss;
-				hwaddrint hwaddr = get_hwaddr(l2);
-				// FIXME throwing out anything to which we have no
-				// route means we basically don't work pre-config.
-				// addresses pre-configuration have information, but
-				// are inferior to those post-configuration. we need a
-				// means of *updating* names whenever routes change,
-				// or as close to true route cache behavior as we like
-				if(get_unicast_address(octx,i,&hwaddr,fam,addr,&ss) == NULL){
-					return &external_l3; // FIXME terrible
-				}
+			struct sockaddr_storage ss;
+			hwaddrint hwaddr = get_hwaddr(l2);
+			// FIXME throwing out anything to which we have no
+			// route means we basically don't work pre-config.
+			// addresses pre-configuration have information, but
+			// are inferior to those post-configuration. we need a
+			// means of *updating* names whenever routes change,
+			// or as close to true route cache behavior as we like
+			if(get_unicast_address(octx,i,&hwaddr,fam,addr,&ss) == NULL){
+				return &external_l3; // FIXME terrible
 			}
 		}
 	}else{
@@ -237,7 +282,7 @@ lookup_l3host_common(const omphalos_iface *octx,interface *i,struct l2host *l2,
 	}
 	// FIXME probably want to make this per-node
 	assert(len <= sizeof(cmp));
-	memcpy(&cmp,addr,sizeof(cmp));
+	memcpy(&cmp,addr,len);
 	for(prev = orig ; (l3 = *prev) ; prev = &l3->next){
 		if(memcmp(&l3->addr,&cmp,len) == 0){
 			// Move it to the front of the list, splicing it out
@@ -289,6 +334,26 @@ lookup_l3host_common(const omphalos_iface *octx,interface *i,struct l2host *l2,
 		}
         }
         return l3;
+}
+
+// Browse the global list...
+struct l3host *lookup_global_l3host(int fam,const void *addr){
+	struct globalhosts *gh;
+	l3host *l3;
+	typeof(l3->addr) cmp;
+
+	if((gh = get_global_hosts(fam)) == NULL){
+		return NULL;
+	}
+	assert(gh->addrlen <= sizeof(cmp));
+	memcpy(&cmp,addr,gh->addrlen);
+	for(l3 = gh->head ; l3 ; l3 = l3->gnext){
+		if(memcmp(&l3->addr,&cmp,gh->addrlen) == 0){
+			break;
+		}
+	}
+	pthread_mutex_unlock(&gh->lock);
+	return l3;
 }
 
 // This is for raw network addresses as seen on the wire, which may be from
