@@ -764,7 +764,6 @@ void interface_removed_locked(iface_state *is,struct panel_state **ps){
 
 		//fprintf(stderr,"Removing iface at %d\n",rb->scrline);
 		assert(werase(rb->subwin) == OK);
-		//screen_update();
 		assert(hide_panel(rb->panel) == OK);
 		getmaxyx(stdscr,scrrows,scrcols);
 		// we'll need pull other interfaces up or down
