@@ -161,8 +161,11 @@ update_l3name(const omphalos_iface *octx,struct l2host *l2,l3host *l3,
 	if((rev = revstrfxn(addr)) == NULL){
 		return;
 	}
-	l3->lastnametry = time(NULL);
-	queue_for_naming(octx,i,l2,l3,dnsfxn,rev,fam,addr);
+	if(queue_for_naming(octx,i,l2,l3,dnsfxn,rev,fam,addr)){
+		wname_l3host_absolute(octx,i,l2,l3,L"Resolution failed",NAMING_LEVEL_FAIL);
+	}else{
+		l3->lastnametry = time(NULL);
+	}
 	free(rev);
 }
 
