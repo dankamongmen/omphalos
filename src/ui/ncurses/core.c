@@ -764,6 +764,8 @@ void interface_removed_locked(iface_state *is,struct panel_state **ps){
 
 		//fprintf(stderr,"Removing iface at %d\n",rb->scrline);
 		assert(werase(rb->subwin) == OK);
+		//screen_update();
+		assert(hide_panel(rb->panel) == OK);
 		getmaxyx(stdscr,scrrows,scrcols);
 		// we'll need pull other interfaces up or down
 		if(rb->next){
@@ -793,16 +795,17 @@ void interface_removed_locked(iface_state *is,struct panel_state **ps){
 			}
 		}else if(rb->scrline > current_iface->scrline){
 			pull_interfaces_up(rb,scrrows,scrcols,delta);
-		}else{ // pull them down; we're above current_iface
+			screen_update();
+		}else{ // pull them down; removed is above current_iface
 			int ts;
 
 			pull_interfaces_down(rb,scrrows,scrcols,delta);
 			if( (ts = top_space_p(scrrows)) ){
 				pull_interfaces_up(NULL,scrrows,scrcols,ts);
 			}
+			screen_update();
 		}
-		// FIXME results in massive corruption at shutdown...why?
-		//free_reelbox(rb);
+		free_reelbox(rb);
 	}
 	free_iface_state(is); // clears l2/l3 nodes
 	is->next->prev = is->prev;
