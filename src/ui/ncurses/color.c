@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <string.h>
+#include <sys/time.h>
 #include <ui/ncurses/color.h>
 #include <ncursesw/ncurses.h>
 
@@ -151,40 +152,43 @@ restore_our_colors(void){
 	return ret;
 }
 
-#define REFRESH 60 // Screen refresh rate in Hz FIXME
 #include <unistd.h>
 void fade(unsigned sec){
-	const int quanta = sec * (REFRESH / 4);
-	const int us = sec * 1000000 / quanta;
 	short r[colors_allowed],g[colors_allowed],b[colors_allowed];
-	int q;
+	// ncurses palettes are in terms of 0..1000, so there's no point in
+	// trying to do more than 1000 iterations, ever. This is in usec.
+	const long unsigned quanta = sec * 1000000 / 15;
+	long unsigned sus,cus;
+	struct timeval stime;
+	int p;
 
 	if(!modified_colors){
 		return;
 	}
-	for(q = 0 ; q < colors_allowed ; ++q){
-		r[q] = or[q];
-		g[q] = og[q];
-		b[q] = ob[q];
+	for(p = 0 ; p < colors_allowed ; ++p){
+		r[p] = or[p];
+		g[p] = og[p];
+		b[p] = ob[p];
 	}
-	for(q = 0 ; q < quanta ; ++q){
-		unsigned p;
+	gettimeofday(&stime,NULL);
+	cus = sus = stime.tv_sec * 1000000 + stime.tv_usec;
+	while(cus < sus + sec * 1000000){
+		long unsigned permille;
+		struct timeval ctime;
 
-		for(p = 0 ; p < sizeof(r) / sizeof(*r) ; ++p){
-			r[p] -= or[p] / quanta;
-			g[p] -= og[p] / quanta;
-			b[p] -= ob[p] / quanta;
-			r[p] = r[p] < 0 ? 0 : r[p];
-			g[p] = g[p] < 0 ? 0 : g[p];
-			b[p] = b[p] < 0 ? 0 : b[p];
+		if((permille = (cus - sus) * 1000 / (sec * 1000000)) > 1000){
+			permille = 1000;
+		}
+		for(p = 0 ; p < colors_allowed ; ++p){
+			r[p] = (or[p] * (1000 - permille)) / 1000;
+			g[p] = (og[p] * (1000 - permille)) / 1000;
+			b[p] = (ob[p] * (1000 - permille)) / 1000;
 			init_color(p,r[p],g[p],b[p]);
 		}
-		usleep(us);
+		usleep(quanta);
 		wrefresh(curscr);
-		// We ought feed back the actual time interval and perhaps
-		// fade more rapidly based on the result. This ought control
-		// flicker in all circumstances, becoming a single palette fade
-		// in the limit (ie, no fade at all).
+		gettimeofday(&ctime,NULL);
+		cus = ctime.tv_sec * 1000000 + ctime.tv_usec;
 	}
 	restore_our_colors();
 	wrefresh(curscr);
