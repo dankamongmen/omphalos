@@ -191,7 +191,7 @@ l4obj *add_service_to_iface(iface_state *is,struct l3obj *l3,struct l4srv *srv){
 }
 
 static void
-print_host_services(WINDOW *w,const l3obj *l,int *line,int rows){
+print_host_services(WINDOW *w,const l3obj *l,int *line,int rows,int cols){
 	const struct l4obj *l4;
 	int n = 0;
 
@@ -205,11 +205,15 @@ print_host_services(WINDOW *w,const l3obj *l,int *line,int rows){
 	for(l4 = l->l4objs ; l4 ; l4 = l4->next){
 		if(n){
 			assert(wprintw(w,", %s",l4srvstr(l4->l4)) != ERR);
+			n += 2 + strlen(l4srvstr(l4->l4));
 		}else{
 			assert(mvwprintw(w,*line,1,"     %s",l4srvstr(l4->l4)) != ERR);
 			++*line;
-			++n;
+			n = 5 + strlen(l4srvstr(l4->l4));
 		}
+	}
+	if(n){
+		assert(wprintw(w,"%-*.*s",cols - 2 - n,cols - 2 - n,"") == OK);
 	}
 }
 
@@ -358,8 +362,7 @@ print_iface_hosts(const interface *i,const iface_state *is,WINDOW *w,
 				}
 				++line;
 				if(is->expansion >= EXPANSION_SERVICES){
-					print_host_services(w,l3,&line,
-						rows - (partial <= 0));
+					print_host_services(w,l3,&line,rows - (partial <= 0),cols);
 				}
 			}
 		}
