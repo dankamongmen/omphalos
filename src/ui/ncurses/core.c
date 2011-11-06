@@ -981,6 +981,7 @@ void use_next_iface_locked(WINDOW *w,struct panel_state *ps){
 	//		current_iface->is->next->iface->name);
 	getmaxyx(w,rows,cols);
 	oldrb = current_iface;
+	deselect_iface_locked();
 	// Don't redraw the old inteface yet; it might have been moved/hidden
 	if(current_iface->next == NULL){
 		iface_state *is = current_iface->is->next;
