@@ -303,7 +303,7 @@ print_iface_hosts(const interface *i,const iface_state *is,WINDOW *w,
 				assert(mvwprintw(w,line,1," %c %s %-*.*s",
 					legend,hw,len,len,devname) != ERR);
 			}else{
-				int len = cols - PREFIXSTRLEN * 2 - 4;
+				int len = cols - PREFIXSTRLEN * 2 - 6;
 				assert(mvwprintw(w,line,1," %c %-*.*s",
 					legend,len,len,hw) != ERR);
 			}
