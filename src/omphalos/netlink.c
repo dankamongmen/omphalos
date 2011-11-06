@@ -873,10 +873,10 @@ netlink_thread(const omphalos_iface *octx){
 	if(discover_addrs(octx,pfd[0].fd)){
 		goto done;
 	}
-	if(discover_neighbors(octx,pfd[0].fd)){
+	if(discover_routes(octx,pfd[0].fd)){
 		goto done;
 	}
-	if(discover_routes(octx,pfd[0].fd)){
+	if(discover_neighbors(octx,pfd[0].fd)){
 		goto done;
 	}
 	while(!cancelled){
