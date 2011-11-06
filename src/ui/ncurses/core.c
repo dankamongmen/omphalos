@@ -1370,8 +1370,8 @@ static const wchar_t *helps[] = {
 	L"       configure algorithm stepdown, WEP/WPA cracking, SSL MitM", */
 	L"'C': configuration",
 	L"'⏎Enter': browse interface    '␛Esc': leave interface browser",
-	L"'k'/'↑': previous interface   'j'/'↓': next interface",
-	L"'-'/'←': collapse interface   '+'/'→': expand interface",
+	L"'k'/'↑': previous selection   'j'/'↓': next selection",
+	L"'-'/'←': collapse selection   '+'/'→': expand selection",
 	L"'m': change device MAC        'u': change device MTU",
 	L"'r': reset interface's stats  'R': reset all interfaces' stats",
 	L"'d': bring down device        'p': toggle promiscuity",
