@@ -1431,3 +1431,27 @@ err:
 	memset(ps,0,sizeof(*ps));
 	return ERR;
 }
+
+void use_next_node_locked(void){
+	reelbox *rb;
+
+	if((rb = current_iface) == NULL){
+		return;
+	}
+	if(rb->selected < 0 || rb->selected == rb->is->nodes - 1){
+		return;
+	}
+	select_interface_node(rb,rb->selected + 1);
+}
+
+void use_prev_node_locked(void){
+	reelbox *rb;
+
+	if((rb = current_iface) == NULL){
+		return;
+	}
+	if(rb->selected <= 0){
+		return;
+	}
+	select_interface_node(rb,rb->selected - 1);
+}

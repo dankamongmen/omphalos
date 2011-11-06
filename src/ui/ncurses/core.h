@@ -112,8 +112,17 @@ void reset_all_interface_stats(WINDOW *);
 void reset_current_interface_stats(WINDOW *);
 void use_next_iface_locked(WINDOW *,struct panel_state *);
 void use_prev_iface_locked(WINDOW *,struct panel_state *);
+
+// Actions on the current interface
+void use_next_node_locked(void);
+void use_prev_node_locked(void);
 int expand_iface_locked(void);
 int collapse_iface_locked(void);
+// Select the current interface for host-granularity browsing (up and down now
+// move within the interface rather than among interfaces).
+int select_iface_locked(void);
+// Go back to interface-granularity browsing.
+int deselect_iface_locked(void);
 
 // Subpanels
 void hide_panel_locked(struct panel_state *ps);
@@ -121,13 +130,6 @@ int display_env_locked(WINDOW *,struct panel_state *);
 int display_help_locked(WINDOW *,struct panel_state *);
 int display_details_locked(WINDOW *,struct panel_state *);
 int new_display_panel(WINDOW *,struct panel_state *,int,int,const wchar_t *);
-
-// Select the current interface for host-granularity browsing (up and down now
-// move within the interface rather than among interfaces).
-int select_iface_locked(void);
-
-// Go back to interface-granularity browsing.
-int deselect_iface_locked(void);
 
 void check_consistency(void); // Debugging -- all assert()s
 

@@ -57,6 +57,9 @@ extern int mvwprintw(WINDOW *,int,int,const char *,...) __attribute__ ((format (
 
 static struct panel_state *active;
 
+// Whether we've entered an interface, and are browsing selected nodes within.
+static int selection_active;
+
 // FIXME granularize things, make packet handler iret-like
 static pthread_mutex_t bfl = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
 
@@ -167,12 +170,20 @@ ncurses_input_thread(void *unsafe_marsh){
 	switch(ch){
 		case KEY_UP: case 'k':
 			lock_ncurses();
+			if(!selection_active){
 				use_prev_iface_locked(w,&details);
+			}else{
+				use_prev_node_locked();
+			}
 			unlock_ncurses();
 			break;
 		case KEY_DOWN: case 'j':
 			lock_ncurses();
+			if(!selection_active){
 				use_next_iface_locked(w,&details);
+			}else{
+				use_next_node_locked();
+			}
 			unlock_ncurses();
 			break;
 		case KEY_RESIZE:
@@ -188,11 +199,13 @@ ncurses_input_thread(void *unsafe_marsh){
 		case 13: // Enter FIXME
 			lock_ncurses();{
 				select_iface_locked();
+				selection_active = 1;
 			}unlock_ncurses();
 			break;
 		case 27: // Escape FIXME
 			lock_ncurses();{
 				deselect_iface_locked();
+				selection_active = 0;
 			}unlock_ncurses();
 			break;
 		case 'C':

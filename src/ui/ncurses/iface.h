@@ -27,7 +27,7 @@ typedef struct iface_state {
 	const char *typestr;		// looked up using iface->arptype
 	struct timeval lastprinted;	// last time we printed the iface
 	int devaction;			// 1 == down, -1 == up, 0 == nothing
-	unsigned nodes;			// number of nodes
+	int nodes;			// number of nodes
 	unsigned hosts;			// number of hosts (a node MAY have one
 					//  or more hosts; a host MUST have one
 					//  or more nodes)
