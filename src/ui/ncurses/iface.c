@@ -292,15 +292,13 @@ print_iface_hosts(const interface *i,const iface_state *is,WINDOW *w,
 		if(line >= 0){
 			l2ntop(l->l2,i->addrlen,hw);
 			if(devname){
-				size_t len = strlen(devname);
-
-				if(len > cols - 5 - HWADDRSTRLEN(i->addrlen)){
-					len = cols - 5 - HWADDRSTRLEN(i->addrlen);
-				}
-				assert(mvwprintw(w,line,1," %c %s %.*s",
-					legend,hw,cols - 1,devname) != ERR);
+				int len = cols - PREFIXSTRLEN * 2 - 5 - HWADDRSTRLEN(i->addrlen);
+				assert(mvwprintw(w,line,1," %c %s %-*.*s",
+					legend,hw,len,len,devname) != ERR);
 			}else{
-				assert(mvwprintw(w,line,1," %c %s",legend,hw) != ERR);
+				int len = cols - PREFIXSTRLEN * 2 - 3;
+				assert(mvwprintw(w,line,1," %c %-*.*s",
+					legend,len,len,hw) != ERR);
 			}
 			if(interface_up_p(i)){
 				char sbuf[PREFIXSTRLEN + 1],dbuf[PREFIXSTRLEN + 1];
