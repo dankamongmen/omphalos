@@ -230,6 +230,13 @@ print_iface_hosts(const interface *i,const iface_state *is,WINDOW *w,
 		line = 1 + !!interface_up_p(i);
 	}
 	l2idx = -1;
+	// lines_for_interface() counts up nodes, hosts, and up to one line of
+	// services per host. if we're a partial, we won't be displaying the
+	// first or last (or both) lines of this output. each line that *would*
+	// be printed increases 'line'. don't print if line doesn't make up for
+	// the degree of top-partialness (line >= 0), but continue. break once
+	// line is greater than the last available line, since we won't print
+	// anymore. l2idx is the current node index, needed for selection.
 	for(l = is->l2objs ; l ; l = l->next){
 		char hw[HWADDRSTRLEN(i->addrlen)];
 		int attrs,l3attrs,rattrs;
@@ -292,23 +299,25 @@ print_iface_hosts(const interface *i,const iface_state *is,WINDOW *w,
 		if(line >= 0){
 			l2ntop(l->l2,i->addrlen,hw);
 			if(devname){
-				int len = cols - PREFIXSTRLEN * 2 - 5 - HWADDRSTRLEN(i->addrlen);
+				int len = cols - PREFIXSTRLEN * 2 - 6 - HWADDRSTRLEN(i->addrlen);
 				assert(mvwprintw(w,line,1," %c %s %-*.*s",
 					legend,hw,len,len,devname) != ERR);
 			}else{
-				int len = cols - PREFIXSTRLEN * 2 - 3;
+				int len = cols - PREFIXSTRLEN * 2 - 4;
 				assert(mvwprintw(w,line,1," %c %-*.*s",
 					legend,len,len,hw) != ERR);
 			}
 			if(interface_up_p(i)){
 				char sbuf[PREFIXSTRLEN + 1],dbuf[PREFIXSTRLEN + 1];
 				if(get_srcpkts(l->l2) == 0 && (l->cat == RTN_MULTICAST || l->cat == RTN_BROADCAST)){
-					mvwprintw(w,line,cols - PREFIXSTRLEN * 1 - 1,PREFIXFMT,
-							prefix(get_dstpkts(l->l2),1,dbuf,sizeof(dbuf),1));
+					wprintw(w,"%-*.*s"PREFIXFMT,PREFIXSTRLEN + 1,PREFIXSTRLEN + 1,
+							"",prefix(get_dstpkts(l->l2),1,dbuf,sizeof(dbuf),1));
 				}else{
-					mvwprintw(w,line,cols - PREFIXSTRLEN * 2 - 2,PREFIXFMT" "PREFIXFMT,prefix(get_srcpkts(l->l2),1,sbuf,sizeof(sbuf),1),
+					wprintw(w,PREFIXFMT" "PREFIXFMT,prefix(get_srcpkts(l->l2),1,sbuf,sizeof(sbuf),1),
 							prefix(get_dstpkts(l->l2),1,dbuf,sizeof(dbuf),1));
 				}
+			}else{
+				// FIXME print to end of line for selection
 			}
 		}
 		++line;
@@ -321,6 +330,8 @@ print_iface_hosts(const interface *i,const iface_state *is,WINDOW *w,
 					break;
 				}
 				if(line >= 0){
+					int len = cols - 5;
+
 					assert(wattrset(w,l3attrs) != ERR);
 					l3ntop(l3->l3,nw,sizeof(nw));
 					if((name = get_l3name(l3->l3)) == NULL){
@@ -328,16 +339,17 @@ print_iface_hosts(const interface *i,const iface_state *is,WINDOW *w,
 					}
 					assert(mvwprintw(w,line,1,"    %s ",nw) != ERR);
 					assert(wattrset(w,rattrs) != ERR);
-					assert(wprintw(w,"%ls",name) != ERR);
+					len = cols - PREFIXSTRLEN * 2 - 8 - strlen(nw);
+					assert(wprintw(w,"%-*.*ls",len,len,name) != ERR);
 					assert(wattrset(w,l3attrs) != ERR);
 					{
 						char sbuf[PREFIXSTRLEN + 1];
 						char dbuf[PREFIXSTRLEN + 1];
 						if(l3_get_srcpkt(l3->l3) == 0 && (l->cat == RTN_MULTICAST || l->cat == RTN_BROADCAST)){
-							mvwprintw(w,line,cols - PREFIXSTRLEN * 1 - 1,PREFIXFMT,
-									prefix(l3_get_dstpkt(l3->l3),1,dbuf,sizeof(dbuf),1));
+							wprintw(w,"%-*.*s"PREFIXFMT,PREFIXSTRLEN + 1,PREFIXSTRLEN + 1,
+									"",prefix(l3_get_dstpkt(l3->l3),1,dbuf,sizeof(dbuf),1));
 						}else{
-							mvwprintw(w,line,cols - PREFIXSTRLEN * 2 - 2,PREFIXFMT" "PREFIXFMT,
+							wprintw(w,PREFIXFMT" "PREFIXFMT,
 									prefix(l3_get_srcpkt(l3->l3),1,sbuf,sizeof(sbuf),1),
 									prefix(l3_get_dstpkt(l3->l3),1,dbuf,sizeof(dbuf),1));
 						}
