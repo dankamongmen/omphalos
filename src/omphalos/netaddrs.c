@@ -267,9 +267,8 @@ lookup_l3host_common(const omphalos_iface *octx,interface *i,struct l2host *l2,
 			return NULL; // FIXME
 		}
 	}
-	// Should probably skip this on NOARP interfaces? FIXME
-	if(routed_family_p(fam) && !knownlocal){
-		cat = l2categorize(i,l2);
+	cat = l2categorize(i,l2);
+	if(!(i->flags & IFF_NOARP) && routed_family_p(fam) && !knownlocal){
 		if(cat == RTN_UNICAST || cat == RTN_LOCAL){
 			struct sockaddr_storage ss;
 			hwaddrint hwaddr = get_hwaddr(l2);
@@ -283,8 +282,6 @@ lookup_l3host_common(const omphalos_iface *octx,interface *i,struct l2host *l2,
 				return &external_l3; // FIXME terrible
 			}
 		}
-	}else{
-		cat = RTN_UNICAST;
 	}
 	// FIXME probably want to make this per-node
 	assert(len <= sizeof(cmp));
