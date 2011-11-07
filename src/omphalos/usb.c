@@ -252,31 +252,48 @@ int find_usb_device(const char *busid __attribute__ ((unused)),
 		struct sysfs_device *sd,topdev_info *tinf){
 	struct sysfs_attribute *attr;
 	struct sysfs_device *parent;
-	char *tmp;
+	unsigned long val;
+	char *tmp,*e;
 
 	if((parent = sysfs_get_device_parent(sd)) == NULL){
 		return -1;
 	}
-	if((attr = sysfs_get_device_attr(parent,"manufacturer")) == NULL){
+	if((attr = sysfs_get_device_attr(parent,"idVendor")) == NULL){
 		return -1;
 	}
-	if((tinf->devname = strdup(attr->value)) == NULL){
+	if((val = strtoul(attr->value,&e,16)) > 0xffffu || *e != '\n' || e == attr->value ||
+					!vendors[val].name){
+		if((attr = sysfs_get_device_attr(parent,"manufacturer")) == NULL){
+			return -1;
+		}
+		if((tinf->devname = strdup(attr->value)) == NULL){
+			return -1;
+		}
+	}else{
+		if((tinf->devname = strdup(vendors[val].name)) == NULL){
+			return -1;
+		}
+	}
+	if((attr = sysfs_get_device_attr(parent,"idProduct")) == NULL){
 		return -1;
 	}
-	if((attr = sysfs_get_device_attr(parent,"product")) == NULL){
-		free(tinf->devname);
-		tinf->devname = NULL;
-		return -1;
+	if((val = strtoul(attr->value,&e,16)) > 0xffffu || *e != '\n' || e == attr->value ||
+			1 /* FIXME find device */){
+		if((attr = sysfs_get_device_attr(parent,"product")) == NULL){
+			free(tinf->devname);
+			tinf->devname = NULL;
+			return -1;
+		}
+		if((tmp = realloc(tinf->devname,strlen(tinf->devname) + strlen(attr->value) + 2)) == NULL){
+			free(tinf->devname);
+			tinf->devname = NULL;
+			return -1;
+		}
+		// They come with a newline at the end, argh!
+		tmp[strlen(tmp) - 1] = ' ';
+		strcat(tmp,attr->value);
+		tmp[strlen(tmp) - 1] = '\0';
+		tinf->devname = tmp;
 	}
-	if((tmp = realloc(tinf->devname,strlen(tinf->devname) + strlen(attr->value) + 2)) == NULL){
-		free(tinf->devname);
-		tinf->devname = NULL;
-		return -1;
-	}
-	// They come with a newline at the end, argh!
-	tmp[strlen(tmp) - 1] = ' ';
-	strcat(tmp,attr->value);
-	tmp[strlen(tmp) - 1] = '\0';
-	tinf->devname = tmp;
 	return 0;
 }
