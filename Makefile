@@ -70,15 +70,16 @@ TTYOBJS:=$(filter $(OUT)/$(SRC)/ui/tty/%.o,$(COBJS))
 
 USBIDS:=usb.ids
 IANAOUI:=ieee-oui.txt
+SUPPORT:=$(USBIDS) $(IANAOUI)
 
 # Requires CAP_NET_ADMIN privileges bestowed upon the binary
-livetest: sudobless $(IANAOUI) $(USBIDS)
+livetest: sudobless $(SUPPORT)
 	$(OMPHALOS)-ncurses -u '' --plog $(OUTCAP)
 
-test: all $(TESTPCAPS) $(IANAOUI)
+test: all $(TESTPCAPS) $(SUPPORT)
 	for i in $(TESTPCAPS) ; do $(OMPHALOS)-tty --plog $(OUTCAP) -f $$i -u "" || exit 1 ; done
 
-valgrind: all $(TESTPCAPS) $(IANAOUI)
+valgrind: all $(TESTPCAPS) $(SUPPORT)
 	for i in $(TESTPCAPS) ; do valgrind --tool=memcheck --leak-check=full $(OMPHALOS)-tty -f $$i -u "" || exit 1 ; done
 
 $(USBIDS):
