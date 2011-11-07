@@ -124,8 +124,7 @@ static struct usb_vendor {
 // UTF-8, but the site serves ISO-8859-1 with invalid UTF-8 characters. FIXME
 static int
 parse_usbids_file(const omphalos_iface *octx,const char *fn){
-	int line = 0,devs = 0,vends = 0;
-	unsigned long curvendor;
+	int line = 0,devs = 0,vends = 0,curvendor = -1;
 	char buf[1024]; // FIXME ugh!
 	FILE *fp;
 
@@ -179,8 +178,24 @@ parse_usbids_file(const omphalos_iface *octx,const char *fn){
 			vendors[curvendor].name = tok;
 			++vends;
 		}else{
-			// FIXME
-			free(tok);
+			struct usb_vendor *vend;
+			struct usb_device *dev;
+
+			// Ought have a vendor context
+			if(curvendor < 0 || vendors[curvendor].name == NULL){
+				goto formaterr;
+			}
+			vend = &vendors[curvendor];
+			dev = realloc(vend->devices,sizeof(*vend->devices) * (vend->devcount + 1));
+			if(dev == NULL){
+				octx->diagnostic(L"Error allocating USB array (%s?)",strerror(errno));
+				fclose(fp);
+				return -1;
+			}
+			vend->devices = dev;
+			vend->devices[vend->devcount].name = tok;
+			vend->devices[vend->devcount].devid = val;
+			++vend->devcount;
 			++devs;
 		}
 		continue;
