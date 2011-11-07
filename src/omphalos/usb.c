@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <ctype.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
@@ -110,18 +111,96 @@ int find_usb_device(const char *busid,struct sysfs_device *sd __attribute__ ((un
 }
 */
 
+static struct usb_vendor {
+	char *name;
+	unsigned devcount;
+	struct usb_device {
+		char *name;
+		unsigned devid;
+	} *devices;
+} vendors[65536];
+
+// Who knows what the hell character set the input file might be. It ought be
+// UTF-8, but the site serves ISO-8859-1 with invalid UTF-8 characters. FIXME
 static int
 parse_usbids_file(const omphalos_iface *octx,const char *fn){
+	int line = 0,devs = 0,vends = 0;
+	unsigned long curvendor;
+	char buf[1024]; // FIXME ugh!
 	FILE *fp;
 
 	if((fp = fopen(fn,"r")) == NULL){
 		octx->diagnostic(L"Couldn't open USB ID db at %s (%s?)",fn,strerror(errno));
 		return -1;
 	}
+	while(fgets(buf,sizeof(buf),fp)){
+		char *c,*e,*nl,*tok;
+		unsigned long val;
+
+		++line;
+		// Verify and strip the trailing newline
+		nl = strchr(buf,'\n');
+		if(!nl){
+			goto formaterr;
+		}
+		*nl = '\0';
+		// Skip leading whitespace
+		c = buf;
+		while(isspace(*c)){
+			++c;
+		}
+		// Ignore comments and blank lines
+		if(*c == '#' || !*c){
+			continue;
+		}
+		// Unfortunately, there's a bunch of crap added on to the end
+		// of the usb.ids file (USB classes, etc). We throw it away...
+		// We ought have 4 hexadecimal digits followed by two spaces...
+		if((val = strtoul(c,&e,16)) > sizeof(vendors) / sizeof(*vendors) || e != c + 4){
+			// FIXME goto formaterr;
+			continue;
+		}
+		if(*e++ != ' ' || *e++ != ' '){
+			// FIXME goto formaterr;
+			continue;
+		}
+		// ...followed by a string.
+		if((tok = strdup(e)) == NULL){
+			octx->diagnostic(L"Error allocating USB ID (%s?)",strerror(errno));
+			fclose(fp);
+			return -1;
+		}
+		// If we're at the beginning of a line, we're a new Vendor
+		if(c == buf){
+			curvendor = val;
+			if(vendors[curvendor].name){
+				goto formaterr;	// duplicate definition
+			}
+			vendors[curvendor].name = tok;
+			++vends;
+		}else{
+			// FIXME
+			free(tok);
+			++devs;
+		}
+		continue;
+
+formaterr:
+		octx->diagnostic(L"Error at line %d of %s",line,fn);
+		fclose(fp);
+		return -1;
+	}
+	if(ferror(fp)){
+		octx->diagnostic(L"Error reading USB ID db at %s (%s?)",fn,strerror(errno));
+		fclose(fp);
+		return -1;
+	}
 	if(fclose(fp)){
 		octx->diagnostic(L"Couldn't close USB ID db at %s (%s?)",fn,strerror(errno));
 		return -1;
 	}
+	octx->diagnostic(L"Reloaded %d vendor%s and %d USB device%s from %s",
+			vends,vends == 1 ? "" : "s",devs,devs == 1 ? "" : "s",fn);
 	return 0;
 }
 
@@ -134,6 +213,17 @@ int init_usb_support(const omphalos_iface *octx,const char *fn){
 }
 
 int stop_usb_support(void){
+	unsigned idx;
+
+	for(idx = 0 ; idx < sizeof(vendors) / sizeof(*vendors) ; ++idx){
+		struct usb_vendor *uv;
+
+		uv = &vendors[idx];
+		if(uv->name){
+			free(uv->name);
+			// FIXME free devices also
+		}
+	}
 	return 0;
 }
 

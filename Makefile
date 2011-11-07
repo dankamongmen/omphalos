@@ -83,7 +83,7 @@ valgrind: all $(TESTPCAPS) $(SUPPORT)
 	for i in $(TESTPCAPS) ; do valgrind --tool=memcheck --leak-check=full $(OMPHALOS)-tty -f $$i -u "" || exit 1 ; done
 
 $(USBIDS):
-	wget http://www.linux-usb.org/usb.ids -O $@
+	wget --header='Accept-Charset: utf-8' http://www.linux-usb.org/usb.ids -O $@
 
 $(IANAOUI):
 	get-oui -v -f $@
