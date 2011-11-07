@@ -235,8 +235,11 @@ int stop_usb_support(void){
 
 		uv = &vendors[idx];
 		if(uv->name){
+			while(uv->devcount--){
+				free(uv->devices[uv->devcount].name);
+			}
+			free(uv->devices);
 			free(uv->name);
-			// FIXME free devices also
 		}
 	}
 	return 0;
