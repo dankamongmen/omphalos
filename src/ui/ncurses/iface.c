@@ -334,7 +334,7 @@ print_iface_hosts(const interface *i,const iface_state *is,WINDOW *w,
 					break;
 				}
 				if(line >= 0){
-					int len;
+					int len,wlen;
 
 					assert(wattrset(w,l3attrs) != ERR);
 					l3ntop(l3->l3,nw,sizeof(nw));
@@ -344,8 +344,11 @@ print_iface_hosts(const interface *i,const iface_state *is,WINDOW *w,
 					assert(mvwprintw(w,line,1,"    %s ",nw) != ERR);
 					assert(wattrset(w,rattrs) != ERR);
 					len = cols - PREFIXSTRLEN * 2 - 8 - strlen(nw);
-					assert(wprintw(w,"%.*ls%*.*s",len,name,len - wcswidth(name,wcslen(name)),
-								len - wcswidth(name,wcslen(name)),"") != ERR);
+					wlen = len - wcswidth(name,wcslen(name));
+					if(wlen < 0){
+						wlen = 0;
+					}
+					assert(wprintw(w,"%.*ls%*.*s",len,name,wlen,wlen,"") != ERR);
 					assert(wattrset(w,l3attrs) != ERR);
 					{
 						char sbuf[PREFIXSTRLEN + 1];
