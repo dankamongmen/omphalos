@@ -299,7 +299,7 @@ print_iface_hosts(const interface *i,const iface_state *is,WINDOW *w,
 			attrs = sattrs;
 			l3attrs = sattrs;
 			rattrs = sattrs;
-			selectchar = L'{';
+			selectchar = l->l3objs && is->expansion >= EXPANSION_HOSTS ? L'⎧' : L'⎨';
 		}else{
 			selectchar = L' ';
 		}
@@ -339,6 +339,13 @@ print_iface_hosts(const interface *i,const iface_state *is,WINDOW *w,
 				char nw[INET6_ADDRSTRLEN + 1]; // FIXME
 				const wchar_t *name;
 
+				if(selectchar != L' '){
+					if(l3->next || (l3->l4objs && is->expansion >= EXPANSION_SERVICES)){
+						selectchar = L'⎪';
+					}else{
+						selectchar = L'⎩';
+					}
+				}
 				if(line >= rows - (partial <= 0)){
 					break;
 				}
@@ -376,6 +383,9 @@ print_iface_hosts(const interface *i,const iface_state *is,WINDOW *w,
 				}
 				++line;
 				if(is->expansion >= EXPANSION_SERVICES){
+					if(selectchar != L' ' && !l3->next){
+						selectchar = L'⎩';
+					}
 					print_host_services(w,l3,&line,rows - (partial <= 0),cols,selectchar);
 				}
 			}
