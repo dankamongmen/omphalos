@@ -146,11 +146,13 @@ l2catcmp(int c0,int c1){
 
 l2obj *add_l2_to_iface(const interface *i,iface_state *is,struct l2host *l2h){
 	l2obj *l2;
+	int idx;
 
 	if( (l2 = get_l2obj(i,l2h)) ){
 		l2obj **prev;
 
 		++is->nodes;
+		idx = 0;
 		for(prev = &is->l2objs ; *prev ; prev = &(*prev)->next){
 			// we want the inverse of l2catcmp()'s priorities
 			if(l2catcmp(l2->cat,(*prev)->cat) > 0){
@@ -163,6 +165,9 @@ l2obj *add_l2_to_iface(const interface *i,iface_state *is,struct l2host *l2h){
 		}
 		l2->next = *prev;
 		*prev = l2;
+		if(is->rb && idx < is->rb->selected){
+			++is->rb->selected;
+		}
 	}
 	return l2;
 }
