@@ -435,6 +435,10 @@ ncurses_setup(const omphalos_iface *octx){
 		assert(init_pair(UCAST_COLOR,COLOR_CYAN,-1) == OK);
 		assert(init_pair(MCAST_COLOR,COLOR_BLUE,-1) == OK);
 		assert(init_pair(BCAST_COLOR,COLOR_MAGENTA,-1) == OK);
+		assert(init_pair(LSELECTED_COLOR,-1,COLOR_CYAN) == OK);
+		assert(init_pair(USELECTED_COLOR,-1,COLOR_CYAN) == OK);
+		assert(init_pair(MSELECTED_COLOR,-1,COLOR_BLUE) == OK);
+		assert(init_pair(BSELECTED_COLOR,-1,COLOR_MAGENTA) == OK);
 		assert(init_pair(LCAST_L3_COLOR,COLOR_CYAN,-1) == OK);
 		assert(init_pair(UCAST_L3_COLOR,COLOR_CYAN,-1) == OK);
 		assert(init_pair(MCAST_L3_COLOR,COLOR_BLUE,-1) == OK);
@@ -443,12 +447,15 @@ ncurses_setup(const omphalos_iface *octx){
 		assert(init_pair(UCAST_RES_COLOR,COLOR_CYAN,-1) == OK);
 		assert(init_pair(MCAST_RES_COLOR,COLOR_BLUE,-1) == OK);
 		assert(init_pair(BCAST_RES_COLOR,COLOR_MAGENTA,-1) == OK);
-		assert(init_pair(SELECTED_COLOR,COLOR_BLACK,COLOR_CYAN) == OK);
 	}else{
 		assert(init_pair(LCAST_COLOR,COLOR_ORANGE,-1) == OK);
 		assert(init_pair(UCAST_COLOR,COLOR_CYAN,-1) == OK);
 		assert(init_pair(MCAST_COLOR,COLOR_BLUE,-1) == OK);
 		assert(init_pair(BCAST_COLOR,COLOR_PURPLE,-1) == OK);
+		assert(init_pair(LSELECTED_COLOR,-1,COLOR_ORANGE) == OK);
+		assert(init_pair(USELECTED_COLOR,-1,COLOR_CYAN) == OK);
+		assert(init_pair(MSELECTED_COLOR,-1,COLOR_BLUE) == OK);
+		assert(init_pair(BSELECTED_COLOR,-1,COLOR_PURPLE) == OK);
 		assert(init_pair(LCAST_L3_COLOR,COLOR_ORANGE_75,-1) == OK);
 		assert(init_pair(UCAST_L3_COLOR,COLOR_CYAN_75,-1) == OK);
 		assert(init_pair(MCAST_L3_COLOR,COLOR_BLUE_75,-1) == OK);
@@ -457,7 +464,6 @@ ncurses_setup(const omphalos_iface *octx){
 		assert(init_pair(UCAST_RES_COLOR,COLOR_CYAN_50,-1) == OK);
 		assert(init_pair(MCAST_RES_COLOR,COLOR_BLUE_50,-1) == OK);
 		assert(init_pair(BCAST_RES_COLOR,COLOR_PURPLE_50,-1) == OK);
-		assert(init_pair(SELECTED_COLOR,COLOR_BLACK,COLOR_CYAN) == OK);
 	}
 	if(curs_set(0) == ERR){
 		errstr = L"Couldn't disable cursor\n";

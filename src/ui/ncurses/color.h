@@ -51,7 +51,10 @@ enum {
 	LCAST_RES_COLOR,		// local name
 	MCAST_RES_COLOR,		// multicast name
 	BCAST_RES_COLOR,		// broadcast name
-	SELECTED_COLOR,			// selected node, all components
+	LSELECTED_COLOR,		// selected node
+	USELECTED_COLOR,
+	MSELECTED_COLOR,
+	BSELECTED_COLOR,
 	MAX_OMPHALOS_COLOR
 };
 

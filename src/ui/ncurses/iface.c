@@ -243,7 +243,7 @@ print_iface_hosts(const interface *i,const iface_state *is,WINDOW *w,
 	// anymore. l2idx is the current node index, needed for selection.
 	for(l = is->l2objs ; l ; l = l->next){
 		char hw[HWADDRSTRLEN(i->addrlen)];
-		int attrs,l3attrs,rattrs;
+		int attrs,l3attrs,rattrs,sattrs;
 		const char *devname;
 		char legend;
 		l3obj *l3;
@@ -257,6 +257,7 @@ print_iface_hosts(const interface *i,const iface_state *is,WINDOW *w,
 				attrs = COLOR_PAIR(UCAST_COLOR);
 				l3attrs = COLOR_PAIR(UCAST_L3_COLOR);
 				rattrs = COLOR_PAIR(UCAST_RES_COLOR);
+				sattrs = COLOR_PAIR(USELECTED_COLOR);
 				devname = get_devname(l->l2);
 				legend = 'U';
 				break;
@@ -264,6 +265,7 @@ print_iface_hosts(const interface *i,const iface_state *is,WINDOW *w,
 				attrs = COLOR_PAIR(LCAST_COLOR) | OUR_BOLD;
 				l3attrs = COLOR_PAIR(LCAST_L3_COLOR) | OUR_BOLD;
 				rattrs = COLOR_PAIR(LCAST_RES_COLOR) | OUR_BOLD;
+				sattrs = COLOR_PAIR(LSELECTED_COLOR);
 				if(interface_virtual_p(i) ||
 					(devname = get_devname(l->l2)) == NULL){
 					devname = i->topinfo.devname;
@@ -274,6 +276,7 @@ print_iface_hosts(const interface *i,const iface_state *is,WINDOW *w,
 				attrs = COLOR_PAIR(MCAST_COLOR);
 				l3attrs = COLOR_PAIR(MCAST_L3_COLOR);
 				rattrs = COLOR_PAIR(MCAST_RES_COLOR);
+				sattrs = COLOR_PAIR(MSELECTED_COLOR);
 				devname = get_devname(l->l2);
 				legend = 'M';
 				break;
@@ -281,6 +284,7 @@ print_iface_hosts(const interface *i,const iface_state *is,WINDOW *w,
 				attrs = COLOR_PAIR(BCAST_COLOR);
 				l3attrs = COLOR_PAIR(BCAST_L3_COLOR);
 				rattrs = COLOR_PAIR(BCAST_RES_COLOR);
+				sattrs = COLOR_PAIR(BSELECTED_COLOR);
 				devname = get_devname(l->l2);
 				legend = 'B';
 				break;
@@ -289,10 +293,9 @@ print_iface_hosts(const interface *i,const iface_state *is,WINDOW *w,
 				break;
 		}
 		if(l2idx == selectedidx){
-			// FIXME use reverse video
-			attrs = COLOR_PAIR(SELECTED_COLOR);
-			l3attrs = COLOR_PAIR(SELECTED_COLOR);
-			rattrs = COLOR_PAIR(SELECTED_COLOR);
+			attrs = sattrs;
+			l3attrs = sattrs;
+			rattrs = sattrs;
 		}
 		if(!interface_up_p(i)){
 			attrs = (attrs & A_BOLD) | COLOR_PAIR(DBORDER_COLOR);
