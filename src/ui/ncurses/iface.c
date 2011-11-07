@@ -162,6 +162,7 @@ l2obj *add_l2_to_iface(const interface *i,iface_state *is,struct l2host *l2h){
 					break;
 				}
 			}
+			++idx;
 		}
 		l2->next = *prev;
 		*prev = l2;
