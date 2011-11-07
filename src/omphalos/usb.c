@@ -270,30 +270,47 @@ int find_usb_device(const char *busid __attribute__ ((unused)),
 			return -1;
 		}
 	}else{
+		const struct usb_vendor *vend;
+
 		if((tinf->devname = strdup(vendors[val].name)) == NULL){
 			return -1;
 		}
+	       	vend = &vendors[val];
+		if((attr = sysfs_get_device_attr(parent,"idProduct")) == NULL){
+			return -1;
+		}
+		if((val = strtoul(attr->value,&e,16)) <= 0xffffu && *e == '\n' && e != attr->value){
+			unsigned dev;
+
+			for(dev = 0 ; dev < vend->devcount ; ++dev){
+				if(vend->devices[dev].devid == val){
+					if((tmp = realloc(tinf->devname,strlen(tinf->devname) + strlen(vend->devices[dev].name) + 2)) == NULL){
+						free(tinf->devname);
+						tinf->devname = NULL;
+						return -1;
+					}
+					tmp[strlen(tmp) - 1] = ' ';
+					strcat(tmp,vend->devices[dev].name);
+					tinf->devname = tmp;
+					return 0;
+				}
+			}
+		}
 	}
-	if((attr = sysfs_get_device_attr(parent,"idProduct")) == NULL){
+	if((attr = sysfs_get_device_attr(parent,"product")) == NULL){
+		free(tinf->devname);
+		tinf->devname = NULL;
 		return -1;
 	}
-	if((val = strtoul(attr->value,&e,16)) > 0xffffu || *e != '\n' || e == attr->value ||
-			1 /* FIXME find device */){
-		if((attr = sysfs_get_device_attr(parent,"product")) == NULL){
-			free(tinf->devname);
-			tinf->devname = NULL;
-			return -1;
-		}
-		if((tmp = realloc(tinf->devname,strlen(tinf->devname) + strlen(attr->value) + 2)) == NULL){
-			free(tinf->devname);
-			tinf->devname = NULL;
-			return -1;
-		}
-		// They come with a newline at the end, argh!
-		tmp[strlen(tmp) - 1] = ' ';
-		strcat(tmp,attr->value);
-		tmp[strlen(tmp) - 1] = '\0';
-		tinf->devname = tmp;
+	if((tmp = realloc(tinf->devname,strlen(tinf->devname) + strlen(attr->value) + 2)) == NULL){
+		free(tinf->devname);
+		tinf->devname = NULL;
+		return -1;
 	}
+	// They come with a newline at the end, argh!
+	tmp[strlen(tmp) - 1] = ' ';
+	strcat(tmp,attr->value);
+	tmp[strlen(tmp) - 1] = '\0';
+	tinf->devname = tmp;
 	return 0;
 }
