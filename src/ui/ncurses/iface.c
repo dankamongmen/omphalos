@@ -191,7 +191,8 @@ l4obj *add_service_to_iface(iface_state *is,struct l3obj *l3,struct l4srv *srv){
 }
 
 static void
-print_host_services(WINDOW *w,const l3obj *l,int *line,int rows,int cols){
+print_host_services(WINDOW *w,const l3obj *l,int *line,int rows,int cols,
+				wchar_t selectchar){
 	const struct l4obj *l4;
 	int n = 0;
 
@@ -207,7 +208,8 @@ print_host_services(WINDOW *w,const l3obj *l,int *line,int rows,int cols){
 			assert(wprintw(w,", %s",l4srvstr(l4->l4)) != ERR);
 			n += 2 + strlen(l4srvstr(l4->l4));
 		}else{
-			assert(mvwprintw(w,*line,1,"     %s",l4srvstr(l4->l4)) != ERR);
+			assert(mvwprintw(w,*line,1,"%lc    %s",
+					selectchar,l4srvstr(l4->l4)) != ERR);
 			++*line;
 			n = 5 + strlen(l4srvstr(l4->l4));
 		}
@@ -245,6 +247,7 @@ print_iface_hosts(const interface *i,const iface_state *is,WINDOW *w,
 		char hw[HWADDRSTRLEN(i->addrlen)];
 		int attrs,l3attrs,rattrs,sattrs;
 		const char *devname;
+		wchar_t selectchar;
 		char legend;
 		l3obj *l3;
 		
@@ -296,6 +299,9 @@ print_iface_hosts(const interface *i,const iface_state *is,WINDOW *w,
 			attrs = sattrs;
 			l3attrs = sattrs;
 			rattrs = sattrs;
+			selectchar = L'{';
+		}else{
+			selectchar = L' ';
 		}
 		if(!interface_up_p(i)){
 			attrs = (attrs & A_BOLD) | COLOR_PAIR(DBORDER_COLOR);
@@ -307,12 +313,12 @@ print_iface_hosts(const interface *i,const iface_state *is,WINDOW *w,
 			l2ntop(l->l2,i->addrlen,hw);
 			if(devname){
 				int len = cols - PREFIXSTRLEN * 2 - 6 - HWADDRSTRLEN(i->addrlen);
-				assert(mvwprintw(w,line,1," %c %s %-*.*s",
-					legend,hw,len,len,devname) != ERR);
+				assert(mvwprintw(w,line,1,"%lc%c %s %-*.*s",
+					selectchar,legend,hw,len,len,devname) != ERR);
 			}else{
 				int len = cols - PREFIXSTRLEN * 2 - 6;
-				assert(mvwprintw(w,line,1," %c %-*.*s",
-					legend,len,len,hw) != ERR);
+				assert(mvwprintw(w,line,1,"%lc%c %-*.*s",
+					selectchar,legend,len,len,hw) != ERR);
 			}
 			if(interface_up_p(i)){
 				char sbuf[PREFIXSTRLEN + 1],dbuf[PREFIXSTRLEN + 1];
@@ -344,7 +350,8 @@ print_iface_hosts(const interface *i,const iface_state *is,WINDOW *w,
 					if((name = get_l3name(l3->l3)) == NULL){
 						name = L"";
 					}
-					assert(mvwprintw(w,line,1,"    %s ",nw) != ERR);
+					assert(mvwprintw(w,line,1,"%lc   %s ",
+						selectchar,nw) != ERR);
 					assert(wattrset(w,rattrs) != ERR);
 					len = cols - PREFIXSTRLEN * 2 - 8 - strlen(nw);
 					wlen = len - wcswidth(name,wcslen(name));
@@ -369,7 +376,7 @@ print_iface_hosts(const interface *i,const iface_state *is,WINDOW *w,
 				}
 				++line;
 				if(is->expansion >= EXPANSION_SERVICES){
-					print_host_services(w,l3,&line,rows - (partial <= 0),cols);
+					print_host_services(w,l3,&line,rows - (partial <= 0),cols,selectchar);
 				}
 			}
 		}
