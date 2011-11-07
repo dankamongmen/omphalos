@@ -3,9 +3,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <omphalos/usb.h>
+#include <omphalos/inotify.h>
+#include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
 
-/* LibUSB 1.0 implementation
+/* LibUSB 1.0 implementation. Unused -- LibUSB is unsuitable for inclusion.
 #include <libusb-1.0/libusb.h>
 static libusb_context *usb;
 
@@ -108,16 +110,35 @@ int find_usb_device(const char *busid,struct sysfs_device *sd __attribute__ ((un
 }
 */
 
-// libsysfs implementation
-#include <sysfs/libsysfs.h>
+static int
+parse_usbids_file(const omphalos_iface *octx,const char *fn){
+	FILE *fp;
 
-int init_usb_support(void){
+	if((fp = fopen(fn,"r")) == NULL){
+		octx->diagnostic(L"Couldn't open USB ID db at %s (%s?)",fn,strerror(errno));
+		return -1;
+	}
+	if(fclose(fp)){
+		octx->diagnostic(L"Couldn't close USB ID db at %s (%s?)",fn,strerror(errno));
+		return -1;
+	}
+	return 0;
+}
+
+// USB ID database implementation
+int init_usb_support(const omphalos_iface *octx,const char *fn){
+	if(watch_file(octx,fn,parse_usbids_file)){
+		return -1;
+	}
 	return 0;
 }
 
 int stop_usb_support(void){
 	return 0;
 }
+
+// libsysfs implementation
+#include <sysfs/libsysfs.h>
 
 int find_usb_device(const char *busid __attribute__ ((unused)),
 		struct sysfs_device *sd,topdev_info *tinf){

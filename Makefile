@@ -68,10 +68,11 @@ COREOBJS:=$(filter $(OUT)/$(SRC)/$(PROJ)/%.o,$(COBJS))
 NCURSESOBJS:=$(filter $(OUT)/$(SRC)/ui/ncurses/%.o,$(COBJS))
 TTYOBJS:=$(filter $(OUT)/$(SRC)/ui/tty/%.o,$(COBJS))
 
+USBIDS:=usb.ids
 IANAOUI:=ieee-oui.txt
 
 # Requires CAP_NET_ADMIN privileges bestowed upon the binary
-livetest: sudobless $(IANAOUI)
+livetest: sudobless $(IANAOUI) $(USBIDS)
 	$(OMPHALOS)-ncurses -u '' --plog $(OUTCAP)
 
 test: all $(TESTPCAPS) $(IANAOUI)
@@ -79,6 +80,9 @@ test: all $(TESTPCAPS) $(IANAOUI)
 
 valgrind: all $(TESTPCAPS) $(IANAOUI)
 	for i in $(TESTPCAPS) ; do valgrind --tool=memcheck --leak-check=full $(OMPHALOS)-tty -f $$i -u "" || exit 1 ; done
+
+$(USBIDS):
+	wget http://www.linux-usb.org/usb.ids -O $@
 
 $(IANAOUI):
 	get-oui -v -f $@
@@ -109,7 +113,7 @@ clean:
 	rm -rf $(OUT) core
 
 clobber: clean
-	rm -rf $(IANAOUI)
+	rm -rf $(IANAOUI) $(USBIDS)
 
 bless: all
 	$(ADDCAPS) $(BIN)

@@ -27,7 +27,8 @@
 #define DEFAULT_USERNAME "nobody"
 #define DEFAULT_PROCROOT "/proc/"
 #define DEFAULT_MODESTRING "active"
-#define DEFAULT_IANA_FILENAME "ieee-oui.txt" // from arp-scan's 'get-oui'
+#define DEFAULT_IANA_FILENAME "ieee-oui.txt"	// arp-scan's 'get-oui'
+#define DEFAULT_USBIDS_FILENAME "usb.ids"	// usbutils' 'update-usbids'
 #define DEFAULT_RESOLVCONF_FILENAME "/etc/resolv.conf"
 
 pthread_key_t omphalos_ctx_key;
@@ -45,6 +46,8 @@ usage(const char *arg0,int ret){
 	fprintf(fp,"-f filename: libpcap-format save file for input.\n");
 	fprintf(fp,"--mode silent|stealthy|active|aggressive|forceful|hostile\n");
 	fprintf(fp,"\t'%s' by default. See documentation for details.\n",DEFAULT_MODESTRING);
+	fprintf(fp,"--usbids filename: USB ID Repository (http://www.linux-usb.org/usb-ids.html).\n");
+	fprintf(fp,"\t'%s' by default. provide empty string to disable.\n",DEFAULT_USBIDS_FILENAME);
 	fprintf(fp,"--ouis filename: IANA's OUI mapping in get-oui(1) format.\n");
 	fprintf(fp,"\t'%s' by default. provide empty string to disable.\n",DEFAULT_IANA_FILENAME);
 	fprintf(fp,"--resolv filename: resolv.conf-format nameserver list.\n");
@@ -128,6 +131,7 @@ mask_cancel_sigs(sigset_t *oldsigs){
 
 enum {
 	OPT_OUIS = 'z' + 1,
+	OPT_USBIDS,
 	OPT_VERSION,
 	OPT_PLOG,
 	OPT_RESOLV,
@@ -141,6 +145,11 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 			.has_arg = 1,
 			.flag = NULL,
 			.val = OPT_OUIS,
+		},{
+			.name = "usbids",
+			.has_arg = 1,
+			.flag = NULL,
+			.val = OPT_USBIDS,
 		},{
 			.name = "version",
 			.has_arg = 0,
@@ -190,6 +199,13 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 				usage(argv[0],EXIT_FAILURE);
 			}
 			pctx->ianafn = optarg;
+			break;
+		}case OPT_USBIDS:{
+			if(pctx->usbidsfn){
+				fprintf(stderr,"Provided --usbids twice\n");
+				usage(argv[0],EXIT_FAILURE);
+			}
+			pctx->usbidsfn = optarg;
 			break;
 		}case OPT_RESOLV:{
 			if(pctx->resolvconf){
@@ -261,6 +277,9 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 	if(pctx->ianafn == NULL){
 		pctx->ianafn = DEFAULT_IANA_FILENAME;
 	}
+	if(pctx->usbidsfn == NULL){
+		pctx->usbidsfn = DEFAULT_USBIDS_FILENAME;
+	}
 	if(pctx->resolvconf == NULL){
 		pctx->resolvconf = DEFAULT_RESOLVCONF_FILENAME;
 	}
@@ -301,6 +320,11 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 	if(init_procfs(&pctx->iface,DEFAULT_PROCROOT)){
 		return -1;
 	}
+	if(strcmp(pctx->usbidsfn,"")){
+		if(init_usb_support(&pctx->iface,pctx->usbidsfn)){
+			return -1;
+		}
+	}
 	if(strcmp(pctx->ianafn,"")){
 		if(init_iana_naming(&pctx->iface,pctx->ianafn)){
 			return -1;
@@ -329,9 +353,6 @@ int omphalos_init(const omphalos_ctx *pctx){
 	}else{
 		if(init_pci_support()){
 			pctx->iface.diagnostic(L"Warning: no PCI support available");
-		}
-		if(init_usb_support()){
-			return -1;
 		}
 		if(handle_netlink_socket(pctx)){
 			return -1;
