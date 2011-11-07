@@ -275,6 +275,7 @@ static int
 handle_rtm_newaddr(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	const struct ifaddrmsg *ia = NLMSG_DATA(nl);
 	struct rtattr *ra;
+	struct l2host *l2;
 	interface *iface;
 	void *as = NULL;
 	uint128_t addr;
@@ -314,9 +315,13 @@ handle_rtm_newaddr(const omphalos_iface *octx,const struct nlmsghdr *nl){
 		}
 		ra = RTA_NEXT(ra,rlen);
 	}
+	lock_interface(iface);
+	l2 = lookup_l2host(octx,iface,iface->addr);
+	lookup_local_l3host(octx,iface,l2,ia->ifa_family,as);
 	if(ia->ifa_family == AF_INET6 && as){
 		set_default_ipv6src(iface,*(const uint128_t *)as);
 	}
+	unlock_interface(iface);
 	return 0;
 }
 
