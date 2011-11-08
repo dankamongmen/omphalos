@@ -8,16 +8,14 @@ extern "C" {
 #include <stddef.h>
 
 struct routepath;
-struct omphalos_iface;
 struct omphalos_packet;
 
 // Return value is 0 if packet was processed entirely, without error, as DNS.
 // Takes the frame where DNS is expected to begin (UDP/TCP payload).
-int handle_dns_packet(const struct omphalos_iface *,struct omphalos_packet *,
-			const void *,size_t) __attribute__ ((nonnull (1,2,3)));
+int handle_dns_packet(struct omphalos_packet *,const void *,size_t)
+			__attribute__ ((nonnull (1,2)));
 
-int tx_dns_ptr(const struct omphalos_iface *,int,const void *,const char *)
-		__attribute__ ((nonnull (1,3,4)));
+int tx_dns_ptr(int,const void *,const char *) __attribute__ ((nonnull (2,3)));
 
 int setup_dns_ptr(const struct routepath *,int,unsigned,size_t,void *,const char *)
 			__attribute__ ((nonnull (1,5,6)));

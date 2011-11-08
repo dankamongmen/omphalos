@@ -29,14 +29,14 @@ void handle_udp_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 	op->l4dst = udp->dest;
 	switch(udp->source){
 		case __constant_htons(DNS_UDP_PORT):{
-			if(handle_dns_packet(octx,op,ubdy,ulen) == 0){
-				observe_service(octx,op->i,op->l2s,op->l3s,op->l3proto,
+			if(handle_dns_packet(op,ubdy,ulen) == 0){
+				observe_service(op->i,op->l2s,op->l3s,op->l3proto,
 					op->l4src,"DNS",NULL);
 			}
 		}break;
 		case __constant_htons(MDNS_UDP_PORT):{
 			// FIXME also check dest?
-			handle_mdns_packet(octx,op,ubdy,ulen);
+			handle_mdns_packet(op,ubdy,ulen);
 		}break;
 		case __constant_htons(DHCP_UDP_PORT):{
 			// FIXME also check dest?

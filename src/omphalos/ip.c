@@ -58,8 +58,8 @@ void handle_ipv6_packet(const omphalos_iface *octx,omphalos_packet *op,
 	// FIXME check extension headers...
 	memcpy(op->l3saddr,&ip->ip6_src,16);
 	memcpy(op->l3daddr,&ip->ip6_dst,16);
-	op->l3s = lookup_l3host(octx,op->i,op->l2s,AF_INET6,&ip->ip6_src);
-	op->l3d = lookup_l3host(octx,op->i,op->l2d,AF_INET6,&ip->ip6_dst);
+	op->l3s = lookup_l3host(op->i,op->l2s,AF_INET6,&ip->ip6_src);
+	op->l3d = lookup_l3host(op->i,op->l2d,AF_INET6,&ip->ip6_dst);
 	const void *nhdr = (const unsigned char *)frame + (len - plen);
 	next = ip->ip6_ctlun.ip6_un1.ip6_un1_nxt;
 
@@ -142,8 +142,8 @@ void handle_ipv4_packet(const omphalos_iface *octx,omphalos_packet *op,
 	}
 	memcpy(op->l3saddr,&ip->saddr,4);
 	memcpy(op->l3daddr,&ip->daddr,4);
-	op->l3s = lookup_l3host(octx,op->i,op->l2s,AF_INET,&ip->saddr);
-	op->l3d = lookup_l3host(octx,op->i,op->l2d,AF_INET,&ip->daddr);
+	op->l3s = lookup_l3host(op->i,op->l2s,AF_INET,&ip->saddr);
+	op->l3d = lookup_l3host(op->i,op->l2d,AF_INET,&ip->daddr);
 
 	const void *nhdr = (const unsigned char *)frame + hlen;
 	const size_t nlen = ntohs(ip->tot_len) - hlen;

@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <omphalos/usb.h>
+#include <omphalos/diag.h>
 #include <omphalos/inotify.h>
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
@@ -123,13 +124,13 @@ static struct usb_vendor {
 // Who knows what the hell character set the input file might be. It ought be
 // UTF-8, but the site serves ISO-8859-1 with invalid UTF-8 characters. FIXME
 static int
-parse_usbids_file(const omphalos_iface *octx,const char *fn){
+parse_usbids_file(const char *fn){
 	int line = 0,devs = 0,vends = 0,curvendor = -1;
 	char buf[1024]; // FIXME ugh!
 	FILE *fp;
 
 	if((fp = fopen(fn,"r")) == NULL){
-		octx->diagnostic(L"Couldn't open USB ID db at %s (%s?)",fn,strerror(errno));
+		diagnostic(L"Couldn't open USB ID db at %s (%s?)",fn,strerror(errno));
 		return -1;
 	}
 	while(fgets(buf,sizeof(buf),fp)){
@@ -165,7 +166,7 @@ parse_usbids_file(const omphalos_iface *octx,const char *fn){
 		}
 		// ...followed by a string.
 		if((tok = strdup(e)) == NULL){
-			octx->diagnostic(L"Error allocating USB ID (%s?)",strerror(errno));
+			diagnostic(L"Error allocating USB ID (%s?)",strerror(errno));
 			fclose(fp);
 			return -1;
 		}
@@ -188,7 +189,7 @@ parse_usbids_file(const omphalos_iface *octx,const char *fn){
 			vend = &vendors[curvendor];
 			dev = realloc(vend->devices,sizeof(*vend->devices) * (vend->devcount + 1));
 			if(dev == NULL){
-				octx->diagnostic(L"Error allocating USB array (%s?)",strerror(errno));
+				diagnostic(L"Error allocating USB array (%s?)",strerror(errno));
 				fclose(fp);
 				return -1;
 			}
@@ -201,27 +202,27 @@ parse_usbids_file(const omphalos_iface *octx,const char *fn){
 		continue;
 
 formaterr:
-		octx->diagnostic(L"Error at line %d of %s",line,fn);
+		diagnostic(L"Error at line %d of %s",line,fn);
 		fclose(fp);
 		return -1;
 	}
 	if(ferror(fp)){
-		octx->diagnostic(L"Error reading USB ID db at %s (%s?)",fn,strerror(errno));
+		diagnostic(L"Error reading USB ID db at %s (%s?)",fn,strerror(errno));
 		fclose(fp);
 		return -1;
 	}
 	if(fclose(fp)){
-		octx->diagnostic(L"Couldn't close USB ID db at %s (%s?)",fn,strerror(errno));
+		diagnostic(L"Couldn't close USB ID db at %s (%s?)",fn,strerror(errno));
 		return -1;
 	}
-	octx->diagnostic(L"Reloaded %d vendor%s and %d USB device%s from %s",
+	diagnostic(L"Reloaded %d vendor%s and %d USB device%s from %s",
 			vends,vends == 1 ? "" : "s",devs,devs == 1 ? "" : "s",fn);
 	return 0;
 }
 
 // USB ID database implementation
-int init_usb_support(const omphalos_iface *octx,const char *fn){
-	if(watch_file(octx,fn,parse_usbids_file)){
+int init_usb_support(const char *fn){
+	if(watch_file(fn,parse_usbids_file)){
 		return -1;
 	}
 	return 0;

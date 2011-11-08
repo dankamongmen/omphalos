@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <omphalos/dns.h>
 #include <omphalos/util.h>
+#include <omphalos/diag.h>
 #include <omphalos/ietf.h>
 #include <omphalos/resolv.h>
 #include <omphalos/service.h>
@@ -121,7 +122,7 @@ create_l3host(int fam,const void *addr,size_t len){
 	return r;
 }
 
-void name_l3host_absolute(const omphalos_iface *octx,const interface *i,
+void name_l3host_absolute(const interface *i,
 			struct l2host *l2,l3host *l3,const char *name,
 			namelevel nlevel){
 	wchar_t *wname;
@@ -131,12 +132,12 @@ void name_l3host_absolute(const omphalos_iface *octx,const interface *i,
 	if( (wname = malloc((len + 1) * sizeof(*wname))) ){
 		mbsrtowcs(wname,&name,len,NULL);
 		wname[len] = L'\0';
-		wname_l3host_absolute(octx,i,l2,l3,wname,nlevel);
+		wname_l3host_absolute(i,l2,l3,wname,nlevel);
 		free(wname);
 	}
 }
 
-void wname_l3host_absolute(const omphalos_iface *octx,const interface *i,
+void wname_l3host_absolute(const interface *i,
 			struct l2host *l2,l3host *l3,const wchar_t *name,
 			namelevel nlevel){
 	pthread_mutex_lock(&l3->nlock);
@@ -144,11 +145,13 @@ void wname_l3host_absolute(const omphalos_iface *octx,const interface *i,
 		wchar_t *tmp;
 
 		if( (tmp = wcsdup(name)) ){
+			const omphalos_ctx *octx = get_octx();
+
 			free(l3->name);
 			l3->name = tmp;
 			l3->nlevel = nlevel;
-			if(octx->host_event){
-				l3->opaque = octx->host_event(i,l2,l3);
+			if(octx->iface.host_event){
+				l3->opaque = octx->iface.host_event(i,l2,l3);
 			}
 		}
 	}
@@ -191,7 +194,7 @@ struct l3host *find_l3host(interface *i,int fam,const void *addr){
 }
 
 static inline void
-update_l3name(const omphalos_iface *octx,struct l2host *l2,l3host *l3,
+update_l3name(struct l2host *l2,l3host *l3,
 		dnstxfxn dnsfxn,char *(*revstrfxn)(const void *),int cat,
 		const void *addr,interface *i,int fam){
 	char *rev;
@@ -216,15 +219,15 @@ update_l3name(const omphalos_iface *octx,struct l2host *l2,l3host *l3,
 		return;
 	}
 	l3->lastnametry = time(NULL);
-	if(queue_for_naming(octx,i,l3,dnsfxn,rev,fam,addr)){
-		wname_l3host_absolute(octx,i,l2,l3,L"Resolution failed",NAMING_LEVEL_FAIL);
+	if(queue_for_naming(i,l3,dnsfxn,rev,fam,addr)){
+		wname_l3host_absolute(i,l2,l3,L"Resolution failed",NAMING_LEVEL_FAIL);
 	}
 	free(rev);
 }
 
 // Interface lock needs be held upon entry
 static l3host *
-lookup_l3host_common(const omphalos_iface *octx,interface *i,struct l2host *l2,
+lookup_l3host_common(interface *i,struct l2host *l2,
 			int fam,const void *addr,int knownlocal){
 	char *(*revstrfxn)(const void *);
         l3host *l3,**prev,**orig;
@@ -263,7 +266,7 @@ lookup_l3host_common(const omphalos_iface *octx,interface *i,struct l2host *l2,
 			revstrfxn = NULL;
 			break;
 		}default:{
-			octx->diagnostic(L"Don't support l3 type %d",fam);
+			diagnostic(L"Don't support l3 type %d",fam);
 			return NULL; // FIXME
 		}
 	}
@@ -278,7 +281,7 @@ lookup_l3host_common(const omphalos_iface *octx,interface *i,struct l2host *l2,
 			// are inferior to those post-configuration. we need a
 			// means of *updating* names whenever routes change,
 			// or as close to true route cache behavior as we like
-			if(get_unicast_address(octx,i,&hwaddr,fam,addr,&ss) == NULL){
+			if(get_unicast_address(i,&hwaddr,fam,addr,&ss) == NULL){
 				return &external_l3; // FIXME terrible
 			}
 		}
@@ -293,7 +296,7 @@ lookup_l3host_common(const omphalos_iface *octx,interface *i,struct l2host *l2,
 			l3->next = *orig;
 			*orig = l3;
 			l3->l2 = l2; // FIXME ought indicate a change!
-			update_l3name(octx,l2,l3,dnsfxn,revstrfxn,cat,addr,i,fam);
+			update_l3name(l2,l3,dnsfxn,revstrfxn,cat,addr,i,fam);
 			return l3;
 		}
 	}
@@ -309,28 +312,28 @@ lookup_l3host_common(const omphalos_iface *octx,interface *i,struct l2host *l2,
 		if(cat == RTN_LOCAL){
 			const wchar_t *lname = ietf_local_lookup(fam,addr);
 			if(lname){
-				wname_l3host_absolute(octx,i,l2,l3,lname,NAMING_LEVEL_GLOBAL);
+				wname_l3host_absolute(i,l2,l3,lname,NAMING_LEVEL_GLOBAL);
 				return l3;
 			} // try to look locals up if they're not special cases
 		}else if(cat == RTN_MULTICAST){
 			const wchar_t *mname = ietf_multicast_lookup(fam,addr);
 			if(mname){
-				wname_l3host_absolute(octx,i,l2,l3,mname,NAMING_LEVEL_GLOBAL);
+				wname_l3host_absolute(i,l2,l3,mname,NAMING_LEVEL_GLOBAL);
 			}
 			return l3; // static multicast naming only
 		}else if(cat == RTN_BROADCAST){
 			const wchar_t *bname = ietf_bcast_lookup(fam,addr);
 			if(bname){
-				wname_l3host_absolute(octx,i,l2,l3,bname,NAMING_LEVEL_GLOBAL);
+				wname_l3host_absolute(i,l2,l3,bname,NAMING_LEVEL_GLOBAL);
 			}
 			return l3; // static broadcast naming only
 		}
 		if(dnsfxn && revstrfxn && (rev = revstrfxn(addr))){
 			// Calls the host event if necessary
-			wname_l3host_absolute(octx,i,l2,l3,L"Resolving...",NAMING_LEVEL_RESOLVING);
+			wname_l3host_absolute(i,l2,l3,L"Resolving...",NAMING_LEVEL_RESOLVING);
 			l3->lastnametry = time(NULL);
-			if(queue_for_naming(octx,i,l3,dnsfxn,rev,fam,addr)){
-				wname_l3host_absolute(octx,i,l2,l3,L"Resolution failed",NAMING_LEVEL_FAIL);
+			if(queue_for_naming(i,l3,dnsfxn,rev,fam,addr)){
+				wname_l3host_absolute(i,l2,l3,L"Resolution failed",NAMING_LEVEL_FAIL);
 			}
 			free(rev);
 		}
@@ -368,23 +371,20 @@ struct l3host *lookup_global_l3host(int fam,const void *addr){
 // returned is different from the wire address, an ARP probe is directed to the
 // link-layer address (this is all handled by get_route()). ARP replies are
 // link-layer only, and thus processed directly (name_l2host_local()).
-l3host *lookup_l3host(const omphalos_iface *octx,interface *i,
-				struct l2host *l2,int fam,const void *addr){
-	return lookup_l3host_common(octx,i,l2,fam,addr,0);
+l3host *lookup_l3host(interface *i,struct l2host *l2,int fam,const void *addr){
+	return lookup_l3host_common(i,l2,fam,addr,0);
 }
 
-l3host *lookup_local_l3host(const omphalos_iface *octx,interface *i,
-				struct l2host *l2,int fam,const void *addr){
-	return lookup_l3host_common(octx,i,l2,fam,addr,1);
+l3host *lookup_local_l3host(interface *i,struct l2host *l2,int fam,const void *addr){
+	return lookup_l3host_common(i,l2,fam,addr,1);
 }
 
-void name_l3host_local(const omphalos_iface *octx,const interface *i,
-		struct l2host *l2,l3host *l3,int family,const void *name,
+void name_l3host_local(const interface *i,struct l2host *l2,l3host *l3,int family,const void *name,
 		namelevel nlevel){
 	char b[INET6_ADDRSTRLEN];
 
 	if(inet_ntop(family,name,b,sizeof(b)) == b){
-		name_l3host_absolute(octx,i,l2,l3,b,nlevel);
+		name_l3host_absolute(i,l2,l3,b,nlevel);
 	}
 }
 

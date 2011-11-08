@@ -5,6 +5,7 @@
 #include <sys/socket.h>
 #include <omphalos/tx.h>
 #include <linux/if_arp.h>
+#include <omphalos/diag.h>
 #include <omphalos/pcap.h>
 #include <linux/if_ether.h>
 #include <linux/if_packet.h>
@@ -16,19 +17,19 @@
 
 // Acquire a frame from the ringbuffer. Start writing, given return value
 // 'frame', at: (char *)frame + ((struct tpacket_hdr *)frame)->tp_mac.
-void *get_tx_frame(const omphalos_iface *octx,interface *i,size_t *fsize){
+void *get_tx_frame(interface *i,size_t *fsize){
 	void *ret;
 
 	if(i->arptype != ARPHRD_LOOPBACK){
 		struct tpacket_hdr *thdr = i->curtxm;
 
 		if(thdr == NULL){
-			octx->diagnostic(L"Can't transmit on %s (fd %d)",i->name,i->fd);
+			diagnostic(L"Can't transmit on %s (fd %d)",i->name,i->fd);
 			return NULL;
 		}
 		if(thdr->tp_status != TP_STATUS_AVAILABLE){
 			if(thdr->tp_status != TP_STATUS_WRONG_FORMAT){
-				octx->diagnostic(L"No available TX frames on %s",i->name);
+				diagnostic(L"No available TX frames on %s",i->name);
 				return NULL;
 			}
 			thdr->tp_status = TP_STATUS_AVAILABLE;
@@ -47,7 +48,7 @@ void *get_tx_frame(const omphalos_iface *octx,interface *i,size_t *fsize){
 		if( (thdr = ret) ){
 			thdr->tp_net = thdr->tp_mac = TPACKET_ALIGN(sizeof(struct tpacket_hdr));
 		}else{
-			octx->diagnostic(L"Can't transmit on %s (fd %d)",i->name,i->fd);
+			diagnostic(L"Can't transmit on %s (fd %d)",i->name,i->fd);
 			*fsize = 0;
 		}
 	}
@@ -68,8 +69,7 @@ void *get_tx_frame(const omphalos_iface *octx,interface *i,size_t *fsize){
 // transport protocol supported now, or likely to be supported ever (due to the
 // mechanics of the mechanism).
 static ssize_t
-send_loopback_frame(const omphalos_iface *octx __attribute__ ((unused)),
-					interface *i,void *frame){
+send_loopback_frame(interface *i,void *frame){
 	struct tpacket_hdr *thdr = frame;
 	const struct udphdr *udp;
 	const struct ethhdr *eth;
@@ -96,7 +96,7 @@ send_loopback_frame(const omphalos_iface *octx __attribute__ ((unused)),
 }*/
 // Mark a frame as ready-to-send. Must have come from get_tx_frame() using this
 // same interface. Yes, we will see packets we generate on the RX ring.
-void send_tx_frame(const omphalos_iface *octx,interface *i,void *frame){
+void send_tx_frame(interface *i,void *frame){
 	int ret;
 
 	if(i->arptype != ARPHRD_LOOPBACK){
@@ -110,13 +110,13 @@ void send_tx_frame(const omphalos_iface *octx,interface *i,void *frame){
 		if(ret == 0){
 			ret = tplen;
 		}
-		//octx->diagnostic(L"Transmitted %d on %s",ret,i->name);
+		//diagnostic(L"Transmitted %d on %s",ret,i->name);
 	}else{
-		ret = send_loopback_frame(octx,i,frame);
+		ret = send_loopback_frame(i,frame);
 		free(frame);
 	}
 	if(ret < 0){
-		octx->diagnostic(L"Error transmitting on %s",i->name);
+		diagnostic(L"Error transmitting on %s",i->name);
 		++i->txerrors;
 	}else{
 		i->txbytes += ret;
@@ -124,24 +124,17 @@ void send_tx_frame(const omphalos_iface *octx,interface *i,void *frame){
 	}
 }
 
-void abort_tx_frame(const omphalos_iface *octx,interface *i,void *frame){
+void abort_tx_frame(interface *i,void *frame){
 	if(i->arptype != ARPHRD_LOOPBACK){
 		++i->txaborts;
 	}else{
 		free(frame);
 	}
-	octx->diagnostic(L"Aborted TX %llu on %s",i->txaborts,i->name);
+	diagnostic(L"Aborted TX %llu on %s",i->txaborts,i->name);
 }
 
-// FIXME
-/*void prepare_arp_req(const omphalos_iface *octx,const interface *i,
-		void *frame,size_t *flen,const void *paddr,size_t pln){
-	assert(octx && i && frame && flen && paddr && pln);
-}*/
-
-void prepare_arp_probe(const omphalos_iface *octx,const interface *i,
-		void *frame,size_t *flen,const void *haddr,size_t hln,
-		const void *paddr,size_t pln,const void *saddr){
+void prepare_arp_probe(const interface *i,void *frame,size_t *flen,
+			const void *haddr,size_t hln,const void *paddr,size_t pln,const void *saddr){
 	struct tpacket_hdr *thdr;
 	unsigned char *payload;
 	struct ethhdr *ehdr;
@@ -150,13 +143,13 @@ void prepare_arp_probe(const omphalos_iface *octx,const interface *i,
 
 	thdr = frame;
 	if(*flen < sizeof(*thdr)){
-		octx->diagnostic(L"%s %s frame too small for tx",__func__,i->name);
+		diagnostic(L"%s %s frame too small for tx",__func__,i->name);
 		return;
 	}
 	tlen = thdr->tp_mac + sizeof(*ehdr) + sizeof(*ahdr)
 			+ 2 * hln + 2 * pln;
 	if(*flen < tlen){
-		octx->diagnostic(L"%s %s frame too small for tx",__func__,i->name);
+		diagnostic(L"%s %s frame too small for tx",__func__,i->name);
 		return;
 	}
 	assert(hln == i->addrlen); // FIXME handle this case

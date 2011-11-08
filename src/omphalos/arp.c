@@ -58,7 +58,7 @@ void handle_arp_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 	// 0.0.0.0; these oughtn't be linked to the hardware addresses.
 	if(ap->ar_pln <= sizeof(PROBESRC)){
 		if(memcmp(PROBESRC,saddr,ap->ar_pln)){
-			op->l3s = lookup_local_l3host(octx,op->i,op->l2s,fam,saddr);
+			op->l3s = lookup_local_l3host(op->i,op->l2s,fam,saddr);
 		}
 	}
 	switch(ap->ar_op){
@@ -76,7 +76,7 @@ void handle_arp_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 			daddr = (const char *)ap + sizeof(*ap) + ap->ar_hln * 2 + ap->ar_pln;
 			if(ap->ar_pln <= sizeof(PROBESRC)){
 				if(memcmp(PROBESRC,daddr,ap->ar_pln)){
-					op->l3d = lookup_local_l3host(octx,op->i,op->l2d,fam,daddr);
+					op->l3d = lookup_local_l3host(op->i,op->l2d,fam,daddr);
 				}
 			}
 		}
@@ -89,17 +89,17 @@ void handle_arp_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 	}}
 }
 
-void send_arp_probe(const omphalos_iface *octx,interface *i,const void *hwaddr,
-		const void *addr,size_t addrlen,const void *saddr){
+void send_arp_probe(interface *i,const void *hwaddr,const void *addr,
+				size_t addrlen,const void *saddr){
 	void *frame;
 	size_t flen;
 
-	if( (frame = get_tx_frame(octx,i,&flen)) ){
+	if( (frame = get_tx_frame(i,&flen)) ){
 		/*char addrstr[INET6_ADDRSTRLEN];
 		inet_ntop(addrlen == 4 ? AF_INET:AF_INET6,addr,addrstr,sizeof(addrstr));
-		octx->diagnostic(L"Probing %s on %s",addrstr,i->name);*/
-		prepare_arp_probe(octx,i,frame,&flen,hwaddr,i->addrlen,
+		diagnostic(L"Probing %s on %s",addrstr,i->name);*/
+		prepare_arp_probe(i,frame,&flen,hwaddr,i->addrlen,
 					addr,addrlen,saddr);
-		send_tx_frame(octx,i,frame);
+		send_tx_frame(i,frame);
 	}
 }

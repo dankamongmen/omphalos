@@ -41,10 +41,10 @@ free_service(l4srv *l){
 	}
 }
 
-void observe_service(const omphalos_iface *octx,struct interface *i,
-			struct l2host *l2,struct l3host *l3,
+void observe_service(struct interface *i,struct l2host *l2,struct l3host *l3,
 			unsigned proto,unsigned port,
 			const char *srv,const char *srvver){
+	const omphalos_ctx *octx = get_octx();
 	l4srv *services,*curs;
 
 	services = l3_getservices(l3);
@@ -56,7 +56,9 @@ void observe_service(const omphalos_iface *octx,struct interface *i,
 	curs = new_service(proto,port,srv,srvver);
 	curs->next = services;
 	l3_setservices(l3,curs);
-	octx->srv_event(i,l2,l3,curs);
+	if(octx->iface.srv_event){
+		octx->iface.srv_event(i,l2,l3,curs);
+	}
 }
 
 // Destroy a services structure.

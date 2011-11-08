@@ -5,6 +5,7 @@
 #include <string.h>
 #include <limits.h>
 #include <pthread.h>
+#include <omphalos/diag.h>
 #include <omphalos/procfs.h>
 #include <omphalos/inotify.h>
 #include <omphalos/omphalos.h>
@@ -76,43 +77,43 @@ lex_state(FILE *fp,unsigned n){
 }
 
 static int
-lex_unsigned_file(const omphalos_iface *octx,const char *fn,unsigned long n){
+lex_unsigned_file(const char *fn,unsigned long n){
 	FILE *fp;
 	int val;
 
 	assert(n <= INT_MAX);
 	if((fp = fopen(fn,"r")) == NULL){
-		octx->diagnostic(L"Couldn't open %s (%s?)",fn,strerror(errno));
+		diagnostic(L"Couldn't open %s (%s?)",fn,strerror(errno));
 		return -1;
 	}
 	if((val = lex_state(fp,n)) < 0){
-		octx->diagnostic(L"Error parsing %s",fn);
+		diagnostic(L"Error parsing %s",fn);
 		fclose(fp);
 		return -1;
 	}
 	if(fclose(fp)){
-		octx->diagnostic(L"Error closing %s (%s?)",fn,strerror(errno));
+		diagnostic(L"Error closing %s (%s?)",fn,strerror(errno));
 		return -1;
 	}
 	return val;
 }
 
 static char *
-lex_string_file(const omphalos_iface *octx,const char *fn){
+lex_string_file(const char *fn){
 	char *val;
 	FILE *fp;
 
 	if((fp = fopen(fn,"r")) == NULL){
-		octx->diagnostic(L"Couldn't open %s (%s?)",fn,strerror(errno));
+		diagnostic(L"Couldn't open %s (%s?)",fn,strerror(errno));
 		return NULL;
 	}
 	if((val = lex_string(fp)) == NULL){
-		octx->diagnostic(L"Error parsing %s",fn);
+		diagnostic(L"Error parsing %s",fn);
 		fclose(fp);
 		return NULL;
 	}
 	if(fclose(fp)){
-		octx->diagnostic(L"Error closing %s (%s?)",fn,strerror(errno));
+		diagnostic(L"Error closing %s (%s?)",fn,strerror(errno));
 		free(val);
 		return NULL;
 	}
@@ -120,10 +121,10 @@ lex_string_file(const omphalos_iface *octx,const char *fn){
 }
 
 static int
-proc_ipv4_ip_forward(const omphalos_iface *octx,const char *fn){
+proc_ipv4_ip_forward(const char *fn){
 	int ipv4f;
 
-	if((ipv4f = lex_unsigned_file(octx,fn,1)) < 0){
+	if((ipv4f = lex_unsigned_file(fn,1)) < 0){
 		return -1;
 	}
 	pthread_mutex_lock(&netlock);
@@ -133,10 +134,10 @@ proc_ipv4_ip_forward(const omphalos_iface *octx,const char *fn){
 }
 
 static int
-proc_ipv6_ip_forward(const omphalos_iface *octx,const char *fn){
+proc_ipv6_ip_forward(const char *fn){
 	int ipv6f;
 
-	if((ipv6f = lex_unsigned_file(octx,fn,1)) < 0){
+	if((ipv6f = lex_unsigned_file(fn,1)) < 0){
 		return -1;
 	}
 	pthread_mutex_lock(&netlock);
@@ -146,10 +147,10 @@ proc_ipv6_ip_forward(const omphalos_iface *octx,const char *fn){
 }
 
 static int
-proc_proxy_arp(const omphalos_iface *octx,const char *fn){
+proc_proxy_arp(const char *fn){
 	int parp;
 
-	if((parp = lex_unsigned_file(octx,fn,1)) < 0){
+	if((parp = lex_unsigned_file(fn,1)) < 0){
 		return -1;
 	}
 	pthread_mutex_lock(&netlock);
@@ -159,10 +160,10 @@ proc_proxy_arp(const omphalos_iface *octx,const char *fn){
 }
 
 static int
-proc_tcp_fack(const omphalos_iface *octx,const char *fn){
+proc_tcp_fack(const char *fn){
 	int fack;
 
-	if((fack = lex_unsigned_file(octx,fn,1)) < 0){
+	if((fack = lex_unsigned_file(fn,1)) < 0){
 		return -1;
 	}
 	pthread_mutex_lock(&netlock);
@@ -172,10 +173,10 @@ proc_tcp_fack(const omphalos_iface *octx,const char *fn){
 }
 
 static int
-proc_tcp_frto(const omphalos_iface *octx,const char *fn){
+proc_tcp_frto(const char *fn){
 	int frto;
 
-	if((frto = lex_unsigned_file(octx,fn,2)) < 0){
+	if((frto = lex_unsigned_file(fn,2)) < 0){
 		return -1;
 	}
 	pthread_mutex_lock(&netlock);
@@ -185,10 +186,10 @@ proc_tcp_frto(const omphalos_iface *octx,const char *fn){
 }
 
 static int
-proc_tcp_sack(const omphalos_iface *octx,const char *fn){
+proc_tcp_sack(const char *fn){
 	int sack;
 
-	if((sack = lex_unsigned_file(octx,fn,1)) < 0){
+	if((sack = lex_unsigned_file(fn,1)) < 0){
 		return -1;
 	}
 	pthread_mutex_lock(&netlock);
@@ -198,10 +199,10 @@ proc_tcp_sack(const omphalos_iface *octx,const char *fn){
 }
 
 static int
-proc_tcp_dsack(const omphalos_iface *octx,const char *fn){
+proc_tcp_dsack(const char *fn){
 	int dsack;
 
-	if((dsack = lex_unsigned_file(octx,fn,1)) < 0){
+	if((dsack = lex_unsigned_file(fn,1)) < 0){
 		return -1;
 	}
 	pthread_mutex_lock(&netlock);
@@ -211,10 +212,10 @@ proc_tcp_dsack(const omphalos_iface *octx,const char *fn){
 }
 
 static int
-proc_tcp_ccalg(const omphalos_iface *octx,const char *fn){
+proc_tcp_ccalg(const char *fn){
 	char *ccalg;
 
-	if((ccalg = lex_string_file(octx,fn)) == NULL){
+	if((ccalg = lex_string_file(fn)) == NULL){
 		return -1;
 	}
 	pthread_mutex_lock(&netlock);
@@ -239,34 +240,34 @@ static const struct procent {
 	{ .path = NULL,					.fxn = NULL,			}
 };
 
-int init_procfs(const omphalos_iface *octx,const char *procroot){
+int init_procfs(const char *procroot){
 	const struct procent *p;
 	char path[PATH_MAX],*pp;
 	int s,ps;
 
 	ps = sizeof(path);
 	if((s = snprintf(path,sizeof(path),"%s",procroot)) >= ps){
-		octx->diagnostic(L"Bad procfs mountpath: %s",procroot);
+		diagnostic(L"Bad procfs mountpath: %s",procroot);
 		return -1;
 	}
 	ps -= s;
 	pp = path + s;
 	for(p = procents ; p->path ; ++p){
 		if(snprintf(pp,ps,"%s",p->path) >= ps){
-			octx->diagnostic(L"Bad path: %s%s",procroot,p->path);
+			diagnostic(L"Bad path: %s%s",procroot,p->path);
 			return -1;
-		}else if(watch_file(octx,path,p->fxn)){
+		}else if(watch_file(path,p->fxn)){
 			return -1;
 		}
 	}
 	return 0;
 }
 
-int cleanup_procfs(const omphalos_iface *octx){
+int cleanup_procfs(void){
 	int err;
 
 	if( (err = pthread_mutex_destroy(&netlock)) ){
-		octx->diagnostic(L"Error destroying netlock (%s?)",strerror(err));
+		diagnostic(L"Error destroying netlock (%s?)",strerror(err));
 		return -1;
 	}
 	free(netstate.tcp_ccalg);

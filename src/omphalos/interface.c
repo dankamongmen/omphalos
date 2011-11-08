@@ -185,7 +185,7 @@ int print_all_iface_stats(FILE *fp,interface *agg){
 
 // Interface lock must be held upon entry
 // FIXME need to check and ensure they don't overlap with existing routes
-int add_route4(const omphalos_iface *octx,interface *i,const struct in_addr *s,
+int add_route4(interface *i,const struct in_addr *s,
 		const struct in_addr *via,const struct in_addr *src,
 		unsigned blen,int iif){
 	ip4route *r,**prev;
@@ -200,8 +200,8 @@ int add_route4(const omphalos_iface *octx,interface *i,const struct in_addr *s,
 
 		memcpy(&r->src,src,sizeof(*src));
 		r->addrs |= ROUTE_HAS_SRC;
-		l2 = lookup_l2host(octx,i,i->addr);
-		lookup_l3host(octx,i,l2,AF_INET,src);
+		l2 = lookup_l2host(i,i->addr);
+		lookup_l3host(i,l2,AF_INET,src);
 	}
 	if(via){
 		memcpy(&r->via,via,sizeof(*via));
@@ -233,7 +233,7 @@ int add_route4(const omphalos_iface *octx,interface *i,const struct in_addr *s,
 }
 
 // Interface lock must be held upon entry
-int add_route6(const omphalos_iface *octx,interface *i,const struct in6_addr *s,
+int add_route6(interface *i,const struct in6_addr *s,
 		const struct in6_addr *via,const struct in6_addr *src,
 		unsigned blen,int iif){
 	ip6route *r;
@@ -249,8 +249,8 @@ int add_route6(const omphalos_iface *octx,interface *i,const struct in6_addr *s,
 
 		memcpy(&r->src,src,sizeof(*src));
 		r->addrs |= ROUTE_HAS_SRC;
-		l2 = lookup_l2host(octx,i,i->addr);
-		lookup_l3host(octx,i,l2,AF_INET6,src);
+		l2 = lookup_l2host(i,i->addr);
+		lookup_l3host(i,l2,AF_INET6,src);
 	}
 	if(via){
 		memcpy(&r->via,via,sizeof(*via));
@@ -530,9 +530,7 @@ get_route6(const interface *i,const void *ip){
 }
 
 const void *
-get_source_address(const struct omphalos_iface *octx,interface *i,
-			int fam,const void *addr,void *s){
-	assert(octx); // FIXME
+get_source_address(interface *i,int fam,const void *addr,void *s){
 	switch(fam){
 		case AF_INET:{
 			const ip4route *i4r = addr ? get_route4(i,addr) : i->ip4r;
@@ -558,11 +556,9 @@ get_source_address(const struct omphalos_iface *octx,interface *i,
 }
 
 const void *
-get_unicast_address(const struct omphalos_iface *octx,interface *i,
-			const void *hwaddr,int fam,const void *addr,void *r){
+get_unicast_address(interface *i,const void *hwaddr,int fam,const void *addr,void *r){
 	int ret = 0;
 
-	assert(octx); // FIXME
 	assert(hwaddr); // FIXME
 	switch(fam){
 		case AF_INET:{
@@ -586,7 +582,7 @@ get_unicast_address(const struct omphalos_iface *octx,interface *i,
 						if(i4v->addrs & ROUTE_HAS_SRC){
 							uint32_t v = i4v->src;
 							assert(*(const uint32_t *)&i4v->src);
-							send_arp_probe(octx,i,hwaddr,
+							send_arp_probe(i,hwaddr,
 									addr,
 									sizeof(uint32_t),
 									&i4v->src);

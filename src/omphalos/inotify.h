@@ -5,14 +5,12 @@
 extern "C" {
 #endif
 
-struct omphalos_iface;
+typedef int (*watchcbfxn)(const char *);
 
-typedef int (*watchcbfxn)(const struct omphalos_iface *,const char *);
-
-int watch_init(const struct omphalos_iface *);
-int watch_file(const struct omphalos_iface *,const char *,watchcbfxn);
-int handle_watch_event(const struct omphalos_iface *,int);
-int watch_stop(const struct omphalos_iface *);
+int watch_init(void);
+int watch_file(const char *,watchcbfxn);
+int handle_watch_event(int);
+int watch_stop(void);
 
 #ifdef __cplusplus
 }

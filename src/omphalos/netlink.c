@@ -17,6 +17,7 @@
 #include <linux/if_addr.h>
 #include <linux/netlink.h>
 #include <linux/version.h>
+#include <omphalos/diag.h>
 #include <omphalos/route.h>
 #include <omphalos/sysfs.h>
 #include <linux/rtnetlink.h>
@@ -186,8 +187,8 @@ handle_rtm_newneigh(const omphalos_iface *octx,const struct nlmsghdr *nl){
 			struct l2host *l2;
 
 			lock_interface(iface);
-			l2 = lookup_l2host(octx,iface,ll);
-			lookup_local_l3host(octx,iface,l2,nd->ndm_family,ad);
+			l2 = lookup_l2host(iface,ll);
+			lookup_local_l3host(iface,l2,nd->ndm_family,ad);
 			unlock_interface(iface);
 		}
 	}
@@ -319,8 +320,8 @@ handle_rtm_newaddr(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	if(ia->ifa_family == AF_INET6 && as){
 		set_default_ipv6src(iface,*(const uint128_t *)as);
 	}
-	l2 = lookup_l2host(octx,iface,iface->addr);
-	lookup_local_l3host(octx,iface,l2,ia->ifa_family,as);
+	l2 = lookup_l2host(iface,iface->addr);
+	lookup_local_l3host(iface,l2,ia->ifa_family,as);
 	unlock_interface(iface);
 	return 0;
 }
@@ -339,7 +340,7 @@ handle_rtm_dellink(const omphalos_iface *octx,const struct nlmsghdr *nl){
 }
 
 typedef struct psocket_marsh {
-	const omphalos_iface *octx;
+	const omphalos_ctx *ctx;
 	interface *i;
 	int cancelled;
 	pthread_cond_t cond;
@@ -358,19 +359,17 @@ ring_packet_loop(psocket_marsh *pm){
 		int r;
 
 		if( (r = pthread_mutex_lock(&pm->i->lock)) ){
-			pm->octx->diagnostic(L"Couldn't lock on %s (%s?)",
-					pm->i->name,strerror(r));
+			diagnostic(L"Couldn't lock %s (%s?)",pm->i->name,strerror(r));
 			return -1;
 		}
-		if((r = handle_ring_packet(pm->octx,pm->i,pm->i->rfd,rxm)) == 0){
+		if((r = handle_ring_packet(&pm->ctx->iface,pm->i,pm->i->rfd,rxm)) == 0){
 			rxm += inclen(&idx,&pm->i->rtpr);
 		}else if(r < 0){
 			pthread_mutex_unlock(&pm->i->lock);
 			return -1;
 		}
 		if( (r = pthread_mutex_unlock(&pm->i->lock)) ){
-			pm->octx->diagnostic(L"Couldn't lock on %s (%s?)",
-					pm->i->name,strerror(r));
+			diagnostic(L"Couldn't unlock %s (%s?)",pm->i->name,strerror(r));
 			return -1;
 		}
 	}
@@ -382,7 +381,7 @@ psocket_thread(void *unsafe){
 	psocket_marsh *pm = unsafe;
 	int r;
 
-	if(pthread_setspecific(omphalos_ctx_key,pm->octx)){
+	if(pthread_setspecific(omphalos_ctx_key,pm->ctx)){
 		return "couldn't set TSD";
 	}
 	// We control thread exit via the global cancelled value, set in the
@@ -470,7 +469,7 @@ prepare_rx_socket(const omphalos_iface *octx,interface *iface,int idx){
 		if((iface->rs = mmap_rx_psocket(octx,iface->rfd,idx,
 				iface->mtu,&iface->rxm,&iface->rtpr)) > 0){
 			if( (iface->pmarsh = pmarsh_create()) ){
-				iface->pmarsh->octx = octx;
+				iface->pmarsh->ctx = get_octx();
 				iface->pmarsh->i = iface;
 				iface->curtxm = iface->txm;
 				iface->txidx = 0;
@@ -689,10 +688,10 @@ handle_newlink_locked(const omphalos_iface *octx,interface *iface,
 
 		iface->opaque = octx->iface_event(iface,iface->opaque);
 		if(iface->addr){
-			lookup_l2host(octx,iface,iface->addr);
+			lookup_l2host(iface,iface->addr);
 		}
 		if(iface->bcast && (iface->flags & IFF_BROADCAST)){
-			lookup_l2host(octx,iface,iface->bcast);
+			lookup_l2host(iface,iface->bcast);
 		}
 		if(iface->arptype != ARPHRD_LOOPBACK){
 			r = prepare_packet_sockets(octx,iface,ii->ifi_index);
@@ -780,7 +779,7 @@ handle_netlink_error(const omphalos_iface *octx,int fd,const struct nlmsgerr *ne
 }
 
 static int
-handle_netlink_event(const omphalos_iface *octx,int fd){
+handle_netlink_event(int fd){
 	char buf[4096]; // FIXME numerous problems
 	struct iovec iov[1] = { { buf, sizeof(buf) } };
 	struct sockaddr_nl sa;
@@ -789,6 +788,8 @@ handle_netlink_event(const omphalos_iface *octx,int fd){
 	};
 	struct nlmsghdr *nh;
 	int r,inmulti,res;
+	const omphalos_ctx *ctx = get_octx();
+	const omphalos_iface *octx = &ctx->iface;
 
 	res = 0;
 	// For handling multipart messages
@@ -856,17 +857,17 @@ netlink_thread(const omphalos_iface *octx){
 			.events = POLLIN | POLLRDNORM | POLLERR,
 		}
 	};
-	int(* const callbacks[2])(const omphalos_iface *,int) = {
+	int(* const callbacks[2])(int) = {
 		handle_netlink_event,
 		handle_watch_event,
 	};
 	int events;
 
-	if((pfd[1].fd = watch_init(octx)) < 0){
+	if((pfd[1].fd = watch_init()) < 0){
 		return -1;
 	}
 	if((pfd[0].fd = netlink_socket(octx)) < 0){
-		watch_stop(octx);
+		watch_stop();
 		return -1;
 	}
 	if(discover_bluetooth(octx)){
@@ -901,14 +902,14 @@ netlink_thread(const omphalos_iface *octx){
 			if(pfd[z].revents & POLLERR){
 				octx->diagnostic(L"Error polling socket %d\n",pfd[z].fd);
 			}else if(pfd[z].revents){
-				callbacks[z](octx,pfd[z].fd);
+				callbacks[z](pfd[z].fd);
 			}
 			pfd[z].revents = 0;
 		}
 	}
 done:
 	octx->diagnostic(L"Shutting down (cancelled = %u)...",cancelled);
-	watch_stop(octx);
+	watch_stop();
 	close(pfd[0].fd);
 	return cancelled ? 0 : -1;
 }

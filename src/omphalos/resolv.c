@@ -6,6 +6,7 @@
 #include <arpa/inet.h>
 #include <omphalos/dns.h>
 #include <omphalos/mdns.h>
+#include <omphalos/diag.h>
 #include <omphalos/util.h>
 #include <asm/byteorder.h>
 #include <omphalos/resolv.h>
@@ -48,9 +49,8 @@ free_resolvers(resolver **r){
 	}
 }
 
-int queue_for_naming(const struct omphalos_iface *octx,struct interface *i,
-			struct l3host *l3,dnstxfxn dnsfxn,const char *revstr,
-			int fam,const void *lookup){
+int queue_for_naming(struct interface *i,struct l3host *l3,dnstxfxn dnsfxn,
+			const char *revstr,int fam,const void *lookup){
 	int ret = 0;
 
 	if(get_l3nlevel(l3) < NAMING_LEVEL_NXDOMAIN){
@@ -59,14 +59,14 @@ int queue_for_naming(const struct omphalos_iface *octx,struct interface *i,
 		}
 		// FIXME round-robin or even use the simple resolv.conf algorithm
 		if(resolvers){
-			ret = dnsfxn(octx,AF_INET,&resolvers->addr.ip4,revstr);
+			ret = dnsfxn(AF_INET,&resolvers->addr.ip4,revstr);
 		}
 		if(resolvers6){
-			ret = dnsfxn(octx,AF_INET6,&resolvers6->addr.ip6,revstr);
+			ret = dnsfxn(AF_INET6,&resolvers6->addr.ip6,revstr);
 		}
 		pthread_mutex_unlock(&resolver_lock);
 	}
-	ret |= tx_mdns_ptr(octx,i,revstr,fam,lookup);
+	ret |= tx_mdns_ptr(i,revstr,fam,lookup);
 	return ret;
 }
 
@@ -99,8 +99,7 @@ offer_nameserver(int nsfam,const void *nameserver){
 	pthread_mutex_unlock(&resolver_lock);
 }*/
 
-int offer_resolution(const omphalos_iface *octx,int fam,const void *addr,
-				const char *name,namelevel nlevel,
+int offer_resolution(int fam,const void *addr,const char *name,namelevel nlevel,
 				int nsfam,const void *nameserver){
 	wchar_t *wname;
 	size_t len;
@@ -112,13 +111,12 @@ int offer_resolution(const omphalos_iface *octx,int fam,const void *addr,
 	}
 	assert(mbsrtowcs(wname,&name,len,NULL) == len);
 	wname[len] = L'\0';
-	r = offer_wresolution(octx,fam,addr,wname,nlevel,nsfam,nameserver);
+	r = offer_wresolution(fam,addr,wname,nlevel,nsfam,nameserver);
 	free(wname);
 	return r;
 }
 
-int offer_wresolution(const omphalos_iface *octx,int fam,const void *addr,
-				const wchar_t *name,namelevel nlevel,
+int offer_wresolution(int fam,const void *addr,const wchar_t *name,namelevel nlevel,
 				int nsfam __attribute__ ((unused)),
 				const void *nameserver __attribute__ ((unused))){
 	struct interface *i;
@@ -133,19 +131,19 @@ int offer_wresolution(const omphalos_iface *octx,int fam,const void *addr,
 	// FIXME needs to lock the interface to touch l3 objs
 	l2 = l3_getlastl2(l3);
 	i = l2_getiface(l2);
-	wname_l3host_absolute(octx,i,l2,l3,name,nlevel);
+	wname_l3host_absolute(i,l2,l3,name,nlevel);
 	/*{
 		char abuf[INET6_ADDRSTRLEN],rbuf[INET6_ADDRSTRLEN];
 
 		inet_ntop(fam,addr,abuf,sizeof(abuf));
 		inet_ntop(nsfam,nameserver,rbuf,sizeof(rbuf));
-		octx->diagnostic(L"Resolved %s @%s as %ls",abuf,rbuf,name);
+		diagnostic(L"Resolved %s @%s as %ls",abuf,rbuf,name);
 	}*/
 	return 0;
 }
 
 static int
-parse_resolv_conf(const omphalos_iface *octx,const char *fn){
+parse_resolv_conf(const char *fn){
 	resolver *revs = NULL;
 	unsigned count = 0;
 	int l,ret = -1;
@@ -154,7 +152,7 @@ parse_resolv_conf(const omphalos_iface *octx,const char *fn){
 	char *b;
 
 	if((fp = fopen(fn,"r")) == NULL){
-		octx->diagnostic(L"Couldn't open %s",fn);
+		diagnostic(L"Couldn't open %s",fn);
 		return -1;
 	}
 	b = NULL;
@@ -208,26 +206,26 @@ parse_resolv_conf(const omphalos_iface *octx,const char *fn){
 		resolvers = revs;
 		pthread_mutex_unlock(&resolver_lock);
 		free_resolvers(&r);
-		octx->diagnostic(L"Reloaded %u resolver%s from %s",count,
+		diagnostic(L"Reloaded %u resolver%s from %s",count,
 				count == 1 ? "" : "s",fn);
 		ret = 0;
 	}
 	return ret;
 }
 
-int init_naming(const omphalos_iface *octx,const char *resolvconf){
-	if(watch_file(octx,resolvconf,parse_resolv_conf)){
+int init_naming(const char *resolvconf){
+	if(watch_file(resolvconf,parse_resolv_conf)){
 		return -1;
 	}
 	return 0;
 }
 
-int cleanup_naming(const omphalos_iface *octx){
+int cleanup_naming(void){
 	int er;
 
 	er = 0;
 	if( (er = pthread_mutex_destroy(&resolver_lock)) ){
-		octx->diagnostic(L"Error destroying resolver lock (%s)",strerror(er));
+		diagnostic(L"Error destroying resolver lock (%s)",strerror(er));
 	}
 	free_resolvers(&resolvers6);
 	free_resolvers(&resolvers);

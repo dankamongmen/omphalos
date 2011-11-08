@@ -95,6 +95,9 @@ typedef struct omphalos_ctx {
 // The omphalos_ctx for a given thread can be accessed via this TSD.
 extern pthread_key_t omphalos_ctx_key;
 
+// Retrieve this thread's omphalos_ctx
+const omphalos_ctx *get_octx(void);
+
 // Parse the command line for common arguments (a UI introducing its own
 // CLI arguments would need to extract them before calling, as stands
 // FIXME). Initializes and prepares an omphalos_ctx.

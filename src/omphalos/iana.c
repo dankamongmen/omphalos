@@ -4,6 +4,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
+#include <omphalos/diag.h>
 #include <omphalos/iana.h>
 #include <omphalos/util.h>
 #include <omphalos/inotify.h>
@@ -48,7 +49,7 @@ free_ouitries(ouitrie **tries){
 }
 
 static int
-parse_file(const omphalos_iface *octx,const char *fn){
+parse_file(const char *fn){
 	unsigned allocerr,count = 0;
 	const char *line;
 	int l,ret = -1;
@@ -56,7 +57,7 @@ parse_file(const omphalos_iface *octx,const char *fn){
 	char *b;
 
 	if((fp = fopen(fn,"r")) == NULL){
-		octx->diagnostic(L"Coudln't open %s (%s?)",fn,strerror(errno));
+		diagnostic(L"Coudln't open %s (%s?)",fn,strerror(errno));
 		return -1;
 	}
 	clearerr(fp);
@@ -116,15 +117,15 @@ parse_file(const omphalos_iface *octx,const char *fn){
 	}
 	free(b);
 	if(allocerr){
-		octx->diagnostic(L"Couldn't allocate for %s",fn);
+		diagnostic(L"Couldn't allocate for %s",fn);
 	}else if(ferror(fp)){
-		octx->diagnostic(L"Error reading %s",fn);
+		diagnostic(L"Error reading %s",fn);
 	}else{
 		ret = 0;
 	}
 	fclose(fp);
 	if(count){
-		octx->diagnostic(L"Reloaded %u OUI%s from %s",count,
+		diagnostic(L"Reloaded %u OUI%s from %s",count,
 					count == 1 ? "" : "s",fn);
 	}
 	return ret;
@@ -158,7 +159,7 @@ make_oui(const char *broadcast){
 }
 
 // Load IANA OUI descriptions from the specified file, and watch it for updates
-int init_iana_naming(const omphalos_iface *octx,const char *fn){
+int init_iana_naming(const char *fn){
 	ouitrie *path,*p;
 
 	if(((p = make_oui(NULL)) == NULL)){
@@ -170,7 +171,7 @@ int init_iana_naming(const omphalos_iface *octx,const char *fn){
 	}
 	trie[51u] = p;
 	p->next[51u] = path;
-	if(watch_file(octx,fn,parse_file)){
+	if(watch_file(fn,parse_file)){
 		return -1;
 	}
 	return 0;

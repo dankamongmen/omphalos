@@ -7,10 +7,8 @@ extern "C" {
 
 #include <stddef.h>
 
-struct omphalos_iface;
-
 // Load IANA OUI descriptions from the specified file, and watch it for updates
-int init_iana_naming(const struct omphalos_iface *,const char *);
+int init_iana_naming(const char *);
 
 // Look up the 24-bit OUI against IANA specifications.
 const char *iana_lookup(const void *,size_t);

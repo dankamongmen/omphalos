@@ -213,13 +213,13 @@ int handle_rtm_newroute(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	}
 	if(r->family == AF_INET){
 		lock_interface(r->iface);
-		if(add_route4(octx,r->iface,ad,r->ssg.ss_family ? ag : NULL,r->sss.ss_family ? as : NULL,r->maskbits,iif)){
+		if(add_route4(r->iface,ad,r->ssg.ss_family ? ag : NULL,r->sss.ss_family ? as : NULL,r->maskbits,iif)){
 			unlock_interface(r->iface);
 			octx->diagnostic(L"Couldn't add route to %s",r->iface->name);
 			goto err;
 		}
 		if(r->ssg.ss_family){
-			send_arp_probe(octx,r->iface,r->iface->bcast,ag,flen,as);
+			send_arp_probe(r->iface,r->iface->bcast,ag,flen,as);
 		}
 		unlock_interface(r->iface);
 		pthread_mutex_lock(&route_lock);
@@ -244,7 +244,7 @@ int handle_rtm_newroute(const omphalos_iface *octx,const struct nlmsghdr *nl){
 		pthread_mutex_unlock(&route_lock);
 	}else if(r->family == AF_INET6){
 		lock_interface(r->iface);
-		if(add_route6(octx,r->iface,ad,r->ssg.ss_family ? ag : NULL,r->sss.ss_family ? as : NULL,r->maskbits,iif)){
+		if(add_route6(r->iface,ad,r->ssg.ss_family ? ag : NULL,r->sss.ss_family ? as : NULL,r->maskbits,iif)){
 			unlock_interface(r->iface);
 			octx->diagnostic(L"Couldn't add route to %s",r->iface->name);
 			goto err;
@@ -349,12 +349,12 @@ int get_router(int fam,const void *addr,struct routepath *rp){
 
 // Call get_router() on the address, acquire a TX frame from the discovered
 // interface, Initialize it with proper L2 and L3 data.
-int get_routed_frame(const omphalos_iface *octx,int fam,const void *addr,
-			struct routepath *rp,void **frame,size_t *flen,size_t *hlen){
+int get_routed_frame(int fam,const void *addr,struct routepath *rp,
+			void **frame,size_t *flen,size_t *hlen){
 	if(get_router(fam,addr,rp)){
 		return -1;
 	}
-	if((*frame = get_tx_frame(octx,rp->i,flen)) == NULL){
+	if((*frame = get_tx_frame(rp->i,flen)) == NULL){
 		return -1;
 	}
 	assert(hlen); // FIXME set up the l2/l3 headers

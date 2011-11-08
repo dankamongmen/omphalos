@@ -8,6 +8,7 @@
 #include <omphalos/tx.h>
 #include <omphalos/dns.h>
 #include <omphalos/udp.h>
+#include <omphalos/diag.h>
 #include <omphalos/util.h>
 #include <asm/byteorder.h>
 #include <omphalos/csum.h>
@@ -323,7 +324,7 @@ extract_dns_extra(size_t len,const unsigned char *sec,unsigned *ttl,
 	return buf;
 }
 
-int handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void *frame,size_t len){
+int handle_dns_packet(omphalos_packet *op,const void *frame,size_t len){
 	const struct dnshdr *dns = frame;
 	uint16_t qd,an,ns,ar,flags;
 	unsigned class,type,bsize;
@@ -348,7 +349,7 @@ int handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void 
 		nsaddr = &nsaddru.addr6;
 		memcpy(nsaddr,op->l3saddr,16);
 	}else{
-		octx->diagnostic(L"DNS on %s:0x%x",op->i->name,op->l3proto);
+		diagnostic(L"DNS on %s:0x%x",op->i->name,op->l3proto);
 		op->noproto = 1;
 		return 0;
 	}
@@ -360,7 +361,7 @@ int handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void 
 	flags = ntohs(dns->flags);
 	len -= sizeof(*dns);
 	sec = (const unsigned char *)frame + sizeof(*dns);
-	// octx->diagnostic(L"q/a/n/a: %hu/%hu/%hu/%hu",qd,an,ns,ar);
+	// diagnostic(L"q/a/n/a: %hu/%hu/%hu/%hu",qd,an,ns,ar);
 	while(qd--){
 		buf = extract_dns_record(len,sec,&class,&type,&bsize,frame);
 		if(buf == NULL){
@@ -376,7 +377,7 @@ int handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void 
 						// FIXME perform routing lookup on ss to get
 						// the desired interface and see whether we care
 						// about this address
-						offer_wresolution(octx,fam,ss,L"name unknown",
+						offer_wresolution(fam,ss,L"name unknown",
 							NAMING_LEVEL_NXDOMAIN,nsfam,nsaddr);
 					}
 				}
@@ -394,7 +395,7 @@ int handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void 
 		if(buf == NULL){
 			goto malformed;
 		}
-		//octx->diagnostic(L"lookup [%s]",buf);
+		//diagnostic(L"lookup [%s]",buf);
 		sec += bsize;
 		len -= bsize;
 		data = extract_dns_extra(len,sec,&ttl,&bsize,frame,type);
@@ -415,14 +416,14 @@ int handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void 
 					// FIXME perform routing lookup on ss to get
 					// the desired interface and see whether we care
 					// about this address
-					offer_resolution(octx,fam,ss,data,
+					offer_resolution(fam,ss,data,
 						NAMING_LEVEL_REVDNS,nsfam,nsaddr);
 				}
 			}else if(type == DNS_TYPE_A){
-				offer_resolution(octx,AF_INET,data,buf,
+				offer_resolution(AF_INET,data,buf,
 						NAMING_LEVEL_DNS,nsfam,nsaddr);
 			}else if(type == DNS_TYPE_AAAA){
-				offer_resolution(octx,AF_INET6,data,buf,
+				offer_resolution(AF_INET6,data,buf,
 						NAMING_LEVEL_DNS,nsfam,nsaddr);
 			}else if(type == DNS_TYPE_CNAME){
 				// FIXME do what (nothing probably)?
@@ -433,7 +434,7 @@ int handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void 
 			}else if(type == DNS_TYPE_HINFO){
 				// FIXME do what?
 			}
-			//octx->diagnostic(L"TYPE: %hu CLASS: %hu",
+			//diagnostic(L"TYPE: %hu CLASS: %hu",
 			//		,ntohs(*((uint16_t *)sec + 1)));
 		}
 		free(buf);
@@ -454,14 +455,13 @@ int handle_dns_packet(const omphalos_iface *octx,omphalos_packet *op,const void 
 	return 0;
 
 malformed:
-	octx->diagnostic(L"%s malformed with %zu on %s",
+	diagnostic(L"%s malformed with %zu on %s",
 			__func__,len,op->i->name);
 	op->malformed = 1;
 	return -1;
 }
 
-int tx_dns_ptr(const omphalos_iface *octx,int fam,const void *addr,
-		const char *question){
+int tx_dns_ptr(int fam,const void *addr,const char *question){
 	struct routepath rp;
 	void *frame;
 	size_t flen;
@@ -471,15 +471,15 @@ int tx_dns_ptr(const omphalos_iface *octx,int fam,const void *addr,
 	if(get_router(fam,addr,&rp)){
 		return -1;
 	}
-	if((frame = get_tx_frame(octx,rp.i,&flen)) == NULL){
+	if((frame = get_tx_frame(rp.i,&flen)) == NULL){
 		return -1;
 	}
 	r = setup_dns_ptr(&rp,fam,DNS_TARGET_PORT,flen,frame,question);
 	if(r){
-		abort_tx_frame(octx,rp.i,frame);
+		abort_tx_frame(rp.i,frame);
 		return -1;
 	}
-	send_tx_frame(octx,rp.i,frame);
+	send_tx_frame(rp.i,frame);
 	return 0;
 }
 

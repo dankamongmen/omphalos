@@ -33,6 +33,10 @@
 
 pthread_key_t omphalos_ctx_key;
 
+const omphalos_ctx *get_octx(void){
+	return pthread_getspecific(omphalos_ctx_key);
+}
+
 static void
 usage(const char *arg0,int ret){
 	FILE *fp = ret == EXIT_SUCCESS ? stdout : stderr;
@@ -314,26 +318,29 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 	if(mask_cancel_sigs(NULL)){
 		return -1;
 	}
+	pctx->iface.diagnostic = default_diagnostic;
+	pctx->iface.vdiagnostic = default_vdiagnostic;
 	if(pthread_key_create(&omphalos_ctx_key,NULL)){
 		return -1;
 	}
-	pctx->iface.diagnostic = default_diagnostic;
-	pctx->iface.vdiagnostic = default_vdiagnostic;
-	if(init_procfs(&pctx->iface,DEFAULT_PROCROOT)){
+	if(pthread_setspecific(omphalos_ctx_key,pctx)){
+		return -1;
+	}
+	if(init_procfs(DEFAULT_PROCROOT)){
 		return -1;
 	}
 	if(strcmp(pctx->usbidsfn,"")){
-		if(init_usb_support(&pctx->iface,pctx->usbidsfn)){
+		if(init_usb_support(pctx->usbidsfn)){
 			return -1;
 		}
 	}
 	if(strcmp(pctx->ianafn,"")){
-		if(init_iana_naming(&pctx->iface,pctx->ianafn)){
+		if(init_iana_naming(pctx->ianafn)){
 			return -1;
 		}
 	}
 	if(strcmp(pctx->resolvconf,"")){
-		if(init_naming(&pctx->iface,pctx->resolvconf)){
+		if(init_naming(pctx->resolvconf)){
 			return -1;
 		}
 	}
@@ -370,6 +377,6 @@ void omphalos_cleanup(const omphalos_ctx *pctx){
 	cleanup_iana_naming();
 	stop_pci_support();
 	stop_usb_support();
-	cleanup_naming(&pctx->iface);
-	cleanup_procfs(&pctx->iface);
+	cleanup_naming();
+	cleanup_procfs();
 }

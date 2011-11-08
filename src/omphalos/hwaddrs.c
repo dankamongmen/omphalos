@@ -52,7 +52,8 @@ create_l2host(interface *i,const void *hwaddr){
 
 // FIXME strictly proof-of-concept. we'll want a trie- or hash-based
 // lookup, backed by an arena-allocated LRU, etc...
-l2host *lookup_l2host(const omphalos_iface *octx,interface *i,const void *hwaddr){
+l2host *lookup_l2host(interface *i,const void *hwaddr){
+	const omphalos_ctx *octx = get_octx();
 	l2host *l2,**prev;
 	hwaddrint hwcmp;
 
@@ -72,8 +73,8 @@ l2host *lookup_l2host(const omphalos_iface *octx,interface *i,const void *hwaddr
 	if(l2){
 		l2->next = i->l2hosts;
 		i->l2hosts = l2;
-		if(octx->neigh_event){
-			l2->opaque = octx->neigh_event(i,l2);
+		if(octx->iface.neigh_event){
+			l2->opaque = octx->iface.neigh_event(i,l2);
 		}
 	}
 	return l2;

@@ -9,13 +9,12 @@ extern "C" {
 
 struct l2host;
 struct interface;
-struct omphalos_iface;
 
 // We don't handle any hardware addresses longer than 64 bits...yet...
 typedef uint64_t hwaddrint;
 
-struct l2host *lookup_l2host(const struct omphalos_iface *,struct interface *,
-				const void *) __attribute__ ((nonnull (1,2,3)));
+struct l2host *lookup_l2host(struct interface *,const void *)
+		__attribute__ ((nonnull (1,2)));
 
 void cleanup_l2hosts(struct l2host **) __attribute__ ((nonnull (1)));
 

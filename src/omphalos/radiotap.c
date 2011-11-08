@@ -147,7 +147,7 @@ handle_ieee80211_mgmtfix(const omphalos_iface *octx,omphalos_packet *op,
 		tagtbl[IEEE80211_MGMT_TAG_SSID].ptr = tmp;
 		// FIXME ugh
 		snprintf(tmp + tagtbl[IEEE80211_MGMT_TAG_SSID].len,9," %u.%02uGHz",freq / 1000,(freq % 1000) / 10);
-		name_l3host_absolute(octx,op->i,op->l2s,op->l3s,tmp,NAMING_LEVEL_MAX);
+		name_l3host_absolute(op->i,op->l2s,op->l3s,tmp,NAMING_LEVEL_MAX);
 	}
 
 freetags:
@@ -167,9 +167,9 @@ handle_ieee80211_mgmt(const omphalos_iface *octx,omphalos_packet *op,
 				__func__,len,op->i->name);
 		return;
 	}
-	op->l2s = lookup_l2host(octx,op->i,ibec->h_src);
+	op->l2s = lookup_l2host(op->i,ibec->h_src);
        	len -= sizeof(*ibec);
-	op->l3s = lookup_l3host(octx,op->i,op->l2s,AF_BSSID,ibec->bssid);
+	op->l3s = lookup_l3host(op->i,op->l2s,AF_BSSID,ibec->bssid);
 	handle_ieee80211_mgmtfix(octx,op,(const char *)frame + sizeof(*ibec),len,freq);
 }
 
@@ -184,7 +184,7 @@ handle_ieee80211_ctrl(const omphalos_iface *octx,omphalos_packet *op,
 				__func__,len,op->i->name);
 		return;
 	}
-	op->l2d = lookup_l2host(octx,op->i,ictrl->h_dest);
+	op->l2d = lookup_l2host(op->i,ictrl->h_dest);
 	len -= sizeof(*ictrl);
 }
 
@@ -199,8 +199,8 @@ handle_ieee80211_data(const omphalos_iface *octx,omphalos_packet *op,
 				__func__,len,op->i->name);
 		return;
 	}
-	op->l2s = lookup_l2host(octx,op->i,idata->h_dest);
-	op->l2s = lookup_l2host(octx,op->i,idata->h_src);
+	op->l2s = lookup_l2host(op->i,idata->h_dest);
+	op->l2s = lookup_l2host(op->i,idata->h_src);
        	len -= sizeof(*idata);
 	// FIXME and do what??
 }

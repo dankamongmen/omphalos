@@ -10,14 +10,13 @@ extern "C" {
 struct l2host;
 struct l3host;
 struct interface;
-struct omphalos_iface;
 struct omphalos_packet;
 
-void handle_mdns_packet(const struct omphalos_iface *,struct omphalos_packet *,
-			const void *,size_t) __attribute__ ((nonnull (1,2,3)));
+void handle_mdns_packet(struct omphalos_packet *,const void *,size_t)
+			__attribute__ ((nonnull (1,2)));
 
-int tx_mdns_ptr(const struct omphalos_iface *,struct interface *,const char *,
-			int,const void *) __attribute__ ((nonnull (1,2,3,5)));
+int tx_mdns_ptr(struct interface *,const char *,int,const void *)
+			__attribute__ ((nonnull (1,2,4)));
 
 #ifdef __cplusplus
 }

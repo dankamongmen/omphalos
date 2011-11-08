@@ -157,20 +157,18 @@ hwaddrstr(const interface *i){
 void free_iface(const struct omphalos_iface *,interface *);
 void cleanup_interfaces(const struct omphalos_iface *);
 int print_all_iface_stats(FILE *,interface *);
-int add_route4(const struct omphalos_iface *,interface *,const struct in_addr *,
+int add_route4(interface *,const struct in_addr *,
 		const struct in_addr *,const struct in_addr *,unsigned,int);
-int add_route6(const struct omphalos_iface *,interface *,const struct in6_addr *,
+int add_route6(interface *,const struct in6_addr *,
 		const struct in6_addr *,const struct in6_addr *,unsigned,int);
 int del_route4(interface *,const struct in_addr *,unsigned);
 int del_route6(interface *,const struct in6_addr *,unsigned);
 
 void set_default_ipv6src(interface *,const uint128_t);
 
-const void *get_source_address(const struct omphalos_iface *,interface *,
-				int,const void *,void *);
+const void *get_source_address(interface *,int,const void *,void *);
 
-const void *get_unicast_address(const struct omphalos_iface *,interface *,
-				const void *,int,const void *,void *);
+const void *get_unicast_address(interface *,const void *,int,const void *,void *);
 
 // predicates. racey against netlink messages.
 int is_local4(const interface *,uint32_t);
