@@ -7,8 +7,6 @@ void diagnostic(const wchar_t *fmt,...){
 	const omphalos_ctx *octx = get_octx();
 	va_list va;
 
-	assert(octx && octx->iface.diagnostic);
-	octx->iface.diagnostic(L"%p",octx);
 	va_start(va,fmt);
 	octx->iface.vdiagnostic(fmt,va);
 	va_end(va);
