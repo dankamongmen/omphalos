@@ -585,11 +585,16 @@ interface_removed_callback(const interface *i __attribute__ ((unused)),void *uns
 }
 
 static void
+vdiag_callback(const wchar_t *fmt,va_list v){
+	wvstatus(stdscr,fmt,v);
+}
+
+static void
 diag_callback(const wchar_t *fmt,...){
 	va_list va;
 
 	va_start(va,fmt);
-	wvstatus(stdscr,fmt,va);
+	vdiag_callback(fmt,va);
 	va_end(va);
 }
 
@@ -618,6 +623,7 @@ int main(int argc,char * const *argv){
 	pctx.iface.iface_event = interface_callback;
 	pctx.iface.iface_removed = interface_removed_callback;
 	pctx.iface.diagnostic = diag_callback;
+	pctx.iface.vdiagnostic = vdiag_callback;
 	pctx.iface.wireless_event = wireless_callback;
 	pctx.iface.srv_event = service_callback;
 	pctx.iface.neigh_event = neighbor_callback;
