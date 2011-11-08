@@ -264,8 +264,7 @@ int handle_rtm_newroute(const omphalos_iface *octx,const struct nlmsghdr *nl){
 			// FIXME set less-specific sources
 		pthread_mutex_unlock(&route_lock);
 	}
-	// FIXME need a route callback in octx
-	/*{
+	{
 		char str[INET6_ADDRSTRLEN];
 		inet_ntop(rt->rtm_family,ad,str,sizeof(str));
 		octx->diagnostic(L"[%8s] new route to %s/%u %s",r->iface->name,str,r->maskbits,
@@ -278,7 +277,7 @@ int handle_rtm_newroute(const omphalos_iface *octx,const struct nlmsghdr *nl){
 			rt->rtm_type == RTN_BLACKHOLE ? "(blackhole)" :
 			rt->rtm_type == RTN_MULTICAST ? "(multicast)" :
 			"");
-	}*/
+	}
 	return 0;
 
 err:

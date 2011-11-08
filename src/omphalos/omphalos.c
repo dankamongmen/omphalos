@@ -98,18 +98,19 @@ version(const char *arg0){
 	exit(EXIT_SUCCESS);
 }
 
+static inline void
+default_vdiagnostic(const wchar_t *fmt,va_list v){
+	assert(vfwprintf(stderr,fmt,v) >= 0);
+	assert(fputwc('\n',stderr) != WEOF);
+}
+
 static void
 default_diagnostic(const wchar_t *fmt,...){
 	va_list va;
 
 	va_start(va,fmt);
-	if(vfwprintf(stderr,fmt,va) < 0){
-		abort();
-	}
+	default_vdiagnostic(fmt,va);
 	va_end(va);
-	if(fputwc('\n',stderr) == WEOF){
-		abort();
-	}
 }
 
 // If we add any other signals to this list, be sure to update the signal
@@ -317,6 +318,7 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 		return -1;
 	}
 	pctx->iface.diagnostic = default_diagnostic;
+	pctx->iface.vdiagnostic = default_vdiagnostic;
 	if(init_procfs(&pctx->iface,DEFAULT_PROCROOT)){
 		return -1;
 	}

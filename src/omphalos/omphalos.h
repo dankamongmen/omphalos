@@ -39,6 +39,7 @@ typedef struct omphalos_iface {
 	// Free-form diagnostics using standard print(3)-style format strings.
 	//void (*diagnostic)(const wchar_t *,va_list);
 	void (*diagnostic)(const wchar_t *,...);
+	void (*vdiagnostic)(const wchar_t *,va_list);
 
 	// Device event callback. Called upon device detection or change. A
 	// value returned will be associated with the interface's "opaque"

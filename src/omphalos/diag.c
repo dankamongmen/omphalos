@@ -10,6 +10,6 @@ void diagnostic(const wchar_t *fmt,...){
 	octx = pthread_getspecific(omphalos_ctx_key);
 	assert(octx);
 	va_start(va,fmt);
-	vfwprintf(stderr,fmt,va);
+	octx->iface.vdiagnostic(fmt,va);
 	va_end(va);
 }
