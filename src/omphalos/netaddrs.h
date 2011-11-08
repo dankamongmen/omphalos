@@ -27,20 +27,27 @@ typedef enum {
 	NAMING_LEVEL_MAX
 } namelevel;
 
+// Look up an l3 address, creating an l3host if the address isn't known on
+// this l2host. A route check will be performed; if no local route to this host
+// exists, an ARP request will be issued rather than adding the host.
 struct l3host *lookup_l3host(const struct omphalos_iface *,struct interface *,
 				struct l2host *,int,const void *)
 				__attribute__ ((nonnull (1,2,3,5)));
 
-// Doesn't create the l3host if it isn't found (what interface would it bind it
-// to?), but scans all interfaces' nodes for such a host.
-struct l3host *lookup_global_l3host(int,const void *) __attribute__ ((nonnull (2)));
-
+// Look up an l3 address known to be local (perhaps we got it from the host's
+// ARP cache, or it's our own address). No ARP/route lookup will be performed.
 struct l3host *lookup_local_l3host(const struct omphalos_iface *,
 		struct interface *,struct l2host *,int,const void *)
 		__attribute__ ((nonnull (1,2,3,5)));
 
+// Look up an l3 address on this interface, ignoring l2host information. Does
+// not create an l3host on lookup failure.
 struct l3host *find_l3host(struct interface *,int,const void *)
 	__attribute__ ((nonnull (1,3)));
+
+// Doesn't create the l3host if it isn't found (what interface would it bind it
+// to?), but scans all interfaces' nodes for such a host.
+struct l3host *lookup_global_l3host(int,const void *) __attribute__ ((nonnull (2)));
 
 void name_l3host_local(const struct omphalos_iface *,const struct interface *,
 			struct l2host *,struct l3host *,int,const void *,namelevel)
@@ -57,6 +64,7 @@ void wname_l3host_absolute(const struct omphalos_iface *,const struct interface 
 char *l3addrstr(const struct l3host *) __attribute__ ((nonnull (1)));
 char *netaddrstr(int,const void *) __attribute__ ((nonnull (2)));
 
+// Get a string representation of the l3host's network address
 int l3ntop(const struct l3host *,char *,size_t) __attribute__ ((nonnull (1,2)));
 
 void cleanup_l3hosts(struct l3host **list) __attribute__ ((nonnull (1)));

@@ -160,8 +160,8 @@ routed_family_p(int fam){
 	return fam == AF_INET || fam == AF_INET6;
 }
 
-// A global lookup without lower-level information. It doesn't create a new
-// entry if none exists. No support for BSSID lookup.
+// An interface-scoped lookup without lower-level information. It doesn't
+// create a new entry if none exists. No support for BSSID lookup.
 struct l3host *find_l3host(interface *i,int fam,const void *addr){
         l3host *l3;
 	typeof(l3->addr) cmp;
@@ -381,18 +381,10 @@ l3host *lookup_local_l3host(const omphalos_iface *octx,interface *i,
 void name_l3host_local(const omphalos_iface *octx,const interface *i,
 		struct l2host *l2,l3host *l3,int family,const void *name,
 		namelevel nlevel){
-	if(l3->name == NULL){
-		wchar_t wb[INET6_ADDRSTRLEN];
-		char b[INET6_ADDRSTRLEN];
+	char b[INET6_ADDRSTRLEN];
 
-		if(inet_ntop(family,name,b,sizeof(b)) == b){
-			size_t q;
-
-			for(q = 0 ; q < sizeof(b) ; ++q){
-				wb[q] = btowc(b[q]);
-			}
-			wname_l3host_absolute(octx,i,l2,l3,wb,nlevel);
-		}
+	if(inet_ntop(family,name,b,sizeof(b)) == b){
+		name_l3host_absolute(octx,i,l2,l3,b,nlevel);
 	}
 }
 
