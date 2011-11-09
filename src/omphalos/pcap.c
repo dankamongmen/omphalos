@@ -7,7 +7,9 @@
 #include <omphalos/ip.h>
 #include <omphalos/util.h>
 #include <asm/byteorder.h>
+#include <omphalos/irda.h>
 #include <omphalos/pcap.h>
+#include <omphalos/diag.h>
 #include <linux/if_ether.h>
 #include <omphalos/hwaddrs.h>
 #include <omphalos/ethernet.h>
@@ -150,6 +152,7 @@ int handle_pcap_file(const omphalos_ctx *pctx){
 	pcap_t *pcap;
 
 	free(pmarsh.i->name);
+	diagnostic(L"Processing pcap file %s",pctx->pcapfn);
 	memset(pmarsh.i,0,sizeof(*pmarsh.i));
 	pmarsh.i->fd = pmarsh.i->rfd = -1;
 	pmarsh.i->flags = IFF_BROADCAST | IFF_UP | IFF_LOWER_UP;
@@ -158,7 +161,7 @@ int handle_pcap_file(const omphalos_ctx *pctx){
 		return -1;
 	}
 	if((pcap = pcap_open_offline(pctx->pcapfn,ebuf)) == NULL){
-		fprintf(stderr,"Couldn't open pcap input %s (%s?)\n",pctx->pcapfn,ebuf);
+		diagnostic(L"Couldn't open pcap input %s (%s?)",pctx->pcapfn,ebuf);
 		return -1;
 	}
 	fxn = NULL;
@@ -179,8 +182,12 @@ int handle_pcap_file(const omphalos_ctx *pctx){
 			pmarsh.handler = handle_radiotap_packet;
 			fxn = handle_pcap_direct;
 			break;
+		}case DLT_LINUX_IRDA:{
+			pmarsh.handler = handle_irda_packet;
+			fxn = handle_pcap_direct;
+			break;
 		}default:{
-			fprintf(stderr,"Unhandled datalink type: %d\n",pcap_datalink(pcap));
+			diagnostic(L"Unhandled datalink type: %d",pcap_datalink(pcap));
 			break;
 		}
 	}
@@ -189,7 +196,7 @@ int handle_pcap_file(const omphalos_ctx *pctx){
 		return -1;
 	}
 	if(pcap_loop(pcap,-1,fxn,(u_char *)&pmarsh)){
-		fprintf(stderr,"Error processing pcap file %s (%s?)\n",pctx->pcapfn,pcap_geterr(pcap));
+		diagnostic(L"Error processing pcap file %s (%s?)",pctx->pcapfn,pcap_geterr(pcap));
 		pcap_close(pcap);
 		return -1;
 	}
