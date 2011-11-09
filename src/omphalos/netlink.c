@@ -664,7 +664,7 @@ handle_newlink_locked(const omphalos_iface *octx,interface *iface,
 	iface->settings_valid = SETTINGS_INVALID;
 	// Ethtool can fail for any given command depending on the device's
 	// level of support. All but loopback seem to provide driver info...
-	if(iface_driver_info(octx,iface->name,&iface->drv)){
+	if(iface_driver_info(iface->name,&iface->drv)){
 		memset(&iface->drv,0,sizeof(iface->drv));
 		iface->topinfo.devname = name_virtual_device(ii,NULL);
 	}else{
@@ -674,13 +674,13 @@ handle_newlink_locked(const omphalos_iface *octx,interface *iface,
 			// Try to get detailed wireless info first, falling back to ethtool.
 			if(iface_wireless_info(octx,iface->name,&iface->settings.wext) == 0){
 				iface->settings_valid = SETTINGS_VALID_WEXT;
-			}else if(iface_ethtool_info(octx,iface->name,&iface->settings.ethtool) == 0){
+			}else if(iface_ethtool_info(iface->name,&iface->settings.ethtool) == 0){
 				iface->settings_valid = SETTINGS_VALID_ETHTOOL;
 			}
 		}
 	}
 	// Offload info seems available for everything, even loopback.
-	iface_offload_info(octx,iface->name,&iface->offload,&iface->offloadmask);
+	iface_offload_info(iface->name,&iface->offload,&iface->offloadmask);
 
 	// Bring down or set up the packet sockets and thread, as appropriate
 	if(iface->fd < 0 && (iface->flags & IFF_UP)){

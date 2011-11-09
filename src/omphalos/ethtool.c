@@ -8,24 +8,25 @@
 #include <linux/sockios.h>
 #include <linux/version.h>
 #include <linux/ethtool.h>
+#include <omphalos/diag.h>
 #include <omphalos/ethtool.h>
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
 
 static inline int
-ethtool_docmd(const omphalos_iface *octx,const char *name,void *unsafe){
+ethtool_docmd(const char *name,void *unsafe){
 	struct ifreq ifr;
 	int fd;
 
 	if(strlen(name) >= sizeof(ifr.ifr_name)){
-		octx->diagnostic(L"Bad name: %s",name);
+		diagnostic(L"Bad name: %s",name);
 		return -1;
 	}
 	memset(&ifr,0,sizeof(&ifr));
 	strcpy(ifr.ifr_name,name);
 	ifr.ifr_data = (caddr_t)unsafe;
 	if((fd = socket(AF_INET,SOCK_DGRAM,0)) < 0){
-		octx->diagnostic(L"Couldn't open ethtool fd (%s?)",strerror(errno));
+		diagnostic(L"Couldn't open ethtool fd (%s?)",strerror(errno));
 		return -1;
 	}
 	if(ioctl(fd,SIOCETHTOOL,&ifr)){ // no diagnostic here; specialize
@@ -33,15 +34,15 @@ ethtool_docmd(const omphalos_iface *octx,const char *name,void *unsafe){
 		return -1;
 	}
 	if(close(fd)){
-		octx->diagnostic(L"Couldn't close ethtool fd %d (%s?)",fd,strerror(errno));
+		diagnostic(L"Couldn't close ethtool fd %d (%s?)",fd,strerror(errno));
 		return -1;
 	}
 	return 0;
 }
 
-int iface_driver_info(const omphalos_iface *octx,const char *name,struct ethtool_drvinfo *drv){
+int iface_driver_info(const char *name,struct ethtool_drvinfo *drv){
 	drv->cmd = ETHTOOL_GDRVINFO;
-	if(ethtool_docmd(octx,name,drv)){
+	if(ethtool_docmd(name,drv)){
 		return -1;
 	}
 	// Some return the empty string for firmware / bus, others "N/A".
@@ -135,8 +136,7 @@ int iface_offloaded_p(const interface *i,unsigned otype){
 	return -1;
 }
 
-int iface_offload_info(const omphalos_iface *octx,const char *name,
-				unsigned *offload,unsigned *valid){
+int iface_offload_info(const char *name,unsigned *offload,unsigned *valid){
 	const struct offload_info *oi;
 	const struct offload_flags_info *of;
 	struct ethtool_value ev;
@@ -145,14 +145,14 @@ int iface_offload_info(const omphalos_iface *octx,const char *name,
 	for(oi = offload_infos ; oi->desc ; ++oi){
 		if(oi->op >= 0){
 			ev.cmd = oi->op;
-			if(ethtool_docmd(octx,name,&ev) == 0){
+			if(ethtool_docmd(name,&ev) == 0){
 				*valid |= oi->mask;
 				*offload |= ev.data ? oi->mask : 0;
 			}
 		}
 	}
 	ev.cmd = ETHTOOL_GFLAGS;
-	if(ethtool_docmd(octx,name,&ev) == 0){
+	if(ethtool_docmd(name,&ev) == 0){
 		for(of = offload_flags ; of->desc ; ++of){
 			*valid |= of->mask;
 			if(ev.data & of->flag){
@@ -163,9 +163,9 @@ int iface_offload_info(const omphalos_iface *octx,const char *name,
 	return 0;
 }
 
-int iface_ethtool_info(const omphalos_iface *octx,const char *name,struct ethtool_cmd *info){
+int iface_ethtool_info(const char *name,struct ethtool_cmd *info){
 	info->cmd = ETHTOOL_GSET;
-	if(ethtool_docmd(octx,name,info)){
+	if(ethtool_docmd(name,info)){
 		return -1;
 	}
 	return 0;
