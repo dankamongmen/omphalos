@@ -11,6 +11,7 @@
 #include <linux/if_arp.h>
 #include <omphalos/pci.h>
 #include <omphalos/pcap.h>
+#include <omphalos/diag.h>
 #include <omphalos/privs.h>
 #include <linux/if_packet.h>
 #include <omphalos/netlink.h>
@@ -149,6 +150,8 @@ recover_truncated_packet(const omphalos_iface *octx,interface *iface,int fd,unsi
 		iface->truncbuf = tmp;
 		iface->truncbuflen = tlen;
 	}
+	// Passing MSG_TRUNC ensures that we get the true length of the packet
+	// from the wire (see packet(7)).
 	if((r = recvfrom(fd,iface->truncbuf,iface->truncbuflen,MSG_DONTWAIT|MSG_TRUNC,NULL,0)) <= 0){
 		octx->diagnostic(L"Error in recvfrom(%s): %s",iface->name,strerror(errno));
 		return r;
@@ -277,6 +280,20 @@ int handle_ring_packet(const omphalos_iface *octx,interface *iface,int fd,void *
 	return 0;
 }
 
+static int
+packet_multicast(int fd,int ifindex){
+	struct packet_mreq pm;
+
+	memset(&pm,0,sizeof(pm));
+	pm.mr_ifindex = ifindex;
+	pm.mr_type = PACKET_MR_ALLMULTI;
+	if(setsockopt(fd,SOL_PACKET,PACKET_ADD_MEMBERSHIP,&pm,sizeof(pm))){
+		diagnostic(L"Couldn't PACKET_ADD_MEMBERSHIP (%s?)",strerror(errno));
+		return -1;
+	}
+	return 0;
+}
+
 size_t mmap_rx_psocket(const omphalos_iface *octx,int fd,int idx,
 		unsigned maxframe,void **map,struct tpacket_req *treq){
 	size_t ret;
@@ -288,6 +305,10 @@ size_t mmap_rx_psocket(const omphalos_iface *octx,int fd,int idx,
 	}
 	thresh = 1;
 	if(setsockopt(fd,SOL_PACKET,PACKET_COPY_THRESH,&thresh,sizeof(thresh))){
+		unmap_psocket(octx,*map,ret);
+		return -1;
+	}
+	if(packet_multicast(fd,idx)){
 		unmap_psocket(octx,*map,ret);
 		return -1;
 	}
