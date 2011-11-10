@@ -267,7 +267,7 @@ int handle_rtm_newroute(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	{
 		char str[INET6_ADDRSTRLEN];
 		inet_ntop(rt->rtm_family,ad,str,sizeof(str));
-		octx->diagnostic(L"[%8s] new route to %s/%u %s",r->iface->name,str,r->maskbits,
+		octx->diagnostic(L"[%s] new route to %s/%u %s",r->iface->name,str,r->maskbits,
 			rt->rtm_type == RTN_LOCAL ? "(local)" :
 			rt->rtm_type == RTN_BROADCAST ? "(broadcast)" :
 			rt->rtm_type == RTN_UNREACHABLE ? "(unreachable)" :
