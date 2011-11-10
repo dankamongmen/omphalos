@@ -545,7 +545,7 @@ int setup_dns_ptr(const struct routepath *rp,int fam,unsigned port,
 	dnshdr->arcount = 0;
 	tlen += sizeof(struct dnshdr);
 	udp->len = sizeof(struct udphdr) + sizeof(struct dnshdr);
-	memcpy((char *)frame + tlen,question,strlen(question) + 1);
+	strcpy((char *)frame + tlen,question);
 	tlen += strlen(question) + 1;
 	tptr = DNS_TYPE_PTR;
 	memcpy((char *)frame + tlen,&tptr,2);
