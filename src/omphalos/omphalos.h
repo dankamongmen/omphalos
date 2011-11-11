@@ -87,6 +87,7 @@ typedef struct omphalos_ctx {
 	const char *resolvconf;	// resolver configuration file
 	const char *usbidsfn;	// USB ID database in update-usbids(8) format
 	int mode;		// operating mode
+	int nopromiscuous;	// do not make newly-discovered devices promiscous
 	omphalos_iface iface;
 	pcap_t *plogp;
 	pcap_dumper_t *plog;

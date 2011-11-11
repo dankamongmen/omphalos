@@ -44,6 +44,7 @@ usage(const char *arg0,int ret){
 	fprintf(fp,"usage: %s [ options... ]\n",basename(arg0));
 	fprintf(fp,"\noptions:\n");
 	fprintf(fp,"-h print this help, and exit\n");
+	fprintf(fp,"-p do not make newly-discovered devices promiscuous\n");
 	fprintf(fp,"--version print version info, and exit\n");
 	fprintf(fp,"-u username: user name to take after creating packet socket.\n");
 	fprintf(fp,"\t'%s' by default. provide empty string to disable.\n",DEFAULT_USERNAME);
@@ -190,7 +191,7 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 	
 	memset(pctx,0,sizeof(*pctx));
 	opterr = 0; // suppress getopt() diagnostic to stderr
-	while((opt = getopt_long(argc,argv,":hf:u:",ops,&longidx)) >= 0){
+	while((opt = getopt_long(argc,argv,":hf:u:p",ops,&longidx)) >= 0){
 		switch(opt){ // FIXME need --plog
 		case 'h':{
 			usage(argv[0],EXIT_SUCCESS);
@@ -241,6 +242,13 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 				usage(argv[0],EXIT_FAILURE);
 			}
 			fprintf(stdout,"Logging malformed packets to %s\n",optarg);
+			break;
+		}case 'p':{
+			if(pctx->nopromiscuous){
+				fprintf(stderr,"Provided %c twice\n",opt);
+				usage(argv[0],EXIT_FAILURE);
+			}
+			pctx->nopromiscuous = 1;
 			break;
 		}case 'f':{
 			if(pctx->pcapfn){
