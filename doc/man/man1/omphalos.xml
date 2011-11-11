@@ -68,6 +68,7 @@
 			<arg>--version</arg>
 			<arg>-u username</arg>
 			<arg>-f filename</arg>
+			<arg>-p</arg>
 			<arg>--ouis filename</arg>
 			<arg>--usbids filename </arg>
 			<arg>--resolv filename</arg>
@@ -114,6 +115,16 @@
 				<para>Omphalos will by default listen (until shut down) to active network devices
 				using packet sockets. If -f is provided, omphalos will instead process the libpcap-format
 				file specified by filename.</para>
+			</listitem>
+		</varlistentry>
+		<varlistentry>
+			<term><option>-p</option></term>
+			<listitem>
+				<para>Omphalos will by default place all newly-detected
+					Ethernet devices into promiscuous mode.
+					If -p is provided, omphalos will leave
+					such devices in whatever mode they were
+					discovered.</para>
 			</listitem>
 		</varlistentry>
 		<varlistentry>
