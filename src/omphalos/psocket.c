@@ -114,7 +114,7 @@ mmap_psocket(const omphalos_iface *octx,int op,int idx,int fd,
 	}
 	if((*map = mmap(0,size,PROT_READ|PROT_WRITE,
 				MAP_SHARED | (op ? 0 : MAP_ANONYMOUS),
-				op ? -1 : fd,0)) == MAP_FAILED){
+				op ? fd : -1,0)) == MAP_FAILED){
 		octx->diagnostic(L"Couldn't mmap %zub (%s?)",size,strerror(errno));
 		return 0;
 	}
