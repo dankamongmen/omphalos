@@ -53,6 +53,7 @@ int init_interfaces(void){
 			while(i--){
 				pthread_mutex_destroy(&interfaces[i].lock);
 			}
+			pthread_mutexattr_destroy(&attr);
 			return -1;
 		}
 		iface->rfd = iface->fd = -1;
