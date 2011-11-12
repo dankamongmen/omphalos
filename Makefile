@@ -82,8 +82,9 @@ test: all $(TESTPCAPS) $(SUPPORT)
 valgrind: all $(TESTPCAPS) $(SUPPORT)
 	for i in $(TESTPCAPS) ; do valgrind --tool=memcheck --leak-check=full $(OMPHALOS)-tty -f $$i -u "" || exit 1 ; done
 
+# Even with --header='Accept-Charset: utf-8', we get served up ISO-8859-1, yuck
 $(USBIDS):
-	wget --header='Accept-Charset: utf-8' http://www.linux-usb.org/usb.ids -O $@
+	wget http://www.linux-usb.org/usb.ids -O - | iconv -f iso-8859-1 -t utf-8 -o $@
 
 $(IANAOUI):
 	get-oui -v -f $@

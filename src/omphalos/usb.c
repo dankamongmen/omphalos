@@ -3,6 +3,7 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
+#include <wctype.h>
 #include <omphalos/usb.h>
 #include <omphalos/diag.h>
 #include <omphalos/inotify.h>
@@ -126,31 +127,31 @@ static struct usb_vendor {
 static int
 parse_usbids_file(const char *fn){
 	int line = 0,devs = 0,vends = 0,curvendor = -1;
-	char buf[1024]; // FIXME ugh!
+	wchar_t buf[1024]; // FIXME ugh!
 	FILE *fp;
 
 	if((fp = fopen(fn,"r")) == NULL){
 		diagnostic(L"Couldn't open USB ID db at %s (%s?)",fn,strerror(errno));
 		return -1;
 	}
-	while(fgets(buf,sizeof(buf),fp)){
-		char *c,*e,*nl,*tok;
+	while(fgetws(buf,sizeof(buf),fp)){
+		wchar_t *c,*e,*nl,*tok;
 		unsigned long val;
 
 		++line;
 		// Verify and strip the trailing newline
-		nl = strchr(buf,'\n');
+		nl = wcschr(buf,L'\n');
 		if(!nl){
 			goto formaterr;
 		}
-		*nl = '\0';
+		*nl = L'\0';
 		// Skip leading whitespace
 		c = buf;
-		while(isspace(*c)){
+		while(iswspace(*c)){
 			++c;
 		}
 		// Ignore comments and blank lines
-		if(*c == '#' || !*c){
+		if(*c == L'#' || *c == L'\0'){
 			continue;
 		}
 		// Unfortunately, there's a bunch of crap added on to the end
