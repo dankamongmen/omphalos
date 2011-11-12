@@ -1,4 +1,5 @@
 #include <errno.h>
+#include <wchar.h>
 #include <stdlib.h>
 #include <assert.h>
 #include <omphalos/dns.h>
@@ -130,7 +131,7 @@ void name_l3host_absolute(const interface *i,
 
 	len = strlen(name);
 	if( (wname = malloc((len + 1) * sizeof(*wname))) ){
-		mbsrtowcs(wname,&name,len,NULL);
+		assert(mbsrtowcs(wname,&name,len,NULL) == len);
 		wname[len] = L'\0';
 		wname_l3host_absolute(i,l2,l3,wname,nlevel);
 		free(wname);

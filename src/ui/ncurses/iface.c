@@ -252,7 +252,7 @@ print_iface_hosts(const interface *i,const iface_state *is,WINDOW *w,
 	for(l = is->l2objs ; l ; l = l->next){
 		char hw[HWADDRSTRLEN(i->addrlen)];
 		int attrs,l3attrs,rattrs,sattrs;
-		const char *devname;
+		const wchar_t *devname;
 		wchar_t selectchar;
 		char legend;
 		l3obj *l3;
@@ -319,7 +319,7 @@ print_iface_hosts(const interface *i,const iface_state *is,WINDOW *w,
 			l2ntop(l->l2,i->addrlen,hw);
 			if(devname){
 				int len = cols - PREFIXSTRLEN * 2 - 6 - HWADDRSTRLEN(i->addrlen);
-				assert(mvwprintw(w,line,1,"%lc%c %s %-*.*s",
+				assert(mvwprintw(w,line,1,"%lc%c %s %-*.*ls",
 					selectchar,legend,hw,len,len,devname) != ERR);
 			}else{
 				int len = cols - PREFIXSTRLEN * 2 - 6;

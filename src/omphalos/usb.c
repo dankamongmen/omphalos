@@ -1,9 +1,10 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <errno.h>
-#include <stdlib.h>
+#include <stddef.h>
 #include <string.h>
 #include <wctype.h>
+#include <inttypes.h>
 #include <omphalos/usb.h>
 #include <omphalos/diag.h>
 #include <omphalos/inotify.h>
@@ -114,10 +115,10 @@ int find_usb_device(const char *busid,struct sysfs_device *sd __attribute__ ((un
 */
 
 static struct usb_vendor {
-	char *name;
+	wchar_t *name;
 	unsigned devcount;
 	struct usb_device {
-		char *name;
+		wchar_t *name;
 		unsigned devid;
 	} *devices;
 } vendors[65536];
@@ -136,7 +137,7 @@ parse_usbids_file(const char *fn){
 	}
 	while(fgetws(buf,sizeof(buf),fp)){
 		wchar_t *c,*e,*nl,*tok;
-		unsigned long val;
+		uintmax_t val;
 
 		++line;
 		// Verify and strip the trailing newline
@@ -157,16 +158,20 @@ parse_usbids_file(const char *fn){
 		// Unfortunately, there's a bunch of crap added on to the end
 		// of the usb.ids file (USB classes, etc). We throw it away...
 		// We ought have 4 hexadecimal digits followed by two spaces...
-		if((val = strtoul(c,&e,16)) > sizeof(vendors) / sizeof(*vendors) || e != c + 4){
+		if((val = wcstoumax(c,&e,16)) > 0xffff || e != c + 4){
 			// FIXME goto formaterr;
+			continue;
+		}
+		if(val > sizeof(vendors) / sizeof(*vendors)){
+			goto formaterr;
 			continue;
 		}
 		if(*e++ != ' ' || *e++ != ' '){
-			// FIXME goto formaterr;
+			goto formaterr;
 			continue;
 		}
 		// ...followed by a string.
-		if((tok = strdup(e)) == NULL){
+		if((tok = wcsdup(e)) == NULL){
 			diagnostic(L"Error allocating USB ID (%s?)",strerror(errno));
 			fclose(fp);
 			return -1;
@@ -255,7 +260,8 @@ int find_usb_device(const char *busid __attribute__ ((unused)),
 	struct sysfs_attribute *attr;
 	struct sysfs_device *parent;
 	unsigned long val;
-	char *tmp,*e;
+	wchar_t *tmp;
+	char *e;
 
 	if((parent = sysfs_get_device_parent(sd)) == NULL){
 		return -1;
@@ -268,13 +274,14 @@ int find_usb_device(const char *busid __attribute__ ((unused)),
 		if((attr = sysfs_get_device_attr(parent,"manufacturer")) == NULL){
 			return -1;
 		}
-		if((tinf->devname = strdup(attr->value)) == NULL){
+		if((tinf->devname = malloc(sizeof(wchar_t) * (strlen(attr->value) + 1))) == NULL){
 			return -1;
 		}
+		assert(mbstowcs(tinf->devname,attr->value,strlen(attr->value)) == strlen(attr->value));
 	}else{
 		const struct usb_vendor *vend;
 
-		if((tinf->devname = strdup(vendors[val].name)) == NULL){
+		if((tinf->devname = wcsdup(vendors[val].name)) == NULL){
 			return -1;
 		}
 	       	vend = &vendors[val];
@@ -286,13 +293,13 @@ int find_usb_device(const char *busid __attribute__ ((unused)),
 
 			for(dev = 0 ; dev < vend->devcount ; ++dev){
 				if(vend->devices[dev].devid == val){
-					if((tmp = realloc(tinf->devname,strlen(tinf->devname) + strlen(vend->devices[dev].name) + 2)) == NULL){
+					if((tmp = realloc(tinf->devname,sizeof(*tinf->devname) * (wcslen(tinf->devname) + wcslen(vend->devices[dev].name) + 2))) == NULL){
 						free(tinf->devname);
 						tinf->devname = NULL;
 						return -1;
 					}
-					tmp[strlen(tmp) - 1] = ' ';
-					strcat(tmp,vend->devices[dev].name);
+					tmp[wcslen(tmp)] = L' ';
+					wcscat(tmp,vend->devices[dev].name);
 					tinf->devname = tmp;
 					return 0;
 				}
@@ -304,15 +311,15 @@ int find_usb_device(const char *busid __attribute__ ((unused)),
 		tinf->devname = NULL;
 		return -1;
 	}
-	if((tmp = realloc(tinf->devname,strlen(tinf->devname) + strlen(attr->value) + 2)) == NULL){
+	if((tmp = realloc(tinf->devname,sizeof(wchar_t) * (wcslen(tinf->devname) + strlen(attr->value) + 2))) == NULL){
 		free(tinf->devname);
 		tinf->devname = NULL;
 		return -1;
 	}
 	// They come with a newline at the end, argh!
-	tmp[strlen(tmp) - 1] = ' ';
-	strcat(tmp,attr->value);
-	tmp[strlen(tmp) - 1] = '\0';
+	tmp[wcslen(tmp) - 1] = L' ';
+	mbstowcs(tmp + wcslen(tmp) + 1,attr->value,strlen(attr->value));
+	tmp[wcslen(tmp)] = L'\0';
 	tinf->devname = tmp;
 	return 0;
 }

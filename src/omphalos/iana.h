@@ -11,7 +11,7 @@ extern "C" {
 int init_iana_naming(const char *);
 
 // Look up the 24-bit OUI against IANA specifications.
-const char *iana_lookup(const void *,size_t);
+const wchar_t *iana_lookup(const void *,size_t);
 
 void cleanup_iana_naming(void);
 

@@ -210,7 +210,7 @@ packet_cb(omphalos_packet *op){
 	// We won't have l2s/l2d on critically malformed frames, or UI-driving
 	// frames (clock ticks, interface events, etc).
 	if(op->l2s && op->l2d){
-		const char *ns = NULL,*nd = NULL;
+		const wchar_t *ns = NULL,*nd = NULL;
 
 		//ns = get_name(op->l2s);
 		ns = ns ? ns : get_devname(op->l2s);

@@ -108,9 +108,10 @@ parse_file(const char *fn){
 		// We can't invalidate the previous entry, to which any number
 		// of existing l2hosts might have pointers.
 		if(c->next[b] == NULL){
-			if((c->next[b] = strdup(end)) == NULL){
+			if((c->next[b] = malloc(sizeof(wchar_t) * (strlen(end) + 1))) == NULL){
 				break; // FIXME
 			}
+			mbstowcs(c->next[b],end,strlen(end) + 1);
 		}
 		++count;
 		allocerr = 0;
@@ -135,7 +136,7 @@ parse_file(const char *fn){
 // node, really useful only for OUI's of size other than the typical 24 bits
 // (of which one is the multicast bit) such as IPv6 multicast space.
 static ouitrie *
-make_oui(const char *broadcast){
+make_oui(const wchar_t *broadcast){
 	ouitrie *o;
 
 	if( (o = malloc(sizeof(*o))) ){
@@ -143,7 +144,7 @@ make_oui(const char *broadcast){
 
 		for(z = 0 ; z < OUITRIE_SIZE ; ++z){
 			if(broadcast){
-				if((o->next[z] = strdup(broadcast)) == NULL){
+				if((o->next[z] = wcsdup(broadcast)) == NULL){
 					while(z--){
 						free(o->next[z]);
 					}
@@ -165,7 +166,7 @@ int init_iana_naming(const char *fn){
 	if(((p = make_oui(NULL)) == NULL)){
 		return -1;
 	}
-	if((path = make_oui("RFC 2464 IPv6 multicast")) == NULL){
+	if((path = make_oui(L"RFC 2464 IPv6 multicast")) == NULL){
 		free(p);
 		return -1;
 	}
@@ -180,10 +181,10 @@ int init_iana_naming(const char *fn){
 // FIXME use the main IANA trie, making it varying-length so we can do longest-
 // match. FIXME generate data from a text file, preferably one taken from IANA
 // or whoever administers the multicast address space
-static inline const char *
+static inline const wchar_t *
 name_ethmcastaddr(const void *mac){
 	static const struct mcast {
-		const char *name;
+		const wchar_t *name;
 		const char *mac;
 		size_t mlen;
 		uint16_t eproto;	// host byte order
@@ -192,49 +193,49 @@ name_ethmcastaddr(const void *mac){
 		// is larger than the 23 bits available for mapping, and
 		// thus other multicast addresses could use that MAC.
 		{ // FIXME need handle MPLS Multicast on 01:00:53:1+
-			.name = "RFC 1112 IPv4 multicast",
+			.name = L"RFC 1112 IPv4 multicast",
 			.mac = "\x01\x00\x5e",	// low order 23 bits of ip addresses from 224.0.0.0/4
 			.mlen = 3,
 			.eproto = ETH_P_IP,
 		},{
-			.name = "802.1s Shared Spanning Tree Protocol",
+			.name = L"802.1s Shared Spanning Tree Protocol",
 			.mac = "\x01\x00\x0c\xcc\xcc\xcd",
 			.mlen = 6,
 			.eproto = ETH_P_STP, // FIXME verify
 		},{
-			.name = "802.1d Spanning Tree Protocol",
+			.name = L"802.1d Spanning Tree Protocol",
 			.mac = "\x01\x80\xc2\x00\x00\x00",
 			.mlen = 6,
 			// STP actually almost always goes over 802.2 with a
 			// SAP value of 0x42, rather than Ethernet II.
 			.eproto = ETH_P_STP,
 		},{
-			.name = "802.3ah Ethernet OAM",
+			.name = L"802.3ah Ethernet OAM",
 			.mac = "\x01\x80\xc2\x00\x00\x02",
 			.mlen = 6,
 			.eproto = ETH_P_SLOW,
 		},{
-			.name = "802.1ad Provider bridge STP",
+			.name = L"802.1ad Provider bridge STP",
 			.mac = "\x01\x80\xc2\x00\x00\x08",
 			.mlen = 6,
 			.eproto = ETH_P_STP,
 		},{
-			.name = "FDDI RMT directed beacon",
+			.name = L"FDDI RMT directed beacon",
 			.mac = "\x01\x80\xc2\x00\x10\x00",
 			.mlen = 6,
 			.eproto = ETH_P_STP,
 		},{
-			.name = "FDDI status report frame",
+			.name = L"FDDI status report frame",
 			.mac = "\x01\x80\xc2\x00\x10\x10",
 			.mlen = 6,
 			.eproto = ETH_P_STP,
 		},{
-			.name = "DEC Maintenance Operation Protocol",
+			.name = L"DEC Maintenance Operation Protocol",
 			.mac = "\xab\x00\x00\x02\x00\x00",
 			.mlen = 6,
 			.eproto = ETH_P_DNA_RC,
 		},{
-			.name = "Ethernet Configuration Test Protocol",
+			.name = L"Ethernet Configuration Test Protocol",
 			.mac = "\xcf\x00\x00\x00\x00\x00",
 			.mlen = 6,
 			.eproto = ETH_P_CTP,
@@ -250,7 +251,7 @@ name_ethmcastaddr(const void *mac){
 }
 
 // Look up the 24-bit OUI against IANA specifications.
-const char *iana_lookup(const void *unsafe_oui,size_t addrlen){
+const wchar_t *iana_lookup(const void *unsafe_oui,size_t addrlen){
 	const unsigned char *oui = unsafe_oui;
 	const ouitrie *t;
 
@@ -264,7 +265,7 @@ const char *iana_lookup(const void *unsafe_oui,size_t addrlen){
 		return name_ethmcastaddr(oui);
 	}
 	if(oui[0] & 0x02){
-		return "IEEE 802 locally-assigned MAC";
+		return L"IEEE 802 locally-assigned MAC";
 	}
 	return NULL;
 }

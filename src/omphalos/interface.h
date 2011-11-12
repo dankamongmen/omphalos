@@ -57,7 +57,7 @@ typedef struct wless_info {
 #define MAX_WIRELESS_CHANNEL		999
 
 typedef struct topdev_info {
-	char *devname;			// as in output from lspci or lsusb
+	wchar_t *devname;		// as in output from lspci or lsusb
 } topdev_info;
 
 typedef void (*analyzefxn)(const struct omphalos_iface *,

@@ -540,33 +540,33 @@ prepare_packet_sockets(const omphalos_iface *octx,interface *iface,int idx){
 	return -1;
 }
 
-static char *
+static wchar_t *
 name_virtual_device(const struct ifinfomsg *ii,struct ethtool_drvinfo *ed){
 	if(ii->ifi_type == ARPHRD_LOOPBACK){
-		return strdup("Linux IPv4/IPv6 loopback device");
+		return L"Linux IPv4/IPv6 loopback device";
 	}else if(ii->ifi_type == ARPHRD_TUNNEL){
-		return strdup("Linux IPIP unicast IP4-in-IP4 tunnel");
+		return L"Linux IPIP unicast IP4-in-IP4 tunnel";
 	}else if(ii->ifi_type == ARPHRD_TUNNEL6){
-		return strdup("Linux IP6IP6 tunnel");
+		return L"Linux IP6IP6 tunnel";
 	}else if(ii->ifi_type == ARPHRD_SIT){
-		return strdup("Linux Simple Internet Transition IP6-in-IP4 tunnel");
+		return L"Linux Simple Internet Transition IP6-in-IP4 tunnel";
 	}else if(ii->ifi_type == ARPHRD_IPGRE){
-		return strdup("Linux Generic Routing Encapsulation IP-in-GRE tunnel");
+		return L"Linux Generic Routing Encapsulation IP-in-GRE tunnel";
 	}else if(ii->ifi_type == ARPHRD_VOID){
 		// These can be a number of things...
 		//  teqlX - trivial traffic equalizer
-		return strdup("Linux metadevice");
+		return L"Linux metadevice";
 	}else if(ed){
 		if(strcmp(ed->driver,"tun") == 0){
 			if(strcmp(ed->bus_info,"tap") == 0){
-				return strdup("Linux Ethernet TAP device");
+				return L"Linux Ethernet TAP device";
 			}else if(strcmp(ed->bus_info,"tun") == 0){
-				return strdup("Linux IPv4 point-to-point TUN device");
+				return L"Linux IPv4 point-to-point TUN device";
 			}
 		}else if(strcmp(ed->driver,"bridge") == 0){
-			return strdup("Linux Ethernet bridge");
+			return L"Linux Ethernet bridge";
 		}else if(strcmp(ed->driver,"vif") == 0){
-			return strdup("Xen virtual Ethernet interface");
+			return L"Xen virtual Ethernet interface";
 		}
 	}
 	return NULL;
@@ -704,10 +704,10 @@ handle_newlink_locked(const omphalos_iface *octx,interface *iface,
 	// level of support. All but loopback seem to provide driver info...
 	if(iface_driver_info(iface->name,&iface->drv)){
 		memset(&iface->drv,0,sizeof(iface->drv));
-		iface->topinfo.devname = name_virtual_device(ii,NULL);
+		iface->topinfo.devname = wcsdup(name_virtual_device(ii,NULL));
 	}else{
 		if((iface->busname = lookup_bus(iface->drv.bus_info,&iface->topinfo)) == NULL){
-			iface->topinfo.devname = name_virtual_device(ii,&iface->drv);
+			iface->topinfo.devname = wcsdup(name_virtual_device(ii,&iface->drv));
 		}else{
 			// Try to get detailed wireless info first, falling back to ethtool.
 			if(iface_wireless_info(octx,iface->name,&iface->settings.wext) == 0){

@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <wchar.h>
 #include <stdlib.h>
 #include <limits.h>
 #include <string.h>
@@ -118,6 +119,7 @@ int find_pci_device(const char *busid,struct sysfs_device *sd __attribute__ ((un
 	const char *vend,*devname;
 	struct pci_device *pci;
 	size_t vendlen,devlen;
+	mbstate_t mb;
 
 	if(parse_pci_busid(busid,&domain,&bus,&dev,&func)){
 		return -1;
@@ -129,11 +131,12 @@ int find_pci_device(const char *busid,struct sysfs_device *sd __attribute__ ((un
 	devname = pci_device_get_device_name(pci);
 	vendlen = strlen(vend);
 	devlen = strlen(devname);
-	if((tinf->devname = malloc(vendlen + devlen + 2)) == NULL){
+	if((tinf->devname = malloc(sizeof(wchar_t) * (vendlen + devlen + 2))) == NULL){
 		return -1;
 	}
-	strcpy(tinf->devname,vend);
-	tinf->devname[vendlen] = ' ';
-	strcpy(tinf->devname + vendlen + 1,devname);
+	assert(mbsrtowcs(tinf->devname,&vend,vendlen,&mb) == vendlen);
+	tinf->devname[vendlen] = L' ';
+	assert(mbsrtowcs(tinf->devname + vendlen + 1,&devname,devlen,&mb) == devlen);
+	tinf->devname[vendlen + devlen + 1] = L'\0';
 	return 0;
 }

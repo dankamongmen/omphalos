@@ -15,7 +15,7 @@
 // same length of hardware address.
 typedef struct l2host {
 	hwaddrint hwaddr;		// hardware address
-	const char *devname;		// text description based off lladdress
+	const wchar_t *devname;		// text description based off lladdress
 	struct l2host *next;
 	uintmax_t srcpkts,dstpkts;	// stats
 	interface *i;
@@ -39,7 +39,7 @@ create_l2host(interface *i,const void *hwaddr){
 		l2->i = i;
 		if((i->flags & IFF_BROADCAST) && i->bcast &&
 				memcmp(hwaddr,i->bcast,i->addrlen) == 0){
-			l2->devname = "Link broadcast";
+			l2->devname = L"Link broadcast";
 		}else if(i->arptype == ARPHRD_ETHER || i->arptype == ARPHRD_IEEE80211_RADIOTAP
 				|| i->arptype == ARPHRD_IEEE80211 || i->arptype == ARPHRD_IEEE80211_PRISM){
 			l2->devname = iana_lookup(hwaddr,i->addrlen);
@@ -151,7 +151,7 @@ hwaddrint get_hwaddr(const l2host *l2){
 	return l2->hwaddr;
 }
 
-const char *get_devname(const l2host *l2){
+const wchar_t *get_devname(const l2host *l2){
 	return l2->devname;
 }
 

@@ -223,8 +223,8 @@ iface_details(WINDOW *hw,const interface *i,int rows){
 		assert(mvwprintw(hw,row + z,col + 53," MTU: %-6d",i->mtu) != ERR);
 		--z;
 	}case 1:{
-		assert(mvwprintw(hw,row + z,col,"%-*s",scrcols - 2,i->topinfo.devname ?
-					i->topinfo.devname : "Unknown device") != ERR);
+		assert(mvwprintw(hw,row + z,col,"%-*ls",scrcols - 2,i->topinfo.devname ?
+					i->topinfo.devname : L"Unknown device") != ERR);
 		--z;
 	}case 0:{
 		if(i->addr){
