@@ -106,11 +106,15 @@ mmap_psocket(const omphalos_iface *octx,int op,int idx,int fd,
 		octx->diagnostic(L"Invalid idx with op %d: %d",op,idx);
 		return -1;
 	}
-	if(setsockopt(fd,SOL_PACKET,op,treq,sizeof(*treq)) < 0){
-		octx->diagnostic(L"Couldn't set socket option (%s?)",strerror(errno));
-		return 0;
+	if(op){
+		if(setsockopt(fd,SOL_PACKET,op,treq,sizeof(*treq)) < 0){
+			octx->diagnostic(L"Couldn't set socket option (%s?)",strerror(errno));
+			return 0;
+		}
 	}
-	if((*map = mmap(0,size,PROT_READ|PROT_WRITE,MAP_SHARED,fd,0)) == MAP_FAILED){
+	if((*map = mmap(0,size,PROT_READ|PROT_WRITE,
+				MAP_SHARED | (op ? 0 : MAP_ANONYMOUS),
+				op ? -1 : fd,0)) == MAP_FAILED){
 		octx->diagnostic(L"Couldn't mmap %zub (%s?)",size,strerror(errno));
 		return 0;
 	}
@@ -126,7 +130,9 @@ mmap_psocket(const omphalos_iface *octx,int op,int idx,int fd,
 size_t mmap_tx_psocket(const omphalos_iface *octx,int fd,int idx,
 				unsigned maxframe,void **map,
 				struct tpacket_req *treq){
-	return mmap_psocket(octx,PACKET_TX_RING,idx,fd,maxframe,map,treq);
+	// PACKET_TX_RING leads to bad craziness, perhaps due to threading
+	//return mmap_psocket(octx,PACKET_TX_RING,idx,fd,maxframe,map,treq);
+	return mmap_psocket(octx,0,idx,fd,maxframe,map,treq);
 }
 
 int unmap_psocket(const omphalos_iface *octx,void *map,size_t size){
