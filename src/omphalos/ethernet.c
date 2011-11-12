@@ -1,13 +1,16 @@
+#include <netinet/in.h>
 #include <sys/socket.h>
 #include <linux/if.h>
 #include <linux/llc.h>
 #include <omphalos/ip.h>
 #include <omphalos/arp.h>
 #include <omphalos/ipx.h>
+#include <omphalos/diag.h>
 #include <omphalos/util.h>
 #include <linux/if_fddi.h>
 #include <omphalos/eapol.h>
 #include <linux/if_ether.h>
+#include <linux/if_pppox.h>
 #include <omphalos/hwaddrs.h>
 #include <omphalos/ethernet.h>
 #include <omphalos/omphalos.h>
@@ -224,6 +227,25 @@ handle_8022(const omphalos_iface *octx,omphalos_packet *op,const void *frame,siz
 	}
 }
 
+static void
+handle_pppoe_packet(omphalos_packet *op,const void *frame,size_t len){
+	const struct pppoe_hdr *ppp = frame;
+	size_t dlen;
+
+	if(len < sizeof(*ppp)){
+		op->malformed = 1;
+		diagnostic(L"%s %s malformed with %zu",op->i->name,__func__,len);
+		return;
+	}
+	dlen = len - sizeof(*ppp);
+	if(dlen < ntohs(ppp->length)){
+		op->malformed = 1;
+		diagnostic(L"%s %s malformed with %zu",op->i->name,__func__,len);
+		return;
+	}
+	// FIXME
+}
+
 void handle_ethernet_packet(const omphalos_iface *octx,omphalos_packet *op,
 					const void *frame,size_t len){
 	const struct ethhdr *hdr = frame;
@@ -233,7 +255,7 @@ void handle_ethernet_packet(const omphalos_iface *octx,omphalos_packet *op,
 
 	if(len < sizeof(*hdr)){
 		op->malformed = 1;
-		octx->diagnostic(L"%s malformed with %zu",__func__,len);
+		octx->diagnostic(L"%s %s malformed with %zu",op->i->name,__func__,len);
 		return;
 	}
 	// Source and dest immediately follow the preamble in all frame types
@@ -269,6 +291,9 @@ void handle_ethernet_packet(const omphalos_iface *octx,omphalos_packet *op,
 			break;
 		}case ETH_P_LLDP:{
 			handle_lldp_packet(octx,op,dgram,dlen);
+			break;
+		}case ETH_P_PPP_DISC:{
+			handle_pppoe_packet(op,dgram,dlen);
 			break;
 		}default:{
 			if(proto < LLC_MAX_LEN){ // 802.2 DSAP (and maybe SNAP/802.1q)
