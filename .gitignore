@@ -1,5 +1,6 @@
 core
 ieee-oui.txt
+ieee-oui.txt.raw
 out
 tags
 tools/csumtest
