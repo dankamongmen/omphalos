@@ -381,7 +381,7 @@ int handle_dns_packet(omphalos_packet *op,const void *frame,size_t len){
 						// FIXME perform routing lookup on ss to get
 						// the desired interface and see whether we care
 						// about this address
-						offer_wresolution(fam,ss,L"name unknown",
+						offer_wresolution(fam,ss,L"address unknown",
 							NAMING_LEVEL_NXDOMAIN,nsfam,nsaddr);
 					}
 				}
