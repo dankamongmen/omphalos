@@ -106,7 +106,7 @@ version(const char *arg0){
 static inline void
 default_vdiagnostic(const wchar_t *fmt,va_list v){
 	assert(vfwprintf(stderr,fmt,v) >= 0);
-	assert(fputwc('\n',stderr) != WEOF);
+	assert(fputwc(L'\n',stderr) != WEOF);
 }
 
 static void
