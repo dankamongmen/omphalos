@@ -44,7 +44,7 @@ print_iface(FILE *fp,const interface *iface){
 		fwprintf(stderr,L"Unknown dev type %u\n",iface->arptype);
 		return -1;
 	}
-	n = fprintf(fp,"[%8s][%s] %d %s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s\n",
+	n = fwprintf(fp,L"[%8s][%s] %d %s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s\n",
 		iface->name,at,iface->mtu,
 		IFF_FLAG(iface->flags,UP),
 		IFF_FLAG(iface->flags,BROADCAST),
@@ -71,7 +71,7 @@ print_iface(FILE *fp,const interface *iface){
 	if(!(iface->flags & IFF_LOOPBACK)){
 		int nn;
 
-		nn = fprintf(fp,"\t   driver: %s %s @ %s\n",iface->drv.driver,
+		nn = fwprintf(fp,L"\t   driver: %s %s @ %s\n",iface->drv.driver,
 				iface->drv.version,iface->drv.bus_info);
 		if(nn < 0){
 			return -1;
