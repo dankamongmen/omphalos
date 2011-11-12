@@ -324,6 +324,8 @@ extract_dns_extra(size_t len,const unsigned char *sec,unsigned *ttl,
 	return buf;
 }
 
+// Returns 1 if answers were successfully extracted, 0 otherwise for valid
+// queries, and -1 on error. Success is carried by the 'server' boolean.
 int handle_dns_packet(omphalos_packet *op,const void *frame,size_t len){
 	const struct dnshdr *dns = frame;
 	uint16_t qd,an,ns,ar,flags;
@@ -333,6 +335,7 @@ int handle_dns_packet(omphalos_packet *op,const void *frame,size_t len){
 		uint128_t addr6;
 		uint32_t addr4;
 	} nsaddru;
+	int server = 0;
 	void *nsaddr;
 	char *buf;
 	int nsfam;
@@ -361,7 +364,7 @@ int handle_dns_packet(omphalos_packet *op,const void *frame,size_t len){
 	flags = ntohs(dns->flags);
 	len -= sizeof(*dns);
 	sec = (const unsigned char *)frame + sizeof(*dns);
-	// diagnostic(L"q/a/n/a: %hu/%hu/%hu/%hu",qd,an,ns,ar);
+	//diagnostic(L"q/a/n/a: %hu/%hu/%hu/%hu",qd,an,ns,ar);
 	while(qd--){
 		buf = extract_dns_record(len,sec,&class,&type,&bsize,frame);
 		if(buf == NULL){
@@ -369,6 +372,7 @@ int handle_dns_packet(omphalos_packet *op,const void *frame,size_t len){
 		}
 		if((flags & RESPONSE_CODE_MASK) == RESPONSE_CODE_NXDOMAIN){
 			if(class == DNS_CLASS_IN){
+				server = 1;
 				if(type == DNS_TYPE_PTR){
 					char ss[16]; // FIXME
 					int fam;
@@ -406,6 +410,7 @@ int handle_dns_packet(omphalos_packet *op,const void *frame,size_t len){
 		if(class == DNS_CLASS_IN){
 			int fam;
 
+			server = 1;
 			if(type == DNS_TYPE_PTR){
 				char ss[16]; // FIXME
 
@@ -452,7 +457,7 @@ int handle_dns_packet(omphalos_packet *op,const void *frame,size_t len){
 			goto malformed;
 		}
 	}
-	return 0;
+	return server;
 
 malformed:
 	diagnostic(L"%s malformed with %zu on %s",
@@ -530,7 +535,7 @@ int setup_dns_ptr(const struct routepath *rp,int fam,unsigned port,
 	udp = (struct udphdr *)((char *)frame + tlen);
 	udp->dest = htons(port);
 	// Don't send from the mDNS full resolver port or anything below. gross
-	udp->source = (random() % 60000) + 5354;
+	udp->source = htons((random() % 60000) + 5354);
 	udp->check = 0u;
 	tlen += sizeof(*udp);
 	if(flen - tlen < sizeof(*dnshdr) + strlen(question) + 1 + 4){

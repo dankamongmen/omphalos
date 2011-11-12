@@ -29,7 +29,7 @@ void handle_udp_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 	op->l4dst = udp->dest;
 	switch(udp->source){
 		case __constant_htons(DNS_UDP_PORT):{
-			if(handle_dns_packet(op,ubdy,ulen) == 0){
+			if(handle_dns_packet(op,ubdy,ulen) == 1){
 				observe_service(op->i,op->l2s,op->l3s,op->l3proto,
 					op->l4src,"DNS",NULL);
 			}
