@@ -49,7 +49,7 @@ int init_interfaces(void){
 	for(i = 0 ; i < sizeof(interfaces) / sizeof(*interfaces) ; ++i){
 		interface *iface = &interfaces[i];
 
-		if(pthread_mutex_init(&iface->lock,NULL)){
+		if(pthread_mutex_init(&iface->lock,&attr)){
 			while(i--){
 				pthread_mutex_destroy(&interfaces[i].lock);
 			}
