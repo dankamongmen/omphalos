@@ -295,6 +295,16 @@ void handle_ethernet_packet(const omphalos_iface *octx,omphalos_packet *op,
 		}case ETH_P_PPP_DISC:{
 			handle_pppoe_packet(op,dgram,dlen);
 			break;
+		}case ETH_P_DEC: // 0x6000..0x6007 are all DEC jankware
+		case ETH_P_DNA_DL:
+		case ETH_P_DNA_RC:
+		case ETH_P_DNA_RT:
+		case ETH_P_LAT:
+		case ETH_P_DIAG:
+		case ETH_P_CUST:
+		case ETH_P_SCA:{
+			//handle_dec_packet(op,dgram,dlen); FIXME
+			break;
 		}default:{
 			if(proto < LLC_MAX_LEN){ // 802.2 DSAP (and maybe SNAP/802.1q)
 				// FIXME check the proto (LLC length) field against framelen!
