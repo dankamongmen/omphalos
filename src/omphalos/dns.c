@@ -502,7 +502,7 @@ int setup_dns_ptr(const struct routepath *rp,int fam,unsigned port,
 	hw = get_hwaddr(rp->l2);
 	thdr = frame;
 	tlen = thdr->tp_mac;
-	if((r = prep_eth_header(frame + tlen,flen - tlen,rp->i,&hw,
+	if((r = prep_eth_header((char *)frame + tlen,flen - tlen,rp->i,&hw,
 				fam == AF_INET ? ETH_P_IP : ETH_P_IPV6)) < 0){
 		return -1;
 	}
