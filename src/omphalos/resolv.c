@@ -54,17 +54,42 @@ int queue_for_naming(struct interface *i,struct l3host *l3,dnstxfxn dnsfxn,
 	int ret = 0;
 
 	if(get_l3nlevel(l3) < NAMING_LEVEL_NXDOMAIN){
+		uint128_t addr;
+		void *ad;
+
 		if(pthread_mutex_lock(&resolver_lock)){
 			return -1;
 		}
 		// FIXME round-robin or even use the simple resolv.conf algorithm
+		// We don't call dnsfxn() while holding the resolvers lock,
+		// because it can lead to deadlock (interface A resolves using
+		// interface B, acquiring resolver lock. interface B takes its
+		// own lock, and wants to resolve, blocking on resolver lock.
+		// interface A needs get_tx_frame() and routing lookups on B,
+		// blocking on B's lock ---> deadlock).
 		if(resolvers){
-			ret = dnsfxn(AF_INET,&resolvers->addr.ip4,revstr);
-		}
-		if(resolvers6){
-			ret = dnsfxn(AF_INET6,&resolvers6->addr.ip6,revstr);
+			ad = &resolvers->addr.ip4;
+			memcpy(&addr,ad,sizeof(resolvers->addr.ip4));
+		}else{
+			ad = NULL;
 		}
 		pthread_mutex_unlock(&resolver_lock);
+		if(ad){
+			ret = dnsfxn(AF_INET,&addr,revstr);
+		}
+		if(pthread_mutex_lock(&resolver_lock)){
+			return -1;
+		}
+		if(resolvers6){
+			ad = &resolvers6->addr.ip6;
+			memcpy(&addr,ad,sizeof(resolvers6->addr.ip6));
+		}else{
+			ad = NULL;
+		}
+		pthread_mutex_unlock(&resolver_lock);
+		if(ad){
+			ret = dnsfxn(AF_INET6,&addr,revstr);
+		}
 	}
 	ret |= tx_mdns_ptr(i,revstr,fam,lookup);
 	return ret;
