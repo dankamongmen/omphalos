@@ -15,6 +15,8 @@
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
 
+#define TP_STATUS_PREPARING (~0u)
+
 // Acquire a frame from the ringbuffer. Start writing, given return value
 // 'frame', at: (char *)frame + ((struct tpacket_hdr *)frame)->tp_mac.
 void *get_tx_frame(interface *i,size_t *fsize){
@@ -38,6 +40,9 @@ void *get_tx_frame(interface *i,size_t *fsize){
 			}
 			thdr->tp_status = TP_STATUS_AVAILABLE;
 		}
+		// Need indicate that this one is in use, but don't want to
+		// indicate that it should be sent yet
+		thdr->tp_status = TP_STATUS_PREPARING;
 		// FIXME we ought be able to set this once for each packet, and be done
 		thdr->tp_net = thdr->tp_mac = TPACKET_ALIGN(sizeof(struct tpacket_hdr));
 		ret = i->curtxm;
@@ -108,10 +113,12 @@ void send_tx_frame(interface *i,void *frame){
 		struct tpacket_hdr *thdr = frame;
 		uint32_t tplen = thdr->tp_len;
 
-		assert(thdr->tp_status == TP_STATUS_AVAILABLE);
-		thdr->tp_status = TP_STATUS_SEND_REQUEST;
+		assert(thdr->tp_status == TP_STATUS_PREPARING);
 		pthread_mutex_lock(&i->lock);
-		ret = send(i->fd,NULL,0,0);
+		//thdr->tp_status = TP_STATUS_SEND_REQUEST;
+		//ret = send(i->fd,NULL,0,0);
+		ret = send(i->fd,(const char *)frame + thdr->tp_mac,thdr->tp_len,0);
+		thdr->tp_status = TP_STATUS_AVAILABLE;
 		pthread_mutex_unlock(&i->lock);
 		if(ret == 0){
 			ret = tplen;
