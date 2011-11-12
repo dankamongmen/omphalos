@@ -21,14 +21,18 @@ void *get_tx_frame(interface *i,size_t *fsize){
 	void *ret;
 
 	if(i->arptype != ARPHRD_LOOPBACK){
-		struct tpacket_hdr *thdr = i->curtxm;
+		struct tpacket_hdr *thdr;
 
+		assert(pthread_mutex_lock(&i->lock) == 0);
+		thdr = i->curtxm;
 		if(thdr == NULL){
+			pthread_mutex_unlock(&i->lock);
 			diagnostic(L"Can't transmit on %s (fd %d)",i->name,i->fd);
 			return NULL;
 		}
 		if(thdr->tp_status != TP_STATUS_AVAILABLE){
 			if(thdr->tp_status != TP_STATUS_WRONG_FORMAT){
+				pthread_mutex_unlock(&i->lock);
 				diagnostic(L"No available TX frames on %s",i->name);
 				return NULL;
 			}
@@ -38,6 +42,7 @@ void *get_tx_frame(interface *i,size_t *fsize){
 		thdr->tp_net = thdr->tp_mac = TPACKET_ALIGN(sizeof(struct tpacket_hdr));
 		ret = i->curtxm;
 		i->curtxm += inclen(&i->txidx,&i->ttpr);
+		pthread_mutex_unlock(&i->lock);
 		*fsize = i->ttpr.tp_frame_size;
 	}else{
 		struct tpacket_hdr *thdr;
