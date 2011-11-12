@@ -86,7 +86,10 @@ valgrind: all $(TESTPCAPS) $(SUPPORT)
 $(USBIDS):
 	wget http://www.linux-usb.org/usb.ids -O - | iconv -f iso-8859-1 -t utf-8 -o $@
 
-$(IANAOUI):
+$(IANAOUI): $(IANAOUI).raw
+	iconv -f iso-8859-1 -t utf-8 -o $@ $<
+
+$(IANAOUI).raw:
 	get-oui -v -f $@
 
 $(OMPHALOS)-ncurses: $(COREOBJS) $(NCURSESOBJS)
@@ -115,7 +118,7 @@ clean:
 	rm -rf $(OUT) core
 
 clobber: clean
-	rm -rf $(IANAOUI) $(USBIDS)
+	rm -rf $(IANAOUI) $(IANAOUI).raw $(USBIDS)
 
 bless: all
 	$(ADDCAPS) $(BIN)
