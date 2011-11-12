@@ -1,5 +1,6 @@
 #include <errno.h>
 #include <stdio.h>
+#include <limits.h>
 #include <string.h>
 #include <signal.h>
 #include <unistd.h>
@@ -270,16 +271,38 @@ handle_rtm_delneigh(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	return 0;
 }*/
 
-// FIXME Currently used solely as backup source addresses for routes which
-// don't define one.
+// Mask off the rightmost bits of the address. len is the address length in
+// octets. maskbits is the prefix length in bits (maskbits must be <= len * 8).
+static void *
+mask_addr(void *dst,void *src,unsigned maskbits,size_t len){
+	unsigned tomask;
+	uint32_t *m;
+
+	assert(len >= sizeof(*m));
+	memcpy(dst,src,len);
+	tomask = len * 8 - maskbits;
+	m = ((uint32_t *)dst) + (len / sizeof(*m) - 1);
+	while(tomask > sizeof(*m) * CHAR_BIT){
+		*m-- = 0;
+		tomask -= sizeof(*m) * CHAR_BIT;
+	}
+	// Patial 32-bit word mask
+	if(tomask){
+		*m &= (~0U) << tomask;
+	}
+	return dst;
+}
+
 static int
 handle_rtm_newaddr(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	const struct ifaddrmsg *ia = NLMSG_DATA(nl);
+	char astr[INET6_ADDRSTRLEN];
+	unsigned char prefixlen;
+	void *as = NULL,*ad;
+	uint128_t addr,dst;
 	struct rtattr *ra;
 	struct l2host *l2;
 	interface *iface;
-	void *as = NULL;
-	uint128_t addr;
 	size_t alen;
 	int rlen;
 
@@ -296,6 +319,8 @@ handle_rtm_newaddr(const omphalos_iface *octx,const struct nlmsghdr *nl){
 	}else{
 		return 0;
 	}
+	prefixlen = ia->ifa_prefixlen;
+	assert(prefixlen <= alen * 8);
 	while(RTA_OK(ra,rlen)){
 		switch(ra->rta_type){
 			case IFA_ADDRESS:
@@ -305,6 +330,8 @@ handle_rtm_newaddr(const omphalos_iface *octx,const struct nlmsghdr *nl){
 				}
 				as = &addr;
 				memcpy(as,RTA_DATA(ra),alen);
+				ad = &dst;
+				mask_addr(ad,RTA_DATA(ra),prefixlen,alen);
 				break;
 			case IFA_LOCAL: break;
 			case IFA_BROADCAST: break;
@@ -316,13 +343,24 @@ handle_rtm_newaddr(const omphalos_iface *octx,const struct nlmsghdr *nl){
 		}
 		ra = RTA_NEXT(ra,rlen);
 	}
+	if(!as){
+		diagnostic(L"No address in ifaddrmsg");
+		return -1;
+	}
+	assert(inet_ntop(ia->ifa_family,as,astr,sizeof(astr)));
 	lock_interface(iface);
+	if(ia->ifa_family == AF_INET){
+		add_route4(iface,ad,NULL,as,prefixlen,ia->ifa_index);
+	}else{
+		add_route6(iface,ad,NULL,as,prefixlen,ia->ifa_index);
+	}
 	if(ia->ifa_family == AF_INET6 && as){
 		set_default_ipv6src(iface,*(const uint128_t *)as);
 	}
 	l2 = lookup_l2host(iface,iface->addr);
 	lookup_local_l3host(iface,l2,ia->ifa_family,as);
 	unlock_interface(iface);
+	diagnostic(L"[%s] new address %s",iface->name,astr);
 	return 0;
 }
 

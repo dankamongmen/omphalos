@@ -110,8 +110,9 @@ void send_tx_frame(interface *i,void *frame){
 
 		assert(thdr->tp_status == TP_STATUS_AVAILABLE);
 		thdr->tp_status = TP_STATUS_SEND_REQUEST;
-		//ret = send(i->fd,(char *)frame + TPACKET_ALIGN(sizeof(*thdr)),tplen,0);
+		pthread_mutex_lock(&i->lock);
 		ret = send(i->fd,NULL,0,0);
+		pthread_mutex_unlock(&i->lock);
 		if(ret == 0){
 			ret = tplen;
 		}
