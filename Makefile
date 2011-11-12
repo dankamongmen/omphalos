@@ -14,7 +14,7 @@ OMPHALOS:=$(OUT)/$(PROJ)/$(PROJ)
 ADDCAPS:=tools/addcaps
 SETUPCORE:=tools/setupcores
 
-UI:=ncurses tty
+UI:=ncurses tty x
 BIN:=$(addprefix $(OMPHALOS)-,$(UI))
 
 DFLAGS:=-D_FILE_OFFSET_BITS=64 -D_XOPEN_SOURCE_EXTENDED -D_GNU_SOURCE
@@ -67,6 +67,7 @@ COBJS:=$(addprefix $(OUT)/,$(CSRCS:%.c=%.o))
 COREOBJS:=$(filter $(OUT)/$(SRC)/$(PROJ)/%.o,$(COBJS))
 NCURSESOBJS:=$(filter $(OUT)/$(SRC)/ui/ncurses/%.o,$(COBJS))
 TTYOBJS:=$(filter $(OUT)/$(SRC)/ui/tty/%.o,$(COBJS))
+XOBJS:=$(filter $(OUT)/$(SRC)/ui/x/%.o,$(COBJS))
 
 USBIDS:=usb.ids
 IANAOUI:=ieee-oui.txt
@@ -99,6 +100,10 @@ $(OMPHALOS)-ncurses: $(COREOBJS) $(NCURSESOBJS)
 $(OMPHALOS)-tty: $(COREOBJS) $(TTYOBJS)
 	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -o $@ $^ $(LFLAGS) -lreadline -lncursesw
+
+$(OMPHALOS)-x: $(COREOBJS) $(XOBJS)
+	@mkdir -p $(@D)
+	$(CC) $(CFLAGS) -o $@ $^ $(LFLAGS) -lX11
 
 $(OUT)/%.o: %.c $(CINCS) $(MAKEFILE)
 	@mkdir -p $(@D)
