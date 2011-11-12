@@ -66,7 +66,7 @@ size_mmap_psocket(const omphalos_iface *octx,struct tpacket_req *treq,unsigned m
 
 	// Must be a multiple of TPACKET_ALIGNMENT, and the following must
 	// hold: TPACKET_HDRLEN <= tp_frame_size <= tp_block_size.
-	treq->tp_frame_size = TPACKET_ALIGN(TPACKET_HDRLEN + sizeof(struct tpacket_hdr) + maxframe);
+	treq->tp_frame_size = TPACKET_ALIGN(TPACKET_HDRLEN + maxframe);
 	if(get_block_size(octx,treq->tp_frame_size,&treq->tp_block_size) < 0){
 		return 0;
 	}
@@ -76,7 +76,7 @@ size_mmap_psocket(const omphalos_iface *octx,struct tpacket_req *treq,unsigned m
 	treq->tp_frame_size = treq->tp_block_size / fperblk;
 	// Array of pointers to blocks, allocated via slab -- cannot be
 	// larger than largest slabbable allocation. FIXME do better
-	treq->tp_block_nr = 4096 / (treq->tp_block_size / getpagesize());
+	treq->tp_block_nr = 1024 / (treq->tp_block_size / getpagesize());
 	// tp_frame_nr is derived from the other three parameters.
 	treq->tp_frame_nr = (treq->tp_block_size / treq->tp_frame_size)
 		* treq->tp_block_nr;
