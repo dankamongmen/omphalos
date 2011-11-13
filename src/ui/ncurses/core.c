@@ -727,6 +727,8 @@ void *interface_cb_locked(interface *i,iface_state *ret,struct panel_state *ps){
 			++count_interface;
 			// calls draw_main_window(), updating iface count
 			wstatus_locked(stdscr,L"Set up new interface %s",i->name);
+		}else{
+			rb = NULL;
 		}
 	}else{
 		rb = ret->rb;
