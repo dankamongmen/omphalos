@@ -115,7 +115,7 @@ void *get_tx_frame(interface *i,size_t *fsize){
 // transport protocol supported now, or likely to be supported ever (due to the
 // mechanics of the mechanism).
 static ssize_t
-send_loopback_frame(interface *i,void *frame){
+send_to_self(interface *i,void *frame){
 	struct tpacket_hdr *thdr = frame;
 	const struct udphdr *udp;
 	const struct ethhdr *eth;
@@ -138,6 +138,16 @@ send_loopback_frame(interface *i,void *frame){
 	return sendto(i->fd,payload,plen,MSG_DONTROUTE,&sina,sizeof(sina));
 }
 
+static inline int
+self_directed(const interface *i,const void *frame){
+	return !i && !frame; // FIXME
+}
+
+static inline int
+out_directed(const interface *i,const void *frame){
+	return i && frame; // FIXME
+}
+
 /* to log transmitted packets, use the following: {
 }*/
 // Mark a frame as ready-to-send. Must have come from get_tx_frame() using this
@@ -145,24 +155,24 @@ send_loopback_frame(interface *i,void *frame){
 void send_tx_frame(interface *i,void *frame){
 	int ret;
 
-	if(i->arptype != ARPHRD_LOOPBACK){
+	if(self_directed(i,frame)){
+		ret = send_to_self(i,frame);
+	}
+	if(out_directed(i,frame)){
 		struct tpacket_hdr *thdr = frame;
 		uint32_t tplen = thdr->tp_len;
 
 		assert(thdr->tp_status == TP_STATUS_PREPARING);
 		pthread_mutex_lock(&i->lock);
-		thdr->tp_status = TP_STATUS_SEND_REQUEST;
-		ret = send(i->fd,NULL,0,0);
-		//ret = send(i->fd,(const char *)frame + thdr->tp_mac,thdr->tp_len,0);
-		//thdr->tp_status = TP_STATUS_AVAILABLE;
+		//thdr->tp_status = TP_STATUS_SEND_REQUEST;
+		//ret = send(i->fd,NULL,0,0);
+		ret = send(i->fd,(const char *)frame + thdr->tp_mac,thdr->tp_len,0);
+		thdr->tp_status = TP_STATUS_AVAILABLE;
 		pthread_mutex_unlock(&i->lock);
 		if(ret == 0){
 			ret = tplen;
 		}
 		//diagnostic(L"Transmitted %d on %s",ret,i->name);
-	}else{
-		ret = send_loopback_frame(i,frame);
-		free(frame);
 	}
 	if(ret < 0){
 		diagnostic(L"Error transmitting on %s",i->name);
