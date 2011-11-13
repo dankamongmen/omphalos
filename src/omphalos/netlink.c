@@ -503,8 +503,8 @@ pmarsh_create(void){
 
 static int
 prepare_rx_socket(const omphalos_iface *octx,interface *iface,int idx){
-	if((iface->rfd = packet_socket(octx,ETH_P_ALL)) >= 0){
-		if((iface->rs = mmap_rx_psocket(octx,iface->rfd,idx,
+	if((iface->rfd = packet_socket(ETH_P_ALL)) >= 0){
+		if((iface->rs = mmap_rx_psocket(iface->rfd,idx,
 				iface->mtu,&iface->rxm,&iface->rtpr)) > 0){
 			if( (iface->pmarsh = pmarsh_create()) ){
 				iface->pmarsh->ctx = get_octx();
@@ -534,8 +534,8 @@ static int
 prepare_packet_sockets(const omphalos_iface *octx,interface *iface,int idx){
 	if((iface->fd6 = raw_socket(AF_INET6)) >= 0){
 		if((iface->fd4 = raw_socket(AF_INET)) >= 0){
-			if((iface->fd = packet_socket(octx,ETH_P_ALL)) >= 0){
-				if((iface->ts = mmap_tx_psocket(octx,iface->fd,idx,
+			if((iface->fd = packet_socket(ETH_P_ALL)) >= 0){
+				if((iface->ts = mmap_tx_psocket(iface->fd,idx,
 						iface->mtu,&iface->txm,&iface->ttpr)) > 0){
 					if(prepare_rx_socket(octx,iface,idx) == 0){
 						return 0;

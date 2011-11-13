@@ -26,31 +26,31 @@
 #endif
 
 // See packet(7) and Documentation/networking/packet_mmap.txt
-int packet_socket(const omphalos_iface *pctx,unsigned protocol){
+int packet_socket(unsigned protocol){
 	int fd;
 
 	if((fd = socket(AF_PACKET,SOCK_RAW,ntohs(protocol))) < 0){
-		pctx->diagnostic(L"Couldn't open packet socket (%s?)",strerror(errno));
+		diagnostic(L"Couldn't open packet socket (%s?)",strerror(errno));
 		return -1;
 	}
 	return fd;
 }
 
 static int
-get_block_size(const omphalos_iface *octx,unsigned fsize,unsigned *bsize){
+get_block_size(unsigned fsize,unsigned *bsize){
 	int b;
 
 	// Ought be a power of two for performance. Must be a multiple of
 	// page size. Ought be a multiple of tp_frame_size for efficiency.
 	b = getpagesize();
 	if(b < 0){
-		octx->diagnostic(L"Couldn't get page size (%s?)",strerror(errno));
+		diagnostic(L"Couldn't get page size (%s?)",strerror(errno));
 		return -1;
 	}
 	*bsize = b;
 	while(*bsize < fsize){
 		if((*bsize << 1u) < *bsize){
-			octx->diagnostic(L"No valid configurations found");
+			diagnostic(L"No valid configurations found");
 			return -1;
 		}
 		*bsize <<= 1u;
@@ -61,13 +61,13 @@ get_block_size(const omphalos_iface *octx,unsigned fsize,unsigned *bsize){
 // Returns 0 on failure, otherwise size of the ringbuffer. On a failure,
 // contents of treq are unspecified.
 static size_t
-size_mmap_psocket(const omphalos_iface *octx,struct tpacket_req *treq,unsigned maxframe){
+size_mmap_psocket(struct tpacket_req *treq,unsigned maxframe){
 	unsigned fperblk;
 
 	// Must be a multiple of TPACKET_ALIGNMENT, and the following must
 	// hold: TPACKET_HDRLEN <= tp_frame_size <= tp_block_size.
 	treq->tp_frame_size = TPACKET_ALIGN(TPACKET_HDRLEN + maxframe);
-	if(get_block_size(octx,treq->tp_frame_size,&treq->tp_block_size) < 0){
+	if(get_block_size(treq->tp_frame_size,&treq->tp_block_size) < 0){
 		return 0;
 	}
 	fperblk = treq->tp_block_size / treq->tp_frame_size;
@@ -84,12 +84,12 @@ size_mmap_psocket(const omphalos_iface *octx,struct tpacket_req *treq,unsigned m
 }
 
 static size_t
-mmap_psocket(const omphalos_iface *octx,int op,int idx,int fd,
+mmap_psocket(int op,int idx,int fd,
 			unsigned maxframe,void **map,struct tpacket_req *treq){
 	size_t size;
 
 	*map = MAP_FAILED;
-	if((size = size_mmap_psocket(octx,treq,maxframe)) == 0){
+	if((size = size_mmap_psocket(treq,maxframe)) == 0){
 		return 0;
 	}
 	if(idx >= 0){
@@ -99,52 +99,52 @@ mmap_psocket(const omphalos_iface *octx,int op,int idx,int fd,
 		sll.sll_family = AF_PACKET;
 		sll.sll_ifindex = idx;
 		if(bind(fd,(struct sockaddr *)&sll,sizeof(sll)) < 0){
-			octx->diagnostic(L"Couldn't bind idx %d (%s?)",idx,strerror(errno));
+			diagnostic(L"Couldn't bind idx %d (%s?)",idx,strerror(errno));
 			return 0;
 		}
 	}else if(op == PACKET_TX_RING){
-		octx->diagnostic(L"Invalid idx with op %d: %d",op,idx);
+		diagnostic(L"Invalid idx with op %d: %d",op,idx);
 		return -1;
 	}
 	if(op){
 		if(setsockopt(fd,SOL_PACKET,op,treq,sizeof(*treq)) < 0){
-			octx->diagnostic(L"Couldn't set socket option (%s?)",strerror(errno));
+			diagnostic(L"Couldn't set socket option (%s?)",strerror(errno));
 			return 0;
 		}
 	}
 	if((*map = mmap(0,size,PROT_READ|PROT_WRITE,
 				MAP_SHARED | (op ? 0 : MAP_ANONYMOUS),
 				op ? fd : -1,0)) == MAP_FAILED){
-		octx->diagnostic(L"Couldn't mmap %zub (%s?)",size,strerror(errno));
+		diagnostic(L"Couldn't mmap %zub (%s?)",size,strerror(errno));
 		return 0;
 	}
 	// FIXME MADV_HUGEPAGE support was dropped in 2.6.38.4, it seems.
 #ifdef MADV_HUGEPAGE
 	if(madvise(*map,size,MADV_HUGEPAGE)){
-		//octx->diagnostic(L"Couldn't advise hugepages for %zu (%s?)",size,strerror(errno));
+		//diagnostic(L"Couldn't advise hugepages for %zu (%s?)",size,strerror(errno));
 	}
 #endif
 	return size;
 }
 
-size_t mmap_tx_psocket(const omphalos_iface *octx,int fd,int idx,
+size_t mmap_tx_psocket(int fd,int idx,
 				unsigned maxframe,void **map,
 				struct tpacket_req *treq){
 	// PACKET_TX_RING leads to bad craziness, perhaps due to threading
-	//return mmap_psocket(octx,PACKET_TX_RING,idx,fd,maxframe,map,treq);
-	return mmap_psocket(octx,0,idx,fd,maxframe,map,treq);
+	//return mmap_psocket(PACKET_TX_RING,idx,fd,maxframe,map,treq);
+	return mmap_psocket(0,idx,fd,maxframe,map,treq);
 }
 
-int unmap_psocket(const omphalos_iface *octx,void *map,size_t size){
+int unmap_psocket(void *map,size_t size){
 	if(munmap(map,size)){
-		octx->diagnostic(L"Couldn't unmap %zub ring buffer (%s?)",size,strerror(errno));
+		diagnostic(L"Couldn't unmap %zub ring buffer (%s?)",size,strerror(errno));
 		return -1;
 	}
 	return 0;
 }
 
 static int
-recover_truncated_packet(const omphalos_iface *octx,interface *iface,int fd,unsigned tlen){
+recover_truncated_packet(interface *iface,int fd,unsigned tlen){
 	int r;
 
 	if(iface->truncbuflen < tlen){
@@ -159,11 +159,11 @@ recover_truncated_packet(const omphalos_iface *octx,interface *iface,int fd,unsi
 	// Passing MSG_TRUNC ensures that we get the true length of the packet
 	// from the wire (see packet(7)).
 	if((r = recvfrom(fd,iface->truncbuf,iface->truncbuflen,MSG_DONTWAIT|MSG_TRUNC,NULL,0)) <= 0){
-		octx->diagnostic(L"Error in recvfrom(%s): %s",iface->name,strerror(errno));
+		diagnostic(L"Error in recvfrom(%s): %s",iface->name,strerror(errno));
 		return r;
 	}
 	if((unsigned)r > iface->truncbuflen){
-		octx->diagnostic(L"Couldn't recover truncated packet (%d > %zu)",r,iface->truncbuflen);
+		diagnostic(L"Couldn't recover truncated packet (%d > %zu)",r,iface->truncbuflen);
 		return -1;
 	}
 	return r;
@@ -203,7 +203,7 @@ int handle_ring_packet(const omphalos_iface *octx,interface *iface,int fd,void *
 			return 1;
 		}else if(events < 0){
 			if(errno != EINTR){
-				octx->diagnostic(L"Error in poll() on %s (%s?)",
+				diagnostic(L"Error in poll() on %s (%s?)",
 						iface->name,strerror(errno));
 				return -1;
 			}
@@ -213,7 +213,7 @@ int handle_ring_packet(const omphalos_iface *octx,interface *iface,int fd,void *
 			// is removed from underneath us, but also don't want
 			// to race against notification...check to see if
 			// device is down here? FIXME
-			//octx->diagnostic(L"Error polling psocket %d on %s",fd,i->name);
+			//diagnostic(L"Error polling psocket %d on %s",fd,i->name);
 			return -1;
 		}
 	}
@@ -228,17 +228,17 @@ int handle_ring_packet(const omphalos_iface *octx,interface *iface,int fd,void *
 		// FIXME only call once for each burst of TP_STATUS_LOSING
 		slen = sizeof(tstats);
 		if(getsockopt(fd,SOL_PACKET,PACKET_STATISTICS,&tstats,&slen)){
-			octx->diagnostic(L"Error reading stats on %s (%s?)",iface->name,strerror(errno));
+			diagnostic(L"Error reading stats on %s (%s?)",iface->name,strerror(errno));
 		}else if(tstats.tp_drops){
 			iface->drops += tstats.tp_drops;
-			octx->diagnostic(L"[%s] FUCK ME; THE RINGBUFFER'S FULL (%ju/%ju drops)!",
+			diagnostic(L"[%s] FUCK ME; THE RINGBUFFER'S FULL (%ju/%ju drops)!",
 				iface->name,tstats.tp_drops,iface->drops);
 		}
 	}
 	if((thdr->tp_status & TP_STATUS_COPY) || thdr->tp_snaplen != thdr->tp_len){
 		++iface->truncated;
-		if((len = recover_truncated_packet(octx,iface,fd,thdr->tp_len)) <= 0){
-			octx->diagnostic(L"Partial capture on %s (%u/%ub)",
+		if((len = recover_truncated_packet(iface,fd,thdr->tp_len)) <= 0){
+			diagnostic(L"Partial capture on %s (%u/%ub)",
 				iface->name,thdr->tp_snaplen,thdr->tp_len);
 			frame = (char *)frame + thdr->tp_mac;
 			len = thdr->tp_snaplen;
@@ -300,22 +300,22 @@ packet_multicast(int fd,int ifindex){
 	return 0;
 }
 
-size_t mmap_rx_psocket(const omphalos_iface *octx,int fd,int idx,
+size_t mmap_rx_psocket(int fd,int idx,
 		unsigned maxframe,void **map,struct tpacket_req *treq){
 	size_t ret;
 	int thresh;
 
-	ret = mmap_psocket(octx,PACKET_RX_RING,idx,fd,maxframe,map,treq);
+	ret = mmap_psocket(PACKET_RX_RING,idx,fd,maxframe,map,treq);
 	if(ret == 0){
 		return 0;
 	}
 	thresh = 1;
 	if(setsockopt(fd,SOL_PACKET,PACKET_COPY_THRESH,&thresh,sizeof(thresh))){
-		unmap_psocket(octx,*map,ret);
+		unmap_psocket(*map,ret);
 		return -1;
 	}
 	if(packet_multicast(fd,idx)){
-		unmap_psocket(octx,*map,ret);
+		unmap_psocket(*map,ret);
 		return -1;
 	}
 	return ret;

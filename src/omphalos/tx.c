@@ -71,48 +71,33 @@
 // Acquire a frame from the ringbuffer. Start writing, given return value
 // 'frame', at: (char *)frame + ((struct tpacket_hdr *)frame)->tp_mac.
 void *get_tx_frame(interface *i,size_t *fsize){
+	struct tpacket_hdr *thdr;
 	void *ret;
 
-	if(i->arptype != ARPHRD_LOOPBACK){
-		struct tpacket_hdr *thdr;
-
-		assert(pthread_mutex_lock(&i->lock) == 0);
-		thdr = i->curtxm;
-		if(thdr == NULL){
+	assert(pthread_mutex_lock(&i->lock) == 0);
+	thdr = i->curtxm;
+	if(thdr == NULL){
+		pthread_mutex_unlock(&i->lock);
+		diagnostic(L"Can't transmit on %s (fd %d)",i->name,i->fd);
+		return NULL;
+	}
+	if(thdr->tp_status != TP_STATUS_AVAILABLE){
+		if(thdr->tp_status != TP_STATUS_WRONG_FORMAT){
 			pthread_mutex_unlock(&i->lock);
-			diagnostic(L"Can't transmit on %s (fd %d)",i->name,i->fd);
+			diagnostic(L"No available TX frames on %s",i->name);
 			return NULL;
 		}
-		if(thdr->tp_status != TP_STATUS_AVAILABLE){
-			if(thdr->tp_status != TP_STATUS_WRONG_FORMAT){
-				pthread_mutex_unlock(&i->lock);
-				diagnostic(L"No available TX frames on %s",i->name);
-				return NULL;
-			}
-			thdr->tp_status = TP_STATUS_AVAILABLE;
-		}
-		// Need indicate that this one is in use, but don't want to
-		// indicate that it should be sent yet
-		thdr->tp_status = TP_STATUS_PREPARING;
-		// FIXME we ought be able to set this once for each packet, and be done
-		thdr->tp_net = thdr->tp_mac = TPACKET_ALIGN(sizeof(struct tpacket_hdr));
-		ret = i->curtxm;
-		i->curtxm += inclen(&i->txidx,&i->ttpr);
-		pthread_mutex_unlock(&i->lock);
-		*fsize = i->ttpr.tp_frame_size;
-	}else{
-		struct tpacket_hdr *thdr;
-
-		*fsize = i->mtu + TPACKET_ALIGN(sizeof(struct tpacket_hdr));
-		// FIXME pull from constrained, preallocated, compact buffer ew
-		ret = malloc(*fsize);
-		if( (thdr = ret) ){
-			thdr->tp_net = thdr->tp_mac = TPACKET_ALIGN(sizeof(struct tpacket_hdr));
-		}else{
-			diagnostic(L"Can't transmit on %s (fd %d)",i->name,i->fd);
-			*fsize = 0;
-		}
+		thdr->tp_status = TP_STATUS_AVAILABLE;
 	}
+	// Need indicate that this one is in use, but don't want to
+	// indicate that it should be sent yet
+	thdr->tp_status = TP_STATUS_PREPARING;
+	// FIXME we ought be able to set this once for each packet, and be done
+	thdr->tp_net = thdr->tp_mac = TPACKET_ALIGN(sizeof(struct tpacket_hdr));
+	ret = i->curtxm;
+	i->curtxm += inclen(&i->txidx,&i->ttpr);
+	pthread_mutex_unlock(&i->lock);
+	*fsize = i->ttpr.tp_frame_size;
 	return ret;
 }
 
@@ -166,10 +151,10 @@ void send_tx_frame(interface *i,void *frame){
 
 		assert(thdr->tp_status == TP_STATUS_PREPARING);
 		pthread_mutex_lock(&i->lock);
-		//thdr->tp_status = TP_STATUS_SEND_REQUEST;
-		//ret = send(i->fd,NULL,0,0);
-		ret = send(i->fd,(const char *)frame + thdr->tp_mac,thdr->tp_len,0);
-		thdr->tp_status = TP_STATUS_AVAILABLE;
+		thdr->tp_status = TP_STATUS_SEND_REQUEST;
+		ret = send(i->fd,NULL,0,0);
+		//ret = send(i->fd,(const char *)frame + thdr->tp_mac,thdr->tp_len,0);
+		//thdr->tp_status = TP_STATUS_AVAILABLE;
 		pthread_mutex_unlock(&i->lock);
 		if(ret == 0){
 			ret = tplen;
