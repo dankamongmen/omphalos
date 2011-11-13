@@ -140,7 +140,20 @@ send_to_self(interface *i,void *frame){
 
 static inline int
 self_directed(const interface *i,const void *frame){
-	return !i && !frame; // FIXME
+	int r = 0;
+
+	switch(i->arptype){
+		case ARPHRD_ETHER:{
+			const struct ethhdr *eth = frame;
+
+			// LOCAL, MULTICAST, and BROADCAST all ought go to us
+			r = !(categorize_l2addr(i,eth->h_dest) == RTN_UNICAST);
+			break;
+		}default:
+			diagnostic(L"Need implement %s for %u",__func__,i->arptype);
+			break;
+	}
+	return r;
 }
 
 static inline int
