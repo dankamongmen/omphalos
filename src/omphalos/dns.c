@@ -524,6 +524,8 @@ int setup_dns_ptr(const struct routepath *rp,int fam,unsigned port,
 		totlen = &((struct ip6_hdr *)iphdr)->ip6_ctlun.ip6_un1.ip6_un1_plen;
 		r = prep_ipv6_header(iphdr,flen - tlen,src6,addr6,IPPROTO_UDP);
 		*totlen = tlen + r;
+	}else{
+		return -1;
 	}
 	if(r < 0){
 		return -1;
