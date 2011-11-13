@@ -117,48 +117,66 @@ void *get_tx_frame(interface *i,size_t *fsize){
 static ssize_t
 send_to_self(interface *i,void *frame){
 	struct tpacket_hdr *thdr = frame;
-	const struct udphdr *udp;
 	const struct ethhdr *eth;
 	struct sockaddr_in sina;
-	const struct iphdr *ip;
+	struct sockaddr_in6 sina6;
+	const struct sockaddr *ss;
 	const void *payload;
+	socklen_t slen;
 	unsigned plen;
+	int fd;
 
 	eth = (const struct ethhdr *)((const char *)frame + thdr->tp_mac);
-	assert(eth->h_proto == ntohs(ETH_P_IP));
-	ip = (const struct iphdr *)((const char *)eth + sizeof(*eth));
-	assert(ip->protocol == IPPROTO_UDP);
-	udp = (const struct udphdr *)((const char *)ip + ip->ihl * 4u);
-	memset(&sina,0,sizeof(sina));
-	sina.sin_family = AF_INET;
-	sina.sin_addr.s_addr = ip->daddr;
-	sina.sin_port = udp->dest;
-	payload = (const char *)udp + sizeof(*udp);
-	plen = ntohs(udp->len) - sizeof(*udp);
-	return sendto(i->fd,payload,plen,MSG_DONTROUTE,&sina,sizeof(sina));
+	if(eth->h_proto == ntohs(ETH_P_IP)){
+		const struct udphdr *udp;
+		const struct iphdr *ip;
+
+		fd = i->fd4;
+		ss = (const struct sockaddr *)&sina;
+		slen = sizeof(sina);
+		memset(&sina,0,sizeof(sina));
+		sina.sin_family = AF_INET;
+		ip = (const struct iphdr *)((const char *)eth + sizeof(*eth));
+		assert(ip->protocol == IPPROTO_UDP);
+		sina.sin_addr.s_addr = ip->daddr;
+		udp = (const struct udphdr *)((const char *)ip + ip->ihl * 4u);
+		sina.sin_port = udp->dest;
+		payload = (const char *)udp + sizeof(*udp);
+		plen = ntohs(udp->len) - sizeof(*udp);
+	}else if(eth->h_proto == ntohs(ETH_P_IPV6)){
+		fd = i->fd6;
+		ss = (const struct sockaddr *)&sina6;
+		slen = sizeof(sina6);
+		return -1; // FIXME
+	}else{
+		return -1;
+	}
+	return sendto(fd,payload,plen,MSG_DONTROUTE,ss,slen);
 }
 
+// Determine whether the packet is (a) self-directed and/or (b) out-directed.
+// We should never return 0 for both, unless we don't know the L2 protocol.
 static inline int
-self_directed(const interface *i,const void *frame){
+categorize_tx(const interface *i,const void *frame,int *self,int *out){
 	int r = 0;
 
 	switch(i->arptype){
 		case ARPHRD_ETHER:{
 			const struct ethhdr *eth = frame;
 
-			// LOCAL, MULTICAST, and BROADCAST all ought go to us
-			r = !(categorize_l2addr(i,eth->h_dest) == RTN_UNICAST);
+			r = categorize_l2addr(i,eth->h_dest);
+			// LOCAL, MULTICAST, and BROADCAST all ought go to us,
+			// unless they're ARP.
+			*self = (!(r == RTN_UNICAST)) && (ntohs(eth->h_proto) != ETH_P_ARP);
+			*out = !(r == RTN_LOCAL);
 			break;
 		}default:
 			diagnostic(L"Need implement %s for %u",__func__,i->arptype);
+			*self = 0;
+			*out = 0;
 			break;
 	}
 	return r;
-}
-
-static inline int
-out_directed(const interface *i,const void *frame){
-	return i && frame; // FIXME
 }
 
 /* to log transmitted packets, use the following: {
@@ -166,14 +184,25 @@ out_directed(const interface *i,const void *frame){
 // Mark a frame as ready-to-send. Must have come from get_tx_frame() using this
 // same interface. Yes, we will see packets we generate on the RX ring.
 void send_tx_frame(interface *i,void *frame){
-	int ret;
+	int self,out;
 
-	if(self_directed(i,frame)){
+	categorize_tx(i,frame,&self,&out);
+	if(self){
+		int ret;
+
 		ret = send_to_self(i,frame);
+		if(ret < 0){
+			diagnostic(L"Error transmitting on %s",i->name);
+			++i->txerrors;
+		}else{
+			i->txbytes += ret;
+			++i->txframes;
+		}
 	}
-	if(out_directed(i,frame)){
+	if(out){
 		struct tpacket_hdr *thdr = frame;
 		uint32_t tplen = thdr->tp_len;
+		int ret;
 
 		assert(thdr->tp_status == TP_STATUS_PREPARING);
 		pthread_mutex_lock(&i->lock);
@@ -186,22 +215,23 @@ void send_tx_frame(interface *i,void *frame){
 			ret = tplen;
 		}
 		//diagnostic(L"Transmitted %d on %s",ret,i->name);
-	}
-	if(ret < 0){
-		diagnostic(L"Error transmitting on %s",i->name);
-		++i->txerrors;
-	}else{
-		i->txbytes += ret;
-		++i->txframes;
+		if(ret < 0){
+			diagnostic(L"Error transmitting on %s",i->name);
+			++i->txerrors;
+		}else{
+			i->txbytes += ret;
+			++i->txframes;
+		}
 	}
 }
 
 void abort_tx_frame(interface *i,void *frame){
-	if(i->arptype != ARPHRD_LOOPBACK){
-		++i->txaborts;
-	}else{
-		free(frame);
-	}
+	struct tpacket_hdr *thdr = frame;
+
+	pthread_mutex_lock(&i->lock);
+	++i->txaborts;
+	thdr->tp_status = TP_STATUS_AVAILABLE;
+	pthread_mutex_unlock(&i->lock);
 	diagnostic(L"Aborted TX %llu on %s",i->txaborts,i->name);
 }
 
