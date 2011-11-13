@@ -124,14 +124,14 @@ int l2hostcmp(const l2host *l21,const l2host *l22,size_t addrlen){
 	return memcmp(&l21->hwaddr,&l22->hwaddr,addrlen);
 }
 
-int l2categorize(const interface *i,const l2host *l2){
-	if(memcmp(i->addr,&l2->hwaddr,i->addrlen) == 0){
+int categorize_l2addr(const interface *i,const void *hwaddr){
+	if(memcmp(i->addr,hwaddr,i->addrlen) == 0){
 		return RTN_LOCAL;
 	}
 	if(i->arptype == ARPHRD_ETHER){
-		if(categorize_ethaddr(&l2->hwaddr) == RTN_MULTICAST){
+		if(categorize_ethaddr(hwaddr) == RTN_MULTICAST){
 			if((i->flags & IFF_BROADCAST) && i->bcast){
-				if(memcmp(i->bcast,&l2->hwaddr,i->addrlen) == 0){
+				if(memcmp(i->bcast,hwaddr,i->addrlen) == 0){
 					return RTN_BROADCAST;
 				}
 			}
@@ -140,11 +140,15 @@ int l2categorize(const interface *i,const l2host *l2){
 		return RTN_UNICAST;
 	}
 	if((i->flags & IFF_BROADCAST) && i->bcast){
-		if(memcmp(i->bcast,&l2->hwaddr,i->addrlen) == 0){
+		if(memcmp(i->bcast,hwaddr,i->addrlen) == 0){
 			return RTN_BROADCAST;
 		}
 	}
 	return RTN_UNICAST;
+}
+
+int l2categorize(const interface *i,const l2host *l2){
+	return categorize_l2addr(i,&l2->hwaddr);
 }
 
 hwaddrint get_hwaddr(const l2host *l2){

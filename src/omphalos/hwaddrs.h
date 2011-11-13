@@ -41,6 +41,9 @@ int l2hostcmp(const struct l2host *,const struct l2host *,size_t)
 int l2categorize(const struct interface *,const struct l2host *)
 				__attribute__ ((nonnull (1,2)));
 
+int categorize_l2addr(const struct interface *,const void *)
+				__attribute__ ((nonnull (1,2)));
+
 // Stats
 void l2srcpkt(struct l2host *) __attribute__ ((nonnull (1)));
 void l2dstpkt(struct l2host *) __attribute__ ((nonnull (1)));
