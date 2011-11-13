@@ -526,16 +526,29 @@ prepare_rx_socket(const omphalos_iface *octx,interface *iface,int idx){
 }
 
 static int
+raw_socket(int fam){
+	return socket(fam,SOCK_RAW,IPPROTO_RAW);
+}
+
+static int
 prepare_packet_sockets(const omphalos_iface *octx,interface *iface,int idx){
-	if((iface->fd = packet_socket(octx,ETH_P_ALL)) >= 0){
-		if((iface->ts = mmap_tx_psocket(octx,iface->fd,idx,
-				iface->mtu,&iface->txm,&iface->ttpr)) > 0){
-			if(prepare_rx_socket(octx,iface,idx) == 0){
-				return 0;
+	if((iface->fd6 = raw_socket(AF_INET6)) >= 0){
+		if((iface->fd4 = raw_socket(AF_INET)) >= 0){
+			if((iface->fd = packet_socket(octx,ETH_P_ALL)) >= 0){
+				if((iface->ts = mmap_tx_psocket(octx,iface->fd,idx,
+						iface->mtu,&iface->txm,&iface->ttpr)) > 0){
+					if(prepare_rx_socket(octx,iface,idx) == 0){
+						return 0;
+					}
+				}
+				close(iface->fd); // munmaps
+				iface->fd = -1;
 			}
+			close(iface->fd4);
+			iface->fd4 = -1;
 		}
-		close(iface->fd); // munmaps
-		iface->fd = -1;
+		close(iface->fd6);
+		iface->fd6 = -1;
 	}
 	return -1;
 }
@@ -731,17 +744,7 @@ handle_newlink_locked(const omphalos_iface *octx,interface *iface,
 		if(iface->bcast && (iface->flags & IFF_BROADCAST)){
 			lookup_l2host(iface,iface->bcast);
 		}
-		if(iface->arptype != ARPHRD_LOOPBACK){
-			r = prepare_packet_sockets(octx,iface,ii->ifi_index);
-		}else{
-			// FIXME we'll also need an AF_INET6 socket...
-			if((iface->fd = socket(AF_INET,SOCK_DGRAM,0)) >= 0){
-				r = prepare_rx_socket(octx,iface,ii->ifi_index);
-				if(r){
-					close(iface->fd);
-				}
-			}
-		}
+		r = prepare_packet_sockets(octx,iface,ii->ifi_index);
 		if(r){
 			// Everything needs already be closed/freed by here
 			iface->txidx = iface->rfd = iface->fd = -1;
