@@ -107,8 +107,9 @@ typedef struct interface {
 	void *rxm;		// RX packet ring buffer
 	size_t rs;		// RX packet ring size in bytes
 	struct tpacket_req rtpr;// RX packet ring descriptor
-	int fd;			// TX packet socket
+	int fd;			// TX PF_PACKET socket
 	void *txm;		// TX packet ring buffer
+	int fd4,fd6;		// Fallback IPv4 and IPv6 TX SOCK_RAW sockets
 	size_t ts;		// TX packet ring size in bytes
 	struct tpacket_req ttpr;// TX packet ring descriptor
 	unsigned txidx;		// Index of next frame for TX

@@ -56,7 +56,7 @@ int init_interfaces(void){
 			pthread_mutexattr_destroy(&attr);
 			return -1;
 		}
-		iface->rfd = iface->fd = -1;
+		iface->fd4 = iface->fd6 = iface->rfd = iface->fd = -1;
 	}
 	if(pthread_mutexattr_destroy(&attr)){
 		return -1;
@@ -150,7 +150,7 @@ void free_iface(const omphalos_iface *octx,interface *i){
 	cleanup_l3hosts(&i->ip4hosts);
 	cleanup_l2hosts(&i->l2hosts);
 	memset(i,0,sizeof(*i));
-	i->rfd = i->fd = -1;
+	i->fd4 = i->fd6 = i->rfd = i->fd = -1;
 }
 
 void cleanup_interfaces(const omphalos_iface *pctx){
