@@ -3,6 +3,7 @@
 #include <linux/ip.h>
 #include <linux/udp.h>
 #include <sys/socket.h>
+#include <netinet/ip6.h>
 #include <omphalos/tx.h>
 #include <linux/if_arp.h>
 #include <omphalos/diag.h>
@@ -117,37 +118,67 @@ void *get_tx_frame(interface *i,size_t *fsize){
 static ssize_t
 send_to_self(interface *i,void *frame){
 	struct tpacket_hdr *thdr = frame;
-	const struct ethhdr *eth;
-	struct sockaddr_in sina;
-	struct sockaddr_in6 sina6;
 	const struct sockaddr *ss;
+	struct sockaddr_in6 sina6;
+	struct sockaddr_in sina;
+	unsigned short l2proto;
 	const void *payload;
 	socklen_t slen;
+	const char *l2;
 	unsigned plen;
+	size_t l2len;
 	int fd;
 
-	eth = (const struct ethhdr *)((const char *)frame + thdr->tp_mac);
-	if(eth->h_proto == ntohs(ETH_P_IP)){
+	l2 = ((const char *)frame + thdr->tp_mac);
+	switch(i->arptype){
+		case ARPHRD_ETHER:
+			l2len = sizeof(struct ethhdr);
+			l2proto = ((const struct ethhdr *)l2)->h_proto;
+			break;
+		case ARPHRD_LOOPBACK: // emulates loopback
+			l2len = sizeof(struct ethhdr);
+			l2proto = ((const struct ethhdr *)l2)->h_proto;
+			break;
+		default:
+			assert(0);
+			break;
+	}
+	if(l2proto == ntohs(ETH_P_IP)){
 		const struct udphdr *udp;
 		const struct iphdr *ip;
 
 		fd = i->fd4;
 		ss = (const struct sockaddr *)&sina;
 		slen = sizeof(sina);
-		memset(&sina,0,sizeof(sina));
+		memset(&sina,0,slen);
 		sina.sin_family = AF_INET;
-		ip = (const struct iphdr *)((const char *)eth + sizeof(*eth));
+		ip = (const struct iphdr *)(l2 + l2len);
 		assert(ip->protocol == IPPROTO_UDP);
 		sina.sin_addr.s_addr = ip->daddr;
 		udp = (const struct udphdr *)((const char *)ip + ip->ihl * 4u);
 		sina.sin_port = udp->dest;
-		payload = (const char *)udp + sizeof(*udp);
-		plen = ntohs(udp->len) - sizeof(*udp);
-	}else if(eth->h_proto == ntohs(ETH_P_IPV6)){
+		/*payload = (const char *)udp + sizeof(*udp);
+		plen = ntohs(udp->len) - sizeof(*udp);*/
+		plen = ntohs(ip->tot_len);
+		payload = ip;
+	}else if(l2proto == ntohs(ETH_P_IPV6)){
+		const struct ip6_hdr *ip;
+		const struct udphdr *udp;
+
 		fd = i->fd6;
 		ss = (const struct sockaddr *)&sina6;
 		slen = sizeof(sina6);
-		return -1; // FIXME
+		memset(&sina6,0,slen);
+		sina6.sin6_family = AF_INET;
+		ip = (const struct ip6_hdr *)(l2 + l2len);
+		assert(ip->ip6_ctlun.ip6_un1.ip6_un1_nxt == IPPROTO_UDP);
+		memcpy(&sina6.sin6_addr,&ip->ip6_dst,sizeof(ip->ip6_dst));
+		udp = (const struct udphdr *)((const char *)ip + sizeof(*ip));
+		sina6.sin6_port = udp->dest;
+		/*payload = (const char *)udp + sizeof(*udp);
+		plen = ntohs(udp->len) - sizeof(*udp);*/
+		plen = ntohs(ip->ip6_ctlun.ip6_un1.ip6_un1_plen);
+		payload = ip;
 	}else{
 		return -1;
 	}
@@ -169,6 +200,10 @@ categorize_tx(const interface *i,const void *frame,int *self,int *out){
 			// unless they're ARP.
 			*self = (!(r == RTN_UNICAST)) && (ntohs(eth->h_proto) != ETH_P_ARP);
 			*out = !(r == RTN_LOCAL);
+			break;
+		}case ARPHRD_LOOPBACK:{
+			*self = 1;
+			*out = 0;
 			break;
 		}default:
 			diagnostic(L"Need implement %s for %u",__func__,i->arptype);
@@ -205,12 +240,10 @@ void send_tx_frame(interface *i,void *frame){
 		int ret;
 
 		assert(thdr->tp_status == TP_STATUS_PREPARING);
-		pthread_mutex_lock(&i->lock);
 		//thdr->tp_status = TP_STATUS_SEND_REQUEST;
 		//ret = send(i->fd,NULL,0,0);
 		ret = send(i->fd,(const char *)frame + thdr->tp_mac,thdr->tp_len,0);
 		thdr->tp_status = TP_STATUS_AVAILABLE;
-		pthread_mutex_unlock(&i->lock);
 		if(ret == 0){
 			ret = tplen;
 		}
@@ -228,10 +261,8 @@ void send_tx_frame(interface *i,void *frame){
 void abort_tx_frame(interface *i,void *frame){
 	struct tpacket_hdr *thdr = frame;
 
-	pthread_mutex_lock(&i->lock);
 	++i->txaborts;
 	thdr->tp_status = TP_STATUS_AVAILABLE;
-	pthread_mutex_unlock(&i->lock);
 	diagnostic(L"Aborted TX %llu on %s",i->txaborts,i->name);
 }
 
