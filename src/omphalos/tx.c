@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <errno.h>
 #include <assert.h>
 #include <linux/ip.h>
 #include <linux/udp.h>
@@ -169,7 +170,7 @@ send_to_self(interface *i,void *frame){
 		ss = (const struct sockaddr *)&sina6;
 		slen = sizeof(sina6);
 		memset(&sina6,0,slen);
-		sina6.sin6_family = AF_INET;
+		sina6.sin6_family = AF_INET6;
 		ip = (const struct ip6_hdr *)(l2 + l2len);
 		assert(ip->ip6_ctlun.ip6_un1.ip6_un1_nxt == IPPROTO_UDP);
 		memcpy(&sina6.sin6_addr,&ip->ip6_dst,sizeof(ip->ip6_dst));
@@ -227,7 +228,7 @@ void send_tx_frame(interface *i,void *frame){
 
 		ret = send_to_self(i,frame);
 		if(ret < 0){
-			diagnostic(L"Error transmitting on %s",i->name);
+			diagnostic(L"Error self-TXing on %s (%s)",i->name,strerror(errno));
 			++i->txerrors;
 		}else{
 			i->txbytes += ret;
@@ -249,7 +250,7 @@ void send_tx_frame(interface *i,void *frame){
 		}
 		//diagnostic(L"Transmitted %d on %s",ret,i->name);
 		if(ret < 0){
-			diagnostic(L"Error transmitting on %s",i->name);
+			diagnostic(L"Error out-TXing on %s (%s)",i->name,strerror(errno));
 			++i->txerrors;
 		}else{
 			i->txbytes += ret;
