@@ -387,4 +387,5 @@ void omphalos_cleanup(const omphalos_ctx *pctx){
 	stop_usb_support();
 	cleanup_naming();
 	cleanup_procfs();
+	pthread_key_delete(omphalos_ctx_key);
 }
