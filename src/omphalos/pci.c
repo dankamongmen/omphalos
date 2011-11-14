@@ -134,6 +134,7 @@ int find_pci_device(const char *busid,struct sysfs_device *sd __attribute__ ((un
 	if((tinf->devname = malloc(sizeof(wchar_t) * (vendlen + devlen + 2))) == NULL){
 		return -1;
 	}
+	memset(&mb,0,sizeof(mb));
 	assert(mbsrtowcs(tinf->devname,&vend,vendlen,&mb) == vendlen);
 	tinf->devname[vendlen] = L' ';
 	assert(mbsrtowcs(tinf->devname + vendlen + 1,&devname,devlen,&mb) == devlen);
