@@ -128,7 +128,7 @@ send_to_self(interface *i,void *frame){
 	const char *l2;
 	unsigned plen;
 	size_t l2len;
-	int fd;
+	int fd,r;
 
 	l2 = ((const char *)frame + thdr->tp_mac);
 	switch(i->arptype){
@@ -180,7 +180,10 @@ send_to_self(interface *i,void *frame){
 	}else{
 		return -1;
 	}
-	return sendto(fd,payload,plen,MSG_DONTROUTE,ss,slen);
+	if((r = sendto(fd,payload,plen,0,ss,slen)) < 0){
+		diagnostic(L"Error self-TXing on %s:%d (%s)",i->name,fd,strerror(errno));
+	}
+	return r;
 }
 
 // Determine whether the packet is (a) self-directed and/or (b) out-directed.
@@ -225,7 +228,6 @@ void send_tx_frame(interface *i,void *frame){
 
 		ret = send_to_self(i,frame);
 		if(ret < 0){
-			diagnostic(L"Error self-TXing on %s (%s)",i->name,strerror(errno));
 			++i->txerrors;
 		}else{
 			i->txbytes += ret;
