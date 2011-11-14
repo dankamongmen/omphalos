@@ -64,14 +64,14 @@ int init_interfaces(void){
 	return 0;
 }
 
-#define STAT(fp,i,x) if((i)->x) { if(fprintf((fp),"<"#x">%ju</"#x">",(i)->x) < 0){ return -1; } }
+#define STAT(fp,i,x) if((i)->x) { if(fwprintf((fp),L"<"#x">%ju</"#x">",(i)->x) < 0){ return -1; } }
 int print_iface_stats(FILE *fp,const interface *i,interface *agg,const char *decorator){
 	if(i->name == NULL){
-		if(fprintf(fp,"<%s>",decorator) < 0){
+		if(fwprintf(fp,L"<%s>",decorator) < 0){
 			return -1;
 		}
 	}else{
-		if(fprintf(fp,"<%s name=\"%s\">",decorator,i->name) < 0){
+		if(fwprintf(fp,L"<%s name=\"%s\">",decorator,i->name) < 0){
 			return -1;
 		}
 	}
@@ -79,7 +79,7 @@ int print_iface_stats(FILE *fp,const interface *i,interface *agg,const char *dec
 	STAT(fp,i,truncated);
 	STAT(fp,i,noprotocol);
 	STAT(fp,i,malformed);
-	if(fprintf(fp,"</%s>",decorator) < 0){
+	if(fwprintf(fp,L"</%s>",decorator) < 0){
 		return -1;
 	}
 	if(agg){
