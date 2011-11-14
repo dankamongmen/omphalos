@@ -527,13 +527,37 @@ prepare_rx_socket(const omphalos_iface *octx,interface *iface,int idx){
 
 static int
 raw_socket(const interface *i,int fam){
-	int sd;
+	int sd,idx,slevel,sopt;
+	struct ip_mreqn mr;
+	size_t slen;
+	void *sarg;
 
 	sd = socket(fam,SOCK_RAW,IPPROTO_RAW);
 	if(sd < 0){
+		diagnostic(L"Error creating raw socket for %s: %s",i->name,strerror(errno));
+		return -1;
+	}
+	idx = idx_of_iface(i);
+	if(fam == AF_INET){
+		slevel = IPPROTO_IP;
+		sopt = IP_MULTICAST_IF;
+		sarg = &mr;
+		memset(&mr,0,sizeof(mr));
+		mr.imr_ifindex = idx;
+		slen = sizeof(mr);
+	}else{
+		slevel = IPPROTO_IPV6;
+		sopt = IPV6_MULTICAST_IF;
+		sarg = &idx;
+		slen = sizeof(idx);
+	}
+	if(setsockopt(sd,slevel,sopt,sarg,slen)){
+		diagnostic(L"Error setting %d:mcast:%d for %s: %s",fam,idx,i->name,strerror(errno));
+		close(sd);
 		return -1;
 	}
 	if(setsockopt(sd,SOL_SOCKET,SO_BINDTODEVICE,i->name,IFNAMSIZ)){
+		diagnostic(L"Error setting SO_BINDTODEVICE for %s: %s",i->name,strerror(errno));
 		close(sd);
 		return -1;
 	}
