@@ -184,6 +184,20 @@ int handle_rtm_newroute(const omphalos_iface *octx,const struct nlmsghdr *nl){
 			goto err;
 		}
 	}
+	{
+		char str[INET6_ADDRSTRLEN];
+		inet_ntop(rt->rtm_family,ad,str,sizeof(str));
+		octx->diagnostic(L"[%s] new route to %s/%u %s",r->iface->name,str,r->maskbits,
+			rt->rtm_type == RTN_LOCAL ? "(local)" :
+			rt->rtm_type == RTN_BROADCAST ? "(broadcast)" :
+			rt->rtm_type == RTN_UNREACHABLE ? "(unreachable)" :
+			rt->rtm_type == RTN_ANYCAST ? "(anycast)" :
+			rt->rtm_type == RTN_UNICAST ? "(unicast)" :
+			rt->rtm_type == RTN_MULTICAST ? "(multicast)" :
+			rt->rtm_type == RTN_BLACKHOLE ? "(blackhole)" :
+			rt->rtm_type == RTN_MULTICAST ? "(multicast)" :
+			"");
+	}
 	// We're not interest in blackholes, unreachables, prohibits, NATs yet
 	if(rt->rtm_type != RTN_UNICAST && rt->rtm_type != RTN_LOCAL
 			&& rt->rtm_type != RTN_BROADCAST
@@ -263,20 +277,6 @@ int handle_rtm_newroute(const omphalos_iface *octx,const struct nlmsghdr *nl){
 			*prev = r;
 			// FIXME set less-specific sources
 		pthread_mutex_unlock(&route_lock);
-	}
-	{
-		char str[INET6_ADDRSTRLEN];
-		inet_ntop(rt->rtm_family,ad,str,sizeof(str));
-		octx->diagnostic(L"[%s] new route to %s/%u %s",r->iface->name,str,r->maskbits,
-			rt->rtm_type == RTN_LOCAL ? "(local)" :
-			rt->rtm_type == RTN_BROADCAST ? "(broadcast)" :
-			rt->rtm_type == RTN_UNREACHABLE ? "(unreachable)" :
-			rt->rtm_type == RTN_ANYCAST ? "(anycast)" :
-			rt->rtm_type == RTN_UNICAST ? "(unicast)" :
-			rt->rtm_type == RTN_MULTICAST ? "(multicast)" :
-			rt->rtm_type == RTN_BLACKHOLE ? "(blackhole)" :
-			rt->rtm_type == RTN_MULTICAST ? "(multicast)" :
-			"");
 	}
 	return 0;
 
