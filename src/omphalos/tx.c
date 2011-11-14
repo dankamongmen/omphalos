@@ -158,8 +158,6 @@ send_to_self(interface *i,void *frame){
 		sina.sin_addr.s_addr = ip->daddr;
 		udp = (const struct udphdr *)((const char *)ip + ip->ihl * 4u);
 		sina.sin_port = udp->dest;
-		/*payload = (const char *)udp + sizeof(*udp);
-		plen = ntohs(udp->len) - sizeof(*udp);*/
 		plen = ntohs(ip->tot_len);
 		payload = ip;
 	}else if(l2proto == ntohs(ETH_P_IPV6)){
@@ -175,15 +173,13 @@ send_to_self(interface *i,void *frame){
 		assert(ip->ip6_ctlun.ip6_un1.ip6_un1_nxt == IPPROTO_UDP);
 		memcpy(&sina6.sin6_addr,&ip->ip6_dst,sizeof(ip->ip6_dst));
 		udp = (const struct udphdr *)((const char *)ip + sizeof(*ip));
-		sina6.sin6_port = udp->dest;
-		/*payload = (const char *)udp + sizeof(*udp);
-		plen = ntohs(udp->len) - sizeof(*udp);*/
-		plen = ntohs(ip->ip6_ctlun.ip6_un1.ip6_un1_plen);
-		payload = ip;
+		// IPv6 doesn't support IP_HDRINCL.
+		sina6.sin6_port = 0;
+		plen = ntohs(udp->len) - sizeof(*udp);
+		payload = udp;
 	}else{
 		return -1;
 	}
-	diagnostic(L"%u at %p",plen,payload);
 	return sendto(fd,payload,plen,MSG_DONTROUTE,ss,slen);
 }
 
