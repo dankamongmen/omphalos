@@ -526,14 +526,24 @@ prepare_rx_socket(const omphalos_iface *octx,interface *iface,int idx){
 }
 
 static int
-raw_socket(int fam){
-	return socket(fam,SOCK_RAW,IPPROTO_RAW);
+raw_socket(const interface *i,int fam){
+	int sd;
+
+	sd = socket(fam,SOCK_RAW,IPPROTO_RAW);
+	if(sd < 0){
+		return -1;
+	}
+	if(setsockopt(sd,SOL_SOCKET,SO_BINDTODEVICE,i->name,IFNAMSIZ)){
+		close(sd);
+		return -1;
+	}
+	return sd;
 }
 
 static int
 prepare_packet_sockets(const omphalos_iface *octx,interface *iface,int idx){
-	if((iface->fd6 = raw_socket(AF_INET6)) >= 0){
-		if((iface->fd4 = raw_socket(AF_INET)) >= 0){
+	if((iface->fd6 = raw_socket(iface,AF_INET6)) >= 0){
+		if((iface->fd4 = raw_socket(iface,AF_INET)) >= 0){
 			if((iface->fd = packet_socket(ETH_P_ALL)) >= 0){
 				if((iface->ts = mmap_tx_psocket(iface->fd,idx,
 						iface->mtu,&iface->txm,&iface->ttpr)) > 0){
