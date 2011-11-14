@@ -87,7 +87,7 @@ print_stats(FILE *fp){
 	interface total;
 
 	memset(&total,0,sizeof(total));
-	if(fprintf(fp,"<stats>") < 0){
+	if(fwprintf(fp,L"<stats>") < 0){
 		return -1;
 	}
 	if(print_all_iface_stats(fp,&total) < 0){
@@ -99,7 +99,7 @@ print_stats(FILE *fp){
 	if(print_iface_stats(fp,&total,NULL,"total") < 0){
 		return -1;
 	}
-	if(fprintf(fp,"</stats>") < 0){
+	if(fwprintf(fp,L"</stats>") < 0){
 		return -1;
 	}
 	return 0;
@@ -107,14 +107,13 @@ print_stats(FILE *fp){
 
 static int
 dump_output(FILE *fp){
-	assert(fp == stdout);
-	if(fprintf(fp,"<omphalos>") < 0){
+	if(fwprintf(fp,L"<omphalos>") < 0){
 		return -1;
 	}
 	if(print_stats(fp)){
 		return -1;
 	}
-	if(fprintf(fp,"</omphalos>\n") < 0 || fflush(fp)){
+	if(fwprintf(fp,L"</omphalos>\n") < 0 || fflush(fp)){
 		return -1;
 	}
 	return 0;
@@ -126,7 +125,7 @@ print_neigh(const interface *iface,const struct l2host *l2){
 	int n;
 
 	hwaddr = l2addrstr(l2);
-	n = printf("[%8s] neighbor %s\n",iface->name,hwaddr);
+	n = wprintf(L"[%8s] neighbor %s\n",iface->name,hwaddr);
 	free(hwaddr);
 	/* FIXME printf("[%8s] neighbor %s %s%s%s%s%s%s%s%s\n",iface->name,str,
 			nd->ndm_state & NUD_INCOMPLETE ? "INCOMPLETE" : "",
@@ -151,9 +150,9 @@ print_host(const interface *iface,const struct l2host *l2,const struct l3host *l
 	hwaddr = l2addrstr(l2);
 	netaddr = l3addrstr(l3);
 	if( (l3name = get_l3name(l3)) ){
-		n = printf("[%8s] host %s \"%ls\" (addr %s)\n",iface->name,hwaddr,l3name,netaddr);
+		n = wprintf(L"[%8s] host %s \"%ls\" (addr %s)\n",iface->name,hwaddr,l3name,netaddr);
 	}else{
-		n = printf("[%8s] host %s addr %s\n",iface->name,hwaddr,netaddr);
+		n = wprintf(L"[%8s] host %s addr %s\n",iface->name,hwaddr,netaddr);
 	}
 	free(netaddr);
 	free(hwaddr);
@@ -173,9 +172,9 @@ print_service(const interface *iface,const struct l2host *l2,
 	netaddr = l3addrstr(l3);
 	srv = l4srvstr(l4);
 	if( (l3name = get_l3name(l3)) ){
-		n = printf("[%8s] %s served by host %s \"%ls\" (addr %s)\n",iface->name,srv,hwaddr,l3name,netaddr);
+		n = wprintf(L"[%8s] %s served by host %s \"%ls\" (addr %s)\n",iface->name,srv,hwaddr,l3name,netaddr);
 	}else{
-		n = printf("[%8s] %s served by host %s addr %s\n",iface->name,srv,hwaddr,netaddr);
+		n = wprintf(L"[%8s] %s served by host %s addr %s\n",iface->name,srv,hwaddr,netaddr);
 	}
 	free(netaddr);
 	free(hwaddr);
@@ -190,15 +189,15 @@ print_wireless_event(FILE *fp,const interface *i,unsigned cmd){
 	switch(cmd){
 	case SIOCGIWSCAN:{
 		// FIXME handle scan results
-		n = fprintf(fp,"\t   Scan results on %s\n",i->name);
+		n = fwprintf(fp,L"\t   Scan results on %s\n",i->name);
 	break;}case SIOCGIWAP:{
 		// FIXME handle AP results
-		n = fprintf(fp,"\t   Access point on %s\n",i->name);
+		n = fwprintf(fp,L"\t   Access point on %s\n",i->name);
 	break;}case IWEVASSOCRESPIE:{
 		// FIXME handle IE reassociation results
-		n = fprintf(fp,"\t   Reassociation on %s\n",i->name);
+		n = fwprintf(fp,L"\t   Reassociation on %s\n",i->name);
 	break;}default:{
-		n = fprintf(fp,"\t   Unknown wireless event on %s: 0x%x\n",i->name,cmd);
+		n = fwprintf(fp,L"\t   Unknown wireless event on %s: 0x%x\n",i->name,cmd);
 		break;
 	} }
 	assert(n >= 0);
@@ -222,7 +221,7 @@ packet_cb(omphalos_packet *op){
 
 static inline void
 clear_for_output(FILE *fp){
-	assert(putwc(L'\n',fp) != WEOF);
+	assert(fputwc(L'\n',fp) != WEOF);
 }
 
 #define PROMPTDELIM "> "
@@ -361,6 +360,8 @@ int main(int argc,char * const *argv){
 	omphalos_ctx pctx;
 	pthread_t tid;
 
+	assert(fwide(stdout,1) > 0);
+	assert(fwide(stderr,1) > 0);
 	if(setlocale(LC_ALL,"") == NULL || ((codeset = nl_langinfo(CODESET)) == NULL)){
 		fprintf(stderr,"Couldn't initialize locale (%s?)\n",strerror(errno));
 		return EXIT_FAILURE;

@@ -537,7 +537,7 @@ int setup_dns_ptr(const struct routepath *rp,int fam,unsigned port,
 	udp = (struct udphdr *)((char *)frame + tlen);
 	udp->dest = htons(port);
 	// Don't send from the mDNS full resolver port or anything below. gross
-	udp->source = htons((random() % 60000) + 5354);
+	udp->source = htons(5353);//htons((random() % 60000) + 5354);
 	udp->check = 0u;
 	tlen += sizeof(*udp);
 	if(flen - tlen < sizeof(*dnshdr) + strlen(question) + 1 + 4){
