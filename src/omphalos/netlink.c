@@ -559,7 +559,7 @@ raw_socket(const interface *i,int fam){
 		close(sd);
 		return -1;
 	}
-	if(setsockopt(sd,SOL_SOCKET,SO_BINDTODEVICE,i->name,IFNAMSIZ)){
+	if(setsockopt(sd,SOL_SOCKET,SO_BINDTODEVICE,i->name,strlen(i->name))){
 		diagnostic(L"Error setting SO_BINDTODEVICE for %s: %s",i->name,strerror(errno));
 		close(sd);
 		return -1;
