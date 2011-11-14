@@ -222,7 +222,7 @@ packet_cb(omphalos_packet *op){
 
 static inline void
 clear_for_output(FILE *fp){
-	assert(putwc(L'\r',fp) != WEOF);
+	assert(putwc(L'\n',fp) != WEOF);
 }
 
 #define PROMPTDELIM "> "
