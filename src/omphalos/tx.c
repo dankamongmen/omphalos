@@ -119,10 +119,10 @@ void *get_tx_frame(interface *i,size_t *fsize){
 static ssize_t
 send_to_self(interface *i,void *frame){
 	struct tpacket_hdr *thdr = frame;
-	const struct sockaddr *ss;
 	struct sockaddr_in6 sina6;
 	struct sockaddr_in sina;
 	unsigned short l2proto;
+	struct sockaddr *ss;
 	const void *payload;
 	socklen_t slen;
 	const char *l2;
@@ -149,9 +149,9 @@ send_to_self(interface *i,void *frame){
 		const struct iphdr *ip;
 
 		fd = i->fd4;
-		ss = (const struct sockaddr *)&sina;
+		ss = (struct sockaddr *)&sina;
 		slen = sizeof(sina);
-		memset(&sina,0,slen);
+		memset(ss,0,slen);
 		sina.sin_family = AF_INET;
 		ip = (const struct iphdr *)(l2 + l2len);
 		assert(ip->protocol == IPPROTO_UDP);
@@ -167,9 +167,9 @@ send_to_self(interface *i,void *frame){
 		const struct udphdr *udp;
 
 		fd = i->fd6;
-		ss = (const struct sockaddr *)&sina6;
+		ss = (struct sockaddr *)&sina6;
 		slen = sizeof(sina6);
-		memset(&sina6,0,slen);
+		memset(ss,0,slen);
 		sina6.sin6_family = AF_INET6;
 		ip = (const struct ip6_hdr *)(l2 + l2len);
 		assert(ip->ip6_ctlun.ip6_un1.ip6_un1_nxt == IPPROTO_UDP);
@@ -183,6 +183,7 @@ send_to_self(interface *i,void *frame){
 	}else{
 		return -1;
 	}
+	diagnostic(L"%u at %p",plen,payload);
 	return sendto(fd,payload,plen,MSG_DONTROUTE,ss,slen);
 }
 
