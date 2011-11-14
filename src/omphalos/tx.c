@@ -175,7 +175,7 @@ send_to_self(interface *i,void *frame){
 		udp = (const struct udphdr *)((const char *)ip + sizeof(*ip));
 		// IPv6 doesn't support IP_HDRINCL.
 		sina6.sin6_port = 0;
-		plen = ntohs(udp->len) - sizeof(*udp);
+		plen = ntohs(udp->len);
 		payload = udp;
 	}else{
 		return -1;
