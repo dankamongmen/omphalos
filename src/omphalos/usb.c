@@ -293,12 +293,15 @@ int find_usb_device(const char *busid __attribute__ ((unused)),
 
 			for(dev = 0 ; dev < vend->devcount ; ++dev){
 				if(vend->devices[dev].devid == val){
-					if((tmp = realloc(tinf->devname,sizeof(*tinf->devname) * (wcslen(tinf->devname) + wcslen(vend->devices[dev].name) + 2))) == NULL){
+					size_t wlen = wcslen(tinf->devname);
+
+					if((tmp = realloc(tinf->devname,sizeof(*tinf->devname) * (wlen + wcslen(vend->devices[dev].name) + 2))) == NULL){
 						free(tinf->devname);
 						tinf->devname = NULL;
 						return -1;
 					}
-					tmp[wcslen(tmp)] = L' ';
+					tmp[wlen] = L' ';
+					tmp[wlen + 1] = L'\0';
 					wcscat(tmp,vend->devices[dev].name);
 					tinf->devname = tmp;
 					return 0;
