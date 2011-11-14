@@ -143,6 +143,7 @@ typedef struct interface {
 
 int init_interfaces(void);
 interface *iface_by_idx(int);
+int idx_of_iface(const interface *);
 int print_iface_stats(FILE *,const interface *,interface *,const char *);
 
 static inline char *

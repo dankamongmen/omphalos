@@ -106,6 +106,10 @@ interface *iface_by_idx(int idx){
 	return &interfaces[idx];
 }
 
+int idx_of_iface(const interface *i){
+	return i - interfaces;
+}
+
 // We don't destroy the mutex lock here; it exists for the life of the program.
 void free_iface(const omphalos_iface *octx,interface *i){
 	// Must reap thread prior to closing the fd's, lest some other thread
