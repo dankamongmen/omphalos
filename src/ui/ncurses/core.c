@@ -943,15 +943,19 @@ reset_interface_stats(WINDOW *w,const interface *i __attribute__ ((unused))){
 	unimplemented(w);
 }
 
-void reset_all_interface_stats(WINDOW *w){
+static void
+resolve_interface(WINDOW *w,reelbox *rb __attribute__ ((unused))){
+	unimplemented(w);
+}
+
+void resolve_selection(WINDOW *w){
 	reelbox *rb;
 
 	if( (rb = current_iface) ){
-		do{
-			const interface *i = rb->is->iface;
-
-			reset_interface_stats(w,i);
-		}while((rb = rb->next) != current_iface);
+		// FIXME check for host selection...
+		resolve_interface(w,rb);
+	}else{
+		wstatus_locked(w,L"There is no active selection");
 	}
 }
 
@@ -960,6 +964,8 @@ void reset_current_interface_stats(WINDOW *w){
 
 	if( (i = get_current_iface()) ){
 		reset_interface_stats(w,i);
+	}else{
+		wstatus_locked(w,L"There is no active selection");
 	}
 }
 
@@ -1375,7 +1381,7 @@ static const wchar_t *helps[] = {
 	L"'k'/'↑': previous selection   'j'/'↓': next selection",
 	L"'-'/'←': collapse selection   '+'/'→': expand selection",
 	L"'m': change device MAC        'u': change device MTU",
-	L"'r': reset interface's stats  'R': reset all interfaces' stats",
+	L"'r': reset selection's stats  'D': reresolve selection",
 	L"'d': bring down device        'p': toggle promiscuity",
 	L"'s': toggle sniffing, bringing up interface if down",
 	L"'v': view interface details   'n': view networking details",

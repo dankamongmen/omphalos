@@ -213,9 +213,9 @@ ncurses_input_thread(void *unsafe_marsh){
 				configure_prefs(w);
 			unlock_ncurses();
 			break;
-		case 'R':
+		case 'D':
 			lock_ncurses();
-				reset_all_interface_stats(w);
+				resolve_selection(w);
 			unlock_ncurses();
 			break;
 		case 'r':

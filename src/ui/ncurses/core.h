@@ -108,7 +108,7 @@ int packet_cb_locked(const struct interface *,struct omphalos_packet *,struct pa
 void toggle_promisc_locked(const struct omphalos_iface *,WINDOW *w);
 void sniff_interface_locked(const struct omphalos_iface *,WINDOW *w);
 void down_interface_locked(const struct omphalos_iface *,WINDOW *w);
-void reset_all_interface_stats(WINDOW *);
+void resolve_selection(WINDOW *);
 void reset_current_interface_stats(WINDOW *);
 void use_next_iface_locked(WINDOW *,struct panel_state *);
 void use_prev_iface_locked(WINDOW *,struct panel_state *);
