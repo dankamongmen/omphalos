@@ -20,11 +20,11 @@
 #define DEFAULT_IP6_TTL 64
 
 static void
-handle_igmp_packet(const omphalos_iface *octx,omphalos_packet *op,const void *frame,size_t len){
+handle_igmp_packet(omphalos_packet *op,const void *frame,size_t len){
 	const struct igmphdr *igmp = frame;
 
 	if(len < sizeof(*igmp)){
-		octx->diagnostic(L"%s malformed with %zu",__func__,len);
+		diagnostic(L"%s malformed with %zu",__func__,len);
 		op->malformed = 1;
 		return;
 	}
@@ -40,19 +40,19 @@ void handle_ipv6_packet(const omphalos_iface *octx,omphalos_packet *op,
 
 	if(len < sizeof(*ip)){
 		op->malformed = 1;
-		octx->diagnostic(L"%s malformed with %zu on %s",__func__,len,op->i->name);
+		diagnostic(L"%s malformed with %zu on %s",__func__,len,op->i->name);
 		return;
 	}
 	ver = ntohl(ip->ip6_ctlun.ip6_un1.ip6_un1_flow) >> 28u;
 	if(ver != 6){
 		op->noproto = 1;
-		octx->diagnostic(L"%s noversion for %u on %s",__func__,ver,op->i->name);
+		diagnostic(L"%s noversion for %u on %s",__func__,ver,op->i->name);
 		return;
 	}
 	plen = ntohs(ip->ip6_ctlun.ip6_un1.ip6_un1_plen);
 	if(len < plen + sizeof(*ip)){
 		op->malformed = 1;
-		octx->diagnostic(L"%s malformed with %zu != %u on %s",__func__,len,plen,op->i->name);
+		diagnostic(L"%s malformed with %zu != %u on %s",__func__,len,plen,op->i->name);
 		return;
 	}
 	// FIXME check extension headers...
@@ -67,7 +67,7 @@ void handle_ipv6_packet(const omphalos_iface *octx,omphalos_packet *op,
 	while(nhdr){
 		switch(next){
 		case IPPROTO_TCP:{
-			handle_tcp_packet(octx,op,nhdr,plen);
+			handle_tcp_packet(op,nhdr,plen);
 			nhdr = NULL;
 		break; }case IPPROTO_UDP:{
 			handle_udp_packet(octx,op,nhdr,plen);
@@ -82,7 +82,7 @@ void handle_ipv6_packet(const omphalos_iface *octx,omphalos_packet *op,
 			handle_gre_packet(op,nhdr,plen);
 			nhdr = NULL;
 		break; }case IPPROTO_IGMP:{
-			handle_igmp_packet(octx,op,nhdr,plen);
+			handle_igmp_packet(op,nhdr,plen);
 			nhdr = NULL;
 		break; }case IPPROTO_PIM:{
 			handle_pim_packet(op,nhdr,plen);
@@ -95,7 +95,7 @@ void handle_ipv6_packet(const omphalos_iface *octx,omphalos_packet *op,
 			} *hbh = nhdr;
 			if(plen < sizeof(*hbh) || plen < hbh->hdrlen){
 				op->malformed = 1;
-				octx->diagnostic(L"%s malformed with len %zu on %s",__func__,plen,op->i->name);
+				diagnostic(L"%s malformed with len %zu on %s",__func__,plen,op->i->name);
 				return;
 			}
 			plen -= hbh->hdrlen;
@@ -103,7 +103,7 @@ void handle_ipv6_packet(const omphalos_iface *octx,omphalos_packet *op,
 			next = hbh->nexthdr;
 		break; }default:{
 			op->noproto = 1;
-			octx->diagnostic(L"%s %s noproto for %u",__func__,
+			diagnostic(L"%s %s noproto for %u",__func__,
 					op->i->name,next);
 			return;
 		break; } }
@@ -117,26 +117,26 @@ void handle_ipv4_packet(const omphalos_iface *octx,omphalos_packet *op,
 
 	if(len < sizeof(*ip)){
 		op->malformed = 1;
-		octx->diagnostic(L"%s %s malformed with %zu",__func__,
+		diagnostic(L"%s %s malformed with %zu",__func__,
 				op->i->name,len);
 		return;
 	}
 	if(ip->version != 4){
 		op->noproto = 1;
-		octx->diagnostic(L"%s %s noversion for %u",__func__,
+		diagnostic(L"%s %s noversion for %u",__func__,
 				op->i->name,ip->version);
 		return;
 	}
 	hlen = ip->ihl << 2u;
 	if(len < hlen){
 		op->malformed = 1;
-		octx->diagnostic(L"%s %s malformed with %zu vs %u",__func__,
+		diagnostic(L"%s %s malformed with %zu vs %u",__func__,
 				op->i->name,len,hlen);
 		return;
 	}
 	if(check_ethernet_padup(len,ntohs(ip->tot_len))){
 		op->malformed = 1;
-		octx->diagnostic(L"%s %s malformed with %zu vs %hu",__func__,
+		diagnostic(L"%s %s malformed with %zu vs %hu",__func__,
 				op->i->name,len,ntohs(ip->tot_len));
 		return;
 	}
@@ -151,7 +151,7 @@ void handle_ipv4_packet(const omphalos_iface *octx,omphalos_packet *op,
 	// FIXME don't call down if we're fragmented
 	switch(ip->protocol){
 	case IPPROTO_TCP:{
-		handle_tcp_packet(octx,op,nhdr,nlen);
+		handle_tcp_packet(op,nhdr,nlen);
 	break; }case IPPROTO_UDP:{
 		handle_udp_packet(octx,op,nhdr,nlen);
 	break; }case IPPROTO_ICMP:{
@@ -159,13 +159,12 @@ void handle_ipv4_packet(const omphalos_iface *octx,omphalos_packet *op,
 	break; }case IPPROTO_GRE:{
 		handle_gre_packet(op,nhdr,nlen);
 	break; }case IPPROTO_IGMP:{
-		handle_igmp_packet(octx,op,nhdr,nlen);
+		handle_igmp_packet(op,nhdr,nlen);
 	break; }case IPPROTO_PIM:{
 		handle_pim_packet(op,nhdr,nlen);
 	break; }default:{
 		op->noproto = 1;
-		octx->diagnostic(L"%s %s noproto for %u",__func__,
-				op->i->name,ip->protocol);
+		diagnostic(L"%s %s noproto for %u",__func__,op->i->name,ip->protocol);
 	break; } }
 }
 
