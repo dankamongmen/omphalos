@@ -45,6 +45,7 @@ update_network_details(WINDOW *w){
 	case (NETWORKROWS - 1):{
 		// FIXME need collect servers
 		assert(mvwprintw(w,row + z,col,"DNS servers: ") != ERR);
+		--z;
 	}case 2:{
 		assert(mvwprintw(w,row + z,col,"TCP [%s]: SACK%lc DSACK%lc FACK%lc FRTO%lc",
 					ps.tcp_ccalg,state3char(ps.tcp_sack),
