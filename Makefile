@@ -120,7 +120,7 @@ $(TAGS): $(CINCS) $(CSRCS) $(wildcard $(SRC)/ui/*/*.c)
 	$(CTAGS) -o $@ -R $(SRC)
 
 clean:
-	rm -rf $(OUT) core
+	rm -rf $(OUT) $(wildcard core*) $(wildcard vgcore*)
 
 clobber: clean
 	rm -rf $(IANAOUI) $(IANAOUI).raw $(USBIDS)
