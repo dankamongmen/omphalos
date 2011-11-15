@@ -24,7 +24,7 @@ state3char(int state){
 	return L'?';
 }
 
-#define NETWORKROWS 3
+#define NETWORKROWS 4
 
 static int
 update_network_details(WINDOW *w){
@@ -43,6 +43,9 @@ update_network_details(WINDOW *w){
 	}
 	switch(z){ // Intentional fallthroughs all the way to 0
 	case (NETWORKROWS - 1):{
+		// FIXME need collect servers
+		assert(mvprintw(w,row + z,col,"DNS servers: ") != ERR);
+	}case 2:{
 		assert(mvwprintw(w,row + z,col,"TCP [%s]: SACK%lc DSACK%lc FACK%lc FRTO%lc",
 					ps.tcp_ccalg,state3char(ps.tcp_sack),
 					state3char(ps.tcp_dsack),
