@@ -127,12 +127,21 @@ void name_l3host_absolute(const interface *i,
 			struct l2host *l2,l3host *l3,const char *name,
 			namelevel nlevel){
 	wchar_t *wname;
-	size_t len;
+	size_t wlen;
 
-	len = strlen(name);
-	if( (wname = malloc((len + 1) * sizeof(*wname))) ){
-		assert(mbsrtowcs(wname,&name,len,NULL) == len);
-		wname[len] = L'\0';
+	if((wlen = mbstowcs(NULL,name,0)) == (size_t)-1){
+		diagnostic(L"Couldn't normalize [%s]",name);
+	}else if( (wname = malloc((wlen + 1) * sizeof(*wname))) ){
+		size_t r;
+
+		r = mbstowcs(wname,name,wlen + 1);
+		if(r == (size_t)-1){
+			diagnostic(L"Invalid name: [%s]",name);
+			return;
+		}
+		if(r != wlen){
+			assert(r == wlen + 1);
+		}
 		wname_l3host_absolute(i,l2,l3,wname,nlevel);
 		free(wname);
 	}
