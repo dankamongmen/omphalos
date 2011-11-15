@@ -961,10 +961,10 @@ netlink_thread(void){
 	if(discover_addrs(pfd[0].fd)){
 		goto done;
 	}
-	if(discover_neighbors(pfd[0].fd)){
+	if(discover_routes(pfd[0].fd)){
 		goto done;
 	}
-	if(discover_routes(pfd[0].fd)){
+	if(discover_neighbors(pfd[0].fd)){
 		goto done;
 	}
 	while(!cancelled){
