@@ -345,18 +345,21 @@ ip6_in_route(const ip6route *r,const uint128_t i){
 	switch(r->maskbits / 32){
 		case 0:
 			mask[0] = ~0u << (32 - r->maskbits);
-			mask[1] = 0u; mask[2] = 0u; mask[3] = 0u;
+			mask[1] = 0u;
+			mask[2] = 0u;
+			mask[3] = 0u;
 			break;
 		case 1:
 			mask[1] = ~0u << (64 - r->maskbits);
-			mask[2] = 0u; mask[3] = 0u;
+			mask[2] = 0u;
+			mask[3] = 0u;
 			break;
 		case 2:
-			mask[2] = ~0u << (64 - r->maskbits);
+			mask[2] = ~0u << (96 - r->maskbits);
 			mask[3] = 0u;
 			break;
 		case 3:
-			mask[3] = ~0u << (64 - r->maskbits);
+			mask[3] = ~0u << (128 - r->maskbits);
 			break;
 		case 4:
 			break;
