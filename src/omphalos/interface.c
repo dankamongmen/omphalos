@@ -212,18 +212,6 @@ int add_route4(interface *i,const struct in_addr *s,
 	}
 	r->addrs = 0;
 	memcpy(&r->dst,s,sizeof(*s));
-	if(src){
-		struct l2host *l2;
-
-		memcpy(&r->src,src,sizeof(*src));
-		r->addrs |= ROUTE_HAS_SRC;
-		l2 = lookup_l2host(i,i->addr);
-		lookup_local_l3host(i,l2,AF_INET,src);
-	}
-	if(via){
-		memcpy(&r->via,via,sizeof(*via));
-		r->addrs |= ROUTE_HAS_VIA;
-	}
 	r->iif = iif;
 	r->maskbits = blen;
 	prev = &i->ip4r;
@@ -236,8 +224,17 @@ int add_route4(interface *i,const struct in_addr *s,
 	}
 	r->next = *prev;
 	*prev = r;
-	// Set the src for any less-specific routes we contain
-	if(r->addrs & ROUTE_HAS_SRC){
+	if(via){
+		memcpy(&r->via,via,sizeof(*via));
+		r->addrs |= ROUTE_HAS_VIA;
+	}
+	if(src){
+		struct l2host *l2;
+
+		memcpy(&r->src,src,sizeof(*src));
+		r->addrs |= ROUTE_HAS_SRC;
+		l2 = lookup_l2host(i,i->addr);
+		// Set the src for any less-specific routes we contain
 		while( *(prev = &(*prev)->next) ){
 			assert((*prev)->maskbits < r->maskbits);
 			if(!((*prev)->addrs & ROUTE_HAS_SRC)){
@@ -245,6 +242,7 @@ int add_route4(interface *i,const struct in_addr *s,
 				memcpy(&(*prev)->src,src,sizeof(*src));
 			}
 		}
+		lookup_local_l3host(i,l2,AF_INET,src);
 	}
 	return 0;
 }
@@ -260,19 +258,6 @@ int add_route6(interface *i,const struct in6_addr *s,
 	}
 	r->addrs = 0;
 	memcpy(&r->dst,s,sizeof(*s));
-	assert(src);
-	if(src){
-		struct l2host *l2;
-
-		memcpy(&r->src,src,sizeof(*src));
-		r->addrs |= ROUTE_HAS_SRC;
-		l2 = lookup_l2host(i,i->addr);
-		lookup_local_l3host(i,l2,AF_INET6,src);
-	}
-	if(via){
-		memcpy(&r->via,via,sizeof(*via));
-		r->addrs |= ROUTE_HAS_VIA;
-	}
 	r->iif = iif;
 	r->maskbits = blen;
 	prev = &i->ip6r;
@@ -284,6 +269,26 @@ int add_route6(interface *i,const struct in6_addr *s,
 	}
 	r->next = *prev;
 	*prev = r;
+	if(via){
+		memcpy(&r->via,via,sizeof(*via));
+		r->addrs |= ROUTE_HAS_VIA;
+	}
+	if(src){
+		struct l2host *l2;
+
+		memcpy(&r->src,src,sizeof(*src));
+		r->addrs |= ROUTE_HAS_SRC;
+		l2 = lookup_l2host(i,i->addr);
+		// Set the src for any less-specific routes we contain
+		while( *(prev = &(*prev)->next) ){
+			assert((*prev)->maskbits < r->maskbits);
+			if(!((*prev)->addrs & ROUTE_HAS_SRC)){
+				(*prev)->addrs |= ROUTE_HAS_SRC;
+				memcpy(&(*prev)->src,src,sizeof(*src));
+			}
+		}
+		lookup_local_l3host(i,l2,AF_INET6,src);
+	}
 	return 0;
 }
 
@@ -558,19 +563,21 @@ get_source_address(interface *i,int fam,const void *addr,void *s){
 		case AF_INET:{
 			const ip4route *i4r = addr ? get_route4(i,addr) : i->ip4r;
 
-			if(i4r == NULL){
-				return NULL;
+			if(i4r){
+				memcpy(s,&i4r->src,sizeof(uint32_t));
+			}else{
+				memset(s,0,sizeof(uint32_t));
 			}
-			memcpy(s,&i4r->src,sizeof(uint32_t));
 			break;
 		}case AF_INET6:{
 			const ip6route *i6r = addr ? get_route6(i,addr) : i->ip6r;
 
-			if(i6r == NULL){
-				return NULL;
+			if(i6r){
+				// FIXME ipv6 routes very rarely set their src :/
+				memcpy(s,&i6r->src,sizeof(uint128_t));
+			}else{
+				memset(s,0,sizeof(uint128_t));
 			}
-			// FIXME ipv6 routes very rarely set their src :/
-			memcpy(s,&i6r->src,sizeof(uint128_t));
 			break;
 		}default:
 			return NULL;
