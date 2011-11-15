@@ -322,6 +322,8 @@ handle_rtm_newaddr(const struct nlmsghdr *nl){
 	assert(prefixlen <= alen * 8);
 	while(RTA_OK(ra,rlen)){
 		switch(ra->rta_type){
+			// Same as IFA_LOCAL usually, but the destination
+			// address(!) of a point-to-point link.
 			case IFA_ADDRESS:
 				if(RTA_PAYLOAD(ra) != alen){
 					diagnostic(L"Bad payload len for addr (%zu != %zu)",alen,RTA_PAYLOAD(ra));
@@ -332,10 +334,24 @@ handle_rtm_newaddr(const struct nlmsghdr *nl){
 				ad = &dst;
 				mask_addr(ad,RTA_DATA(ra),prefixlen,alen);
 				break;
-			case IFA_LOCAL: break;
+			case IFA_LOCAL:
+				// FIXME see note above. We also see these on lo.
+				break;
 			case IFA_BROADCAST: break;
 			case IFA_ANYCAST: break;
-			case IFA_LABEL: break;
+			case IFA_LABEL:
+				if(iface->name == NULL){
+					iface->name = strdup(RTA_DATA(ra));
+				}else if(strcmp(iface->name,RTA_DATA(ra))){
+					char *tmp = strdup(RTA_DATA(ra));
+
+					diagnostic(L"Got new name %s for %s",RTA_DATA(ra),iface->name);
+					if(tmp){
+						free(iface->name);
+						iface->name = tmp;
+					}
+				}
+				break;
 			case IFA_MULTICAST: break;
 			case IFA_CACHEINFO: break;
 			default: break;
