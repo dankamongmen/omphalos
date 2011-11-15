@@ -253,7 +253,7 @@ int add_route4(interface *i,const struct in_addr *s,
 int add_route6(interface *i,const struct in6_addr *s,
 		const struct in6_addr *via,const struct in6_addr *src,
 		unsigned blen,int iif){
-	ip6route *r;
+	ip6route *r,**prev;
 
 	if((r = malloc(sizeof(*r))) == NULL){
 		return -1;
@@ -275,9 +275,15 @@ int add_route6(interface *i,const struct in6_addr *s,
 	}
 	r->iif = iif;
 	r->maskbits = blen;
-	// FIXME need to sort most-to-least specific
-	r->next = i->ip6r;
-	i->ip6r = r;
+	prev = &i->ip6r;
+	while(*prev){
+		if(r->maskbits > (*prev)->maskbits){
+			break;
+		}
+		prev = &(*prev)->next;
+	}
+	r->next = *prev;
+	*prev = r;
 	return 0;
 }
 
