@@ -220,8 +220,10 @@ categorize_tx(const interface *i,const void *frame,int *self,int *out){
 // Mark a frame as ready-to-send. Must have come from get_tx_frame() using this
 // same interface. Yes, we will see packets we generate on the RX ring.
 void send_tx_frame(interface *i,void *frame){
+	struct tpacket_hdr *thdr = frame;
 	int self,out;
 
+	assert(thdr->tp_status == TP_STATUS_PREPARING);
 	categorize_tx(i,frame,&self,&out);
 	if(self){
 		int ret;
@@ -235,15 +237,12 @@ void send_tx_frame(interface *i,void *frame){
 		}
 	}
 	if(out){
-		struct tpacket_hdr *thdr = frame;
 		uint32_t tplen = thdr->tp_len;
 		int ret;
 
-		assert(thdr->tp_status == TP_STATUS_PREPARING);
 		//thdr->tp_status = TP_STATUS_SEND_REQUEST;
 		//ret = send(i->fd,NULL,0,0);
 		ret = send(i->fd,(const char *)frame + thdr->tp_mac,thdr->tp_len,0);
-		thdr->tp_status = TP_STATUS_AVAILABLE;
 		if(ret == 0){
 			ret = tplen;
 		}
@@ -256,6 +255,7 @@ void send_tx_frame(interface *i,void *frame){
 			++i->txframes;
 		}
 	}
+	thdr->tp_status = TP_STATUS_AVAILABLE;
 }
 
 void abort_tx_frame(interface *i,void *frame){
