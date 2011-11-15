@@ -288,7 +288,7 @@ mask_addr(void *dst,void *src,unsigned maskbits,size_t len){
 	}
 	// Patial 32-bit word mask
 	if(tomask){
-		*m &= (~0U) << tomask;
+		*m = htonl((ntohl(*m)) & ((~0U) << tomask));
 	}
 	return dst;
 }
@@ -961,10 +961,10 @@ netlink_thread(void){
 	if(discover_addrs(pfd[0].fd)){
 		goto done;
 	}
-	if(discover_routes(pfd[0].fd)){
+	if(discover_neighbors(pfd[0].fd)){
 		goto done;
 	}
-	if(discover_neighbors(pfd[0].fd)){
+	if(discover_routes(pfd[0].fd)){
 		goto done;
 	}
 	while(!cancelled){

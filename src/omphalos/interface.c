@@ -202,16 +202,15 @@ int print_all_iface_stats(FILE *fp,interface *agg){
 
 // Interface lock must be held upon entry
 // FIXME need to check and ensure they don't overlap with existing routes
-int add_route4(interface *i,const struct in_addr *s,
-		const struct in_addr *via,const struct in_addr *src,
-		unsigned blen,int iif){
+int add_route4(interface *i,const uint32_t *dst,const uint32_t *via,
+				const uint32_t *src,unsigned blen,int iif){
 	ip4route *r,**prev;
 
 	if((r = malloc(sizeof(*r))) == NULL){
 		return -1;
 	}
 	r->addrs = 0;
-	memcpy(&r->dst,s,sizeof(*s));
+	memcpy(&r->dst,dst,sizeof(*dst));
 	r->iif = iif;
 	r->maskbits = blen;
 	prev = &i->ip4r;
@@ -248,16 +247,15 @@ int add_route4(interface *i,const struct in_addr *s,
 }
 
 // Interface lock must be held upon entry
-int add_route6(interface *i,const struct in6_addr *s,
-		const struct in6_addr *via,const struct in6_addr *src,
-		unsigned blen,int iif){
+int add_route6(interface *i,const uint128_t *dst,const uint128_t *via,
+				const uint128_t *src,unsigned blen,int iif){
 	ip6route *r,**prev;
 
 	if((r = malloc(sizeof(*r))) == NULL){
 		return -1;
 	}
 	r->addrs = 0;
-	memcpy(&r->dst,s,sizeof(*s));
+	memcpy(&r->dst,dst,sizeof(*dst));
 	r->iif = iif;
 	r->maskbits = blen;
 	prev = &i->ip6r;
@@ -563,20 +561,20 @@ get_source_address(interface *i,int fam,const void *addr,void *s){
 		case AF_INET:{
 			const ip4route *i4r = addr ? get_route4(i,addr) : i->ip4r;
 
-			if(i4r){
+			if(i4r && (i4r->addrs & ROUTE_HAS_SRC)){
 				memcpy(s,&i4r->src,sizeof(uint32_t));
 			}else{
-				memset(s,0,sizeof(uint32_t));
+				return NULL;
 			}
 			break;
 		}case AF_INET6:{
 			const ip6route *i6r = addr ? get_route6(i,addr) : i->ip6r;
 
-			if(i6r){
-				// FIXME ipv6 routes very rarely set their src :/
+			// FIXME ipv6 routes very rarely set their src :/
+			if(i6r && (i6r->addrs & ROUTE_HAS_SRC)){
 				memcpy(s,&i6r->src,sizeof(uint128_t));
 			}else{
-				memset(s,0,sizeof(uint128_t));
+				return NULL;
 			}
 			break;
 		}default:
