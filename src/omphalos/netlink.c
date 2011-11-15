@@ -254,10 +254,11 @@ handle_rtm_delneigh(const struct nlmsghdr *nl){
 		ra = RTA_NEXT(ra,rlen);
 	}
 	if(rlen){
-		diagnostic(L"%d excess bytes on %s newlink message",rlen,iface->name);
+		diagnostic(L"%d excess bytes on %s delneigh message",rlen,iface->name);
 	}
 	return 0;
 }
+
 /*static int handle_rtm_deladdr(const struct nlmsghdr *nl){ const struct ifaddrmsg *ia = NLMSG_DATA(nl);
 	interface *iface;
 
@@ -645,15 +646,6 @@ handle_newlink_locked(interface *iface,const struct ifinfomsg *ii,const struct n
 	int rlen;
 
 	// FIXME this is all crap
-	if(iface->name == NULL){
-		if(timestat_prep(&iface->fps,IFACE_TIMESTAT_USECS,IFACE_TIMESTAT_SLOTS)){
-			return -1;
-		}
-		if(timestat_prep(&iface->bps,IFACE_TIMESTAT_USECS,IFACE_TIMESTAT_SLOTS)){
-			timestat_destroy(&iface->fps);
-			return -1;
-		}
-	}
 	iface->arptype = ii->ifi_type;
 	rlen = nl->nlmsg_len - NLMSG_LENGTH(sizeof(*ii));
 	ra = (struct rtattr *)((char *)(NLMSG_DATA(nl)) + sizeof(*ii));

@@ -59,6 +59,13 @@ int init_interfaces(void){
 			return -1;
 		}
 		iface->fd4 = iface->fd6 = iface->rfd = iface->fd = -1;
+		if(timestat_prep(&iface->fps,IFACE_TIMESTAT_USECS,IFACE_TIMESTAT_SLOTS)){
+			return -1;
+		}
+		if(timestat_prep(&iface->bps,IFACE_TIMESTAT_USECS,IFACE_TIMESTAT_SLOTS)){
+			timestat_destroy(&iface->fps);
+			return -1;
+		}
 	}
 	if(pthread_mutexattr_destroy(&attr)){
 		return -1;
