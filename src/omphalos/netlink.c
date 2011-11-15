@@ -760,7 +760,7 @@ handle_newlink_locked(const omphalos_iface *octx,interface *iface,
 			iface->topinfo.devname = wcsdup(name_virtual_device(ii,&iface->drv));
 		}else{
 			// Try to get detailed wireless info first, falling back to ethtool.
-			if(iface_wireless_info(octx,iface->name,&iface->settings.wext) == 0){
+			if(iface_wireless_info(iface->name,&iface->settings.wext) == 0){
 				iface->settings_valid = SETTINGS_VALID_WEXT;
 			}else if(iface_ethtool_info(iface->name,&iface->settings.ethtool) == 0){
 				iface->settings_valid = SETTINGS_VALID_ETHTOOL;

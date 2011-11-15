@@ -1,6 +1,7 @@
 #include <sys/socket.h>
 #include <linux/ipx.h>
 #include <omphalos/ipx.h>
+#include <omphalos/diag.h>
 #include <omphalos/util.h>
 #include <omphalos/ethernet.h>
 #include <omphalos/omphalos.h>
@@ -29,13 +30,12 @@ struct ipxhdr {
 	struct ipx_address	ipx_source __attribute__ ((packed));
 };
 
-void handle_ipx_packet(const omphalos_iface *octx,omphalos_packet *op,
-				const void *frame,size_t len){
+void handle_ipx_packet(omphalos_packet *op,const void *frame,size_t len){
 	const struct ipxhdr *ipxhdr = frame;
 	uint32_t ipxlen;
 
 	if(len < sizeof(*ipxhdr)){
-		octx->diagnostic(L"%s truncated (%zu < %zu) on %s",
+		diagnostic(L"%s truncated (%zu < %zu) on %s",
 				__func__,len,sizeof(*ipxhdr),op->i->name);
 		op->malformed = 1;
 		return;
@@ -47,7 +47,7 @@ void handle_ipx_packet(const omphalos_iface *octx,omphalos_packet *op,
 		++ipxlen;
 	}
 	if(check_ethernet_padup(len,ipxlen)){
-		octx->diagnostic(L"%s malformed (%u != %zu) on %s",
+		diagnostic(L"%s malformed (%u != %zu) on %s",
 				__func__,ipxlen,len,op->i->name);
 		op->malformed = 1;
 		return;
@@ -60,7 +60,7 @@ void handle_ipx_packet(const omphalos_iface *octx,omphalos_packet *op,
 	break;}case IPX_TYPE_NCP:{
 	break;}case IPX_TYPE_PPROP:{
 	break;}default:{
-		octx->diagnostic(L"%s noproto %u on %s",
+		diagnostic(L"%s noproto %u on %s",
 				__func__,ipxhdr->ipx_type,op->i->name);
 		op->noproto = 1;
 	break;} }

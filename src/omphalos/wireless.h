@@ -16,8 +16,8 @@ struct omphalos_iface;
 
 int handle_wireless_event(const struct omphalos_iface *,struct interface *,
 				const struct iw_event *,size_t);
-int iface_wireless_info(const struct omphalos_iface *,const char *,
-				struct wless_info *);
+int iface_wireless_info(const char *,struct wless_info *)
+				__attribute__ ((nonnull (1,2)));
 
 static inline const char *
 modestr(unsigned dplx){

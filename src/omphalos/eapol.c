@@ -1,4 +1,5 @@
 #include <sys/socket.h>
+#include <omphalos/diag.h>
 #include <omphalos/util.h>
 #include <omphalos/eapol.h>
 #include <omphalos/omphalos.h>
@@ -16,21 +17,20 @@ struct eapolhdr {
 #define EAPOL_KEY	3
 #define EAPOL_ALERT	4
 
-void handle_eapol_packet(const omphalos_iface *octx,omphalos_packet *op,
-					const void *frame,size_t len){
+void handle_eapol_packet(omphalos_packet *op,const void *frame,size_t len){
 	const struct eapolhdr *eaphdr = frame;
 
 	if(len < sizeof(*eaphdr)){
-		octx->diagnostic(L"%s truncated (%zu < %zu)",__func__,len,sizeof(*eaphdr));
+		diagnostic(L"%s truncated (%zu < %zu)",__func__,len,sizeof(*eaphdr));
 		op->malformed = 1;
 		return;
 	}
 	if(eaphdr->version != 1 && eaphdr->version != 2){
-		octx->diagnostic(L"Unknown EAPOL version %u",eaphdr->version);
+		diagnostic(L"Unknown EAPOL version %u",eaphdr->version);
 		op->noproto = 1;
 	}
 	if(ntohs(eaphdr->len) != len - sizeof(*eaphdr)){
-		octx->diagnostic(L"%s malformed (%u != %zu)",__func__,
+		diagnostic(L"%s malformed (%u != %zu)",__func__,
 			ntohs(eaphdr->len),len - sizeof(*eaphdr));
 		op->malformed = 1;
 		return;
@@ -42,7 +42,7 @@ void handle_eapol_packet(const omphalos_iface *octx,omphalos_packet *op,
 	break;}case EAPOL_KEY:{
 	break;}case EAPOL_ALERT:{
 	break;}default:{
-		octx->diagnostic(L"%s noproto %u",__func__,eaphdr->type);
+		diagnostic(L"%s noproto %u",__func__,eaphdr->type);
 		op->noproto = 1;
 	break;} }
 }
