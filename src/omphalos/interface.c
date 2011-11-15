@@ -320,7 +320,7 @@ int del_route6(interface *i,const struct in6_addr *a,unsigned blen){
 
 static inline int
 ip4_in_route(const ip4route *r,uint32_t i){
-	uint64_t mask = ~0U;
+	uint64_t mask = ~0llu;
 
 	mask <<= 32 - r->maskbits;
 	return (ntohl(r->dst) & mask) == (ntohl(i) & mask);
@@ -339,27 +339,27 @@ int is_local4(const interface *i,uint32_t ip){
 
 static inline int
 ip6_in_route(const ip6route *r,const uint128_t i){
-	uint128_t mask = { ~0u, ~0u, ~0u, ~0u };
-	uint128_t dst = r->dst;
+	uint128_t dst = r->dst,mask;
 
+	memset(&mask,0xff,sizeof(mask));
 	switch(r->maskbits / 32){
 		case 0:
-			mask[0] = ~0u << (32 - r->maskbits);
-			mask[1] = 0u;
-			mask[2] = 0u;
-			mask[3] = 0u;
+			mask[0] = ~0lu << (32 - r->maskbits);
+			mask[1] = 0lu;
+			mask[2] = 0lu;
+			mask[3] = 0lu;
 			break;
 		case 1:
-			mask[1] = ~0u << (64 - r->maskbits);
-			mask[2] = 0u;
-			mask[3] = 0u;
+			mask[1] = ~0lu << (64 - r->maskbits);
+			mask[2] = 0lu;
+			mask[3] = 0lu;
 			break;
 		case 2:
-			mask[2] = ~0u << (96 - r->maskbits);
-			mask[3] = 0u;
+			mask[2] = ~0lu << (96 - r->maskbits);
+			mask[3] = 0lu;
 			break;
 		case 3:
-			mask[3] = ~0u << (128 - r->maskbits);
+			mask[3] = ~0lu << (128 - r->maskbits);
 			break;
 		case 4:
 			break;
