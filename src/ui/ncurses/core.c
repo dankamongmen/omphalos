@@ -1293,7 +1293,7 @@ int deselect_iface_locked(void){
 	return select_interface_node(rb,-1);
 }
 
-#define ENVROWS 1 // FIXME
+#define ENVROWS 2 // FIXME
 
 static int
 env_details(WINDOW *hw,int rows){
@@ -1308,6 +1308,12 @@ env_details(WINDOW *hw,int rows){
 	case (ENVROWS - 1):{
 		assert(mvwprintw(hw,row + z,col,"colors: "U64FMT"palette: %s",
 				COLORS,modified_colors ? "dynamic" : "fixed") != ERR);
+		--z;
+	}case 0:{
+		const char *lang = getenv("LANG");
+
+		lang = lang ? lang : "Undefined";
+		assert(mvwprintw(hw,row + z,col,"LANG: %s",lang) != ERR);
 		--z;
 		break;
 	}default:{
