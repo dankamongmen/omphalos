@@ -11,10 +11,9 @@ struct l2host;
 struct l3host;
 struct nlmsghdr;
 struct interface;
-struct omphalos_iface;
 
-int handle_rtm_delroute(const struct omphalos_iface *,const struct nlmsghdr *);
-int handle_rtm_newroute(const struct omphalos_iface *,const struct nlmsghdr *);
+int handle_rtm_delroute(const struct nlmsghdr *);
+int handle_rtm_newroute(const struct nlmsghdr *);
 
 struct routepath {
 	struct interface *i;

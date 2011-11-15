@@ -371,7 +371,7 @@ int omphalos_init(const omphalos_ctx *pctx){
 		if(init_pci_support()){
 			pctx->iface.diagnostic(L"Warning: no PCI support available");
 		}
-		if(handle_netlink_socket(pctx)){
+		if(handle_netlink_socket()){
 			return -1;
 		}
 	}

@@ -143,7 +143,6 @@ redraw_screen_locked(void){
 
 struct ncurses_input_marshal {
 	WINDOW *w;
-	const omphalos_iface *octx;
 };
 
 
@@ -161,7 +160,6 @@ toggle_panel(WINDOW *w,struct panel_state *ps,int (*psfxn)(WINDOW *,struct panel
 static void *
 ncurses_input_thread(void *unsafe_marsh){
 	struct ncurses_input_marshal *nim = unsafe_marsh;
-	const omphalos_iface *octx = nim->octx;
 	WINDOW *w = nim->w;
 	int ch;
 
@@ -225,17 +223,17 @@ ncurses_input_thread(void *unsafe_marsh){
 			break;
 		case 'p':
 			lock_ncurses();
-				toggle_promisc_locked(octx,w);
+				toggle_promisc_locked(w);
 			unlock_ncurses();
 			break;
 		case 'd':
 			lock_ncurses();
-				down_interface_locked(octx,w);
+				down_interface_locked(w);
 			unlock_ncurses();
 			break;
 		case 's':
 			lock_ncurses();
-				sniff_interface_locked(octx,w);
+				sniff_interface_locked(w);
 			unlock_ncurses();
 			break;
 		case 'u':
@@ -333,7 +331,7 @@ mandatory_cleanup(WINDOW **w){
 }
 
 static WINDOW *
-ncurses_setup(const omphalos_iface *octx){
+ncurses_setup(void){
 	struct ncurses_input_marshal *nim;
 	const wchar_t *errstr = NULL;
 	WINDOW *w = NULL;
@@ -480,7 +478,6 @@ ncurses_setup(const omphalos_iface *octx){
 	if((nim = malloc(sizeof(*nim))) == NULL){
 		goto err;
 	}
-	nim->octx = octx;
 	nim->w = w;
 	// Panels aren't yet being used, so we need call refresh() to
 	// paint the main window.
@@ -629,7 +626,7 @@ int main(int argc,char * const *argv){
 	pctx.iface.srv_event = service_callback;
 	pctx.iface.neigh_event = neighbor_callback;
 	pctx.iface.host_event = host_callback;
-	if(ncurses_setup(&pctx.iface) == NULL){
+	if(ncurses_setup() == NULL){
 		return EXIT_FAILURE;
 	}
 	if(omphalos_init(&pctx)){

@@ -599,21 +599,21 @@ int setup_statusbar(int cols){
 	return 0;
 }
 
-void toggle_promisc_locked(const omphalos_iface *octx,WINDOW *w){
+void toggle_promisc_locked(WINDOW *w){
 	const interface *i = get_current_iface();
 
 	if(i){
 		if(interface_promisc_p(i)){
 			wstatus_locked(w,L"Disabling promiscuity on %s",i->name);
-			disable_promiscuity(octx,i);
+			disable_promiscuity(i);
 		}else{
 			wstatus_locked(w,L"Enabling promiscuity on %s",i->name);
-			enable_promiscuity(octx,i);
+			enable_promiscuity(i);
 		}
 	}
 }
 
-void sniff_interface_locked(const omphalos_iface *octx,WINDOW *w){
+void sniff_interface_locked(WINDOW *w){
 	const interface *i = get_current_iface();
 
 	if(i){
@@ -621,7 +621,7 @@ void sniff_interface_locked(const omphalos_iface *octx,WINDOW *w){
 			if(!interface_up_p(i)){
 				wstatus_locked(w,L"Bringing up %s...",i->name);
 				current_iface->is->devaction = -1;
-				up_interface(octx,i);
+				up_interface(i);
 			}
 		}else{
 			// FIXME send request to stop sniffing
@@ -629,14 +629,14 @@ void sniff_interface_locked(const omphalos_iface *octx,WINDOW *w){
 	}
 }
 
-void down_interface_locked(const omphalos_iface *octx,WINDOW *w){
+void down_interface_locked(WINDOW *w){
 	const interface *i = get_current_iface();
 
 	if(i){
 		if(interface_up_p(i)){
 			wstatus_locked(w,L"Bringing down %s...",i->name);
 			current_iface->is->devaction = 1;
-			down_interface(octx,i);
+			down_interface(i);
 		}
 	}
 }

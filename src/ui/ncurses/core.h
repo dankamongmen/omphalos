@@ -16,7 +16,6 @@ struct l3host;
 struct reelbox;
 struct interface;
 struct panel_state;
-struct omphalos_iface;
 struct omphalos_packet;
 
 // A box on the display reel. A box might be wholly visible, partially visible  endif
@@ -105,9 +104,9 @@ struct l2obj *neighbor_callback_locked(const struct interface *,struct l2host *)
 void interface_removed_locked(iface_state *,struct panel_state **);
 void *interface_cb_locked(struct interface *,iface_state *,struct panel_state *);
 int packet_cb_locked(const struct interface *,struct omphalos_packet *,struct panel_state *);
-void toggle_promisc_locked(const struct omphalos_iface *,WINDOW *w);
-void sniff_interface_locked(const struct omphalos_iface *,WINDOW *w);
-void down_interface_locked(const struct omphalos_iface *,WINDOW *w);
+void toggle_promisc_locked(WINDOW *w);
+void sniff_interface_locked(WINDOW *w);
+void down_interface_locked(WINDOW *w);
 void resolve_selection(WINDOW *);
 void reset_current_interface_stats(WINDOW *);
 void use_next_iface_locked(WINDOW *,struct panel_state *);

@@ -155,7 +155,7 @@ hwaddrstr(const interface *i){
 	return r;
 }
 
-void free_iface(const struct omphalos_iface *,interface *);
+void free_iface(interface *);
 void cleanup_interfaces(const struct omphalos_iface *);
 int print_all_iface_stats(FILE *,interface *);
 int add_route4(interface *,const struct in_addr *,
@@ -177,10 +177,10 @@ int is_local6(const interface *,const struct in6_addr *);
 
 const char *lookup_arptype(unsigned,analyzefxn *);
 
-int enable_promiscuity(const struct omphalos_iface *,const interface *);
-int disable_promiscuity(const struct omphalos_iface *,const interface *);
-int up_interface(const struct omphalos_iface *,const interface *);
-int down_interface(const struct omphalos_iface *,const interface *);
+int enable_promiscuity(const interface *);
+int disable_promiscuity(const interface *);
+int up_interface(const interface *);
+int down_interface(const interface *);
 
 static inline int
 interface_sniffing_p(const interface *i){

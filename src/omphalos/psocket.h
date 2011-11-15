@@ -9,7 +9,6 @@ extern "C" {
 
 struct interface;
 struct tpacket_req;
-struct omphalos_iface;
 
 // Open a packet socket. Requires superuser or network admin capabilities.
 int packet_socket(unsigned);
@@ -19,7 +18,7 @@ int packet_socket(unsigned);
 size_t mmap_rx_psocket(int,int,unsigned,void **,struct tpacket_req *);
 size_t mmap_tx_psocket(int,int,unsigned,void **,struct tpacket_req *);
 
-int handle_ring_packet(const struct omphalos_iface *,struct interface *,int,void *);
+int handle_ring_packet(struct interface *,int,void *);
 
 // map and size ought have been returned by mmap_*_psocket().
 int unmap_psocket(void *,size_t);

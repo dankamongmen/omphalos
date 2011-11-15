@@ -113,20 +113,23 @@ int idx_of_iface(const interface *i){
 }
 
 // We don't destroy the mutex lock here; it exists for the life of the program.
-void free_iface(const omphalos_iface *octx,interface *i){
+void free_iface(interface *i){
+	const struct omphalos_ctx *ctx = get_octx();
+	const omphalos_iface *octx = &ctx->iface;
+
 	// Must reap thread prior to closing the fd's, lest some other thread
 	// be allocated that fd, and have the packet socket thread use it.
 	if(i->pmarsh){
-		reap_thread(octx,i);
+		reap_thread(i);
 	}
 	if(i->rfd >= 0){
 		if(close(i->rfd)){
-			octx->diagnostic(L"Error closing %d: %s",i->rfd,strerror(errno));
+			diagnostic(L"Error closing %d: %s",i->rfd,strerror(errno));
 		}
 	}
 	if(i->fd >= 0){
 		if(close(i->fd)){
-			octx->diagnostic(L"Error closing %d: %s",i->fd,strerror(errno));
+			diagnostic(L"Error closing %d: %s",i->fd,strerror(errno));
 		}
 	}
 	if(i->opaque && octx->iface_removed){
@@ -168,7 +171,7 @@ void cleanup_interfaces(const omphalos_iface *pctx){
 		if(interfaces[i].name){
 			pctx->diagnostic(L"Shutting down %s",interfaces[i].name);
 		}
-		free_iface(pctx,&interfaces[i]);
+		free_iface(&interfaces[i]);
 		if( (r = pthread_mutex_destroy(&interfaces[i].lock)) ){
 			pctx->diagnostic(L"Couldn't destroy lock on %d (%s?)",r,strerror(r));
 		}
@@ -430,13 +433,13 @@ const char *lookup_arptype(unsigned arphrd,analyzefxn *analyzer){
 	return NULL;
 }
 
-int up_interface(const omphalos_iface *octx,const interface *i){
+int up_interface(const interface *i){
 	int fd;
 
-	if((fd = netlink_socket(octx)) < 0){
+	if((fd = netlink_socket()) < 0){
 		return -1;
 	}
-	if(iplink_modify(octx,fd,iface_get_idx(i),IFF_UP,IFF_UP)){
+	if(iplink_modify(fd,iface_get_idx(i),IFF_UP,IFF_UP)){
 		close(fd);
 		return -1;
 	}
@@ -449,13 +452,13 @@ int up_interface(const omphalos_iface *octx,const interface *i){
 	return 0;
 }
 
-int down_interface(const omphalos_iface *octx,const interface *i){
+int down_interface(const interface *i){
 	int fd;
 
-	if((fd = netlink_socket(octx)) < 0){
+	if((fd = netlink_socket()) < 0){
 		return -1;
 	}
-	if(iplink_modify(octx,fd,iface_get_idx(i),0,IFF_UP)){
+	if(iplink_modify(fd,iface_get_idx(i),0,IFF_UP)){
 		close(fd);
 		return -1;
 	}
@@ -468,13 +471,13 @@ int down_interface(const omphalos_iface *octx,const interface *i){
 	return 0;
 }
 
-int enable_promiscuity(const omphalos_iface *octx,const interface *i){
+int enable_promiscuity(const interface *i){
 	int fd;
 
-	if((fd = netlink_socket(octx)) < 0){
+	if((fd = netlink_socket()) < 0){
 		return -1;
 	}
-	if(iplink_modify(octx,fd,iface_get_idx(i),IFF_PROMISC,IFF_PROMISC)){
+	if(iplink_modify(fd,iface_get_idx(i),IFF_PROMISC,IFF_PROMISC)){
 		close(fd);
 		return -1;
 	}
@@ -487,18 +490,18 @@ int enable_promiscuity(const omphalos_iface *octx,const interface *i){
 	return 0;
 }
 
-int disable_promiscuity(const omphalos_iface *octx,const interface *i){
+int disable_promiscuity(const interface *i){
 	int fd;
 
-	if((fd = netlink_socket(octx)) < 0){
+	if((fd = netlink_socket()) < 0){
 		return -1;
 	}
-	if(iplink_modify(octx,fd,iface_get_idx(i),0,IFF_PROMISC)){
+	if(iplink_modify(fd,iface_get_idx(i),0,IFF_PROMISC)){
 		close(fd);
 		return -1;
 	}
 	if(close(fd)){
-		octx->diagnostic(L"couldn't close netlink socket %d (%s?)",fd,strerror(errno));
+		diagnostic(L"couldn't close netlink socket %d (%s?)",fd,strerror(errno));
 		return -1;
 	}
 	// FIXME we're not necessarily out of promiscuous mode yet...i->flags

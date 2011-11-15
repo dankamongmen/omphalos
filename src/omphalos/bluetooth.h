@@ -5,9 +5,7 @@
 extern "C" {
 #endif
 
-struct omphalos_iface;
-
-int discover_bluetooth(const struct omphalos_iface *);
+int discover_bluetooth(void);
 
 #ifdef __cplusplus
 }

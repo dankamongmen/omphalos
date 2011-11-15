@@ -172,7 +172,9 @@ recover_truncated_packet(interface *iface,int fd,unsigned tlen){
 // -1: error; don't call us anymore. 0: handled frame. 1: interrupted; we
 // return for a cancellation check, and the frameptr oughtn't be advanced. The
 // interface lock must be held upon entry.
-int handle_ring_packet(const omphalos_iface *octx,interface *iface,int fd,void *frame){
+int handle_ring_packet(interface *iface,int fd,void *frame){
+	const struct omphalos_ctx *ctx = get_octx();
+	const omphalos_iface *octx = &ctx->iface;
 	struct tpacket_hdr *thdr = frame;
 	omphalos_packet packet = {
 		.i = iface,

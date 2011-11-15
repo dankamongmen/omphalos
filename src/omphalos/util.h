@@ -9,19 +9,20 @@ extern "C" {
 #include <stdlib.h>
 #include <string.h>
 #include <endian.h>
+#include <omphalos/diag.h>
 #include <omphalos/omphalos.h>
 
 static inline void *
-MMalloc(const omphalos_iface *octx,size_t s,const char *fname){
+MMalloc(size_t s,const char *fname){
 	void *r;
 
 	if((r = malloc(s)) == NULL){
-		octx->diagnostic(L"%s|couldn't allocate %zu bytes",fname,s);
+		diagnostic(L"%s|couldn't allocate %zu bytes",fname,s);
 	}
 	return r;
 }
 
-#define Malloc(octx,s) MMalloc(octx,s,__func__)
+#define Malloc(s) MMalloc(s,__func__)
 
 static inline void *
 memdup(const void *,size_t) __attribute__ ((warn_unused_result))
