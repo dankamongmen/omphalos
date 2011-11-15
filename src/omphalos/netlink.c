@@ -301,7 +301,6 @@ handle_rtm_newaddr(const struct nlmsghdr *nl){
 	void *as = NULL,*ad;
 	uint128_t addr,dst;
 	struct rtattr *ra;
-	struct l2host *l2;
 	interface *iface;
 	size_t alen;
 	int rlen;
@@ -365,18 +364,17 @@ handle_rtm_newaddr(const struct nlmsghdr *nl){
 	}
 	assert(inet_ntop(ia->ifa_family,as,astr,sizeof(astr)));
 	lock_interface(iface);
+	if(ia->ifa_family == AF_INET6){
+		set_default_ipv6src(iface,*(const uint128_t *)as);
+	}
+	// add_route*() will perform an l2 and l3 lookup on the source
 	if(ia->ifa_family == AF_INET){
 		add_route4(iface,ad,NULL,as,prefixlen,ia->ifa_index);
 	}else{
 		add_route6(iface,ad,NULL,as,prefixlen,ia->ifa_index);
 	}
-	if(ia->ifa_family == AF_INET6 && as){
-		set_default_ipv6src(iface,*(const uint128_t *)as);
-	}
-	l2 = lookup_l2host(iface,iface->addr);
-	lookup_local_l3host(iface,l2,ia->ifa_family,as);
 	unlock_interface(iface);
-	diagnostic(L"[%s] new address %s",iface->name,astr);
+	diagnostic(L"[%s] new local address %s",iface->name,astr);
 	return 0;
 }
 
