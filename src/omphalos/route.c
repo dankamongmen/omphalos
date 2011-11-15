@@ -228,7 +228,9 @@ int handle_rtm_newroute(const struct nlmsghdr *nl){
 	}
 	if(r->family == AF_INET){
 		lock_interface(r->iface);
-		if(add_route4(r->iface,ad,r->ssg.ss_family ? ag : NULL,r->sss.ss_family ? as : NULL,r->maskbits,iif)){
+		if(add_route4(r->iface,ad,r->ssg.ss_family ? ag : NULL,
+					r->sss.ss_family ? as : NULL,
+					r->maskbits,iif)){
 			unlock_interface(r->iface);
 			diagnostic(L"Couldn't add route to %s",r->iface->name);
 			goto err;
