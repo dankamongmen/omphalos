@@ -26,9 +26,11 @@ static interface interfaces[MAXINTERFACES];
 
 // FIXME what the hell to do here...?
 static void
-handle_void_packet(const omphalos_iface *octx,omphalos_packet *op,
-			const void *frame __attribute__ ((unused)),
+handle_void_packet(omphalos_packet *op,const void *frame __attribute__ ((unused)),
 			size_t len __attribute__ ((unused))){
+	const struct omphalos_ctx *ctx = get_octx();
+	const omphalos_iface *octx = &ctx->iface;
+
 	assert(op->i);
 	if(octx->packet_read){
 		octx->packet_read(op);

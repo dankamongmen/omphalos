@@ -9,11 +9,10 @@ extern "C" {
 #include <linux/if_ether.h>
 #include <linux/rtnetlink.h>
 
-struct omphalos_iface;
 struct omphalos_packet;
 
-void handle_irda_packet(const struct omphalos_iface *,struct omphalos_packet *,
-			const void *,size_t) __attribute__ ((nonnull (1,2,3)));
+void handle_irda_packet(struct omphalos_packet *,const void *,size_t)
+			__attribute__ ((nonnull (1,2)));
 
 #ifdef __cplusplus
 }

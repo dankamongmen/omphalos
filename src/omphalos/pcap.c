@@ -29,7 +29,7 @@ static interface pcap_file_interface = {
 typedef struct pcap_marshal {
 	interface *i;
 	const omphalos_iface *octx;
-	void (*handler)(const omphalos_iface *,omphalos_packet *,const void *,size_t);
+	analyzefxn handler;
 } pcap_marshal;
 
 static void
@@ -81,7 +81,7 @@ handle_pcap_direct(u_char *gi,const struct pcap_pkthdr *h,const u_char *bytes){
 	}
 	memset(&packet,0,sizeof(packet));
 	packet.i = iface;
-	pm->handler(pm->octx,&packet,bytes,h->len);
+	pm->handler(&packet,bytes,h->len);
 	gettimeofday(&phdr.ts,NULL);
 	phdr.len = h->len;
 	phdr.caplen = h->caplen;

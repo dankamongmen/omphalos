@@ -253,7 +253,7 @@ int handle_ring_packet(const omphalos_iface *octx,interface *iface,int fd,void *
 	}
 	timestat_inc(&iface->bps,&packet.tv,len);
 	iface->bytes += len;
-	iface->analyzer(octx,&packet,frame,len);
+	iface->analyzer(&packet,frame,len);
 	thdr->tp_status = TP_STATUS_KERNEL; // return the frame
 	if(packet.l2s){
 		l2srcpkt(packet.l2s);

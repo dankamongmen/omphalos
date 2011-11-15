@@ -60,8 +60,7 @@ typedef struct topdev_info {
 	wchar_t *devname;		// as in output from lspci or lsusb
 } topdev_info;
 
-typedef void (*analyzefxn)(const struct omphalos_iface *,
-		struct omphalos_packet *,const void *,size_t);
+typedef void (*analyzefxn)(struct omphalos_packet *,const void *,size_t);
 
 #define IFACE_TIMESTAT_USECS 40000
 #define IFACE_TIMESTAT_SLOTS 125

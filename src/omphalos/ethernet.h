@@ -9,7 +9,6 @@ extern "C" {
 #include <linux/if_ether.h>
 #include <linux/rtnetlink.h>
 
-struct omphalos_iface;
 struct omphalos_packet;
 
 // STP actually travels over 802.3 with SAP == 0x42 (most of the time).
@@ -18,8 +17,7 @@ struct omphalos_packet;
 // FIXME for SAP/DAP == 0xfe in 802.3 traffic ("routed osi pdu's")
 #define ETH_P_OSI	ETH_P_802_3
 
-void handle_ethernet_packet(const struct omphalos_iface *,
-				struct omphalos_packet *,const void *,size_t);
+void handle_ethernet_packet(struct omphalos_packet *,const void *,size_t);
 
 int prep_eth_header(void *,size_t,const struct interface *,const void *,
 			uint16_t) __attribute__ ((nonnull (1,3,4)));
