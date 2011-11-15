@@ -211,7 +211,7 @@ int add_route4(interface *i,const struct in_addr *s,
 		memcpy(&r->src,src,sizeof(*src));
 		r->addrs |= ROUTE_HAS_SRC;
 		l2 = lookup_l2host(i,i->addr);
-		lookup_l3host(i,l2,AF_INET,src);
+		lookup_local_l3host(i,l2,AF_INET,src);
 	}
 	if(via){
 		memcpy(&r->via,via,sizeof(*via));
@@ -260,7 +260,7 @@ int add_route6(interface *i,const struct in6_addr *s,
 		memcpy(&r->src,src,sizeof(*src));
 		r->addrs |= ROUTE_HAS_SRC;
 		l2 = lookup_l2host(i,i->addr);
-		lookup_l3host(i,l2,AF_INET6,src);
+		lookup_local_l3host(i,l2,AF_INET6,src);
 	}
 	if(via){
 		memcpy(&r->via,via,sizeof(*via));
