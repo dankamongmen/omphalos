@@ -159,11 +159,6 @@ void wname_l3host_absolute(const interface *i,
 	pthread_mutex_unlock(&l3->nlock);
 }
 
-static inline int
-routed_family_p(int fam){
-	return fam == AF_INET || fam == AF_INET6;
-}
-
 // An interface-scoped lookup without lower-level information. It doesn't
 // create a new entry if none exists. No support for BSSID lookup.
 struct l3host *find_l3host(interface *i,int fam,const void *addr){
@@ -228,8 +223,8 @@ update_l3name(struct l2host *l2,l3host *l3,
 
 // Interface lock needs be held upon entry
 static l3host *
-lookup_l3host_common(interface *i,struct l2host *l2,
-			int fam,const void *addr,int knownlocal){
+lookup_l3host_common(interface *i,struct l2host *l2,int fam,const void *addr,
+						int knownlocal){
 	char *(*revstrfxn)(const void *);
         l3host *l3,**prev,**orig;
 	typeof(l3->addr) cmp;
@@ -272,7 +267,7 @@ lookup_l3host_common(interface *i,struct l2host *l2,
 		}
 	}
 	cat = l2categorize(i,l2);
-	if(!(i->flags & IFF_NOARP) && routed_family_p(fam) && !knownlocal){
+	if(!(i->flags & IFF_NOARP) && !knownlocal){
 		if(cat == RTN_UNICAST || cat == RTN_LOCAL){
 			struct sockaddr_storage ss;
 			hwaddrint hwaddr = get_hwaddr(l2);
