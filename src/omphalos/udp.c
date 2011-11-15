@@ -40,7 +40,10 @@ void handle_udp_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 		}break;
 		case __constant_htons(DHCP_UDP_PORT):{
 			// FIXME also check dest?
-			handle_dhcp_packet(octx,op,ubdy,ulen);
+			if(handle_dhcp_packet(op,ubdy,ulen)){
+				observe_service(op->i,op->l2s,op->l3s,op->l3proto,
+					op->l4src,"DHCP",NULL);
+			}
 		}break;
 	}
 }

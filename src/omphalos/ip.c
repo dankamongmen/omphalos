@@ -79,13 +79,13 @@ void handle_ipv6_packet(const omphalos_iface *octx,omphalos_packet *op,
 			handle_icmp6_packet(op,nhdr,plen);
 			nhdr = NULL;
 		break; }case IPPROTO_GRE:{
-			handle_gre_packet(octx,op,nhdr,plen);
+			handle_gre_packet(op,nhdr,plen);
 			nhdr = NULL;
 		break; }case IPPROTO_IGMP:{
 			handle_igmp_packet(octx,op,nhdr,plen);
 			nhdr = NULL;
 		break; }case IPPROTO_PIM:{
-			handle_pim_packet(octx,op,nhdr,plen);
+			handle_pim_packet(op,nhdr,plen);
 			nhdr = NULL;
 		break; }case IPPROTO_HOPOPTS:{
 			const struct ip6hbh {
@@ -157,11 +157,11 @@ void handle_ipv4_packet(const omphalos_iface *octx,omphalos_packet *op,
 	break; }case IPPROTO_ICMP:{
 		handle_icmp_packet(op,nhdr,nlen);
 	break; }case IPPROTO_GRE:{
-		handle_gre_packet(octx,op,nhdr,nlen);
+		handle_gre_packet(op,nhdr,nlen);
 	break; }case IPPROTO_IGMP:{
 		handle_igmp_packet(octx,op,nhdr,nlen);
 	break; }case IPPROTO_PIM:{
-		handle_pim_packet(octx,op,nhdr,nlen);
+		handle_pim_packet(op,nhdr,nlen);
 	break; }default:{
 		op->noproto = 1;
 		octx->diagnostic(L"%s %s noproto for %u",__func__,

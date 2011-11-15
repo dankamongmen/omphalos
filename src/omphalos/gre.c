@@ -1,4 +1,5 @@
 #include <omphalos/gre.h>
+#include <omphalos/diag.h>
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
 
@@ -18,12 +19,12 @@ typedef struct grehdr {
 	uint16_t protocol;
 } __attribute__ ((packed)) grehdr;
 
-void handle_gre_packet(const omphalos_iface *octx,omphalos_packet *op,const void *frame,size_t len){
+void handle_gre_packet(omphalos_packet *op,const void *frame,size_t len){
 	const struct grehdr *gre = frame;
 	unsigned glen;
 
 	if(len < sizeof(*gre)){
-		octx->diagnostic(L"%s malformed with %zu on %s",__func__,len,op->i->name);
+		diagnostic(L"%s malformed with %zu on %s",__func__,len,op->i->name);
 		op->malformed = 1;
 		return;
 	}
@@ -42,12 +43,12 @@ void handle_gre_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 		glen += 4;
 	}
 	if(len < sizeof(*gre) + glen){
-		octx->diagnostic(L"%s malformed with %zu on %s",__func__,len,op->i->name);
+		diagnostic(L"%s malformed with %zu on %s",__func__,len,op->i->name);
 		op->malformed = 1;
 		return;
 	}
 	if(gre->version != GRE_VERSION_NORMAL && gre->version != GRE_VERSION_PPTP){
-		octx->diagnostic(L"%s noproto for %zu on %s",__func__,gre->version,op->i->name);
+		diagnostic(L"%s noproto for %zu on %s",__func__,gre->version,op->i->name);
 		op->malformed = 1;
 		return;
 	}
