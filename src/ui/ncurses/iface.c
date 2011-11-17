@@ -58,7 +58,7 @@ iface_state *create_interface_state(interface *i){
 		ret->typestr = tstr;
 		ret->lastprinted.tv_sec = ret->lastprinted.tv_usec = 0;
 		ret->iface = i;
-		ret->expansion = EXPANSION_HOSTS; // FIXME
+		ret->expansion = EXPANSION_MAX;
 	}
 	return ret;
 }
@@ -200,15 +200,16 @@ static void
 print_host_services(WINDOW *w,const l3obj *l,int *line,int rows,int cols,
 				wchar_t selectchar){
 	const struct l4obj *l4;
-	int n = 0;
+	int n;
 
 	if(*line >= rows){
 		return;
 	}
 	if(*line < 0){
-		++*line;
+		*line += !!l->l4objs;
 		return;
 	}
+	n = 0;
 	for(l4 = l->l4objs ; l4 ; l4 = l4->next){
 		if(n){
 			assert(wprintw(w,", %s",l4srvstr(l4->l4)) != ERR);
@@ -229,8 +230,7 @@ static void
 print_iface_hosts(const interface *i,const iface_state *is,WINDOW *w,
 			int rows,int cols,int partial,int selectedidx){
 	const l2obj *l;
-	int l2idx;
-	int line;
+	int l2idx,line;
 
 	if(is->expansion < EXPANSION_NODES){
 		return;
@@ -305,7 +305,8 @@ print_iface_hosts(const interface *i,const iface_state *is,WINDOW *w,
 			attrs = sattrs;
 			l3attrs = sattrs;
 			rattrs = sattrs;
-			selectchar = l->l3objs && is->expansion >= EXPANSION_HOSTS ? L'⎧' : L'⎨';
+			selectchar = l->l3objs && is->expansion >= EXPANSION_HOSTS
+					? L'⎧' : L'⎨';
 		}else{
 			selectchar = L' ';
 		}
