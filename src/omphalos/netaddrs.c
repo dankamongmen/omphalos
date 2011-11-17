@@ -431,8 +431,8 @@ uint32_t get_l3addr_in(const l3host *l3){
 	return l3->addr.ip4;
 }
 
-uint128_t get_l3addr_in6(const l3host *l3){
-	return l3->addr.ip6;
+const uint128_t *get_l3addr_in6(const l3host *l3){
+	return &l3->addr.ip6;
 }
 
 const wchar_t *get_l3name(const l3host *l3){

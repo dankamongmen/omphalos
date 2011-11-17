@@ -70,7 +70,7 @@ void *l3host_get_opaque(struct l3host *) __attribute__ ((nonnull (1)));
 uintmax_t l3_get_srcpkt(const struct l3host *) __attribute__ ((nonnull (1)));
 uintmax_t l3_get_dstpkt(const struct l3host *) __attribute__ ((nonnull (1)));
 uint32_t get_l3addr_in(const struct l3host *) __attribute__ ((nonnull (1)));
-uint128_t get_l3addr_in6(const struct l3host *) __attribute__ ((nonnull (1)));
+const uint128_t *get_l3addr_in6(const struct l3host *) __attribute__ ((nonnull (1)));
 struct l2host *l3_getlastl2(struct l3host *) __attribute__ ((nonnull (1)));
 
 // Services (UDP/TCP, generally). l3_getservices() returns the head of the

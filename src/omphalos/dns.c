@@ -517,9 +517,10 @@ int setup_dns_ptr(const struct routepath *rp,int fam,unsigned port,
 		r = prep_ipv4_header(iphdr,flen - tlen,src4,addr4,IPPROTO_UDP);
 		*totlen = tlen;
 	}else if(fam == AF_INET6){
-		uint128_t addr6 = get_l3addr_in6(rp->l3);
+		uint128_t addr6;
 		uint128_t src6;
 
+		memcpy(&addr6,get_l3addr_in6(rp->l3),sizeof(addr6));
 		memcpy(&src6,&rp->src,sizeof(src6));
 		totlen = &((struct ip6_hdr *)iphdr)->ip6_ctlun.ip6_un1.ip6_un1_plen;
 		r = prep_ipv6_header(iphdr,flen - tlen,src6,addr6,IPPROTO_UDP);
