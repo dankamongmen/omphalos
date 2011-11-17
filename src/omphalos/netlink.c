@@ -633,7 +633,7 @@ name_virtual_device(const struct ifinfomsg *ii,struct ethtool_drvinfo *ed){
 			return L"Xen virtual Ethernet interface";
 		}
 	}
-	return NULL;
+	return L"Unknown Linux network device";
 }
 
 static int
