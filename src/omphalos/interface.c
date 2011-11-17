@@ -339,8 +339,9 @@ int is_local4(const interface *i,uint32_t ip){
 
 static inline int
 ip6_in_route(const ip6route *r,const uint128_t i){
-	uint128_t dst = r->dst,mask;
+	uint128_t dst,mask;
 
+	memcpy(&dst,&r->dst,sizeof(dst));
 	memset(&mask,0xff,sizeof(mask));
 	switch(r->maskbits / 32){
 		case 0:
