@@ -99,9 +99,10 @@ process_reverse6_lookup(const char *buf,int *fam,void *addr,size_t len){
 #define SDTCP_SRV "_dns-sd._tcp."
 #define LOCAL_DOMAIN "local"
 static char *
-process_srv_lookup(const char *buf,unsigned *prot,unsigned *port){
+process_srv_lookup(const char *buf,unsigned *prot,unsigned *port,int *add){
 	const char *srv,*proto,*domain;
 
+	*add = 0;
 	if(*buf != '_'){
 		return NULL;
 	}
@@ -119,9 +120,11 @@ process_srv_lookup(const char *buf,unsigned *prot,unsigned *port){
 	if(strncmp(proto,UDP_SRV,strlen(UDP_SRV)) == 0){
 		*prot = IPPROTO_UDP;
 		buf += strlen(UDP_SRV);
+		*add = 1;
 	}else if(strncmp(proto,TCP_SRV,strlen(TCP_SRV)) == 0){
 		*prot = IPPROTO_TCP;
 		buf += strlen(TCP_SRV);
+		*add = 1;
 	}else if(strncmp(proto,SDUDP_SRV,strlen(SDUDP_SRV)) == 0){
 		*prot = IPPROTO_UDP;
 		buf += strlen(SDUDP_SRV);
@@ -466,6 +469,7 @@ int handle_dns_packet(omphalos_packet *op,const void *frame,size_t len){
 			if(type == DNS_TYPE_PTR){
 				unsigned proto,port;
 				char *srv,ss[16]; // FIXME
+				int add;
 
 				// A failure here doesn't mean the response is
 				// malformed, necessarily, but simply that it
@@ -476,8 +480,10 @@ int handle_dns_packet(omphalos_packet *op,const void *frame,size_t len){
 					// about this address
 					offer_resolution(fam,ss,data,
 						NAMING_LEVEL_REVDNS,nsfam,nsaddr);
-				}else if( (srv = process_srv_lookup(buf,&proto,&port)) ){;
-					observe_service(op->i,op->l2s,op->l3s,proto,port,srv,NULL);
+				}else if( (srv = process_srv_lookup(buf,&proto,&port,&add)) ){;
+					if(add){
+						observe_service(op->i,op->l2s,op->l3s,proto,port,srv,NULL);
+					}
 				}else{
 					free(buf);
 					goto malformed;
