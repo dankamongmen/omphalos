@@ -154,7 +154,9 @@ send_to_self(interface *i,void *frame){
 		memset(ss,0,slen);
 		sina.sin_family = AF_INET;
 		ip = (const struct iphdr *)(l2 + l2len);
-		assert(ip->protocol == IPPROTO_UDP);
+		if(ip->protocol != IPPROTO_UDP){
+			return -1;
+		}
 		sina.sin_addr.s_addr = ip->daddr;
 		udp = (const struct udphdr *)((const char *)ip + ip->ihl * 4u);
 		sina.sin_port = udp->dest;
@@ -170,7 +172,9 @@ send_to_self(interface *i,void *frame){
 		memset(ss,0,slen);
 		sina6.sin6_family = AF_INET6;
 		ip = (const struct ip6_hdr *)(l2 + l2len);
-		assert(ip->ip6_ctlun.ip6_un1.ip6_un1_nxt == IPPROTO_UDP);
+		if(ip->ip6_ctlun.ip6_un1.ip6_un1_nxt != IPPROTO_UDP){
+			return -1;
+		}
 		memcpy(&sina6.sin6_addr,&ip->ip6_dst,sizeof(ip->ip6_dst));
 		udp = (const struct udphdr *)((const char *)ip + sizeof(*ip));
 		// IPv6 doesn't support IP_HDRINCL.
