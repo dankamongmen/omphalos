@@ -238,7 +238,7 @@ print_host_services(WINDOW *w,const l3obj *l,int *line,int rows,int cols,
 			assert(wprintw(w,", %ls",srv) != ERR);
 			n += 2 + wcslen(srv);
 		}else{
-			cols -= 5 + wcslen(srv);
+			cols -= 2 + 5 + wcslen(srv); // two for borders
 			if(cols < 0){
 				break;
 			}
