@@ -33,12 +33,8 @@ create_reelbox(iface_state *is,int rows,int scrline,int cols){
 		lines = rows - scrline - 1;
 	}
 	if( (ret = malloc(sizeof(*ret))) ){
-		if(((ret->subwin = newwin(lines,PAD_COLS(cols),scrline,START_COL)) == NULL)
-				|| (ret->panel = new_panel(ret->subwin)) == NULL){
-			delwin(ret->subwin);
-			free(ret);
-			return NULL;
-		}
+		assert( (ret->subwin = newwin(lines,PAD_COLS(cols),scrline,START_COL)) );
+		assert( (ret->panel = new_panel(ret->subwin)) );
 		ret->scrline = scrline;
 		ret->selected = -1;
 		ret->is = is;
@@ -274,13 +270,17 @@ pull_interfaces_down(reelbox *puller,int rows,int cols,int delta){
 	assert(delta > 0);
 	rb = puller ? puller->prev : last_reelbox;
 	while(rb){
-		if(iface_lines_bounded(rb->is,rows) > getmaxy(rb->subwin)){
+		int before = getmaxy(rb->subwin);
+
+		if(iface_lines_bounded(rb->is,rows) > before){
 			assert(rb == top_reelbox);
 			resize_iface(rb);
-		}else{
-			rb->scrline += delta;
-			move_interface_generic(rb,rows,cols,delta);
+			if((delta -= (getmaxy(rb->subwin) - before)) == 0){
+				return;
+			}
 		}
+		rb->scrline += delta;
+		move_interface_generic(rb,rows,cols,delta);
 		if(panel_hidden(rb->panel)){
 			//fprintf(stderr,"PULLED THE BOTTOM OFF\n");
 			if((last_reelbox = rb->prev) == NULL){
@@ -294,12 +294,28 @@ pull_interfaces_down(reelbox *puller,int rows,int cols,int delta){
 			rb = rb->prev;
 		}
 	}
-	if(top_reelbox){
+	while(top_reelbox){
+		struct iface_state *i;
+		int maxl,nl;
+
 		if(top_reelbox->scrline <= 2){
 			return;
 		}
+		i = top_reelbox->is->prev;
+		if(i->rb){
+			return; // already visible
+		}
+		nl = iface_lines_bounded(i,top_reelbox->scrline);
+		maxl = top_reelbox->scrline;
+		if((rb = create_reelbox(i,maxl,top_reelbox->scrline - 1 - nl,cols)) == NULL){
+			return;
+		}
+		rb->next = top_reelbox;
+		top_reelbox->prev = rb;
+		rb->prev = NULL;
+		top_reelbox = rb;
+		redraw_iface_generic(rb);
 	}
-	// FIXME make more visible
 }
 
 // Pass a NULL puller to move all interfaces up
@@ -759,9 +775,7 @@ void interface_removed_locked(iface_state *is,struct panel_state **ps){
 		return;
 	}
 	rb = is->rb;
-	if(!rb){
-		//fprintf(stderr,"Removed hidden interface\n");
-	}else{
+	if(rb){
 		int delta = getmaxy(rb->subwin) + 1;
 
 		//fprintf(stderr,"Removing iface at %d\n",rb->scrline);
@@ -779,6 +793,8 @@ void interface_removed_locked(iface_state *is,struct panel_state **ps){
 		}else{
 			top_reelbox = rb->next;
 		}
+		is->next->prev = is->prev;
+		is->prev->next = is->next;
 		if(rb == current_iface){
 			// FIXME need do all the stuff we do in _next_/_prev_
 			if((current_iface = rb->next) == NULL){
@@ -809,8 +825,6 @@ void interface_removed_locked(iface_state *is,struct panel_state **ps){
 		free_reelbox(rb);
 	}
 	free_iface_state(is); // clears l2/l3 nodes
-	is->next->prev = is->prev;
-	is->prev->next = is->next;
 	free(is);
 	--count_interface;
 	draw_main_window(stdscr); // Update the device count
