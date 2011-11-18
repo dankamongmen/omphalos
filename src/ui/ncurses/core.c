@@ -312,7 +312,6 @@ pull_interfaces_up(reelbox *puller,int rows,int cols,int delta){
 	assert(delta > 0);
 	rb = puller ? puller->next : top_reelbox;
 	while(rb){
-		// FIXME entirely broken for partials
 		rb->scrline -= delta;
 		move_interface_generic(rb,rows,cols,-delta);
 		if(panel_hidden(rb->panel)){

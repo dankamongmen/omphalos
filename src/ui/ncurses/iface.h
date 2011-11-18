@@ -56,6 +56,21 @@ struct l4obj *add_service_to_iface(struct iface_state *,struct l3obj *,struct l4
 void expand_interface(struct iface_state *);
 void collapse_interface(struct iface_state *);
 
+static inline int
+iface_lines_bounded(const iface_state *is,int rows){
+	int lines = lines_for_interface(is);
+
+	if(lines > rows - 2){ // top and bottom border
+		lines = rows - 2;
+	}
+	return lines;
+}
+
+static inline int
+iface_lines_unbounded(const struct iface_state *is){
+	return iface_lines_bounded(is,INT_MAX);
+}
+
 #ifdef __cplusplus
 }
 #endif

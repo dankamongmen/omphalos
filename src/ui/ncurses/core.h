@@ -70,21 +70,6 @@ struct panel_state {
 	int ysize;			// number of lines of *text* (not win)
 };
 
-static inline int
-iface_lines_bounded(const iface_state *is,int rows){
-	int lines = lines_for_interface(is);
-
-	if(lines > rows - 2){ // top and bottom border
-		lines = rows - 2;
-	}
-	return lines;
-}
-
-static inline int
-iface_lines_unbounded(const struct iface_state *is){
-	return iface_lines_bounded(is,INT_MAX);
-}
-
 // These functions may only be called while the ncurses lock is held. They
 // themselves will not attempt to do any locking. Furthermore, they will not
 // call screen_update() -- that is the caller's responsibility (in this way,

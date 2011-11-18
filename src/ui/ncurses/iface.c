@@ -670,7 +670,7 @@ void move_interface(reelbox *rb,int rows,int cols,int delta,int active){
 			rb->scrline = 1;
 		}else{
 			targ = rb->scrline;
-			nlines = rr;
+			nlines = iface_lines_bounded(is,rows - rb->scrline + 1);
 		}
 	}
 	if(nlines < 1){
