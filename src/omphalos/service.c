@@ -46,19 +46,34 @@ void observe_service(struct interface *i,struct l2host *l2,struct l3host *l3,
 			unsigned proto,unsigned port,
 			const wchar_t *srv,const wchar_t *srvver){
 	const omphalos_ctx *octx = get_octx();
-	l4srv *services,*curs;
+	l4srv *services,**prev,*cur;
 
 	services = l3_getservices(l3);
-	for(curs = services ; curs ; curs = curs->next){
-		if(curs->proto == proto && curs->port == port && wcscmp(curs->srv,srv) == 0){
-			return;
+	for(prev = &services ; (cur = *prev) ; prev = &cur->next){
+		if(cur->proto > proto){
+			break;
+		}else if(cur->proto == proto){
+			if(cur->port > port){
+				break;
+			}else if(cur->port == port){
+				int r;
+
+				if((r = wcscmp(cur->srv,srv)) == 0){
+					return;
+				}else if(r > 0){
+					break;
+				}
+			}
 		}
 	}
-	curs = new_service(proto,port,srv,srvver);
-	curs->next = services;
-	l3_setservices(l3,curs);
+	if((cur = new_service(proto,port,srv,srvver)) == NULL){
+		return;
+	}
+	cur->next = *prev;
+	*prev = cur;
+	l3_setservices(l3,services);
 	if(octx->iface.srv_event){
-		octx->iface.srv_event(i,l2,l3,curs);
+		octx->iface.srv_event(i,l2,l3,cur);
 	}
 }
 
