@@ -93,6 +93,58 @@ process_reverse6_lookup(const char *buf,int *fam,void *addr,size_t len){
 	return 0;
 }
 
+#define UDP_SRV "_udp."
+#define TCP_SRV "_tcp."
+#define SDUDP_SRV "_dns-sd._udp."
+#define SDTCP_SRV "_dns-sd._tcp."
+#define LOCAL_DOMAIN "local"
+static char *
+process_srv_lookup(const char *buf,unsigned *prot,unsigned *port){
+	const char *srv,*proto,*domain;
+
+	if(*buf != '_'){
+		return NULL;
+	}
+	srv = ++buf;
+	while(isprint(*buf) && *buf != '.'){
+		++buf;
+	}
+	if(*buf != '.' || buf == srv){
+		return NULL;
+	}
+	if(*++buf != '_'){
+		return NULL;
+	}
+	proto = buf;
+	if(strncmp(proto,UDP_SRV,strlen(UDP_SRV)) == 0){
+		*prot = IPPROTO_UDP;
+		buf += strlen(UDP_SRV);
+	}else if(strncmp(proto,TCP_SRV,strlen(TCP_SRV)) == 0){
+		*prot = IPPROTO_TCP;
+		buf += strlen(TCP_SRV);
+	}else if(strncmp(proto,SDUDP_SRV,strlen(SDUDP_SRV)) == 0){
+		*prot = IPPROTO_UDP;
+		buf += strlen(SDUDP_SRV);
+	}else if(strncmp(proto,SDTCP_SRV,strlen(SDTCP_SRV)) == 0){
+		*prot = IPPROTO_TCP;
+		buf += strlen(SDTCP_SRV);
+	}else{
+		return NULL;
+	}
+	domain = buf;
+	if(strcmp(domain,LOCAL_DOMAIN)){
+		assert(0);
+		return NULL;
+	}
+	*port = 0; // FIXME
+	return strndup(srv,proto - srv - 1);
+}
+#undef LOCAL_DOMAIN
+#undef SDUDP_SRV
+#undef SDTCP_SRV
+#undef UDP_SRV
+#undef TCP_SRV
+
 // FIXME is it safe to be using (possibly signed) naked chars?
 static int
 process_reverse_lookup(const char *buf,int *fam,void *addr){
@@ -412,7 +464,8 @@ int handle_dns_packet(omphalos_packet *op,const void *frame,size_t len){
 
 			server = 1;
 			if(type == DNS_TYPE_PTR){
-				char ss[16]; // FIXME
+				unsigned proto,port;
+				char *srv,ss[16]; // FIXME
 
 				// A failure here doesn't mean the response is
 				// malformed, necessarily, but simply that it
@@ -423,6 +476,11 @@ int handle_dns_packet(omphalos_packet *op,const void *frame,size_t len){
 					// about this address
 					offer_resolution(fam,ss,data,
 						NAMING_LEVEL_REVDNS,nsfam,nsaddr);
+				}else if( (srv = process_srv_lookup(buf,&proto,&port)) ){;
+					observe_service(op->i,op->l2s,op->l3s,proto,port,srv,NULL);
+				}else{
+					free(buf);
+					goto malformed;
 				}
 			}else if(type == DNS_TYPE_A){
 				offer_resolution(AF_INET,data,buf,
@@ -460,8 +518,7 @@ int handle_dns_packet(omphalos_packet *op,const void *frame,size_t len){
 	return server;
 
 malformed:
-	diagnostic(L"%s malformed with %zu on %s",
-			__func__,len,op->i->name);
+	diagnostic(L"%s malformed with %zu on %s",__func__,len,op->i->name);
 	op->malformed = 1;
 	return -1;
 }
