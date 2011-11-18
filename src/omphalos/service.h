@@ -25,6 +25,9 @@ void free_services(struct l4srv *);
 // Accessors
 const wchar_t *l4srvstr(const struct l4srv *);
 void *l4host_get_opaque(struct l4srv *);
+unsigned l4_getproto(const struct l4srv *);
+unsigned l4_getport(const struct l4srv *);
+
 
 #ifdef __cplusplus
 }

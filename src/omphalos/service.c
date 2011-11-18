@@ -91,6 +91,14 @@ const wchar_t *l4srvstr(const l4srv *l){
 	return l->srv;
 }
 
+unsigned l4host_getproto(const l4srv *l4){
+	return l4->proto;
+}
+
+unsigned l4host_getport(const l4srv *l4){
+	return l4->port;
+}
+
 void *l4host_get_opaque(l4srv *l4){
 	return l4->opaque;
 }
