@@ -239,6 +239,17 @@ iface_event(interface *i,void *unsafe __attribute__ ((unused))){
 	wake_input_thread();
 	return NULL;
 }
+
+static void
+iface_removed_cb(const interface *i,void *unsafe __attribute__ ((unused))){
+	pthread_mutex_lock(&promptlock);
+	snprintf(promptbuf,sizeof(promptbuf),"%s"PROMPTDELIM,i->name);
+	pthread_mutex_unlock(&promptlock);
+	clear_for_output(stdout);
+	print_iface(stdout,i);
+	rl_set_prompt(promptbuf);
+	wake_input_thread();
+}
 #undef PROMPTDELIM
 
 static void *
@@ -374,6 +385,7 @@ int main(int argc,char * const *argv){
 		return EXIT_FAILURE;
 	}
 	pctx.iface.iface_event = iface_event;
+	pctx.iface.iface_removed = iface_removed_cb;
 	pctx.iface.neigh_event = neigh_event;
 	pctx.iface.host_event = host_event;
 	pctx.iface.srv_event = service_event;
