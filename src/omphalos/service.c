@@ -50,7 +50,7 @@ void observe_service(struct interface *i,struct l2host *l2,struct l3host *l3,
 
 	services = l3_getservices(l3);
 	for(curs = services ; curs ; curs = curs->next){
-		if(curs->proto == proto && curs->port == port){
+		if(curs->proto == proto && curs->port == port && wcscmp(curs->srv,srv) == 0){
 			return;
 		}
 	}
