@@ -134,11 +134,12 @@ process_srv_lookup(const char *buf,unsigned *prot,unsigned *port,int *add){
 	int conv;
 
 	*add = 0;
-	nlen = 0;
 	if((name = malloc(sizeof(*name) * tlen)) == NULL){
 		return NULL;
 	}
+	nlen = 0;
 	while((pconv = match_srv_proto(buf,prot,add)) == 0){
+		nlen = 0;
 		if(*buf == '_'){
 			++buf;
 		}
