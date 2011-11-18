@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
+#include <omphalos/diag.h>
 #include <omphalos/service.h>
 #include <omphalos/netaddrs.h>
 #include <omphalos/omphalos.h>
