@@ -117,6 +117,7 @@ process_srv_lookup(const char *buf,unsigned *prot,unsigned *port,int *add){
 		return NULL;
 	}
 	proto = buf;
+	// FIXME sometimes we have four-part names, and not just SD*_SRV
 	if(strncmp(proto,UDP_SRV,strlen(UDP_SRV)) == 0){
 		*prot = IPPROTO_UDP;
 		buf += strlen(UDP_SRV);
@@ -136,7 +137,6 @@ process_srv_lookup(const char *buf,unsigned *prot,unsigned *port,int *add){
 	}
 	domain = buf;
 	if(strcmp(domain,LOCAL_DOMAIN)){
-		assert(0);
 		return NULL;
 	}
 	*port = 0; // FIXME
@@ -499,7 +499,18 @@ int handle_dns_packet(omphalos_packet *op,const void *frame,size_t len){
 			}else if(type == DNS_TYPE_TXT){
 				// FIXME do what?
 			}else if(type == DNS_TYPE_SRV){
-				// FIXME do what? add a service?
+				unsigned proto,port;
+				char *srv;
+				int add;
+
+				if( (srv = process_srv_lookup(buf,&proto,&port,&add)) ){
+					if(add){
+						observe_service(op->i,op->l2s,op->l3s,proto,port,srv,NULL);
+					}
+				}else{
+					free(buf);
+					goto malformed;
+				}
 			}else if(type == DNS_TYPE_HINFO){
 				// FIXME do what?
 			}
