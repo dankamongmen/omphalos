@@ -172,9 +172,9 @@ print_service(const interface *iface,const struct l2host *l2,
 	netaddr = l3addrstr(l3);
 	srv = l4srvstr(l4);
 	if( (l3name = get_l3name(l3)) ){
-		n = wprintf(L"[%8s] %s served by host %s \"%ls\" (addr %s)\n",iface->name,srv,hwaddr,l3name,netaddr);
+		n = wprintf(L"[%8s] %ls served by host %s \"%ls\" (addr %s)\n",iface->name,srv,hwaddr,l3name,netaddr);
 	}else{
-		n = wprintf(L"[%8s] %s served by host %s addr %s\n",iface->name,srv,hwaddr,netaddr);
+		n = wprintf(L"[%8s] %ls served by host %s addr %s\n",iface->name,srv,hwaddr,netaddr);
 	}
 	free(netaddr);
 	free(hwaddr);
