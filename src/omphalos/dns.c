@@ -128,14 +128,14 @@ match_srv_proto(const char *buf,unsigned *prot,int *add){
 #define LOCAL_DOMAIN "local"
 static wchar_t *
 process_srv_lookup(const char *buf,unsigned *prot,unsigned *port,int *add){
+	size_t nlen,pconv,tlen = 64;
 	const char *srv,*domain;
-	size_t nlen,pconv;
 	wchar_t *name;
 	int conv;
 
 	*add = 0;
 	nlen = 0;
-	if((name = malloc(sizeof(*name) * 64)) == NULL){
+	if((name = malloc(sizeof(*name) * tlen)) == NULL){
 		return NULL;
 	}
 	while((pconv = match_srv_proto(buf,prot,add)) == 0){
@@ -143,9 +143,12 @@ process_srv_lookup(const char *buf,unsigned *prot,unsigned *port,int *add){
 			++buf;
 		}
 		srv = buf;
-		while(*buf != '.' && (conv = mbtowc(&name[nlen],buf,MB_CUR_MAX)) > 0){
+		while(*buf != '.' && (conv = mbtowc(&name[nlen],buf,MB_CUR_MAX)) >= 0){
 			buf += conv;
-			++nlen;
+			if(++nlen >= tlen - 1){
+				free(name);
+				return NULL; // FIXME need grow it
+			}
 		}
 		if(*buf != '.' || buf == srv){
 			free(name);
@@ -160,7 +163,7 @@ process_srv_lookup(const char *buf,unsigned *prot,unsigned *port,int *add){
 		free(name);
 		return NULL;
 	}
-	name[nlen - 1] = L'\0';
+	name[nlen] = L'\0'; // always space; see ++nlen >= tlen - 1 from above
 	buf += pconv;
 	// FIXME sometimes we have four-part names, and not just SD*_SRV
 	domain = buf;
