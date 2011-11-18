@@ -252,8 +252,8 @@ print_host_services(WINDOW *w,const l3obj *l,int *line,int rows,int cols,
 			++*line;
 		}
 	}
-	if(n && cols > (2 + n)){
-		assert(wprintw(w,"%-*.*s",cols - 2 - n,cols - 2 - n,"") == OK);
+	if(n && cols){
+		assert(wprintw(w,"%-*.*s",cols,cols,"") == OK);
 	}
 }
 
