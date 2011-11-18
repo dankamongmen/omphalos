@@ -200,6 +200,7 @@ static void
 print_host_services(WINDOW *w,const l3obj *l,int *line,int rows,int cols,
 				wchar_t selectchar){
 	const struct l4obj *l4;
+	const wchar_t *srv;
 	int n;
 
 	if(*line >= rows){
@@ -211,17 +212,25 @@ print_host_services(WINDOW *w,const l3obj *l,int *line,int rows,int cols,
 	}
 	n = 0;
 	for(l4 = l->l4objs ; l4 ; l4 = l4->next){
+		srv = l4srvstr(l4->l4);
 		if(n){
-			assert(wprintw(w,", %ls",l4srvstr(l4->l4)) != ERR);
-			n += 2 + wcslen(l4srvstr(l4->l4));
+			cols -= 2 + wcslen(srv);
+			if(cols < 0){
+				break;
+			}
+			assert(wprintw(w,", %ls",srv) != ERR);
+			n += 2 + wcslen(srv);
 		}else{
-			assert(mvwprintw(w,*line,1,"%lc    %ls",
-					selectchar,l4srvstr(l4->l4)) != ERR);
+			cols -= 5 + wcslen(srv);
+			if(cols < 0){
+				break;
+			}
+			assert(mvwprintw(w,*line,1,"%lc    %ls",selectchar,srv) != ERR);
+			n += 5 + wcslen(srv);
 			++*line;
-			n = 5 + wcslen(l4srvstr(l4->l4));
 		}
 	}
-	if(n){
+	if(n && cols > (2 + n)){
 		assert(wprintw(w,"%-*.*s",cols - 2 - n,cols - 2 - n,"") == OK);
 	}
 }
