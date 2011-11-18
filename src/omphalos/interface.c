@@ -10,6 +10,7 @@
 #include <omphalos/128.h>
 #include <omphalos/util.h>
 #include <omphalos/irda.h>
+#include <omphalos/service.h>
 #include <omphalos/hwaddrs.h>
 #include <omphalos/netlink.h>
 #include <omphalos/psocket.h>
@@ -205,6 +206,8 @@ int print_all_iface_stats(FILE *fp,interface *agg){
 int add_route4(interface *i,const uint32_t *dst,const uint32_t *via,
 				const uint32_t *src,unsigned blen,int iif){
 	ip4route *r,**prev;
+	struct l3host *l3;
+	struct l2host *l2;
 
 	if((r = malloc(sizeof(*r))) == NULL){
 		return -1;
@@ -228,11 +231,9 @@ int add_route4(interface *i,const uint32_t *dst,const uint32_t *via,
 		r->addrs |= ROUTE_HAS_VIA;
 	}
 	if(src){
-		struct l2host *l2;
-
+		l2 = lookup_l2host(i,i->addr);
 		memcpy(&r->src,src,sizeof(*src));
 		r->addrs |= ROUTE_HAS_SRC;
-		l2 = lookup_l2host(i,i->addr);
 		// Set the src for any less-specific routes we contain
 		while( *(prev = &(*prev)->next) ){
 			assert((*prev)->maskbits < r->maskbits);
@@ -241,7 +242,14 @@ int add_route4(interface *i,const uint32_t *dst,const uint32_t *via,
 				memcpy(&(*prev)->src,src,sizeof(*src));
 			}
 		}
-		lookup_local_l3host(i,l2,AF_INET,src);
+		assert(lookup_local_l3host(i,l2,AF_INET,src));
+	}
+	if(r->addrs & ROUTE_HAS_VIA){
+		if( (l3 = lookup_global_l3host(AF_INET,via)) ){
+			if( (l2 = l3_getlastl2(l3)) ){
+				observe_service(i,l2,l3,IPPROTO_IP,4,L"IPv4 Router",NULL);
+			}
+		}
 	}
 	return 0;
 }
@@ -250,6 +258,8 @@ int add_route4(interface *i,const uint32_t *dst,const uint32_t *via,
 int add_route6(interface *i,const uint128_t *dst,const uint128_t *via,
 				const uint128_t *src,unsigned blen,int iif){
 	ip6route *r,**prev;
+	struct l3host *l3;
+	struct l2host *l2;
 
 	if((r = malloc(sizeof(*r))) == NULL){
 		return -1;
@@ -272,11 +282,9 @@ int add_route6(interface *i,const uint128_t *dst,const uint128_t *via,
 		r->addrs |= ROUTE_HAS_VIA;
 	}
 	if(src){
-		struct l2host *l2;
-
+		l2 = lookup_l2host(i,i->addr);
 		memcpy(&r->src,src,sizeof(*src));
 		r->addrs |= ROUTE_HAS_SRC;
-		l2 = lookup_l2host(i,i->addr);
 		// Set the src for any less-specific routes we contain
 		while( *(prev = &(*prev)->next) ){
 			assert((*prev)->maskbits < r->maskbits);
@@ -285,7 +293,14 @@ int add_route6(interface *i,const uint128_t *dst,const uint128_t *via,
 				memcpy(&(*prev)->src,src,sizeof(*src));
 			}
 		}
-		lookup_local_l3host(i,l2,AF_INET6,src);
+		assert(lookup_local_l3host(i,l2,AF_INET6,src));
+	}
+	if(r->addrs & ROUTE_HAS_VIA){
+		if( (l3 = lookup_global_l3host(AF_INET6,via)) ){
+			if( (l2 = l3_getlastl2(l3)) ){
+				//observe_service(i,l2,l3,IPPROTO_IP,6,L"IPv6 Router",NULL);
+			}
+		}
 	}
 	return 0;
 }

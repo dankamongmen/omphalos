@@ -24,6 +24,7 @@ typedef struct l3host {
 	} addr;		// FIXME sigh
 	uintmax_t srcpkts,dstpkts;
 	namelevel nlevel;
+	unsigned nosrvs;	// FIXME kill oughtn't be necessary
 	// FIXME use usec-based ticks taken from the omphalos_packet *!
 	time_t lastnametry;	// last time we tried to do name resolution
 	struct l4srv *services;	// services observed providing
@@ -39,6 +40,7 @@ typedef struct l3host {
 static l3host external_l3 = {
 	.name = L"external",
 	.fam = AF_INET,
+	.nosrvs = 1,
 }; // FIXME augh
 
 static struct globalhosts {
@@ -60,11 +62,13 @@ static struct globalhosts {
 static l3host unspecified_ipv6 = {
 	.name = L"unspec6",
 	.fam = AF_INET6,
+	.nosrvs = 1,
 };
 
 static l3host unspecified_ipv4 = {
 	.name = L"unspec4",
 	.fam = AF_INET,
+	.nosrvs = 1,
 };
 
 static inline struct globalhosts *
@@ -111,6 +115,7 @@ create_l3host(int fam,const void *addr,size_t len){
 		r->nlevel = NAMING_LEVEL_NONE;
 		r->lastnametry = 0;
 		r->services = NULL;
+		r->nosrvs = 0;
 		memcpy(&r->addr,addr,len);
 		if( (gh = get_global_hosts(fam)) ){
 			r->gnext = gh->head;
@@ -501,6 +506,10 @@ const struct l4srv *l3_getconstservices(const l3host *l3){
 	return l3->services;
 }
 
-void l3_setservices(l3host *l3,struct l4srv *l4){
-	l3->services = l4;
+int l3_setservices(l3host *l3,struct l4srv *l4){
+	if(!l3->nosrvs){
+		l3->services = l4;
+		return 0;
+	}
+	return -1;
 }

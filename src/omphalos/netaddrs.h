@@ -81,7 +81,7 @@ struct l2host *l3_getlastl2(struct l3host *) __attribute__ ((nonnull (1)));
 // structure, use l3_getconstservices() for const enforcement.
 struct l4srv *l3_getservices(struct l3host *);
 const struct l4srv *l3_getconstservices(const struct l3host *);
-void l3_setservices(struct l3host *,struct l4srv *);
+int l3_setservices(struct l3host *,struct l4srv *);
 
 // Predicates
 int l3addr_eq_p(const struct l3host *,int,const void *) __attribute__ ((nonnull (1,3)));

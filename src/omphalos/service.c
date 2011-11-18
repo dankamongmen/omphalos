@@ -71,8 +71,10 @@ void observe_service(struct interface *i,struct l2host *l2,struct l3host *l3,
 	}
 	cur->next = *prev;
 	*prev = cur;
-	l3_setservices(l3,services);
-	if(octx->iface.srv_event){
+	if(l3_setservices(l3,services)){
+		*prev = cur->next;
+		free_service(cur);
+	}else if(octx->iface.srv_event){
 		octx->iface.srv_event(i,l2,l3,cur);
 	}
 }
