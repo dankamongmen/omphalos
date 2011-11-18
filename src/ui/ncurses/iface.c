@@ -215,7 +215,7 @@ l4obj *add_service_to_iface(iface_state *is,struct l3obj *l3,struct l4srv *srv){
 
 static void
 print_host_services(WINDOW *w,const l3obj *l,int *line,int rows,int cols,
-				wchar_t selectchar){
+				wchar_t selectchar,int attrs){
 	const struct l4obj *l4;
 	const wchar_t *srv;
 	int n;
@@ -229,6 +229,11 @@ print_host_services(WINDOW *w,const l3obj *l,int *line,int rows,int cols,
 	}
 	n = 0;
 	for(l4 = l->l4objs ; l4 ; l4 = l4->next){
+		if(l4_getproto(l4->l4) == IPPROTO_IP){
+			assert(wattrset(w,COLOR_PAIR(ROUTER_COLOR)) == OK);
+		}else{
+			assert(wattrset(w,attrs) == OK);
+		}
 		srv = l4srvstr(l4->l4);
 		if(n){
 			cols -= 2 + wcslen(srv);
@@ -412,14 +417,13 @@ print_iface_hosts(const interface *i,const iface_state *is,WINDOW *w,
 									prefix(l3_get_dstpkt(l3->l3),1,dbuf,sizeof(dbuf),1));
 						}
 					}
-					assert(wattrset(w,attrs) != ERR);
 				}
 				++line;
 				if(is->expansion >= EXPANSION_SERVICES){
 					if(selectchar != L' ' && !l3->next){
 						selectchar = L'⎩';
 					}
-					print_host_services(w,l3,&line,rows - (partial <= 0),cols,selectchar);
+					print_host_services(w,l3,&line,rows - (partial <= 0),cols,selectchar,attrs);
 				}
 			}
 		}
