@@ -17,13 +17,13 @@ struct interface;
 //  - service name
 //  - server version (may be NULL)
 void observe_service(struct interface *,struct l2host *,struct l3host *,
-			unsigned,unsigned,const char *,const char *);
+			unsigned,unsigned,const wchar_t *,const wchar_t *);
 
 // Cleanup a services structure.
 void free_services(struct l4srv *);
 
 // Accessors
-const char *l4srvstr(const struct l4srv *);
+const wchar_t *l4srvstr(const struct l4srv *);
 void *l4host_get_opaque(struct l4srv *);
 
 #ifdef __cplusplus

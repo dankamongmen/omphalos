@@ -165,7 +165,7 @@ print_service(const interface *iface,const struct l2host *l2,
 			const struct l3host *l3,const struct l4srv *l4){
 	char *hwaddr,*netaddr;
 	const wchar_t *l3name;
-	const char *srv;
+	const wchar_t *srv;
 	int n;
 
 	hwaddr = l2addrstr(l2);

@@ -97,67 +97,81 @@ process_reverse6_lookup(const char *buf,int *fam,void *addr,size_t len){
 #define TCP_SRV "_tcp."
 #define SDUDP_SRV "_dns-sd._udp."
 #define SDTCP_SRV "_dns-sd._tcp."
-#define LOCAL_DOMAIN "local"
-static char *
-process_srv_lookup(const char *buf,unsigned *prot,unsigned *port,int *add){
-	const char *srv,*proto,*domain;
+static size_t
+match_srv_proto(const char *buf,unsigned *prot,int *add){
+	size_t ret;
 
-	*add = 0;
-	if(*buf != '_'){
-		srv = buf;
-		while(isprint(*buf) && *buf != '.'){
-			++buf;
-		}
-		if(*buf != '.' || buf == srv){
-			return NULL;
-		}
-		if(*++buf != '_'){
-			return NULL;
-		}
-		srv = buf;
-	}else{
-		srv = ++buf;
-	}
-	while(isprint(*buf) && *buf != '.'){
-		++buf;
-	}
-	if(*buf != '.' || buf == srv){
-		return NULL;
-	}
-	if(*++buf != '_'){
-		return NULL;
-	}
-	proto = buf;
-	// FIXME sometimes we have four-part names, and not just SD*_SRV
-	if(strncmp(proto,UDP_SRV,strlen(UDP_SRV)) == 0){
+	if(strncmp(buf,UDP_SRV,strlen(UDP_SRV)) == 0){
 		*prot = IPPROTO_UDP;
-		buf += strlen(UDP_SRV);
+		ret = strlen(UDP_SRV);
 		*add = 1;
-	}else if(strncmp(proto,TCP_SRV,strlen(TCP_SRV)) == 0){
+	}else if(strncmp(buf,TCP_SRV,strlen(TCP_SRV)) == 0){
 		*prot = IPPROTO_TCP;
-		buf += strlen(TCP_SRV);
+		ret = strlen(TCP_SRV);
 		*add = 1;
-	}else if(strncmp(proto,SDUDP_SRV,strlen(SDUDP_SRV)) == 0){
+	}else if(strncmp(buf,SDUDP_SRV,strlen(SDUDP_SRV)) == 0){
 		*prot = IPPROTO_UDP;
-		buf += strlen(SDUDP_SRV);
-	}else if(strncmp(proto,SDTCP_SRV,strlen(SDTCP_SRV)) == 0){
+		ret = strlen(SDUDP_SRV);
+	}else if(strncmp(buf,SDTCP_SRV,strlen(SDTCP_SRV)) == 0){
 		*prot = IPPROTO_TCP;
-		buf += strlen(SDTCP_SRV);
+		ret = strlen(SDTCP_SRV);
 	}else{
-		return NULL;
+		ret = 0;
 	}
-	domain = buf;
-	if(strcmp(domain,LOCAL_DOMAIN)){
-		return NULL;
-	}
-	*port = 0; // FIXME
-	return strndup(srv,proto - srv - 1);
+	return ret;
 }
-#undef LOCAL_DOMAIN
 #undef SDUDP_SRV
 #undef SDTCP_SRV
 #undef UDP_SRV
 #undef TCP_SRV
+
+#define LOCAL_DOMAIN "local"
+static wchar_t *
+process_srv_lookup(const char *buf,unsigned *prot,unsigned *port,int *add){
+	const char *srv,*domain;
+	size_t nlen,pconv;
+	wchar_t *name;
+	int conv;
+
+	*add = 0;
+	nlen = 0;
+	if((name = malloc(sizeof(*name) * 64)) == NULL){
+		return NULL;
+	}
+	while((pconv = match_srv_proto(buf,prot,add)) == 0){
+		if(*buf == '_'){
+			++buf;
+		}
+		srv = buf;
+		while(*buf != '.' && (conv = mbtowc(&name[nlen],buf,MB_CUR_MAX)) > 0){
+			buf += conv;
+			++nlen;
+		}
+		if(*buf != '.' || buf == srv){
+			free(name);
+			return NULL;
+		}
+		if(mbtowc(name + nlen++,buf++,1) != 1){
+			free(name);
+			return NULL;
+		}
+	}
+	if(nlen == 0){
+		free(name);
+		return NULL;
+	}
+	name[nlen - 1] = L'\0';
+	buf += pconv;
+	// FIXME sometimes we have four-part names, and not just SD*_SRV
+	domain = buf;
+	if(strcmp(domain,LOCAL_DOMAIN)){
+		free(name);
+		return NULL;
+	}
+	*port = 0; // FIXME
+	return name;
+}
+#undef LOCAL_DOMAIN
 
 // FIXME is it safe to be using (possibly signed) naked chars?
 static int
@@ -431,7 +445,7 @@ int handle_dns_packet(omphalos_packet *op,const void *frame,size_t len){
 	len -= sizeof(*dns);
 	sec = (const unsigned char *)frame + sizeof(*dns);
 	//diagnostic(L"q/a/n/a: %hu/%hu/%hu/%hu",qd,an,ns,ar);
-	while(qd-- && len){
+	while(qd && len){
 		buf = extract_dns_record(len,sec,&class,&type,&bsize,frame);
 		if(buf == NULL){
 			goto malformed;
@@ -456,8 +470,9 @@ int handle_dns_packet(omphalos_packet *op,const void *frame,size_t len){
 		free(buf);
 		sec += bsize;
 		len -= bsize;
+		--qd;
 	}
-	while(an-- && len){
+	while(an && len){
 		unsigned ttl;
 		char *data;
 
@@ -479,7 +494,8 @@ int handle_dns_packet(omphalos_packet *op,const void *frame,size_t len){
 			server = 1;
 			if(type == DNS_TYPE_PTR){
 				unsigned proto,port;
-				char *srv,ss[16]; // FIXME
+				wchar_t *srv;
+				char ss[16]; // FIXME
 				int add;
 
 				// A failure here doesn't mean the response is
@@ -495,6 +511,7 @@ int handle_dns_packet(omphalos_packet *op,const void *frame,size_t len){
 					if(add){
 						observe_service(op->i,op->l2s,op->l3s,proto,port,srv,NULL);
 					}
+					free(srv);
 				}else{
 					free(buf);
 					goto malformed;
@@ -511,13 +528,14 @@ int handle_dns_packet(omphalos_packet *op,const void *frame,size_t len){
 				// FIXME do what?
 			}else if(type == DNS_TYPE_SRV){
 				unsigned proto,port;
-				char *srv;
+				wchar_t *srv;
 				int add;
 
 				if( (srv = process_srv_lookup(buf,&proto,&port,&add)) ){
 					if(add){
 						observe_service(op->i,op->l2s,op->l3s,proto,port,srv,NULL);
 					}
+					free(srv);
 				}else{
 					free(buf);
 					goto malformed;
@@ -532,24 +550,23 @@ int handle_dns_packet(omphalos_packet *op,const void *frame,size_t len){
 		free(data);
 		sec += bsize;
 		len -= bsize;
+		--an;
 	}
-	while(ns-- && len){
-		if(len == 0){
-			goto malformed;
-		}
+	len = ns = ar = 0; // FIXME learn how to parse ns/ar
+	/* FIXME while(ns && len){
+		--ns;
 	}
-	while(ar-- && len){
-		if(len == 0){
-			goto malformed;
-		}
-	}
-	if(ar || ns || an || qd){
+	while(ar && len){
+		--ar;
+	}*/
+	if(ar || ns || an || qd || len){
 		goto malformed;
 	}
 	return server;
 
 malformed:
 	diagnostic(L"%s malformed with %zu on %s",__func__,len,op->i->name);
+	assert(0);
 	op->malformed = 1;
 	return -1;
 }

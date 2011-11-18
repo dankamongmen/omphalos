@@ -31,7 +31,7 @@ void handle_udp_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 		case __constant_htons(DNS_UDP_PORT):{
 			if(handle_dns_packet(op,ubdy,ulen) == 1){
 				observe_service(op->i,op->l2s,op->l3s,op->l3proto,
-					op->l4src,"DNS",NULL);
+					op->l4src,L"DNS",NULL);
 			}
 		}break;
 		case __constant_htons(MDNS_UDP_PORT):{
@@ -42,7 +42,7 @@ void handle_udp_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 			// FIXME also check dest?
 			if(handle_dhcp_packet(op,ubdy,ulen)){
 				observe_service(op->i,op->l2s,op->l3s,op->l3proto,
-					op->l4src,"DHCP",NULL);
+					op->l4src,L"DHCP",NULL);
 			}
 		}break;
 	}

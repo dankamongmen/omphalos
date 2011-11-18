@@ -212,13 +212,13 @@ print_host_services(WINDOW *w,const l3obj *l,int *line,int rows,int cols,
 	n = 0;
 	for(l4 = l->l4objs ; l4 ; l4 = l4->next){
 		if(n){
-			assert(wprintw(w,", %s",l4srvstr(l4->l4)) != ERR);
-			n += 2 + strlen(l4srvstr(l4->l4));
+			assert(wprintw(w,", %ls",l4srvstr(l4->l4)) != ERR);
+			n += 2 + wcslen(l4srvstr(l4->l4));
 		}else{
-			assert(mvwprintw(w,*line,1,"%lc    %s",
+			assert(mvwprintw(w,*line,1,"%lc    %ls",
 					selectchar,l4srvstr(l4->l4)) != ERR);
 			++*line;
-			n = 5 + strlen(l4srvstr(l4->l4));
+			n = 5 + wcslen(l4srvstr(l4->l4));
 		}
 	}
 	if(n){

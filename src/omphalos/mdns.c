@@ -16,7 +16,7 @@
 void handle_mdns_packet(omphalos_packet *op,const void *frame,size_t len){
 	if(handle_dns_packet(op,frame,len) == 1){
 		observe_service(op->i,op->l2s,op->l3s,op->l3proto,
-				op->l4src,"mDNS",NULL);
+				op->l4src,L"mDNS",NULL);
 	}
 }
 

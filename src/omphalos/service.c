@@ -8,19 +8,19 @@
 
 typedef struct l4srv {
 	unsigned proto,port;
-	char *srv,*srvver;		// srvver might be NULL
+	wchar_t *srv,*srvver;		// srvver might be NULL
 	struct l4srv *next;
 	void *opaque;			// callback state
 } l4srv;
 
 static l4srv *
-new_service(unsigned proto,unsigned port,const char *srv,const char *srvver){
+new_service(unsigned proto,unsigned port,const wchar_t *srv,const wchar_t *srvver){
 	l4srv *r;
 
 	if( (r = malloc(sizeof(*r))) ){
 		r->srvver = NULL;
-		if(!srvver ||  (r->srvver = strdup(srvver)) ){
-			if( (r->srv = strdup(srv)) ){
+		if(!srvver ||  (r->srvver = wcsdup(srvver)) ){
+			if( (r->srv = wcsdup(srv)) ){
 				r->opaque = NULL;
 				r->proto = proto;
 				r->port = port;
@@ -44,7 +44,7 @@ free_service(l4srv *l){
 
 void observe_service(struct interface *i,struct l2host *l2,struct l3host *l3,
 			unsigned proto,unsigned port,
-			const char *srv,const char *srvver){
+			const wchar_t *srv,const wchar_t *srvver){
 	const omphalos_ctx *octx = get_octx();
 	l4srv *services,*curs;
 
@@ -72,7 +72,7 @@ void free_services(l4srv *l){
 	}
 }
 
-const char *l4srvstr(const l4srv *l){
+const wchar_t *l4srvstr(const l4srv *l){
 	return l->srv;
 }
 
