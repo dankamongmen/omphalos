@@ -91,11 +91,11 @@ const wchar_t *l4srvstr(const l4srv *l){
 	return l->srv;
 }
 
-unsigned l4host_getproto(const l4srv *l4){
+unsigned l4_getproto(const l4srv *l4){
 	return l4->proto;
 }
 
-unsigned l4host_getport(const l4srv *l4){
+unsigned l4_getport(const l4srv *l4){
 	return l4->port;
 }
 

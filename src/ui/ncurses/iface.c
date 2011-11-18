@@ -188,10 +188,27 @@ l4obj *add_service_to_iface(iface_state *is,struct l3obj *l3,struct l4srv *srv){
 	l4obj *l4;
 
 	if( (l4 = get_l4obj(srv)) ){
-		if((l4->next = l3->l4objs) == NULL){
-			++is->srvs; // Collapsed onto one line per l3host
-		}
-		l3->l4objs = l4;
+		l4obj **prev = &l3->l4objs;
+
+		if(*prev == NULL){
+			++is->srvs;
+		}else do{
+			struct l4srv *c = (*prev)->l4;
+
+			if(l4_getproto(srv) < l4_getproto(c)){
+				break;
+			}else if(l4_getproto(srv) == l4_getproto(c)){
+				if(l4_getport(srv) < l4_getport(c)){
+					break;
+				}else if(l4_getport(srv) == l4_getport(c)){
+					if(wcscmp(l4srvstr(srv),l4srvstr(c)) < 0){
+						break;
+					}
+				}
+			}
+		}while( *(prev = &(*prev)->next) );
+		l4->next = *prev;
+		*prev = l4;
 	}
 	return l4;
 }
