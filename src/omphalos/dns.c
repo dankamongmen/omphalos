@@ -104,9 +104,20 @@ process_srv_lookup(const char *buf,unsigned *prot,unsigned *port,int *add){
 
 	*add = 0;
 	if(*buf != '_'){
-		return NULL;
+		srv = buf;
+		while(isprint(*buf) && *buf != '.'){
+			++buf;
+		}
+		if(*buf != '.' || buf == srv){
+			return NULL;
+		}
+		if(*++buf != '_'){
+			return NULL;
+		}
+		srv = buf;
+	}else{
+		srv = ++buf;
 	}
-	srv = ++buf;
 	while(isprint(*buf) && *buf != '.'){
 		++buf;
 	}
