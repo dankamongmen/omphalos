@@ -147,7 +147,7 @@ uint16_t icmp6_csum(const void *hdr){
 	sum += ih->ip6_dst.s6_addr16[7]; // daddr
 	sum += ih->ip6_ctlun.ip6_un1.ip6_un1_plen;
 	sum += htons(IPPROTO_ICMP6); // zeroes and protocol
-	cur = (const uint16_t *)ch; // now checksum over UDP header + data
+	cur = (const uint16_t *)ch; // now checksum over ICMP header + data
 	for(z = 0 ; z < dlen / sizeof(*cur) ; ++z){
 		sum += cur[z];
 	}

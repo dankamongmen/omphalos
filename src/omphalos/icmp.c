@@ -92,7 +92,7 @@ tx_ipv6_bcast_pings(interface *i){
 		tlen += sizeof(*icmp);
 		thdr->tp_len = tlen;
 		ip->ip6_ctlun.ip6_un1.ip6_un1_plen = htons(thdr->tp_len -
-			((const char *)ip - (const char *)frame));
+			((const char *)icmp - (const char *)frame));
 		icmp->icmp6_cksum = icmp6_csum(ip);
 		send_tx_frame(i,frame); // FIXME get return value...
 	}
