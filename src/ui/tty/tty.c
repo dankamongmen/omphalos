@@ -316,7 +316,7 @@ tty_handler(void *v){
 				}
 			}
 #define HELPSTR "help"
-#define HELP(cmd,help) printf("%s\t%s\n",cmd,help)
+#define HELP(cmd,help) wprintf(L"%s\t%s\n",cmd,help)
 			if(c->cmd == NULL){
 				if(strcmp(l,HELPSTR) == 0){
 					for(c = cmdtable ; c->cmd ; ++c){
