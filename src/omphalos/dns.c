@@ -154,6 +154,7 @@ process_srv_lookup(const char *buf,unsigned *prot,unsigned *port,int *add){
 			free(name);
 			return NULL;
 		}
+		// see the test above; there's always space guaranteed us
 		if(mbtowc(name + nlen++,buf++,1) != 1){
 			free(name);
 			return NULL;
@@ -163,7 +164,7 @@ process_srv_lookup(const char *buf,unsigned *prot,unsigned *port,int *add){
 		free(name);
 		return NULL;
 	}
-	name[nlen] = L'\0'; // always space; see ++nlen >= tlen - 1 from above
+	name[nlen - 1] = L'\0'; // always space; write over last '.'
 	buf += pconv;
 	// FIXME sometimes we have four-part names, and not just SD*_SRV
 	domain = buf;
