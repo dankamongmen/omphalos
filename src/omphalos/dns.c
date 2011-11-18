@@ -96,7 +96,6 @@ process_reverse6_lookup(const char *buf,int *fam,void *addr,size_t len){
 #define UDP_SRV "_udp."
 #define TCP_SRV "_tcp."
 #define SDUDP_SRV "_dns-sd._udp."
-#define SDTCP_SRV "_dns-sd._tcp."
 static size_t
 match_srv_proto(const char *buf,unsigned *prot,int *add){
 	size_t ret;
@@ -112,16 +111,12 @@ match_srv_proto(const char *buf,unsigned *prot,int *add){
 	}else if(strncmp(buf,SDUDP_SRV,strlen(SDUDP_SRV)) == 0){
 		*prot = IPPROTO_UDP;
 		ret = strlen(SDUDP_SRV);
-	}else if(strncmp(buf,SDTCP_SRV,strlen(SDTCP_SRV)) == 0){
-		*prot = IPPROTO_TCP;
-		ret = strlen(SDTCP_SRV);
 	}else{
 		ret = 0;
 	}
 	return ret;
 }
 #undef SDUDP_SRV
-#undef SDTCP_SRV
 #undef UDP_SRV
 #undef TCP_SRV
 
