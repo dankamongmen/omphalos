@@ -42,7 +42,6 @@ enum {
 	MCAST_COLOR,			// multicast addresses
 	LCAST_COLOR,			// local addresses
 	BCAST_COLOR,			// broadcast addresses
-	ROUTER_COLOR,			// routing l3 addresses / access points
 	UCAST_L3_COLOR,			// unicast l3
 	LCAST_L3_COLOR,			// local l3
 	MCAST_L3_COLOR,			// multicast l3

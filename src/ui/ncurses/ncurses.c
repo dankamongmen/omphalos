@@ -423,10 +423,6 @@ ncurses_setup(void){
 		errstr = L"Couldn't initialize ncurses colorpair\n";
 		goto err;
 	}
-	if(init_pair(ROUTER_COLOR,COLOR_YELLOW,-1) != OK){
-		errstr = L"Couldn't initialize ncurses colorpair\n";
-		goto err;
-	}
 	if(setup_extended_colors() != OK){
 		errstr = L"Couldn't initialize extended colors\n";
 		assert(init_pair(LCAST_COLOR,COLOR_CYAN,-1) == OK); // will use A_BOLD via OUR_BOLD

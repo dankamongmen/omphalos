@@ -230,7 +230,7 @@ print_host_services(WINDOW *w,const l3obj *l,int *line,int rows,int cols,
 	n = 0;
 	for(l4 = l->l4objs ; l4 ; l4 = l4->next){
 		if(l4_getproto(l4->l4) == IPPROTO_IP){
-			assert(wattrset(w,COLOR_PAIR(ROUTER_COLOR)) == OK);
+			assert(wattrset(w,attrs | A_BOLD) == OK);
 		}else{
 			assert(wattrset(w,attrs) == OK);
 		}
