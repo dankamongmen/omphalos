@@ -431,7 +431,7 @@ int handle_dns_packet(omphalos_packet *op,const void *frame,size_t len){
 	len -= sizeof(*dns);
 	sec = (const unsigned char *)frame + sizeof(*dns);
 	//diagnostic(L"q/a/n/a: %hu/%hu/%hu/%hu",qd,an,ns,ar);
-	while(qd--){
+	while(qd-- && len){
 		buf = extract_dns_record(len,sec,&class,&type,&bsize,frame);
 		if(buf == NULL){
 			goto malformed;
@@ -457,7 +457,7 @@ int handle_dns_packet(omphalos_packet *op,const void *frame,size_t len){
 		sec += bsize;
 		len -= bsize;
 	}
-	while(an--){
+	while(an-- && len){
 		unsigned ttl;
 		char *data;
 
@@ -533,15 +533,18 @@ int handle_dns_packet(omphalos_packet *op,const void *frame,size_t len){
 		sec += bsize;
 		len -= bsize;
 	}
-	while(ns--){
+	while(ns-- && len){
 		if(len == 0){
 			goto malformed;
 		}
 	}
-	while(ar--){
+	while(ar-- && len){
 		if(len == 0){
 			goto malformed;
 		}
+	}
+	if(ar || ns || an || qd){
+		goto malformed;
 	}
 	return server;
 
