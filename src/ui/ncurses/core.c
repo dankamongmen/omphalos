@@ -124,13 +124,11 @@ int new_display_panel(WINDOW *w,struct panel_state *ps,int rows,int cols,const w
 
 	getmaxyx(w,y,x);
 	if(cols == 0){
-		cols = x - (START_COL * 2);
+		cols = x - START_COL; // indent on the left, but not the right
 	}
 	assert(y >= rows + 3);
-	assert((x >= cols + START_COL * 2) && (x >= crightlen + START_COL * 2));
-	assert( (psw = newwin(rows + 2,cols,
-					y - (rows + 3),
-					x - (START_COL + cols))) );
+	assert((x >= cols + START_COL) && (x >= crightlen + START_COL));
+	assert( (psw = newwin(rows + 2,cols,y - (rows + 3),x - cols)) );
 	if(psw == NULL){
 		return ERR;
 	}
