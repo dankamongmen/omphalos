@@ -9,6 +9,7 @@
 #include <omphalos/dns.h>
 #include <omphalos/udp.h>
 #include <omphalos/diag.h>
+#include <omphalos/mdns.h>
 #include <omphalos/util.h>
 #include <asm/byteorder.h>
 #include <omphalos/csum.h>
@@ -103,6 +104,9 @@ match_srv_proto(const char *buf,unsigned *prot,int *add){
 #undef UDP_SRV
 #undef TCP_SRV
 
+// If *add is set to non-zero on success, go ahead and add it as a service.
+// Otherwise, it's a service enumeration response, and the service needs be
+// queried as a PTR afresh.
 #define LOCAL_DOMAIN "local"
 static wchar_t *
 process_srv_lookup(const char *buf,unsigned *prot,unsigned *port,int *add){
@@ -149,6 +153,7 @@ process_srv_lookup(const char *buf,unsigned *prot,unsigned *port,int *add){
 	domain = buf;
 	if(strcmp(domain,LOCAL_DOMAIN)){
 		free(name);
+		assert(0);
 		return NULL;
 	}
 	*port = 0; // FIXME
@@ -491,8 +496,13 @@ int handle_dns_packet(omphalos_packet *op,const void *frame,size_t len){
 					offer_resolution(fam,ss,data,
 						NAMING_LEVEL_REVDNS,nsfam,nsaddr);
 				}else if( (srv = process_srv_lookup(buf,&proto,&port,&add)) ){;
+					// If it was actual DNS (not mDNS),
+					// this will probably not be the proper
+					// host! FIXME
 					if(add){
 						observe_service(op->i,op->l2s,op->l3s,proto,port,srv,NULL);
+					}else{
+						mdns_sd_probe(nsfam,op->i,proto,data);
 					}
 					free(srv);
 				}else{
