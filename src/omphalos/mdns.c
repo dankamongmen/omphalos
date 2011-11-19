@@ -79,6 +79,25 @@ int tx_mdns_ptr(interface *i,const char *str,int fam,const void *lookup){
 	return ret;
 }
 
+#define ENUMSTR "\x09_services\x07""_dns-sd\x04""_udp\x05local"
+static int
+setup_service_enum(char *frame,size_t len){
+	struct dnshdr *dns = (struct dnshdr *)frame;
+	char *dat;
+
+	if(len < sizeof(*dns) + strlen(ENUMSTR) + 5){
+		return -1;
+	}
+	memset(dns,0,sizeof(*dns));
+	dns->qdcount = ntohs(1);
+	dat = frame + sizeof(*dns);
+	strcpy(dat,ENUMSTR);
+	*(uint16_t *)(dat + strlen(ENUMSTR) + 1) = DNS_TYPE_PTR;
+	*(uint16_t *)(dat + strlen(ENUMSTR) + 3) = DNS_CLASS_IN;
+	return sizeof(*dns) + strlen(ENUMSTR) + 5;
+}
+#undef ENUMSTR
+
 static int
 tx_sd4_enumerate(interface *i){
 	const struct ip4route *i4;
@@ -126,9 +145,16 @@ tx_sd4_enumerate(interface *i){
                 udp->source = htons(MDNS_UDP_PORT);
                 udp->dest = htons(MDNS_UDP_PORT);
                 tlen += sizeof(*udp);
+		if((r = setup_service_enum((char *)frame + tlen,flen - tlen)) < 0){
+                        abort_tx_frame(i,frame);
+                        ret = -1;
+                        continue;
+		}
+		tlen += r;
                 thdr->tp_len = tlen;
                 ip->tot_len = htons(thdr->tp_len - ((const char *)ip - (const char *)frame));
-		udp->len = ntohs(ip->tot_len) - sizeof(*udp);
+		ip->check = ipv4_csum(ip);
+		udp->len = htons(ntohs(ip->tot_len) - sizeof(*udp));
                 udp->check = udp4_csum(ip);
                 send_tx_frame(i,frame); // FIXME get return value...
 	}
@@ -183,6 +209,12 @@ tx_sd6_enumerate(interface *i){
                 udp->source = htons(MDNS_UDP_PORT);
                 udp->dest = htons(MDNS_UDP_PORT);
                 tlen += sizeof(*udp);
+		if((r = setup_service_enum((char *)frame + tlen,flen - tlen)) < 0){
+                        abort_tx_frame(i,frame);
+                        ret = -1;
+                        continue;
+		}
+		tlen += r;
                 thdr->tp_len = tlen;
                 ip->ip6_ctlun.ip6_un1.ip6_un1_plen = htons(thdr->tp_len -
                         ((const char *)udp - (const char *)frame));

@@ -26,16 +26,6 @@
 #define MDNS_REVSTR_DECODED ".local"
 #define MDNS_REVSTR "\x05" "local"
 
-#define DNS_CLASS_IN	__constant_ntohs(0x0001u)
-#define DNS_CLASS_FLUSH	__constant_ntohs(0x8000u)
-#define DNS_TYPE_A	__constant_ntohs(1u)
-#define DNS_TYPE_CNAME	__constant_ntohs(5u)
-#define DNS_TYPE_PTR	__constant_ntohs(12u)
-#define DNS_TYPE_HINFO	__constant_ntohs(13u)
-#define DNS_TYPE_TXT	__constant_ntohs(16u)
-#define DNS_TYPE_AAAA	__constant_ntohs(28u)
-#define DNS_TYPE_SRV	__constant_ntohs(33u)
-
 // Mask against the flags field of the dnshdr struct
 #define RESPONSE_CODE_MASK 0x7
 enum {
@@ -49,13 +39,6 @@ enum {
 } response_codes;
 
 #define DNS_TARGET_PORT 53	// FIXME terrible
-
-struct dnshdr {
-	uint16_t id;
-	uint16_t flags;
-	uint16_t qdcount,ancount,nscount,arcount;
-	// question, answer, authority, and additional sections follow
-};
 
 // Encoded as 32 nibbles. len is the length prior to the (already-verified)
 // instance of IP6_REVSTR, and thus ought be exactly 63 octets (32 nibbles and
@@ -566,7 +549,6 @@ int handle_dns_packet(omphalos_packet *op,const void *frame,size_t len){
 
 malformed:
 	diagnostic(L"%s malformed with %zu on %s",__func__,len,op->i->name);
-	assert(0);
 	op->malformed = 1;
 	return -1;
 }

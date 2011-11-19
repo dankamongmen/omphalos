@@ -6,9 +6,27 @@ extern "C" {
 #endif
 
 #include <stddef.h>
+#include <stdint.h>
 
 struct routepath;
 struct omphalos_packet;
+
+#define DNS_CLASS_IN	__constant_ntohs(0x0001u)
+#define DNS_CLASS_FLUSH	__constant_ntohs(0x8000u)
+#define DNS_TYPE_A	__constant_ntohs(1u)
+#define DNS_TYPE_CNAME	__constant_ntohs(5u)
+#define DNS_TYPE_PTR	__constant_ntohs(12u)
+#define DNS_TYPE_HINFO	__constant_ntohs(13u)
+#define DNS_TYPE_TXT	__constant_ntohs(16u)
+#define DNS_TYPE_AAAA	__constant_ntohs(28u)
+#define DNS_TYPE_SRV	__constant_ntohs(33u)
+
+struct dnshdr {
+	uint16_t id;
+	uint16_t flags;
+	uint16_t qdcount,ancount,nscount,arcount;
+	// question, answer, authority, and additional sections follow
+} __attribute__ ((packed));
 
 // Return value is 0 if packet was processed entirely, without error, as DNS.
 // Takes the frame where DNS is expected to begin (UDP/TCP payload).
