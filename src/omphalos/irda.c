@@ -19,7 +19,7 @@ struct irlap_info {
 	unsigned char discover;
 	unsigned char slot;
 	unsigned char version;
-};
+} __attribute__ ((packed));
 
 void handle_irda_packet(omphalos_packet *op,const void *frame,size_t len){
 	const struct irlap_info *hdr = frame;
