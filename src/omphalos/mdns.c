@@ -98,44 +98,39 @@ setup_service_enum(char *frame,size_t len){
 	return sizeof(*dns) + strlen(ENUMSTR) + 5;
 }
 #undef ENUMSTR
+#undef DOMAIN
 
 static int
-setup_service_probe(char *frame,size_t len,unsigned proto,const char *name){
+setup_service_probe(char *frame,size_t len,const char *name){
 	struct dnshdr *dns = (struct dnshdr *)frame;
-	const char *prstr;
-	char *dat;
+	const char *comp,*c;
+	char *dat,*d;
 
-	if(proto == IPPROTO_TCP){
-		prstr = "_tcp";
-	}else if(proto == IPPROTO_UDP){
-		prstr = "_udp";
-	}else{
-		return -1;
-	}
-	if(len < sizeof(*dns) + strlen(name) + 2 + strlen(prstr) + 1 + strlen(DOMAIN) + 6){
+	if(len < sizeof(*dns) + strlen(name) + 6){
 		return -1;
 	}
 	memset(dns,0,sizeof(*dns));
 	dns->qdcount = ntohs(1);
 	dat = frame + sizeof(*dns);
-	dat[0] = 1 + strlen(name);
-	dat[1] = '_';
-	strcpy(dat + 2,name);
-	diagnostic(L"NAME: %s",dat);
-	dat[*dat + 1] = strlen(prstr) + 1;
-	strcpy(dat + *dat + 1,prstr);
-	diagnostic(L"NAME: %s",dat);
-	dat[*dat + 1 + dat[*dat + 1]] = strlen(DOMAIN);
-	strcpy(dat + *dat + 1 + dat[*dat + 1],DOMAIN);
-	diagnostic(L"NAME: %s",dat);
-	*(uint16_t *)(dat + *dat + 1 + dat[*dat + 1] + 1 + strlen(DOMAIN) + 2) = DNS_TYPE_PTR;
-	*(uint16_t *)(dat + *dat + 1 + dat[*dat + 1] + 1 + strlen(DOMAIN) + 4) = DNS_CLASS_IN;
-	return sizeof(*dns) + strlen(name) + 2 + strlen(prstr) + 1 + strlen(DOMAIN) + 1 + 5;
+	comp = name;
+	d = dat;
+	while( (c = strchr(comp,'.')) ){
+		diagnostic(L"cmp: %s d - dat: %u",comp,d - dat);
+		*d = c - comp;
+		strncpy(d + 1,comp,c - comp);
+		d += (c - comp) + 1;
+		comp = c + 1;
+	}
+	*d = strlen(comp);
+	strcpy(d + 1,comp);
+	d += strlen(comp) + 2;
+	*(uint16_t *)(d) = DNS_TYPE_PTR;
+	*(uint16_t *)(d + 2) = DNS_CLASS_IN;
+	return sizeof(*dns) + strlen(name) + 6;
 }
-#undef DOMAIN
 
 static int
-tx_sd4_enumerate(interface *i,unsigned proto,const char *name){
+tx_sd4(interface *i,const char *name){
 	const struct ip4route *i4;
 	int ret = 0;
 
@@ -184,7 +179,7 @@ tx_sd4_enumerate(interface *i,unsigned proto,const char *name){
 		if(name == NULL){
 			r = setup_service_enum((char *)frame + tlen,flen - tlen);
 		}else{
-			r = setup_service_probe((char *)frame + tlen,flen - tlen,proto,name);
+			r = setup_service_probe((char *)frame + tlen,flen - tlen,name);
 		}
 		if(r < 0){
 			abort_tx_frame(i,frame);
@@ -203,7 +198,7 @@ tx_sd4_enumerate(interface *i,unsigned proto,const char *name){
 }
 
 static int
-tx_sd6_enumerate(interface *i,unsigned proto,const char *name){
+tx_sd6(interface *i,const char *name){
 	const struct ip6route *i6;
 	int ret = 0;
 
@@ -253,7 +248,7 @@ tx_sd6_enumerate(interface *i,unsigned proto,const char *name){
 		if(name == NULL){
 			r = setup_service_enum((char *)frame + tlen,flen - tlen);
 		}else{
-			r = setup_service_probe((char *)frame + tlen,flen - tlen,proto,name);
+			r = setup_service_probe((char *)frame + tlen,flen - tlen,name);
 		}
 		if(r < 0){
 			abort_tx_frame(i,frame);
@@ -276,21 +271,21 @@ int mdns_sd_enumerate(int fam,interface *i){
 		return 0;
 	}
 	if(fam == AF_INET){
-		return tx_sd4_enumerate(i,0,NULL);
+		return tx_sd4(i,NULL);
 	}else if(fam == AF_INET6){
-		return tx_sd6_enumerate(i,0,NULL);
+		return tx_sd6(i,NULL);
 	}
 	return -1;
 }
 
-int mdns_sd_probe(int fam,interface *i,unsigned proto,const char *name){
+int mdns_sd_probe(int fam,interface *i,const char *name){
 	if(!(i->flags & IFF_MULTICAST)){
 		return 0;
 	}
 	if(fam == AF_INET){
-		return tx_sd4_enumerate(i,proto,name);
+		return tx_sd4(i,name);
 	}else if(fam == AF_INET6){
-		return tx_sd6_enumerate(i,proto,name);
+		return tx_sd6(i,name);
 	}
 	return -1;
 }

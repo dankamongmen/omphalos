@@ -19,7 +19,7 @@ int tx_mdns_ptr(struct interface *,const char *,int,const void *)
 			__attribute__ ((nonnull (1,2,4)));
 
 int mdns_sd_enumerate(int,struct interface *) __attribute__ ((nonnull (2)));
-int mdns_sd_probe(int,struct interface *,unsigned,const char *) __attribute__ ((nonnull (2,4)));
+int mdns_sd_probe(int,struct interface *,const char *) __attribute__ ((nonnull (2,3)));
 
 #ifdef __cplusplus
 }
