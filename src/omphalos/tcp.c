@@ -21,5 +21,9 @@ void handle_tcp_packet(omphalos_packet *op,const void *frame,size_t len){
 	}
 	op->l4src = tcp->source;
 	op->l4dst = tcp->dest;
-	// FIXME check header len etc...
+	if(len < tcp->doff){
+		diagnostic(L"%s options malformed with %zu",__func__,len);
+		op->malformed = 1;
+		return;
+	}
 }
