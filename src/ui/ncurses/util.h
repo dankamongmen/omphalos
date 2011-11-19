@@ -21,6 +21,8 @@ extern "C" {
 #define PREFIXSTRLEN 7	// Does not include a '\0' (xxx.xxU)
 #define PREFIXFMT "%7s"
 
+#define COMB_UNDER '\u0332'
+
 // FIXME eliminate all callers!
 static inline void
 unimplemented(WINDOW *w){
