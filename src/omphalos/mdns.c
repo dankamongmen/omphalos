@@ -1,14 +1,20 @@
 #include <assert.h>
+#include <linux/ip.h>
+#include <linux/udp.h>
 #include <sys/socket.h>
 #include <omphalos/tx.h>
+#include <netinet/ip6.h>
+#include <omphalos/ip.h>
 #include <omphalos/udp.h>
 #include <omphalos/dns.h>
 #include <omphalos/mdns.h>
+#include <omphalos/csum.h>
 #include <asm/byteorder.h>
 #include <omphalos/diag.h>
 #include <omphalos/route.h>
 #include <omphalos/service.h>
 #include <omphalos/hwaddrs.h>
+#include <omphalos/ethernet.h>
 #include <omphalos/netaddrs.h>
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
@@ -70,5 +76,130 @@ int tx_mdns_ptr(interface *i,const char *str,int fam,const void *lookup){
 		}
 		send_tx_frame(i,frame);
 	}
+	return ret;
+}
+
+static int
+tx_sd4_enumerate(interface *i){
+	const struct ip4route *i4;
+	int ret = 0;
+
+	for(i4 = i->ip4r ; i4 ; i4 = i4->next){
+		const unsigned char hw[ETH_ALEN] = { 0x01, 0x00, 0x5e, 0x00, 0x00, 0xfb };
+                uint32_t net = htonl(0xd00000fa);
+                struct tpacket_hdr *thdr;
+                struct udphdr *udp;
+                struct iphdr *ip;
+                size_t flen,tlen;
+                void *frame;
+                int r;
+
+                if(!(i4->addrs & ROUTE_HAS_SRC)){
+                        continue; // not cause for an error
+                }
+                if((frame = get_tx_frame(i,&flen)) == NULL){
+                        ret = -1;
+                        continue;
+                }
+                thdr = frame;
+                tlen = thdr->tp_mac;
+                if((r = prep_eth_header((char *)frame + tlen,flen - tlen,i,
+                                                hw,ETH_P_IP)) < 0){
+                        abort_tx_frame(i,frame);
+                        ret = -1;
+                        continue;
+                }
+                tlen += r;
+                ip = (struct iphdr *)((char *)frame + tlen);
+                if((r = prep_ipv4_header(ip,flen - tlen,i4->src,net,IPPROTO_UDP)) < 0){
+                        abort_tx_frame(i,frame);
+                        ret = -1;
+                        continue;
+                }
+                tlen += r;
+                if(flen - tlen < sizeof(*udp)){
+                        abort_tx_frame(i,frame);
+                        ret = -1;
+                        continue;
+                }
+                udp = (struct udphdr *)((char *)frame + tlen);
+                udp->source = htons(MDNS_UDP_PORT);
+                udp->dest = htons(MDNS_UDP_PORT);
+                tlen += sizeof(*udp);
+                thdr->tp_len = tlen;
+                ip->tot_len = htons(thdr->tp_len - ((const char *)ip - (const char *)frame));
+		udp->len = ntohs(ip->tot_len) - sizeof(*udp);
+                udp->check = udp4_csum(ip);
+                send_tx_frame(i,frame); // FIXME get return value...
+	}
+	return ret;
+}
+
+static int
+tx_sd6_enumerate(interface *i){
+	const struct ip6route *i6;
+	int ret = 0;
+
+	for(i6 = i->ip6r ; i6 ; i6 = i6->next){
+		const unsigned char hw[ETH_ALEN] = { 0x33, 0x33, 0x00, 0x00, 0x00, 0x01 };
+                uint128_t net = { htonl(0xff020000ul), htonl(0x0ul),
+                                        htonl(0x0ul), htonl(0x1ul) };
+                struct tpacket_hdr *thdr;
+                struct udphdr *udp;
+                struct ip6_hdr *ip;
+                size_t flen,tlen;
+                void *frame;
+                int r;
+
+                if(!(i6->addrs & ROUTE_HAS_SRC)){
+                        continue; // not cause for an error
+                }
+                if((frame = get_tx_frame(i,&flen)) == NULL){
+                        ret = -1;
+                        continue;
+                }
+                thdr = frame;
+                tlen = thdr->tp_mac;
+                if((r = prep_eth_header((char *)frame + tlen,flen - tlen,i,
+                                                hw,ETH_P_IPV6)) < 0){
+                        abort_tx_frame(i,frame);
+                        ret = -1;
+                        continue;
+                }
+                tlen += r;
+                ip = (struct ip6_hdr *)((char *)frame + tlen);
+                if((r = prep_ipv6_header(ip,flen - tlen,i6->src,net,IPPROTO_UDP)) < 0){
+                        abort_tx_frame(i,frame);
+                        ret = -1;
+                        continue;
+                }
+                tlen += r;
+                if(flen - tlen < sizeof(*udp)){
+                        abort_tx_frame(i,frame);
+                        ret = -1;
+                        continue;
+                }
+                udp = (struct udphdr *)((char *)frame + tlen);
+                udp->source = htons(MDNS_UDP_PORT);
+                udp->dest = htons(MDNS_UDP_PORT);
+                tlen += sizeof(*udp);
+                thdr->tp_len = tlen;
+                ip->ip6_ctlun.ip6_un1.ip6_un1_plen = htons(thdr->tp_len -
+                        ((const char *)udp - (const char *)frame));
+		udp->len = ip->ip6_ctlun.ip6_un1.ip6_un1_plen;
+                udp->check = udp6_csum(ip);
+                send_tx_frame(i,frame); // FIXME get return value...
+	}
+	return ret;
+}
+
+int mdns_sd_enumerate(interface *i){
+	int ret = 0;
+
+	if(!(i->flags & IFF_MULTICAST)){
+		return 0;
+	}
+	ret |= tx_sd4_enumerate(i);
+	ret |= tx_sd6_enumerate(i);
 	return ret;
 }
