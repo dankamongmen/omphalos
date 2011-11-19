@@ -79,7 +79,8 @@ int tx_mdns_ptr(interface *i,const char *str,int fam,const void *lookup){
 	return ret;
 }
 
-#define ENUMSTR "\x09_services\x07""_dns-sd\x04""_udp\x05local"
+#define DOMAIN "local"
+#define ENUMSTR "\x09_services\x07""_dns-sd\x04""_udp\x05"DOMAIN
 static int
 setup_service_enum(char *frame,size_t len){
 	struct dnshdr *dns = (struct dnshdr *)frame;
@@ -99,7 +100,42 @@ setup_service_enum(char *frame,size_t len){
 #undef ENUMSTR
 
 static int
-tx_sd4_enumerate(interface *i){
+setup_service_probe(char *frame,size_t len,unsigned proto,const char *name){
+	struct dnshdr *dns = (struct dnshdr *)frame;
+	const char *prstr;
+	char *dat;
+
+	if(proto == IPPROTO_TCP){
+		prstr = "_tcp";
+	}else if(proto == IPPROTO_UDP){
+		prstr = "_udp";
+	}else{
+		return -1;
+	}
+	if(len < sizeof(*dns) + strlen(name) + 2 + strlen(prstr) + 1 + strlen(DOMAIN) + 6){
+		return -1;
+	}
+	memset(dns,0,sizeof(*dns));
+	dns->qdcount = ntohs(1);
+	dat = frame + sizeof(*dns);
+	dat[0] = 1 + strlen(name);
+	dat[1] = '_';
+	strcpy(dat + 2,name);
+	diagnostic(L"NAME: %s",dat);
+	dat[*dat + 1] = strlen(prstr) + 1;
+	strcpy(dat + *dat + 1,prstr);
+	diagnostic(L"NAME: %s",dat);
+	dat[*dat + 1 + dat[*dat + 1]] = strlen(DOMAIN);
+	strcpy(dat + *dat + 1 + dat[*dat + 1],DOMAIN);
+	diagnostic(L"NAME: %s",dat);
+	*(uint16_t *)(dat + *dat + 1 + dat[*dat + 1] + 1 + strlen(DOMAIN) + 2) = DNS_TYPE_PTR;
+	*(uint16_t *)(dat + *dat + 1 + dat[*dat + 1] + 1 + strlen(DOMAIN) + 4) = DNS_CLASS_IN;
+	return sizeof(*dns) + strlen(name) + 2 + strlen(prstr) + 1 + strlen(DOMAIN) + 1 + 5;
+}
+#undef DOMAIN
+
+static int
+tx_sd4_enumerate(interface *i,unsigned proto,const char *name){
 	const struct ip4route *i4;
 	int ret = 0;
 
@@ -145,10 +181,15 @@ tx_sd4_enumerate(interface *i){
                 udp->source = htons(MDNS_UDP_PORT);
                 udp->dest = htons(MDNS_UDP_PORT);
                 tlen += sizeof(*udp);
-		if((r = setup_service_enum((char *)frame + tlen,flen - tlen)) < 0){
-                        abort_tx_frame(i,frame);
-                        ret = -1;
-                        continue;
+		if(name == NULL){
+			r = setup_service_enum((char *)frame + tlen,flen - tlen);
+		}else{
+			r = setup_service_probe((char *)frame + tlen,flen - tlen,proto,name);
+		}
+		if(r < 0){
+			abort_tx_frame(i,frame);
+			ret = -1;
+			continue;
 		}
 		tlen += r;
                 thdr->tp_len = tlen;
@@ -162,7 +203,7 @@ tx_sd4_enumerate(interface *i){
 }
 
 static int
-tx_sd6_enumerate(interface *i){
+tx_sd6_enumerate(interface *i,unsigned proto,const char *name){
 	const struct ip6route *i6;
 	int ret = 0;
 
@@ -209,10 +250,15 @@ tx_sd6_enumerate(interface *i){
                 udp->source = htons(MDNS_UDP_PORT);
                 udp->dest = htons(MDNS_UDP_PORT);
                 tlen += sizeof(*udp);
-		if((r = setup_service_enum((char *)frame + tlen,flen - tlen)) < 0){
-                        abort_tx_frame(i,frame);
-                        ret = -1;
-                        continue;
+		if(name == NULL){
+			r = setup_service_enum((char *)frame + tlen,flen - tlen);
+		}else{
+			r = setup_service_probe((char *)frame + tlen,flen - tlen,proto,name);
+		}
+		if(r < 0){
+			abort_tx_frame(i,frame);
+			ret = -1;
+			continue;
 		}
 		tlen += r;
                 thdr->tp_len = tlen;
@@ -230,9 +276,21 @@ int mdns_sd_enumerate(int fam,interface *i){
 		return 0;
 	}
 	if(fam == AF_INET){
-		return tx_sd4_enumerate(i);
+		return tx_sd4_enumerate(i,0,NULL);
 	}else if(fam == AF_INET6){
-		return tx_sd6_enumerate(i);
+		return tx_sd6_enumerate(i,0,NULL);
+	}
+	return -1;
+}
+
+int mdns_sd_probe(int fam,interface *i,unsigned proto,const char *name){
+	if(!(i->flags & IFF_MULTICAST)){
+		return 0;
+	}
+	if(fam == AF_INET){
+		return tx_sd4_enumerate(i,proto,name);
+	}else if(fam == AF_INET6){
+		return tx_sd6_enumerate(i,proto,name);
 	}
 	return -1;
 }
