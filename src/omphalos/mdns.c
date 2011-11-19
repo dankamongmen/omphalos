@@ -193,13 +193,14 @@ tx_sd6_enumerate(interface *i){
 	return ret;
 }
 
-int mdns_sd_enumerate(interface *i){
-	int ret = 0;
-
+int mdns_sd_enumerate(int fam,interface *i){
 	if(!(i->flags & IFF_MULTICAST)){
 		return 0;
 	}
-	ret |= tx_sd4_enumerate(i);
-	ret |= tx_sd6_enumerate(i);
-	return ret;
+	if(fam == AF_INET){
+		return tx_sd4_enumerate(i);
+	}else if(fam == AF_INET6){
+		return tx_sd6_enumerate(i);
+	}
+	return -1;
 }
