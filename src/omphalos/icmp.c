@@ -88,7 +88,6 @@ tx_ipv6_bcast_pings(interface *i){
 		icmp = (struct icmp6_hdr *)((char *)frame + tlen);
 		icmp->icmp6_type = ICMP6_ECHO_REQUEST;
 		icmp->icmp6_code = 0;
-		icmp->icmp6_cksum = 0; // FIXME?
 		tlen += sizeof(*icmp);
 		thdr->tp_len = tlen;
 		ip->ip6_ctlun.ip6_un1.ip6_un1_plen = htons(thdr->tp_len -
