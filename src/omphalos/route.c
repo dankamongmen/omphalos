@@ -189,7 +189,7 @@ int handle_rtm_newroute(const struct nlmsghdr *nl){
 		char str[INET6_ADDRSTRLEN],via[INET6_ADDRSTRLEN];
 		inet_ntop(rt->rtm_family,ad,str,sizeof(str));
 		inet_ntop(rt->rtm_family,ag,via,sizeof(via));
-		diagnostic(L"[%s] new route to %s/%u %s %s%s",r->iface->name,str,r->maskbits,
+		diagnostic(L"[%s] new route to %s/%u %s%s%s",r->iface->name,str,r->maskbits,
 			rt->rtm_type == RTN_LOCAL ? "(local)" :
 			rt->rtm_type == RTN_BROADCAST ? "(broadcast)" :
 			rt->rtm_type == RTN_UNREACHABLE ? "(unreachable)" :
@@ -198,7 +198,7 @@ int handle_rtm_newroute(const struct nlmsghdr *nl){
 			rt->rtm_type == RTN_MULTICAST ? "(multicast)" :
 			rt->rtm_type == RTN_BLACKHOLE ? "(blackhole)" :
 			rt->rtm_type == RTN_MULTICAST ? "(multicast)" : "",
-			r->ssg.ss_family ? "via " : "",
+			r->ssg.ss_family ? " via " : "",
 			r->ssg.ss_family ? via : "");
 	}
 	// We're not interest in blackholes, unreachables, prohibits, NATs yet
