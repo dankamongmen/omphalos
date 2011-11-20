@@ -121,8 +121,7 @@ int idx_of_iface(const interface *i){
 }
 
 // We don't destroy the mutex lock here; it exists for the life of the program.
-// The lock must be held on entrance, however. Also, we mustn't memset() the
-// interface blindly, or else the lock will be destroyed!
+// We mustn't memset() the iface blindly, or else the lock will be destroyed!
 void free_iface(interface *i){
 	const struct omphalos_ctx *ctx = get_octx();
 	const omphalos_iface *octx = &ctx->iface;
@@ -133,6 +132,7 @@ void free_iface(interface *i){
 		reap_thread(i);
 		i->pmarsh = NULL;
 	}
+	pthread_mutex_lock(&i->lock);
 	if(i->rfd >= 0){
 		if(close(i->rfd)){
 			diagnostic(L"Error closing %d: %s",i->rfd,strerror(errno));
@@ -187,6 +187,7 @@ void free_iface(interface *i){
 	cleanup_l3hosts(&i->ip6hosts);
 	cleanup_l3hosts(&i->ip4hosts);
 	cleanup_l2hosts(&i->l2hosts);
+	pthread_mutex_unlock(&i->lock);
 }
 
 void cleanup_interfaces(const omphalos_iface *pctx){
@@ -198,9 +199,7 @@ void cleanup_interfaces(const omphalos_iface *pctx){
 		if(interfaces[i].name){
 			pctx->diagnostic(L"Shutting down %s",interfaces[i].name);
 		}
-		pthread_mutex_lock(&interfaces[i].lock);
 		free_iface(&interfaces[i]);
-		pthread_mutex_unlock(&interfaces[i].lock);
 		if( (r = pthread_mutex_destroy(&interfaces[i].lock)) ){
 			pctx->diagnostic(L"Couldn't destroy lock on %d (%s?)",r,strerror(r));
 		}
