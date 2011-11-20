@@ -246,13 +246,13 @@ void send_tx_frame(interface *i,void *frame){
 
 		//thdr->tp_status = TP_STATUS_SEND_REQUEST;
 		//ret = send(i->fd,NULL,0,0);
-		ret = send(i->fd,(const char *)frame + thdr->tp_mac,thdr->tp_len,0);
+		ret = send(i->fd,(const char *)frame + thdr->tp_mac,tplen,0);
 		if(ret == 0){
 			ret = tplen;
 		}
 		//diagnostic(L"Transmitted %d on %s",ret,i->name);
 		if(ret < 0){
-			diagnostic(L"Error out-TXing on %s (%s)",i->name,strerror(errno));
+			diagnostic(L"Error out-TXing %u on %s (%s)",tplen,i->name,strerror(errno));
 			++i->txerrors;
 		}else{
 			i->txbytes += ret;
