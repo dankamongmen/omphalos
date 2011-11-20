@@ -7,6 +7,7 @@ extern "C" {
 
 #include <stddef.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 struct omphalos_iface;
 struct omphalos_packet;
@@ -18,6 +19,13 @@ struct omphalos_packet;
 
 void handle_udp_packet(const struct omphalos_iface *,struct omphalos_packet *,
 					const void *,size_t);
+
+#define MINPORT 4097
+static inline unsigned
+random_udp_port(void){
+	return (random() % (0xffff - MINPORT)) + MINPORT;
+}
+#undef MINPORT
 
 #ifdef __cplusplus
 }
