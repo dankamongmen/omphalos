@@ -238,7 +238,7 @@ int handle_rtm_newroute(const struct nlmsghdr *nl){
 			goto err;
 		}
 		if(r->ssg.ss_family){
-			send_arp_probe(r->iface,r->iface->bcast,ag,flen,as);
+			send_arp_probe(r->iface,r->iface->bcast,ag,as);
 		}
 		unlock_interface(r->iface);
 		pthread_mutex_lock(&route_lock);

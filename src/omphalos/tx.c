@@ -271,13 +271,15 @@ void abort_tx_frame(interface *i,void *frame){
 }
 
 void prepare_arp_probe(const interface *i,void *frame,size_t *flen,
-			const void *haddr,size_t hln,const void *paddr,size_t pln,const void *saddr){
+			const void *haddr,size_t hln,const uint32_t *paddr,
+			const uint32_t *saddr){
 	struct tpacket_hdr *thdr;
 	unsigned char *payload;
 	struct ethhdr *ehdr;
 	struct arphdr *ahdr;
-	size_t tlen;
+	size_t tlen,pln;
 
+	pln = sizeof(*paddr);
 	thdr = frame;
 	if(*flen < sizeof(*thdr)){
 		diagnostic(L"%s %s frame too small for tx",__func__,i->name);

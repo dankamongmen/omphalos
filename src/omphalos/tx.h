@@ -6,6 +6,7 @@ extern "C" {
 #endif
 
 #include <stdio.h>
+#include <stdint.h>
 
 struct interface;
 
@@ -29,7 +30,7 @@ void abort_tx_frame(struct interface *,void *);
 
 // ARP probe. Sent to the specified link address.
 void prepare_arp_probe(const struct interface *,void *,size_t *,const void *,
-			size_t,const void *,size_t,const void *);
+			size_t,const uint32_t *,const uint32_t *);
 
 #ifdef __cplusplus
 }

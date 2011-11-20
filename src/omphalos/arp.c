@@ -89,8 +89,8 @@ void handle_arp_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 	}}
 }
 
-void send_arp_probe(interface *i,const void *hwaddr,const void *addr,
-				size_t addrlen,const void *saddr){
+void send_arp_probe(interface *i,const void *hwaddr,const uint32_t *addr,
+						const uint32_t *saddr){
 	void *frame;
 	size_t flen;
 
@@ -98,8 +98,7 @@ void send_arp_probe(interface *i,const void *hwaddr,const void *addr,
 		/*char addrstr[INET6_ADDRSTRLEN];
 		inet_ntop(addrlen == 4 ? AF_INET:AF_INET6,addr,addrstr,sizeof(addrstr));
 		diagnostic(L"Probing %s on %s",addrstr,i->name);*/
-		prepare_arp_probe(i,frame,&flen,hwaddr,i->addrlen,
-					addr,addrlen,saddr);
+		prepare_arp_probe(i,frame,&flen,hwaddr,i->addrlen,addr,saddr);
 		send_tx_frame(i,frame);
 	}
 }
