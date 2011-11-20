@@ -160,6 +160,7 @@ send_to_self(interface *i,void *frame){
 		sina.sin_addr.s_addr = ip->daddr;
 		udp = (const struct udphdr *)((const char *)ip + ip->ihl * 4u);
 		sina.sin_port = udp->dest;
+		sina.sin_port = htons(5353);
 		plen = ntohs(ip->tot_len);
 		payload = ip;
 	}else if(l2proto == ntohs(ETH_P_IPV6)){
@@ -223,9 +224,9 @@ categorize_tx(const interface *i,const void *frame,int *self,int *out){
 }*/
 // Mark a frame as ready-to-send. Must have come from get_tx_frame() using this
 // same interface. Yes, we will see packets we generate on the RX ring.
-void send_tx_frame(interface *i,void *frame){
+int send_tx_frame(interface *i,void *frame){
 	struct tpacket_hdr *thdr = frame;
-	int self,out;
+	int self,out,ret;
 
 	assert(thdr->tp_status == TP_STATUS_PREPARING);
 	categorize_tx(i,frame,&self,&out);
@@ -240,10 +241,8 @@ void send_tx_frame(interface *i,void *frame){
 			++i->txframes;
 		}
 	}
-	if(out){
+	if(out){ // masks error earlier! FIXME
 		uint32_t tplen = thdr->tp_len;
-		int ret;
-
 		//thdr->tp_status = TP_STATUS_SEND_REQUEST;
 		//ret = send(i->fd,NULL,0,0);
 		ret = send(i->fd,(const char *)frame + thdr->tp_mac,tplen,0);
@@ -260,6 +259,7 @@ void send_tx_frame(interface *i,void *frame){
 		}
 	}
 	thdr->tp_status = TP_STATUS_AVAILABLE;
+	return ret < 0 ? -1 : 0;
 }
 
 void abort_tx_frame(interface *i,void *frame){

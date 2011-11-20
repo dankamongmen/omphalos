@@ -14,7 +14,7 @@ struct interface;
 void *get_tx_frame(struct interface *,size_t *);
 
 // Mark a frame as ready-to-send. Interface lock must be held.
-void send_tx_frame(struct interface *,void *);
+int send_tx_frame(struct interface *,void *);
 
 // Release a frame for reuse without transmitting it. Interface lock must be held.
 void abort_tx_frame(struct interface *,void *);
