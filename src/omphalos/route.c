@@ -79,11 +79,11 @@ int handle_rtm_newroute(const struct nlmsghdr *nl){
 	const struct rtmsg *rt = NLMSG_DATA(nl);
 	struct rtattr *ra;
 	void *as,*ad,*ag;
-	int rlen,iif,oif;
+	int rlen,oif;
 	route *r,**prev;
 	size_t flen;
 
-	iif = oif = -1;
+	oif = -1;
 	if((r = create_route()) == NULL){
 		return -1;
 	}
@@ -136,7 +136,7 @@ int handle_rtm_newroute(const struct nlmsghdr *nl){
 						sizeof(int),RTA_PAYLOAD(ra));
 				break;
 			}
-			iif = *(int *)RTA_DATA(ra);
+			// we don't use RTA_OIF: iif = *(int *)RTA_DATA(ra);
 		break;}case RTA_OIF:{
 			if(RTA_PAYLOAD(ra) != sizeof(int)){
 				diagnostic(L"Expected %zu oiface bytes, got %lu",
@@ -179,11 +179,9 @@ int handle_rtm_newroute(const struct nlmsghdr *nl){
 	if(rlen){
 		diagnostic(L"%d excess bytes on newlink message",rlen);
 	}
-	if(oif > -1){
-		if((r->iface = iface_by_idx(oif)) == NULL){
-			diagnostic(L"Unknown output interface %d on %s",oif,r->iface->name);
-			goto err;
-		}
+	if((r->iface = iface_by_idx(oif)) == NULL){
+		diagnostic(L"Unknown output interface %d on %s",oif,r->iface->name);
+		goto err;
 	}
 	{
 		char str[INET6_ADDRSTRLEN],via[INET6_ADDRSTRLEN];
@@ -232,7 +230,7 @@ int handle_rtm_newroute(const struct nlmsghdr *nl){
 		lock_interface(r->iface);
 		if(add_route4(r->iface,ad,r->ssg.ss_family ? ag : NULL,
 					r->sss.ss_family ? as : NULL,
-					r->maskbits,iif)){
+					r->maskbits)){
 			unlock_interface(r->iface);
 			diagnostic(L"Couldn't add route to %s",r->iface->name);
 			goto err;
@@ -263,7 +261,7 @@ int handle_rtm_newroute(const struct nlmsghdr *nl){
 		pthread_mutex_unlock(&route_lock);
 	}else if(r->family == AF_INET6){
 		lock_interface(r->iface);
-		if(add_route6(r->iface,ad,r->ssg.ss_family ? ag : NULL,r->sss.ss_family ? as : NULL,r->maskbits,iif)){
+		if(add_route6(r->iface,ad,r->ssg.ss_family ? ag : NULL,r->sss.ss_family ? as : NULL,r->maskbits)){
 			unlock_interface(r->iface);
 			diagnostic(L"Couldn't add route to %s",r->iface->name);
 			goto err;
