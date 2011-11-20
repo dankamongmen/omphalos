@@ -226,40 +226,44 @@ categorize_tx(const interface *i,const void *frame,int *self,int *out){
 // same interface. Yes, we will see packets we generate on the RX ring.
 int send_tx_frame(interface *i,void *frame){
 	struct tpacket_hdr *thdr = frame;
-	int self,out,ret;
+	int self,out,ret = 0;
 
 	assert(thdr->tp_status == TP_STATUS_PREPARING);
 	categorize_tx(i,frame,&self,&out);
 	if(self){
-		int ret;
+		int r;
 
-		ret = send_to_self(i,frame);
-		if(ret < 0){
+		r = send_to_self(i,frame);
+		if(r < 0){
 			++i->txerrors;
 		}else{
-			i->txbytes += ret;
+			i->txbytes += r;
 			++i->txframes;
 		}
+		ret |= r < 0 ? -1 : 0;
 	}
-	if(out){ // masks error earlier! FIXME
+	if(out){
 		uint32_t tplen = thdr->tp_len;
+		int r;
+
 		//thdr->tp_status = TP_STATUS_SEND_REQUEST;
 		//ret = send(i->fd,NULL,0,0);
-		ret = send(i->fd,(const char *)frame + thdr->tp_mac,tplen,0);
-		if(ret == 0){
-			ret = tplen;
+		r = send(i->fd,(const char *)frame + thdr->tp_mac,tplen,0);
+		if(r == 0){
+			r = tplen;
 		}
 		//diagnostic(L"Transmitted %d on %s",ret,i->name);
-		if(ret < 0){
+		if(r < 0){
 			diagnostic(L"Error out-TXing %u on %s (%s)",tplen,i->name,strerror(errno));
 			++i->txerrors;
 		}else{
-			i->txbytes += ret;
+			i->txbytes += r;
 			++i->txframes;
 		}
+		ret |= r < 0 ? -1 : 0;
 	}
 	thdr->tp_status = TP_STATUS_AVAILABLE;
-	return ret < 0 ? -1 : 0;
+	return ret;
 }
 
 void abort_tx_frame(interface *i,void *frame){
