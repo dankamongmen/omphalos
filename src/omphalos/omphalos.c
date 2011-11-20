@@ -357,7 +357,7 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 
 int omphalos_init(const omphalos_ctx *pctx){
 	if(pctx->iface.diagnostic == NULL){
-		fprintf(stderr,"No diagnostic callback function defined, exiting\n");
+		fwprintf(stderr,L"No diagnostic callback function defined, exiting\n");
 		return -1;
 	}
 	if(pthread_setspecific(omphalos_ctx_key,pctx)){
@@ -369,7 +369,7 @@ int omphalos_init(const omphalos_ctx *pctx){
 		}
 	}else{
 		if(init_pci_support()){
-			pctx->iface.diagnostic(L"Warning: no PCI support available");
+			diagnostic(L"Warning: no PCI support available");
 		}
 		if(handle_netlink_socket()){
 			return -1;
