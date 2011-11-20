@@ -380,10 +380,10 @@ int omphalos_init(const omphalos_ctx *pctx){
 }
 
 void omphalos_cleanup(const omphalos_ctx *pctx){
+	cleanup_pcap(pctx);
 	cleanup_naming();
 	free_routes();
 	cleanup_interfaces();
-	cleanup_pcap(pctx);
 	cleanup_iana_naming();
 	stop_pci_support();
 	stop_usb_support();

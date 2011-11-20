@@ -186,11 +186,11 @@ tx_sd4(interface *i,const char *name){
 			continue;
 		}
 		tlen += r;
-                thdr->tp_len = tlen - thdr->tp_mac;
                 ip->tot_len = htons(thdr->tp_len - ((const char *)ip - (const char *)frame));
 		ip->check = ipv4_csum(ip);
 		udp->len = htons(ntohs(ip->tot_len) - ip->ihl * 4u);
                 udp->check = udp4_csum(ip);
+                thdr->tp_len -= thdr->tp_mac;
                 send_tx_frame(i,frame); // FIXME get return value...
 	}
 	return ret;
@@ -255,11 +255,12 @@ tx_sd6(interface *i,const char *name){
 			continue;
 		}
 		tlen += r;
-                thdr->tp_len = tlen - thdr->tp_mac;
+                thdr->tp_len = tlen;
                 ip->ip6_ctlun.ip6_un1.ip6_un1_plen = htons(thdr->tp_len -
                         ((const char *)udp - (const char *)frame));
 		udp->len = ip->ip6_ctlun.ip6_un1.ip6_un1_plen;
                 udp->check = udp6_csum(ip);
+                thdr->tp_len -= thdr->tp_mac;
                 send_tx_frame(i,frame); // FIXME get return value...
 	}
 	return ret;
