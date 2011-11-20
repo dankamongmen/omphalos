@@ -115,7 +115,6 @@ setup_service_probe(char *frame,size_t len,const char *name){
 	comp = name;
 	d = dat;
 	while( (c = strchr(comp,'.')) ){
-		diagnostic(L"cmp: %s d - dat: %u",comp,d - dat);
 		*d = c - comp;
 		strncpy(d + 1,comp,c - comp);
 		d += (c - comp) + 1;
