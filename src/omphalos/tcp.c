@@ -26,4 +26,5 @@ void handle_tcp_packet(omphalos_packet *op,const void *frame,size_t len){
 		op->malformed = 1;
 		return;
 	}
+	// FIXME need reassemble the TCP stream before analyzing it...
 }
