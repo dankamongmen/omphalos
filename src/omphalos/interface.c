@@ -233,7 +233,7 @@ int print_all_iface_stats(FILE *fp,interface *agg){
 // Interface lock must be held upon entry
 // FIXME need to check and ensure they don't overlap with existing routes
 int add_route4(interface *i,const uint32_t *dst,const uint32_t *via,
-				const uint32_t *src,unsigned blen,int iif){
+				const uint32_t *src,unsigned blen){
 	ip4route *r,**prev;
 	struct l3host *l3;
 	struct l2host *l2;
@@ -241,20 +241,24 @@ int add_route4(interface *i,const uint32_t *dst,const uint32_t *via,
 	if((r = malloc(sizeof(*r))) == NULL){
 		return -1;
 	}
-	r->addrs = 0;
 	memcpy(&r->dst,dst,sizeof(*dst));
-	r->iif = iif;
 	r->maskbits = blen;
 	prev = &i->ip4r;
 	// Order most-specific (largest maskbits) to least-specific (0 maskbits)
 	while(*prev){
-		if(r->maskbits > (*prev)->maskbits){
+		if(r->maskbits >= (*prev)->maskbits){
 			break;
 		}
 		prev = &(*prev)->next;
 	}
-	r->next = *prev;
-	*prev = r;
+	if(*prev && r->maskbits == (*prev)->maskbits && r->dst == (*prev)->dst){
+		free(r);
+		r = *prev;
+	}else{
+		r->addrs = 0;
+		r->next = *prev;
+		*prev = r;
+	}
 	if(via){
 		memcpy(&r->via,via,sizeof(*via));
 		r->addrs |= ROUTE_HAS_VIA;
@@ -264,8 +268,9 @@ int add_route4(interface *i,const uint32_t *dst,const uint32_t *via,
 		memcpy(&r->src,src,sizeof(*src));
 		r->addrs |= ROUTE_HAS_SRC;
 		// Set the src for any less-specific routes we contain
+		// FIXME this will only work once...it won't update :/
 		while( *(prev = &(*prev)->next) ){
-			assert((*prev)->maskbits < r->maskbits);
+			assert((*prev)->maskbits <= r->maskbits);
 			if(!((*prev)->addrs & ROUTE_HAS_SRC)){
 				(*prev)->addrs |= ROUTE_HAS_SRC;
 				memcpy(&(*prev)->src,src,sizeof(*src));
@@ -285,7 +290,7 @@ int add_route4(interface *i,const uint32_t *dst,const uint32_t *via,
 
 // Interface lock must be held upon entry
 int add_route6(interface *i,const uint128_t *dst,const uint128_t *via,
-				const uint128_t *src,unsigned blen,int iif){
+				const uint128_t *src,unsigned blen){
 	ip6route *r,**prev;
 	struct l3host *l3;
 	struct l2host *l2;
@@ -293,19 +298,24 @@ int add_route6(interface *i,const uint128_t *dst,const uint128_t *via,
 	if((r = malloc(sizeof(*r))) == NULL){
 		return -1;
 	}
-	r->addrs = 0;
 	memcpy(&r->dst,dst,sizeof(*dst));
-	r->iif = iif;
 	r->maskbits = blen;
 	prev = &i->ip6r;
+	// Order most-specific (largest maskbits) to least-specific (0 maskbits)
 	while(*prev){
-		if(r->maskbits > (*prev)->maskbits){
+		if(r->maskbits >= (*prev)->maskbits){
 			break;
 		}
 		prev = &(*prev)->next;
 	}
-	r->next = *prev;
-	*prev = r;
+	if(*prev && r->maskbits == (*prev)->maskbits && equal128(r->dst,(*prev)->dst)){
+		free(r);
+		r = *prev;
+	}else{
+		r->addrs = 0;
+		r->next = *prev;
+		*prev = r;
+	}
 	if(via){
 		memcpy(&r->via,via,sizeof(*via));
 		r->addrs |= ROUTE_HAS_VIA;
@@ -316,7 +326,7 @@ int add_route6(interface *i,const uint128_t *dst,const uint128_t *via,
 		r->addrs |= ROUTE_HAS_SRC;
 		// Set the src for any less-specific routes we contain
 		while( *(prev = &(*prev)->next) ){
-			assert((*prev)->maskbits < r->maskbits);
+			assert((*prev)->maskbits <= r->maskbits);
 			if(!((*prev)->addrs & ROUTE_HAS_SRC)){
 				(*prev)->addrs |= ROUTE_HAS_SRC;
 				memcpy(&(*prev)->src,src,sizeof(*src));
