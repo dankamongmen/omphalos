@@ -190,20 +190,28 @@ void free_iface(interface *i){
 	pthread_mutex_unlock(&i->lock);
 }
 
-void cleanup_interfaces(const omphalos_iface *pctx){
+void cleanup_interfaces(void){
 	unsigned i;
 
 	for(i = 0 ; i < sizeof(interfaces) / sizeof(*interfaces) ; ++i){
-		int r;
-
 		if(interfaces[i].name){
-			pctx->diagnostic(L"Shutting down %s",interfaces[i].name);
+			diagnostic(L"Shutting down %s",interfaces[i].name);
 		}
 		free_iface(&interfaces[i]);
+	}
+}
+
+int destroy_interfaces(void){
+	unsigned i;
+	int r;
+
+	for(i = 0 ; i < sizeof(interfaces) / sizeof(*interfaces) ; ++i){
 		if( (r = pthread_mutex_destroy(&interfaces[i].lock)) ){
-			pctx->diagnostic(L"Couldn't destroy lock on %d (%s?)",r,strerror(r));
+			diagnostic(L"Couldn't destroy lock on %d (%s?)",r,strerror(r));
+			return -1;
 		}
 	}
+	return 0;
 }
 
 int print_all_iface_stats(FILE *fp,interface *agg){

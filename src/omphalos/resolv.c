@@ -249,10 +249,12 @@ int cleanup_naming(void){
 	int er;
 
 	er = 0;
+	pthread_mutex_lock(&resolver_lock);
+	free_resolvers(&resolvers6);
+	free_resolvers(&resolvers);
+	pthread_mutex_unlock(&resolver_lock);
 	if( (er = pthread_mutex_destroy(&resolver_lock)) ){
 		diagnostic(L"Error destroying resolver lock (%s)",strerror(er));
 	}
-	free_resolvers(&resolvers6);
-	free_resolvers(&resolvers);
 	return er;
 }

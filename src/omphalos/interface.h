@@ -26,7 +26,6 @@ struct l3host;
 struct in_addr;
 struct in6_addr;
 struct psocket_marsh;
-struct omphalos_iface;
 struct omphalos_packet;
 
 // bitmasks for the routes' 'addrs' field
@@ -156,7 +155,9 @@ hwaddrstr(const interface *i){
 }
 
 void free_iface(interface *);
-void cleanup_interfaces(const struct omphalos_iface *);
+void cleanup_interfaces(void);
+int destroy_interfaces(void);
+
 int print_all_iface_stats(FILE *,interface *);
 int add_route4(interface *,const uint32_t *,const uint32_t *,
 				const uint32_t *,unsigned,int);

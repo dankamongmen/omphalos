@@ -379,13 +379,14 @@ int omphalos_init(const omphalos_ctx *pctx){
 }
 
 void omphalos_cleanup(const omphalos_ctx *pctx){
-	cleanup_interfaces(&pctx->iface);
+	cleanup_naming();
 	free_routes();
+	cleanup_interfaces();
 	cleanup_pcap(pctx);
 	cleanup_iana_naming();
 	stop_pci_support();
 	stop_usb_support();
-	cleanup_naming();
 	cleanup_procfs();
+	destroy_interfaces();
 	pthread_key_delete(omphalos_ctx_key);
 }
