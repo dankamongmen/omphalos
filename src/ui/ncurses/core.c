@@ -812,7 +812,6 @@ void interface_removed_locked(iface_state *is,struct panel_state **ps){
 			}
 		}else if(rb->scrline > current_iface->scrline){
 			pull_interfaces_up(rb,scrrows,scrcols,delta);
-			screen_update();
 		}else{ // pull them down; removed is above current_iface
 			int ts;
 
@@ -820,8 +819,8 @@ void interface_removed_locked(iface_state *is,struct panel_state **ps){
 			if( (ts = top_space_p(scrrows)) ){
 				pull_interfaces_up(NULL,scrrows,scrcols,ts);
 			}
-			screen_update();
 		}
+		screen_update();
 		free_reelbox(rb);
 	}
 	free_iface_state(is); // clears l2/l3 nodes
