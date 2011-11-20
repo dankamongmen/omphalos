@@ -90,4 +90,5 @@ void timestat_inc(timestat *ts,const struct timeval *tv,unsigned val){
 
 void timestat_destroy(timestat *ts){
 	free(ts->counts);
+	memset(ts,0,sizeof(*ts));
 }

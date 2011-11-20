@@ -121,6 +121,8 @@ int idx_of_iface(const interface *i){
 }
 
 // We don't destroy the mutex lock here; it exists for the life of the program.
+// The lock must be held on entrance, however. Also, we mustn't memset() the
+// interface blindly, or else the lock will be destroyed!
 void free_iface(interface *i){
 	const struct omphalos_ctx *ctx = get_octx();
 	const omphalos_iface *octx = &ctx->iface;
@@ -129,19 +131,23 @@ void free_iface(interface *i){
 	// be allocated that fd, and have the packet socket thread use it.
 	if(i->pmarsh){
 		reap_thread(i);
+		i->pmarsh = NULL;
 	}
 	if(i->rfd >= 0){
 		if(close(i->rfd)){
 			diagnostic(L"Error closing %d: %s",i->rfd,strerror(errno));
 		}
+		i->rfd = -1;
 	}
 	if(i->fd >= 0){
 		if(close(i->fd)){
 			diagnostic(L"Error closing %d: %s",i->fd,strerror(errno));
 		}
+		i->fd = -1;
 	}
 	if(i->opaque && octx->iface_removed){
 		octx->iface_removed(i,i->opaque);
+		i->opaque = NULL;
 	}
 	while(i->ip6r){
 		struct ip6route *r6 = i->ip6r->next;
@@ -158,16 +164,19 @@ void free_iface(interface *i){
 	timestat_destroy(&i->fps);
 	timestat_destroy(&i->bps);
 	free(i->topinfo.devname);
+	i->topinfo.devname = NULL;
 	free(i->truncbuf);
+	i->truncbuf = NULL;
 	free(i->name);
+	i->name = NULL;
 	free(i->addr);
+	i->addr = NULL;
 	free(i->bcast);
+	i->bcast = NULL;
 	cleanup_l3hosts(&i->cells);
 	cleanup_l3hosts(&i->ip6hosts);
 	cleanup_l3hosts(&i->ip4hosts);
 	cleanup_l2hosts(&i->l2hosts);
-	memset(i,0,sizeof(*i));
-	i->fd4 = i->fd6 = i->rfd = i->fd = -1;
 }
 
 void cleanup_interfaces(const omphalos_iface *pctx){
@@ -179,7 +188,9 @@ void cleanup_interfaces(const omphalos_iface *pctx){
 		if(interfaces[i].name){
 			pctx->diagnostic(L"Shutting down %s",interfaces[i].name);
 		}
+		pthread_mutex_lock(&interfaces[i].lock);
 		free_iface(&interfaces[i]);
+		pthread_mutex_unlock(&interfaces[i].lock);
 		if( (r = pthread_mutex_destroy(&interfaces[i].lock)) ){
 			pctx->diagnostic(L"Couldn't destroy lock on %d (%s?)",r,strerror(r));
 		}
