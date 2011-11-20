@@ -236,23 +236,23 @@ print_host_services(WINDOW *w,const l3obj *l,int *line,int rows,int cols,
 		}
 		srv = l4srvstr(l4->l4);
 		if(n){
+			if((unsigned)cols < 2 + wcslen(srv)){ // two for ", "
+				break;
+			}
 			cols -= 2 + wcslen(srv);
-			if(cols < 0){
-				break;
-			}
-			assert(wprintw(w,", %ls",srv) != ERR);
 			n += 2 + wcslen(srv);
+			assert(wprintw(w,", %ls",srv) != ERR);
 		}else{
-			cols -= 2 + 5 + wcslen(srv); // two for borders
-			if(cols < 0){
+			if((unsigned)cols < 2 + 5 + wcslen(srv)){ // two for borders
 				break;
 			}
+			cols -= 2 + 5 + wcslen(srv);
+			n += 2 + 5 + wcslen(srv);
 			assert(mvwprintw(w,*line,1,"%lc    %ls",selectchar,srv) != ERR);
-			n += 5 + wcslen(srv);
 			++*line;
 		}
 	}
-	if(n && cols){
+	if(n && cols > 0){
 		assert(wprintw(w,"%-*.*s",cols,cols,"") == OK);
 	}
 }
