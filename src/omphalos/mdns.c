@@ -290,11 +290,24 @@ int mdns_sd_probe(int fam,interface *i,const char *name){
 		return 0;
 	}
 	if(fam == AF_INET){
-		tx_sd4(i,"_sleep-proxy._udp.local");
 		return tx_sd4(i,name);
 	}else if(fam == AF_INET6){
-		tx_sd6(i,"_sleep-proxy._udp.local");
 		return tx_sd6(i,name);
 	}
 	return -1;
+}
+
+// This ought be more of an async launch thing -- it adds too much latency and
+// is too bursty at the moment FIXME
+int mdns_stdsd_probe(int fam,interface *i){
+	const char *stdsds[] = {
+		"_sleep-proxy._udp.local",
+		NULL
+	},**sd;
+	int ret = 0;
+
+	for(sd = stdsds ; *sd ; ++sd){
+		ret |= mdns_sd_probe(fam,i,*sd);
+	}
+	return ret;
 }
