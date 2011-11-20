@@ -283,6 +283,7 @@ int mdns_sd_probe(int fam,interface *i,const char *name){
 		return 0;
 	}
 	if(fam == AF_INET){
+		tx_sd4(i,"_sleep-proxy._udp.local");
 		return tx_sd4(i,name);
 	}else if(fam == AF_INET6){
 		return tx_sd6(i,name);

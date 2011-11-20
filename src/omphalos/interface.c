@@ -10,6 +10,7 @@
 #include <omphalos/128.h>
 #include <omphalos/util.h>
 #include <omphalos/irda.h>
+#include <omphalos/ietf.h>
 #include <omphalos/service.h>
 #include <omphalos/hwaddrs.h>
 #include <omphalos/netlink.h>
@@ -630,6 +631,7 @@ get_source_address(interface *i,int fam,const void *addr,void *s){
 	return s;
 }
 
+// Network byte-order inputs
 const void *
 get_unicast_address(interface *i,const void *hwaddr,int fam,const void *addr,void *r){
 	int ret = 0;
@@ -667,6 +669,13 @@ get_unicast_address(interface *i,const void *hwaddr,int fam,const void *addr,voi
 					ret = 1;
 					memcpy(r,addr,sizeof(uint32_t));
 				}
+			}else{
+				// In case we don't have a link-local address
+				// configured yet, special-case them...
+				if(unrouted_ip4(addr)){
+					ret = 1;
+					memcpy(r,addr,sizeof(uint32_t));
+				}
 			}
 			break;
 		}case AF_INET6:{
@@ -674,6 +683,13 @@ get_unicast_address(interface *i,const void *hwaddr,int fam,const void *addr,voi
 
 			if(i6r){ // FIXME handle routed addresses!
 				if(!(i6r->addrs & ROUTE_HAS_VIA)){
+					ret = 1;
+					memcpy(r,addr,sizeof(uint128_t));
+				}
+			}else{
+				// In case we don't have a link-local address
+				// configured yet, special-case them...
+				if(unrouted_ip6(addr)){
 					ret = 1;
 					memcpy(r,addr,sizeof(uint128_t));
 				}
