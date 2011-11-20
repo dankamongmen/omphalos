@@ -24,6 +24,8 @@ static pthread_mutex_t dumplock = PTHREAD_MUTEX_INITIALIZER;
 static interface pcap_file_interface = {
 	.fd = -1,
 	.rfd = -1,
+	.fd4 = -1,
+	.fd6 = -1,
 };
 
 typedef struct pcap_marshal {
