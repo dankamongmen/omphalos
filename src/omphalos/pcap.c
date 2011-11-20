@@ -21,12 +21,7 @@
 static pcap_dumper_t *dumper;
 static pthread_mutex_t dumplock = PTHREAD_MUTEX_INITIALIZER;
 
-static interface pcap_file_interface = {
-	.fd = -1,
-	.rfd = -1,
-	.fd4 = -1,
-	.fd6 = -1,
-};
+static interface pcap_file_interface;
 
 typedef struct pcap_marshal {
 	interface *i;
@@ -156,7 +151,7 @@ int handle_pcap_file(const omphalos_ctx *pctx){
 	free(pmarsh.i->name);
 	diagnostic(L"Processing pcap file %s",pctx->pcapfn);
 	memset(pmarsh.i,0,sizeof(*pmarsh.i));
-	pmarsh.i->fd = pmarsh.i->rfd = -1;
+	pmarsh.i->fd4 = pmarsh.i->fd6 = pmarsh.i->fd = pmarsh.i->rfd = -1;
 	pmarsh.i->flags = IFF_BROADCAST | IFF_UP | IFF_LOWER_UP;
 	// FIXME set up remainder of interface as best we can...
 	if((pmarsh.i->name = strdup(pctx->pcapfn)) == NULL){

@@ -145,6 +145,16 @@ void free_iface(interface *i){
 		}
 		i->fd = -1;
 	}
+	if(i->fd4 >= 0){
+		if(close(i->fd4)){
+			diagnostic(L"Error closing %d: %s",i->fd4,strerror(errno));
+		}
+	}
+	if(i->fd6 >= 0){
+		if(close(i->fd6)){
+			diagnostic(L"Error closing %d: %s",i->fd6,strerror(errno));
+		}
+	}
 	if(i->opaque && octx->iface_removed){
 		octx->iface_removed(i,i->opaque);
 		i->opaque = NULL;
