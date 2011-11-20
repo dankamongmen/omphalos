@@ -576,7 +576,8 @@ int tx_dns_ptr(int fam,const void *addr,const char *question){
 	if((frame = get_tx_frame(rp.i,&flen)) == NULL){
 		return -1;
 	}
-	r = setup_dns_ptr(&rp,fam,DNS_TARGET_PORT,flen,frame,question);
+	r = setup_dns_ptr(&rp,fam,DNS_TARGET_PORT,flen,frame,question,
+				htons(random_udp_port()));
 	if(r){
 		abort_tx_frame(rp.i,frame);
 		return -1;
@@ -586,7 +587,8 @@ int tx_dns_ptr(int fam,const void *addr,const char *question){
 }
 
 int setup_dns_ptr(const struct routepath *rp,int fam,unsigned port,
-			size_t flen,void *frame,const char *question){
+			size_t flen,void *frame,const char *question,
+			unsigned sport){
 	struct tpacket_hdr *thdr;
 	uint16_t *totlen,tptr;
 	struct dnshdr *dnshdr;
@@ -634,8 +636,7 @@ int setup_dns_ptr(const struct routepath *rp,int fam,unsigned port,
 	}
 	udp = (struct udphdr *)((char *)frame + tlen);
 	udp->dest = htons(port);
-	// Don't send from the mDNS full resolver port or anything below. gross
-	udp->source = htons(5353);//htons((random() % 60000) + 5354);
+	udp->source = sport;
 	udp->check = 0u;
 	tlen += sizeof(*udp);
 	if(flen - tlen < sizeof(*dnshdr) + strlen(question) + 1 + 4){
