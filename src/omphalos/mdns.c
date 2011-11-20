@@ -19,6 +19,8 @@
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
 
+#define MDNS_NET4 __constant_htonl(0xe00000fbul)
+
 void handle_mdns_packet(omphalos_packet *op,const void *frame,size_t len){
 	if(handle_dns_packet(op,frame,len) == 1){
 		observe_service(op->i,op->l2s,op->l3s,op->l3proto,
@@ -27,7 +29,6 @@ void handle_mdns_packet(omphalos_packet *op,const void *frame,size_t len){
 }
 
 int tx_mdns_ptr(interface *i,const char *str,int fam,const void *lookup){
-	uint128_t mcast_netaddr;
 	const void *mcast_addr;
 	struct routepath rp;
 	int ret = -1;
@@ -39,11 +40,13 @@ int tx_mdns_ptr(interface *i,const char *str,int fam,const void *lookup){
 	}
 	rp.i = i;
 	if(get_source_address(i,AF_INET,fam == AF_INET ? lookup : NULL,&rp.src)){
+		uint32_t mcast_netaddr;
+
 		mcast_addr = "\x01\x00\x5e\x00\x00\xfb";
 		if((rp.l2 = lookup_l2host(i,mcast_addr)) == NULL){
 			return -1;
 		}
-		mcast_netaddr[0] = __constant_htonl(0xe00000fbu);
+		mcast_netaddr = MDNS_NET4;
 		if( (rp.l3 = lookup_local_l3host(i,rp.l2,AF_INET,&mcast_netaddr)) ){
 			if( (frame = get_tx_frame(i,&flen)) ){
 				if(setup_dns_ptr(&rp,AF_INET,MDNS_UDP_PORT,flen,frame,str,
@@ -57,6 +60,8 @@ int tx_mdns_ptr(interface *i,const char *str,int fam,const void *lookup){
 		}
 	}
 	if(get_source_address(i,AF_INET6,fam == AF_INET6 ? lookup : NULL,&rp.src)){
+		uint128_t mcast_netaddr;
+
 		mcast_addr = "\x33\x33\x00\x00\x00\xfb";
 		if((rp.l2 = lookup_l2host(i,mcast_addr)) == NULL){
 			return -1;
@@ -90,7 +95,7 @@ setup_service_enum(char *frame,size_t len){
 	if(len < sizeof(*dns) + strlen(ENUMSTR) + 5){
 		return -1;
 	}
-	memset(dns,0,sizeof(*dns));
+	memset(dns,0,sizeof(*dns)); // mDNS transaction id == 0
 	dns->qdcount = ntohs(1);
 	dat = frame + sizeof(*dns);
 	strcpy(dat,ENUMSTR);
@@ -110,7 +115,7 @@ setup_service_probe(char *frame,size_t len,const char *name){
 	if(len < sizeof(*dns) + strlen(name) + 6){
 		return -1;
 	}
-	memset(dns,0,sizeof(*dns));
+	memset(dns,0,sizeof(*dns)); // mDNS transaction id == 0
 	dns->qdcount = ntohs(1);
 	dat = frame + sizeof(*dns);
 	comp = name;
@@ -136,7 +141,7 @@ tx_sd4(interface *i,const char *name){
 
 	for(i4 = i->ip4r ; i4 ; i4 = i4->next){
 		const unsigned char hw[ETH_ALEN] = { 0x01, 0x00, 0x5e, 0x00, 0x00, 0xfb };
-                uint32_t net = htonl(0xd00000fa);
+                uint32_t net = MDNS_NET4;
                 struct tpacket_hdr *thdr;
                 struct udphdr *udp;
                 struct iphdr *ip;
@@ -187,13 +192,14 @@ tx_sd4(interface *i,const char *name){
 			continue;
 		}
 		tlen += r;
-                ip->tot_len = htons(thdr->tp_len - ((const char *)ip - (const char *)frame));
+                ip->tot_len = htons(tlen - ((const char *)ip - (const char *)frame));
 		ip->check = ipv4_csum(ip);
 		udp->len = htons(ntohs(ip->tot_len) - ip->ihl * 4u);
                 udp->check = udp4_csum(ip);
-                thdr->tp_len -= thdr->tp_mac;
-                send_tx_frame(i,frame); // FIXME get return value...
+                thdr->tp_len = tlen - thdr->tp_mac;
+                ret |= send_tx_frame(i,frame);
 	}
+	assert(ret >= 0);
 	return ret;
 }
 
@@ -262,7 +268,7 @@ tx_sd6(interface *i,const char *name){
 		udp->len = ip->ip6_ctlun.ip6_un1.ip6_un1_plen;
                 udp->check = udp6_csum(ip);
                 thdr->tp_len -= thdr->tp_mac;
-                send_tx_frame(i,frame); // FIXME get return value...
+                ret |= send_tx_frame(i,frame);
 	}
 	return ret;
 }
@@ -287,6 +293,7 @@ int mdns_sd_probe(int fam,interface *i,const char *name){
 		tx_sd4(i,"_sleep-proxy._udp.local");
 		return tx_sd4(i,name);
 	}else if(fam == AF_INET6){
+		tx_sd6(i,"_sleep-proxy._udp.local");
 		return tx_sd6(i,name);
 	}
 	return -1;
