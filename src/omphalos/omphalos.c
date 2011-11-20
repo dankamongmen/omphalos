@@ -11,6 +11,7 @@
 #include <sys/socket.h>
 #include <omphalos/usb.h>
 #include <omphalos/pci.h>
+#include <omphalos/diag.h>
 #include <omphalos/iana.h>
 #include <omphalos/pcap.h>
 #include <sys/capability.h>
