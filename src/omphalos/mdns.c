@@ -189,7 +189,7 @@ tx_sd4(interface *i,const char *name){
                 thdr->tp_len = tlen;
                 ip->tot_len = htons(thdr->tp_len - ((const char *)ip - (const char *)frame));
 		ip->check = ipv4_csum(ip);
-		udp->len = htons(ntohs(ip->tot_len) - sizeof(*udp));
+		udp->len = htons(ntohs(ip->tot_len) - ip->ihl * 4u);
                 udp->check = udp4_csum(ip);
                 send_tx_frame(i,frame); // FIXME get return value...
 	}
