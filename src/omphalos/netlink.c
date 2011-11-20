@@ -371,9 +371,9 @@ handle_rtm_newaddr(const struct nlmsghdr *nl){
 	}
 	// add_route*() will perform an l2 and l3 lookup on the source
 	if(ia->ifa_family == AF_INET){
-		add_route4(iface,ad,NULL,as,prefixlen,ia->ifa_index);
+		add_route4(iface,ad,NULL,as,prefixlen);
 	}else{
-		add_route6(iface,ad,NULL,as,prefixlen,ia->ifa_index);
+		add_route6(iface,ad,NULL,as,prefixlen);
 	}
 	// FIXME want to do this periodically, probably...
 	tx_broadcast_pings(ia->ifa_family,iface);
