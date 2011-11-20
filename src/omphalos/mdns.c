@@ -186,7 +186,7 @@ tx_sd4(interface *i,const char *name){
 			continue;
 		}
 		tlen += r;
-                thdr->tp_len = tlen;
+                thdr->tp_len = tlen - thdr->tp_mac;
                 ip->tot_len = htons(thdr->tp_len - ((const char *)ip - (const char *)frame));
 		ip->check = ipv4_csum(ip);
 		udp->len = htons(ntohs(ip->tot_len) - ip->ihl * 4u);
@@ -255,7 +255,7 @@ tx_sd6(interface *i,const char *name){
 			continue;
 		}
 		tlen += r;
-                thdr->tp_len = tlen;
+                thdr->tp_len = tlen - thdr->tp_mac;
                 ip->ip6_ctlun.ip6_un1.ip6_un1_plen = htons(thdr->tp_len -
                         ((const char *)udp - (const char *)frame));
 		udp->len = ip->ip6_ctlun.ip6_un1.ip6_un1_plen;
