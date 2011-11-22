@@ -259,7 +259,7 @@ print_host_services(WINDOW *w,const l3obj *l,int *line,int rows,int cols,
 
 static void
 print_iface_hosts(const interface *i,const iface_state *is,WINDOW *w,
-			int rows,int cols,int partial,int selectedidx){
+		int rows,int cols,unsigned topp,unsigned endp,int selectedidx){
 	const l2obj *l;
 	int l2idx,line;
 
@@ -267,8 +267,8 @@ print_iface_hosts(const interface *i,const iface_state *is,WINDOW *w,
 		return;
 	}
 	// If the interface is down, we don't lead with the summary line
-	if(partial <= -1){ // didn't print summary line due to space
-		line = partial + !!interface_up_p(i);
+	if(topp){ // didn't print summary line due to space
+		line = -topp + !!interface_up_p(i);
 	}else{
 		line = 1 + !!interface_up_p(i);
 	}
@@ -289,7 +289,7 @@ print_iface_hosts(const interface *i,const iface_state *is,WINDOW *w,
 		l3obj *l3;
 		
 		++l2idx;
-		if(line >= rows - (partial <= 0)){
+		if(line >= rows - !endp){
 			break;
 		}
 		switch(l->cat){
@@ -384,7 +384,7 @@ print_iface_hosts(const interface *i,const iface_state *is,WINDOW *w,
 						selectchar = L'⎩';
 					}
 				}
-				if(line >= rows - (partial <= 0)){
+				if(line >= rows - !endp){
 					break;
 				}
 				if(line >= 0){
@@ -423,7 +423,7 @@ print_iface_hosts(const interface *i,const iface_state *is,WINDOW *w,
 					if(selectchar != L' ' && !l3->next){
 						selectchar = L'⎩';
 					}
-					print_host_services(w,l3,&line,rows - (partial <= 0),cols,selectchar,attrs);
+					print_host_services(w,l3,&line,rows - !endp,cols,selectchar,attrs);
 				}
 			}
 		}
@@ -457,9 +457,11 @@ duplexstr(unsigned dplx){
 	return "";
 }
 
+// Abovetop: lines hidden at the top of the screen
+// Belowend: lines hidden at the bottom of the screen
 static void
 iface_box(const interface *i,const iface_state *is,WINDOW *w,int active,
-						int partial){
+				unsigned abovetop,unsigned belowend){
 	int bcolor,hcolor,rows,cols;
 	size_t buslen;
 	int attrs;
@@ -469,16 +471,22 @@ iface_box(const interface *i,const iface_state *is,WINDOW *w,int active,
 	hcolor = interface_up_p(i) ? UHEADING_COLOR : DHEADING_COLOR;
 	attrs = active ? A_REVERSE : A_BOLD;
 	assert(wattrset(w,attrs | COLOR_PAIR(bcolor)) == OK);
-	if(partial == 0){
-		assert(bevel(w) == OK);
-	}else if(partial < 0){
-		assert(bevel_notop(w) == OK);
+	if(abovetop == 0){
+		if(belowend == 0){
+			assert(bevel(w) == OK);
+		}else{
+			assert(bevel_nobottom(w) == OK);
+		}
 	}else{
-		assert(bevel_nobottom(w) == OK);
+		if(belowend == 0){
+			assert(bevel_notop(w) == OK);
+		}else{
+			assert(bevel_noborder(w) == OK);
+		}
 	}
 	assert(wattroff(w,A_REVERSE) == OK);
 
-	if(partial >= 0){
+	if(abovetop == 0){
 		if(active){
 			assert(wattron(w,A_BOLD) == OK);
 		}
@@ -514,7 +522,7 @@ iface_box(const interface *i,const iface_state *is,WINDOW *w,int active,
 		assert(wattron(w,attrs) != ERR);
 		assert(wattroff(w,A_REVERSE) != ERR);
 	}
-	if(partial <= 0){
+	if(belowend == 0){
 		assert(mvwprintw(w,rows - 1,2,"[") != ERR);
 		assert(wcolor_set(w,hcolor,NULL) != ERR);
 		if(active){
@@ -584,15 +592,13 @@ iface_box(const interface *i,const iface_state *is,WINDOW *w,int active,
 
 static void
 print_iface_state(const interface *i,const iface_state *is,WINDOW *w,
-				int rows,int cols,int partial){
+				int rows,int cols,unsigned topp){
 	char buf[U64STRLEN + 1],buf2[U64STRLEN + 1];
 	unsigned long usecdomain;
 	int targ;
 
-	if(rows < 2 || partial <= -1){
+	if(rows < 2 || topp){
 		return;
-	}else if(partial == -1){
-		targ = 0;
 	}else{
 		targ = 1;
 	}
@@ -620,9 +626,10 @@ void free_iface_state(iface_state *is){
 }
 
 int redraw_iface(const reelbox *rb,int active){
-	int rows,cols,partial,scrrows,scrcols;
 	const iface_state *is = rb->is;
 	const interface *i = is->iface;
+	int rows,cols,scrrows,scrcols;
+	unsigned topp,endp;
 
 	if(panel_hidden(rb->panel)){
 		return OK;
@@ -630,21 +637,22 @@ int redraw_iface(const reelbox *rb,int active){
 	getmaxyx(stdscr,scrrows,scrcols);
 	assert(rb->scrline >= 1);
 	if(iface_wholly_visible_p(scrrows,rb) || active){ // completely visible
-		partial = 0;
+		topp = endp = 0;
 	}else if(rb->scrline == 1){ // no top
-		partial = 1 + getmaxy(rb->subwin) - iface_lines_unbounded(is);
-		assert(partial <= 0);
+		topp = -(1 + getmaxy(rb->subwin) - iface_lines_unbounded(is));
+		endp = 0;
 	}else{
-		partial = 1; // no bottom
+		topp = 0;
+		endp = 1; // no bottom FIXME
 	}
 	getmaxyx(rb->subwin,rows,cols);
 	assert(cols < scrcols); // FIXME
 	assert(werase(rb->subwin) != ERR);
-	iface_box(i,is,rb->subwin,active,partial);
+	iface_box(i,is,rb->subwin,active,topp,endp);
 	if(interface_up_p(i)){
-		print_iface_state(i,is,rb->subwin,rows,cols,partial);
+		print_iface_state(i,is,rb->subwin,rows,cols,topp);
 	}
-	print_iface_hosts(i,is,rb->subwin,rows,cols,partial,rb->selected);
+	print_iface_hosts(i,is,rb->subwin,rows,cols,topp,endp,rb->selected);
 	return OK;
 }
 

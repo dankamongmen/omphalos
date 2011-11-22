@@ -58,6 +58,7 @@ screen_update(void){
 int bevel(WINDOW *);
 int bevel_notop(WINDOW *);
 int bevel_nobottom(WINDOW *);
+int bevel_noborder(WINDOW *);
 
 char *genprefix(uintmax_t,unsigned,char *,size_t,int,unsigned,int);
 
