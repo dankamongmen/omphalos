@@ -12,7 +12,11 @@ extern "C" {
 
 struct omphalos_packet;
 
-void handle_nd_packet(struct omphalos_packet *,const void *,size_t);
+void handle_nd_routersol(struct omphalos_packet *,const void *,size_t);
+void handle_nd_neighsol(struct omphalos_packet *,const void *,size_t);
+void handle_nd_routerad(struct omphalos_packet *,const void *,size_t);
+void handle_nd_neighad(struct omphalos_packet *,const void *,size_t);
+void handle_nd_redirect(struct omphalos_packet *,const void *,size_t);
 
 #ifdef __cplusplus
 }

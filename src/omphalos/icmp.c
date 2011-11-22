@@ -2,6 +2,7 @@
 #include <netinet/ip6.h>
 #include <omphalos/tx.h>
 #include <omphalos/ip.h>
+#include <omphalos/nd.h>
 #include <netinet/icmp6.h>
 #include <omphalos/csum.h>
 #include <omphalos/icmp.h>
@@ -23,14 +24,38 @@ void handle_icmp_packet(omphalos_packet *op,const void *frame,size_t len){
 }
 
 void handle_icmp6_packet(omphalos_packet *op,const void *frame,size_t len){
-	const struct icmphdr *icmp = frame;
+	const struct icmp6_hdr *icmp = frame;
+	const void *dframe;
+	size_t dlen;
 
 	if(len < sizeof(*icmp)){
 		diagnostic(L"%s malformed with %zu",__func__,len);
 		op->malformed = 1;
 		return;
 	}
-	// FIXME
+	dframe = (const char *)frame + sizeof(*icmp);
+	dlen = len - sizeof(*icmp);
+	switch(icmp->icmp6_type){
+		case ND_ROUTER_ADVERT:
+			handle_nd_routerad(op,dframe,dlen);
+			break;
+		case ND_NEIGHBOR_ADVERT:
+			handle_nd_neighad(op,dframe,dlen);
+			break;
+		case ND_ROUTER_SOLICIT:
+			handle_nd_routersol(op,dframe,dlen);
+			break;
+		case ND_NEIGHBOR_SOLICIT:
+			handle_nd_neighsol(op,dframe,dlen);
+			break;
+		case ND_REDIRECT:
+			handle_nd_redirect(op,dframe,dlen);
+			break;
+		default:
+			diagnostic(L"Unknown ICMPv6 type: %u",icmp->icmp6_type);
+			op->noproto = 1;
+			break;
+	}
 }
 
 // Always goes to ff02::2 (ALL-HOSTS), from each source address.

@@ -11,34 +11,53 @@
 #include <omphalos/ethernet.h>
 #include <omphalos/interface.h>
 
-static const unsigned char PROBESRC[16] = {};
-
-// Takes as input everything following the IPv6 header
-void handle_nd_packet(omphalos_packet *op,const void *frame,size_t len){
-	const struct icmp6_hdr *icmp;
+// Take as input everything following the ICMPv6 header
+void handle_nd_routersol(struct omphalos_packet *op,const void *frame __attribute__ ((unused)),size_t len){
 	const interface *i = op->i;
 
-	icmp = frame;
-	if(len < sizeof(*icmp)){
-		diagnostic(L"%s too short (%zu) on %s",__func__,len,i->name);
+	if(len){
+		diagnostic(L"%s trailing data (%zu) on %s",__func__,len,i->name);
 		op->malformed = 1;
 		return;
 	}
-	// FIXME this switch will need be moved into ICMPv6 handling, and this
-	// function broken up into several...
-	switch(icmp->icmp6_type){
-		case ND_ROUTER_ADVERT:
-			break;
-		case ND_NEIGHBOR_ADVERT:
-			break;
-		case ND_ROUTER_SOLICIT:
-			break;
-		case ND_NEIGHBOR_SOLICIT:
-			break;
-		case ND_REDIRECT:
-			break;
-		default:
-			diagnostic(L"Not a ND message type: %u",icmp->icmp6_type);
-			break;
+}
+
+void handle_nd_neighsol(struct omphalos_packet *op,const void *frame __attribute__ ((unused)),size_t len){
+	const interface *i = op->i;
+
+	if(len){
+		diagnostic(L"%s trailing data (%zu) on %s",__func__,len,i->name);
+		op->malformed = 1;
+		return;
+	}
+}
+
+void handle_nd_routerad(struct omphalos_packet *op,const void *frame __attribute__ ((unused)),size_t len){
+	const interface *i = op->i;
+
+	if(len){
+		diagnostic(L"%s trailing data (%zu) on %s",__func__,len,i->name);
+		op->malformed = 1;
+		return;
+	}
+}
+
+void handle_nd_neighad(struct omphalos_packet *op,const void *frame __attribute__ ((unused)),size_t len){
+	const interface *i = op->i;
+
+	if(len){
+		diagnostic(L"%s trailing data (%zu) on %s",__func__,len,i->name);
+		op->malformed = 1;
+		return;
+	}
+}
+
+void handle_nd_redirect(struct omphalos_packet *op,const void *frame __attribute__ ((unused)),size_t len){
+	const interface *i = op->i;
+
+	if(len){
+		diagnostic(L"%s trailing data (%zu) on %s",__func__,len,i->name);
+		op->malformed = 1;
+		return;
 	}
 }
