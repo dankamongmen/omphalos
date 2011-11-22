@@ -47,7 +47,7 @@ void handle_nd_routersol(struct omphalos_packet *op,const void *frame,size_t len
 				// FIXME do something?
 				break;
 			default:
-				diagnostic(L"%s unknown option (%u)",iop->type);
+				diagnostic(L"%s unknown option (%u)",__func__,iop->type);
 				op->noproto = 1;
 				return;
 		}
@@ -90,7 +90,7 @@ void handle_nd_neighsol(struct omphalos_packet *op,const void *frame __attribute
 				// FIXME do something?
 				break;
 			default:
-				diagnostic(L"%s unknown option (%u)",iop->type);
+				diagnostic(L"%s unknown option (%u)",__func__,iop->type);
 				op->noproto = 1;
 				return;
 		}
