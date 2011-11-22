@@ -17,6 +17,8 @@ typedef uint64_t hwaddrint;
 struct l2host *lookup_l2host(struct interface *,const void *)
 		__attribute__ ((nonnull (1,2)));
 
+void initialize_llnsgroups(struct interface *) __attribute__ ((nonnull (1)));
+
 void cleanup_l2hosts(struct l2host **) __attribute__ ((nonnull (1)));
 
 // Each byte becomes two ASCII characters + separator or nul

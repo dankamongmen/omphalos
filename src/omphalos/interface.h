@@ -132,6 +132,8 @@ typedef struct interface {
 	uint128_t ip6defsrc;	// default ipv6 source FIXME
 
 	struct l2host *l2hosts;
+	struct l2host *llnsgroups;	// link-local neighbor solicitation
+					//  groups, all combined in one node
 	struct l3host *ip4hosts,*ip6hosts,*cells;
 
 	void *opaque;		// opaque callback state
