@@ -1,3 +1,4 @@
+#include <ctype.h>
 #include <assert.h>
 #include <linux/ip.h>
 #include <linux/udp.h>
@@ -120,18 +121,23 @@ setup_service_probe(char *frame,size_t len,const char *name){
 	dat = frame + sizeof(*dns);
 	comp = name;
 	d = dat;
-	while( (c = strchr(comp,'.')) ){
-		*d = c - comp;
-		strncpy(d + 1,comp,c - comp);
-		d += (c - comp) + 1;
-		comp = c + 1;
+	if(isprint(*comp)){
+		while( (c = strchr(comp,'.')) ){
+			*d = c - comp;
+			strncpy(d + 1,comp,c - comp);
+			d += (c - comp) + 1;
+			comp = c + 1;
+		}
+		*d = strlen(comp);
+		strcpy(d + 1,comp);
+		d += strlen(comp) + 2;
+	}else{ // already prepared for dns
+		strcpy(d,comp);
+		d += strlen(comp) + 1;
 	}
-	*d = strlen(comp);
-	strcpy(d + 1,comp);
-	d += strlen(comp) + 2;
 	*(uint16_t *)(d) = DNS_TYPE_PTR;
 	*(uint16_t *)(d + 2) = DNS_CLASS_IN;
-	return sizeof(*dns) + strlen(name) + 6;
+	return sizeof(*dns) + (d - dat) + 4;
 }
 
 static int
@@ -297,13 +303,20 @@ int mdns_sd_probe(int fam,interface *i,const char *name){
 	return -1;
 }
 
+#define TCP(x) x"\x04_tcp\x05local"
+#define UDP(x) x"\x04_udp\x05local"
+static const char *stdsds[] = {
+	TCP("\x0b_afpovertcp"),
+	UDP("\x0c_sleep-proxy"),
+	NULL
+};
+#undef UDP
+#undef TCP
+
 // This ought be more of an async launch thing -- it adds too much latency and
 // is too bursty at the moment FIXME
 int mdns_stdsd_probe(int fam,interface *i){
-	const char *stdsds[] = {
-		"_sleep-proxy._udp.local",
-		NULL
-	},**sd;
+	const char **sd;
 	int ret = 0;
 
 	for(sd = stdsds ; *sd ; ++sd){
