@@ -5,6 +5,8 @@
 extern "C" {
 #endif
 
+#include <wchar.h>
+
 struct l4srv;
 struct l3host;
 struct l2host;

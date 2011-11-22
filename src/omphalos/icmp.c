@@ -3,6 +3,7 @@
 #include <omphalos/tx.h>
 #include <omphalos/ip.h>
 #include <omphalos/nd.h>
+#include <omphalos/mld.h>
 #include <netinet/icmp6.h>
 #include <omphalos/csum.h>
 #include <omphalos/icmp.h>
@@ -11,6 +12,8 @@
 #include <omphalos/omphalos.h>
 #include <omphalos/ethernet.h>
 #include <omphalos/interface.h>
+
+#define ICMPV6_MLD2_REPORT	143
 
 #define COMMON_ICMPV4_LEN 4
 void handle_icmp_packet(omphalos_packet *op,const void *frame,size_t len){
@@ -113,6 +116,9 @@ void handle_icmp6_packet(omphalos_packet *op,const void *frame,size_t len){
 			break;
 		case ND_REDIRECT:
 			handle_nd_redirect(op,dframe,dlen);
+			break;
+		case ICMPV6_MLD2_REPORT:
+			handle_mld_packet(op,dframe,dlen);
 			break;
 		default:
 			diagnostic(L"Unknown ICMPv6 type: %u",icmp->icmp6_type);
