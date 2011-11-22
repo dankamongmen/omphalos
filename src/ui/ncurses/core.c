@@ -1311,21 +1311,23 @@ static int
 env_details(WINDOW *hw,int rows){
 	const int col = START_COL;
 	const int row = 1;
-	int z;
+	int z,srows,scols;
 
+	getmaxyx(stdscr,srows,scols);
 	if((z = rows) >= ENVROWS){
 		z = ENVROWS - 1;
 	}
 	switch(z){ // Intentional fallthroughs all the way to 0
 	case (ENVROWS - 1):{
-		assert(mvwprintw(hw,row + z,col,"colors: "U64FMT"palette: %s",
-				COLORS,modified_colors ? "dynamic" : "fixed") != ERR);
+		assert(mvwprintw(hw,row + z,col,"colors: "U64FMT"rows: "U32FMT"cols: "U32FMT"palette: %s",
+				COLORS,srows,scols,modified_colors ? "dynamic" : "fixed") != ERR);
 		--z;
 	}case 0:{
 		const char *lang = getenv("LANG");
+		const char *term = getenv("TERM");
 
 		lang = lang ? lang : "Undefined";
-		assert(mvwprintw(hw,row + z,col,"LANG: %s",lang) != ERR);
+		assert(mvwprintw(hw,row + z,col,"LANG: %-21s TERM: %s",lang,term) != ERR);
 		--z;
 		break;
 	}default:{
