@@ -162,17 +162,27 @@ make_oui(const wchar_t *broadcast){
 // Load IANA OUI descriptions from the specified file, and watch it for updates
 int init_iana_naming(const char *fn){
 	ouitrie *path,*p;
+	wchar_t *w;
 
 	if(((p = make_oui(NULL)) == NULL)){
 		return -1;
 	}
 	if((path = make_oui(L"RFC 2464 IPv6 multicast")) == NULL){
-		free(p);
+		free_ouitries(&p);
 		return -1;
 	}
-	trie[51u] = p;
-	p->next[51u] = path;
+	if((w = wcsdup(L"RFC 2462 IPv6 link-local solicitation")) == NULL){
+		free_ouitries(&p);
+		free_ouitries(&path);
+		return -1;
+
+	}
+	free(path->next[0xff]);
+	path->next[0xff] = w;
+	trie[0x33] = p;
+	p->next[0x33] = path;
 	if(watch_file(fn,parse_file)){
+		free_ouitries(trie);
 		return -1;
 	}
 	return 0;
