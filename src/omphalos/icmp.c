@@ -23,18 +23,23 @@ void handle_icmp_packet(omphalos_packet *op,const void *frame,size_t len){
 	// FIXME
 }
 
+// The icmp_hdr structure includes the second 32-bit word from the header,
+// though this is different among different ICMPv6 types. Pass it along.
+#define COMMON_ICMPV6_LEN 4
 void handle_icmp6_packet(omphalos_packet *op,const void *frame,size_t len){
 	const struct icmp6_hdr *icmp = frame;
 	const void *dframe;
 	size_t dlen;
 
+	// Check length for the mandatory minimum ICMPv6 size...
 	if(len < sizeof(*icmp)){
 		diagnostic(L"%s malformed with %zu",__func__,len);
 		op->malformed = 1;
 		return;
 	}
-	dframe = (const char *)frame + sizeof(*icmp);
-	dlen = len - sizeof(*icmp);
+	// ...but only skip COMMON_ICMPV6_LEN.
+	dframe = (const char *)frame + COMMON_ICMPV6_LEN;
+	dlen = len - COMMON_ICMPV6_LEN;
 	switch(icmp->icmp6_type){
 		case ND_ROUTER_ADVERT:
 			handle_nd_routerad(op,dframe,dlen);
@@ -57,6 +62,7 @@ void handle_icmp6_packet(omphalos_packet *op,const void *frame,size_t len){
 			break;
 	}
 }
+#undef COMMON_ICMPV6_LEN
 
 // Always goes to ff02::2 (ALL-HOSTS), from each source address.
 static int
