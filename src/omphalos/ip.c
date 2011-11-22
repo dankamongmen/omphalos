@@ -55,17 +55,15 @@ void handle_ipv6_packet(const omphalos_iface *octx,omphalos_packet *op,
 		diagnostic(L"%s malformed with %zu != %u on %s",__func__,len,plen,op->i->name);
 		return;
 	}
-	// FIXME check extension headers...
 	memcpy(op->l3saddr,&ip->ip6_src,16);
 	memcpy(op->l3daddr,&ip->ip6_dst,16);
 	op->l3s = lookup_l3host(op->i,op->l2s,AF_INET6,&ip->ip6_src);
 	op->l3d = lookup_l3host(op->i,op->l2d,AF_INET6,&ip->ip6_dst);
-	const void *nhdr = (const unsigned char *)frame + (len - plen);
+	const void *nhdr = (const char *)frame + (len - plen);
 	next = ip->ip6_ctlun.ip6_un1.ip6_un1_nxt;
-
 	// FIXME don't call down if we're fragmented
 	while(nhdr){
-		switch(next){
+	switch(next){ // "upper-level" protocols end the packet
 		case IPPROTO_TCP:{
 			handle_tcp_packet(op,nhdr,plen);
 			nhdr = NULL;
@@ -88,19 +86,16 @@ void handle_ipv6_packet(const omphalos_iface *octx,omphalos_packet *op,
 			handle_pim_packet(op,nhdr,plen);
 			nhdr = NULL;
 		break; }case IPPROTO_HOPOPTS:{
-			const struct ip6hbh {
-				uint8_t nexthdr;
-				uint8_t hdrlen;
-				// FIXME header data follows
-			} *hbh = nhdr;
-			if(plen < sizeof(*hbh) || plen < hbh->hdrlen){
+			const struct ip6_ext *opt = nhdr;
+
+			if(plen < sizeof(*opt) || plen < (opt->ip6e_len + 1) * 8){
 				op->malformed = 1;
 				diagnostic(L"%s malformed with len %zu on %s",__func__,plen,op->i->name);
 				return;
 			}
-			plen -= hbh->hdrlen;
-			nhdr = (const unsigned char *)nhdr + hbh->hdrlen;
-			next = hbh->nexthdr;
+			plen -= (opt->ip6e_len + 1) * 8;
+			nhdr = (const char *)nhdr + (opt->ip6e_len + 1) * 8;
+			next = opt->ip6e_nxt;
 		break; }default:{
 			op->noproto = 1;
 			diagnostic(L"%s %s noproto for %u",__func__,
