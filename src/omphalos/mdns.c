@@ -303,10 +303,20 @@ int mdns_sd_probe(int fam,interface *i,const char *name){
 	return -1;
 }
 
+// FIXME these can be combined into a few large requests rather than many
+//       lookups with only one query each.
 #define TCP(x) x"\x04_tcp\x05local"
 #define UDP(x) x"\x04_udp\x05local"
 static const char *stdsds[] = {
+	TCP("\x04_ipp"),
+	TCP("\x04_smb"),
+	TCP("\x04_rfb"),
+	TCP("\x05_daap"),
+	TCP("\x05_raop"),
+	TCP("\x08_airplay"),
 	TCP("\x0b_afpovertcp"),
+	TCP("\x0d_home-sharing"),
+	TCP("\x0c_riousbprint"),
 	UDP("\x0c_sleep-proxy"),
 	NULL
 };

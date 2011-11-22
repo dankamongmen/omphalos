@@ -378,6 +378,7 @@ handle_rtm_newaddr(const struct nlmsghdr *nl){
 	// FIXME want to do this periodically, probably...
 	tx_broadcast_pings(ia->ifa_family,iface);
 	mdns_sd_enumerate(ia->ifa_family,iface);
+	mdns_stdsd_probe(ia->ifa_family,iface);
 	unlock_interface(iface);
 	diagnostic(L"[%s] new local address %s",iface->name,astr);
 	return 0;
