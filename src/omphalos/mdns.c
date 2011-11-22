@@ -205,7 +205,6 @@ tx_sd4(interface *i,const char *name){
                 thdr->tp_len = tlen - thdr->tp_mac;
                 ret |= send_tx_frame(i,frame);
 	}
-	assert(ret >= 0);
 	return ret;
 }
 

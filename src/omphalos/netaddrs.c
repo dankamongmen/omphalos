@@ -100,10 +100,13 @@ create_l3host(int fam,const void *addr,size_t len){
 	l3host *r;
 
 	assert(len <= sizeof(r->addr));
-	if( (r = malloc(sizeof(*r))) ){
+	if( (r = Malloc(sizeof(*r))) ){
 		struct globalhosts *gh;
+		int ret;
 
-		if(pthread_mutex_init(&r->nlock,NULL)){
+		if( (ret = pthread_mutex_init(&r->nlock,NULL)) ){
+			diagnostic(L"%s couldn't initialize mutex (%s?)",
+					__func__,strerror(ret));
 			free(r);
 			return NULL;
 		}
@@ -136,7 +139,7 @@ void name_l3host_absolute(const interface *i,
 
 	if((wlen = mbstowcs(NULL,name,0)) == (size_t)-1){
 		diagnostic(L"Couldn't normalize [%s]",name);
-	}else if( (wname = malloc((wlen + 1) * sizeof(*wname))) ){
+	}else if( (wname = Malloc((wlen + 1) * sizeof(*wname))) ){
 		size_t r;
 
 		r = mbstowcs(wname,name,wlen + 1);
@@ -402,7 +405,7 @@ char *l3addrstr(const struct l3host *l3){
 	const size_t len = INET6_ADDRSTRLEN + 1;
 	char *buf;
 
-	if( (buf = malloc(len)) ){
+	if( (buf = Malloc(len)) ){
 		assert(l3ntop(l3,buf,len) == 0);
 	}
 	return buf;
@@ -412,7 +415,7 @@ char *netaddrstr(int fam,const void *addr){
 	const size_t len = INET6_ADDRSTRLEN + 1;
 	char *buf;
 
-	if( (buf = malloc(len)) ){
+	if( (buf = Malloc(len)) ){
 		if(inet_ntop(fam,addr,buf,len) != buf){
 			free(buf);
 			buf = NULL;
