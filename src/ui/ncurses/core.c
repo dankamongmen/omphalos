@@ -1472,6 +1472,7 @@ err:
 
 void use_next_node_locked(void){
 	reelbox *rb;
+	int delta;
 
 	if((rb = current_iface) == NULL){
 		return;
@@ -1479,7 +1480,12 @@ void use_next_node_locked(void){
 	if(rb->selected == NULL || l2obj_next(rb->selected) == NULL){
 		return;
 	}
-	select_interface_node(rb,l2obj_next(rb->selected),l2obj_lines(rb->selected));
+	delta = l2obj_lines(rb->selected);
+	if(rb->selline + l2obj_lines(rb->selected) > getmaxy(rb->subwin)){
+		delta = (getmaxy(rb->subwin) - l2obj_lines(l2obj_next(rb->selected)))
+			 - rb->selline;
+	}
+	select_interface_node(rb,l2obj_next(rb->selected),delta);
 }
 
 void use_prev_node_locked(void){
