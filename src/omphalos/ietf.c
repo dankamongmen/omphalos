@@ -102,6 +102,12 @@ static const struct {
 		.name = L"All segment hosts (RFC 2375)",
 		.octets = 16,
 	},
+	{ // ff02::1:ff:0
+		.ip = { __constant_htonl(0xff020000), __constant_htonl(0x00000000),
+			__constant_htonl(0x00000001), __constant_htonl(0xff000000), },
+		.name = L"LL neighbor solicitation (RFC 4861)",
+		.octets = 13,
+	},
 	{ // ff02::2
 		.ip = { __constant_htonl(0xff020000), __constant_htonl(0x00000000),
 			__constant_htonl(0x00000000), __constant_htonl(0x00000002), },

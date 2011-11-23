@@ -171,7 +171,7 @@ int init_iana_naming(const char *fn){
 		free_ouitries(&p);
 		return -1;
 	}
-	if((w = wcsdup(L"RFC 2462 IPv6 link-local solicitation")) == NULL){
+	if((w = wcsdup(L"RFC 4862 IPv6 link-local solicitation")) == NULL){
 		free_ouitries(&p);
 		free_ouitries(&path);
 		return -1;
