@@ -235,7 +235,7 @@ l4obj *add_service_to_iface(iface_state *is,struct l2obj *l2,struct l3obj *l3,
 
 static void
 print_host_services(WINDOW *w,const l3obj *l,int *line,int rows,int cols,
-				wchar_t selectchar,int attrs){
+				wchar_t selectchar,int attrs,int minline){
 	const struct l4obj *l4;
 	const wchar_t *srv;
 	int n;
@@ -243,7 +243,7 @@ print_host_services(WINDOW *w,const l3obj *l,int *line,int rows,int cols,
 	if(*line >= rows){
 		return;
 	}
-	if(*line < 0){
+	if(*line < minline){
 		*line += !!l->l4objs;
 		return;
 	}
@@ -281,7 +281,7 @@ print_host_services(WINDOW *w,const l3obj *l,int *line,int rows,int cols,
 static void
 print_iface_host(const interface *i,const iface_state *is,WINDOW *w,
 		const l2obj *l,int line,int rows,int cols,int selected,
-		unsigned endp){
+		int minline,unsigned endp){
 	char hw[HWADDRSTRLEN(i->addrlen)];
 	int attrs,l3attrs,rattrs,sattrs;
 	const wchar_t *devname;
@@ -354,7 +354,7 @@ print_iface_host(const interface *i,const iface_state *is,WINDOW *w,
 		rattrs = (rattrs & A_BOLD) | COLOR_PAIR(DBORDER_COLOR);
 	}
 	assert(wattrset(w,attrs) != ERR);
-	if(line >= 0){
+	if(line >= minline){
 		l2ntop(l->l2,i->addrlen,hw);
 		if(devname){
 			int len = cols - PREFIXSTRLEN * 2 - 6 - HWADDRSTRLEN(i->addrlen);
@@ -394,7 +394,7 @@ print_iface_host(const interface *i,const iface_state *is,WINDOW *w,
 			if(line >= rows - !endp){
 				break;
 			}
-			if(line >= 0){
+			if(line >= minline){
 				int len,wlen;
 
 				assert(wattrset(w,l3attrs) != ERR);
@@ -430,7 +430,7 @@ print_iface_host(const interface *i,const iface_state *is,WINDOW *w,
 				if(selectchar != L' ' && !l3->next){
 					selectchar = L'⎩';
 				}
-				print_host_services(w,l3,&line,rows - !endp,cols,selectchar,attrs);
+				print_host_services(w,l3,&line,rows - !endp,cols,selectchar,attrs,minline);
 			}
 		}
 	}
@@ -452,9 +452,9 @@ print_iface_hosts(const interface *i,const iface_state *is,const reelbox *rb,
 	// First, print the selected interface (if there is one)
 	cur = rb->selected;
 	line = rb->selline + sumline;
-	while(cur && line + (long)cur->lines >= 0l){
+	while(cur && line + (long)cur->lines >= !!topp + sumline){
 		print_iface_host(i,is,w,cur,line,rows,cols,
-				cur == rb->selected,endp);
+				cur == rb->selected,!topp + sumline,endp);
 		// here we traverse, then account...
 		if( (cur = cur->prev) ){
 			line -= cur->lines;
@@ -465,7 +465,7 @@ print_iface_hosts(const interface *i,const iface_state *is,const reelbox *rb,
 	line += sumline;
 	cur = (rb->selected ? rb->selected->next : is->l2objs);
 	while(cur && line < rows){
-		print_iface_host(i,is,w,cur,line,rows,cols,0,endp);
+		print_iface_host(i,is,w,cur,line,rows,cols,0,0,endp);
 		// here, we account before we traverse. this is correct.
 		line += cur->lines;
 		cur = cur->next;
@@ -634,7 +634,7 @@ iface_box(const interface *i,const iface_state *is,WINDOW *w,int active,
 
 static void
 print_iface_state(const interface *i,const iface_state *is,WINDOW *w,
-				int rows,int cols,unsigned topp,int selline){
+				int rows,int cols,unsigned topp){
 	char buf[U64STRLEN + 1],buf2[U64STRLEN + 1];
 	unsigned long usecdomain;
 
@@ -646,8 +646,8 @@ print_iface_state(const interface *i,const iface_state *is,WINDOW *w,
 	// into one FTD stat by letting it take an object...
 	// FIXME this leads to a "ramp-up" period where we approach steady state
 	usecdomain = i->bps.usec * i->bps.total;
-	assert(mvwprintw(w,1,1,"%u line%s. Last %lus: %7sb/s (%sp)",
-		selline/*is->nodes*/,is->nodes == 1 ? "" : "s",
+	assert(mvwprintw(w,1,1,"%u node%s. Last %lus: %7sb/s (%sp)",
+		is->nodes,is->nodes == 1 ? "" : "s",
 		usecdomain / 1000000,
 		prefix(timestat_val(&i->bps) * CHAR_BIT * 1000000 * 100 / usecdomain,100,buf,sizeof(buf),0),
 		prefix(timestat_val(&i->fps),1,buf2,sizeof(buf2),1)) != ERR);
@@ -688,7 +688,7 @@ int redraw_iface(const reelbox *rb,int active){
 	assert(werase(rb->subwin) != ERR);
 	iface_box(i,is,rb->subwin,active,topp,endp);
 	if(interface_up_p(i)){
-		print_iface_state(i,is,rb->subwin,rows,cols,topp,rb->selline);
+		print_iface_state(i,is,rb->subwin,rows,cols,topp);
 	}
 	print_iface_hosts(i,is,rb,rb->subwin,rows,cols,topp,endp);
 	return OK;
