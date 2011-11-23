@@ -77,13 +77,13 @@ iface_state *create_interface_state(interface *i){
 }
 
 static l2obj *
-get_l2obj(const interface *i,struct l2host *l2){
+get_l2obj(const interface *i,const iface_state *is,struct l2host *l2){
 	l2obj *l;
 
 	if( (l = malloc(sizeof(*l))) ){
+		l->lines = is->expansion > EXPANSION_NONE ? 1 : 0;
 		l->cat = l2categorize(i,l2);
 		l->l3objs = NULL;
-		l->lines = 1;
 		l->l2 = l2;
 	}
 	return l;
@@ -161,7 +161,7 @@ l2catcmp(int c0,int c1){
 l2obj *add_l2_to_iface(const interface *i,iface_state *is,struct l2host *l2h){
 	l2obj *l2;
 
-	if( (l2 = get_l2obj(i,l2h)) ){
+	if( (l2 = get_l2obj(i,is,l2h)) ){
 		if(++is->nodes == 1){
 			is->l2objs = l2;
 			l2->next = l2->prev = NULL;
@@ -196,7 +196,9 @@ l3obj *add_l3_to_iface(iface_state *is,l2obj *l2,struct l3host *l3h){
 	if( (l3 = get_l3obj(l3h)) ){
 		l3->next = l2->l3objs;
 		l2->l3objs = l3;
-		++l2->lines;
+		if(is->expansion >= EXPANSION_HOSTS){
+			++l2->lines;
+		}
 		++is->hosts;
 	}
 	return l3;
@@ -211,7 +213,9 @@ l4obj *add_service_to_iface(iface_state *is,struct l2obj *l2,struct l3obj *l3,
 
 		if(*prev == NULL){
 			++is->srvs;
-			++l2->lines;
+			if(is->expansion >= EXPANSION_SERVICES){
+				++l2->lines;
+			}
 		}else do{
 			struct l4srv *c = (*prev)->l4;
 
@@ -789,16 +793,46 @@ int iface_wholly_visible_p(int rows,const reelbox *rb){
 	return 1;
 }
 
+static int
+node_lines(int e,const l2obj *l){
+	const l3obj *l3;
+	int lines;
+
+	if(e == EXPANSION_NONE){
+		return 0;
+	}
+	lines = 1;
+	if(e > EXPANSION_NODES){
+		for(l3 = l->l3objs ; l3 ; l3 = l3->next){
+			++lines;
+			if(e > EXPANSION_HOSTS){
+				lines += !!l3->l4objs;
+			}
+		}
+	}
+	return lines;
+}
+
 void expand_interface(iface_state *is){
+	l2obj *l;
+
 	if(is->expansion == EXPANSION_MAX){
 		return;
 	}
 	++is->expansion;
+	for(l = is->l2objs ; l ; l = l->next){
+		l->lines = node_lines(is->expansion,l);
+	}
 }
 
 void collapse_interface(iface_state *is){
+	l2obj *l;
+
 	if(is->expansion == 0){
 		return;
 	}
 	--is->expansion;
+	for(l = is->l2objs ; l ; l = l->next){
+		l->lines = node_lines(is->expansion,l);
+	}
 }
