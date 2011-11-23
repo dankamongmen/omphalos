@@ -873,7 +873,7 @@ struct l4obj *service_callback_locked(const struct interface *i,struct l2host *l
 		return NULL;
 	}
 	if((ret = l4host_get_opaque(l4)) == NULL){
-		if((ret = add_service_to_iface(is,l3o,l4)) == NULL){
+		if((ret = add_service_to_iface(is,l2o,l3o,l4)) == NULL){
 			return NULL;
 		}
 	}

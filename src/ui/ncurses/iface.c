@@ -202,7 +202,8 @@ l3obj *add_l3_to_iface(iface_state *is,l2obj *l2,struct l3host *l3h){
 	return l3;
 }
 
-l4obj *add_service_to_iface(iface_state *is,struct l3obj *l3,struct l4srv *srv){
+l4obj *add_service_to_iface(iface_state *is,struct l2obj *l2,struct l3obj *l3,
+						struct l4srv *srv){
 	l4obj *l4;
 
 	if( (l4 = get_l4obj(srv)) ){
@@ -227,6 +228,9 @@ l4obj *add_service_to_iface(iface_state *is,struct l3obj *l3,struct l4srv *srv){
 		}while( *(prev = &(*prev)->next) );
 		l4->next = *prev;
 		*prev = l4;
+	}
+	if(l4){
+		++l2->lines;
 	}
 	return l4;
 }
