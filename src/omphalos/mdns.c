@@ -313,9 +313,11 @@ static const char *stdsds[] = {
 	TCP("\x05_daap"),
 	TCP("\x05_raop"),
 	TCP("\x08_airplay"),
+	TCP("\x08_scanner"),
 	TCP("\x0b_afpovertcp"),
-	TCP("\x0d_home-sharing"),
 	TCP("\x0c_riousbprint"),
+	TCP("\x0d_home-sharing"),
+	TCP("\x0f_pdl-datastream"),
 	UDP("\x0c_sleep-proxy"),
 	NULL
 };
