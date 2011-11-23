@@ -35,8 +35,8 @@ create_reelbox(iface_state *is,int rows,int scrline,int cols){
 	if( (ret = malloc(sizeof(*ret))) ){
 		assert( (ret->subwin = newwin(lines,PAD_COLS(cols),scrline,START_COL)) );
 		assert( (ret->panel = new_panel(ret->subwin)) );
+		ret->selline = ret->selected = -1;
 		ret->scrline = scrline;
-		ret->selected = -1;
 		ret->is = is;
 		is->rb = ret;
 	}

@@ -52,15 +52,15 @@ struct omphalos_packet;
 // Get a reelbox's dimensions by calling getmaxyx() on its subwin member. These
 // are the dimensions on the real screen, not the desirable dimensions on an
 // infinitely large screen.
-//
-// Split interfaces will require a second panel/window. FIXME
 typedef struct reelbox {
-	int scrline;
+	int scrline;			// FIXME eliminate this; use getbegy()
 	WINDOW *subwin;			// subwin
 	PANEL *panel;			// panel
 	struct reelbox *next,*prev;	// circular list
 	iface_state *is;		// backing interface state
 	int selected;			// selected subentry
+	int selline;			// line within iface window that starts
+					//  the selection (when selected >= 0)
 } reelbox;
 
 // FIXME we ought precreate the subwindows, and show/hide them rather than
