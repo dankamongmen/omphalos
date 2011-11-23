@@ -35,8 +35,8 @@ create_reelbox(iface_state *is,int rows,int scrline,int cols){
 	if( (ret = malloc(sizeof(*ret))) ){
 		assert( (ret->subwin = newwin(lines,PAD_COLS(cols),scrline,START_COL)) );
 		assert( (ret->panel = new_panel(ret->subwin)) );
-		ret->selline = ret->selected = -1;
 		ret->scrline = scrline;
+		ret->selected = NULL;
 		ret->is = is;
 		is->rb = ret;
 	}
@@ -1276,9 +1276,9 @@ void check_consistency(void){
 }
 
 static int
-select_interface_node(reelbox *rb,int nidx){
-	assert(nidx != rb->selected);
-	rb->selected = nidx;
+select_interface_node(reelbox *rb,struct l2obj *l2){
+	assert(l2 != rb->selected);
+	rb->selected = l2;
 	return redraw_iface(rb,1);
 }
 
@@ -1288,10 +1288,10 @@ int select_iface_locked(void){
 	if((rb = current_iface) == NULL){
 		return 0;
 	}
-	if(rb->selected >= 0){
+	if(rb->selected){
 		return 0;
 	}
-	return select_interface_node(rb,0);
+	return select_interface_node(rb,rb->is->l2objs);
 }
 
 int deselect_iface_locked(void){
@@ -1300,10 +1300,10 @@ int deselect_iface_locked(void){
 	if((rb = current_iface) == NULL){
 		return 0;
 	}
-	if(rb->selected < 0){
+	if(rb->selected == NULL){
 		return 0;
 	}
-	return select_interface_node(rb,-1);
+	return select_interface_node(rb,NULL);
 }
 
 #define ENVROWS 2 // FIXME
@@ -1467,10 +1467,10 @@ void use_next_node_locked(void){
 	if((rb = current_iface) == NULL){
 		return;
 	}
-	if(rb->selected < 0 || rb->selected == rb->is->nodes - 1){
+	if(rb->selected == NULL || l2obj_next(rb->selected) == NULL){
 		return;
 	}
-	select_interface_node(rb,rb->selected + 1);
+	select_interface_node(rb,l2obj_next(rb->selected));
 }
 
 void use_prev_node_locked(void){
@@ -1479,8 +1479,8 @@ void use_prev_node_locked(void){
 	if((rb = current_iface) == NULL){
 		return;
 	}
-	if(rb->selected <= 0){
+	if(rb->selected == NULL || l2obj_prev(rb->selected) == NULL){
 		return;
 	}
-	select_interface_node(rb,rb->selected - 1);
+	select_interface_node(rb,l2obj_prev(rb->selected));
 }

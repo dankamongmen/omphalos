@@ -11,6 +11,7 @@ extern "C" {
 #include <ncursesw/ncurses.h>
 #include <ui/ncurses/iface.h>
 
+struct l2obj;
 struct l2host;
 struct l3host;
 struct reelbox;
@@ -58,9 +59,7 @@ typedef struct reelbox {
 	PANEL *panel;			// panel
 	struct reelbox *next,*prev;	// circular list
 	iface_state *is;		// backing interface state
-	int selected;			// selected subentry
-	int selline;			// line within iface window that starts
-					//  the selection (when selected >= 0)
+	struct l2obj *selected;		// selected subentry
 } reelbox;
 
 // FIXME we ought precreate the subwindows, and show/hide them rather than

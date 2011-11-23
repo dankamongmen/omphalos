@@ -28,11 +28,19 @@ typedef struct l3obj {
 } l3obj;
 
 typedef struct l2obj {
-	struct l2obj *next;
+	struct l2obj *next,*prev;
 	struct l2host *l2;
 	int cat;			// cached result of l2categorize()
 	struct l3obj *l3objs;
 } l2obj;
+
+struct l2obj *l2obj_next(struct l2obj *l2){
+	return l2->next;
+}
+
+struct l2obj *l2obj_prev(struct l2obj *l2){
+	return l2->prev;
+}
 
 enum {
 	EXPANSION_NONE,
@@ -146,28 +154,31 @@ l2catcmp(int c0,int c1){
 
 l2obj *add_l2_to_iface(const interface *i,iface_state *is,struct l2host *l2h){
 	l2obj *l2;
-	int idx;
 
 	if( (l2 = get_l2obj(i,l2h)) ){
-		l2obj **prev;
+		if(++is->nodes == 1){
+			is->l2objs = l2;
+			l2->next = l2->prev = NULL;
+		}else{
+			l2obj **prev,*prec;
 
-		++is->nodes;
-		idx = 0;
-		for(prev = &is->l2objs ; *prev ; prev = &(*prev)->next){
-			// we want the inverse of l2catcmp()'s priorities
-			if(l2catcmp(l2->cat,(*prev)->cat) > 0){
-				break;
-			}else if(l2catcmp(l2->cat,(*prev)->cat) == 0){
-				if(l2hostcmp(l2->l2,(*prev)->l2,i->addrlen) <= 0){
+			for(prec = NULL, prev = &is->l2objs ; *prev ; prec = *prev, prev = &(*prev)->next){
+				// we want the inverse of l2catcmp()'s priorities
+				if(l2catcmp(l2->cat,(*prev)->cat) > 0){
 					break;
+				}else if(l2catcmp(l2->cat,(*prev)->cat) == 0){
+					if(l2hostcmp(l2->l2,(*prev)->l2,i->addrlen) <= 0){
+						break;
+					}
 				}
 			}
-			++idx;
-		}
-		l2->next = *prev;
-		*prev = l2;
-		if(is->rb && idx < is->rb->selected){
-			++is->rb->selected;
+			if( (l2->next = *prev) ){
+				l2->prev = (*prev)->prev;
+				(*prev)->prev = l2;
+			}else{
+				l2->prev = prec;
+			}
+			*prev = l2;
 		}
 	}
 	return l2;
@@ -259,7 +270,8 @@ print_host_services(WINDOW *w,const l3obj *l,int *line,int rows,int cols,
 
 static void
 print_iface_hosts(const interface *i,const iface_state *is,WINDOW *w,
-		int rows,int cols,unsigned topp,unsigned endp,int selectedidx){
+		int rows,int cols,unsigned topp,unsigned endp,
+		const struct l2obj *selected){
 	const l2obj *l;
 	int l2idx,line;
 
@@ -332,7 +344,7 @@ print_iface_hosts(const interface *i,const iface_state *is,WINDOW *w,
 				assert(0 && "Unknown l2 category");
 				break;
 		}
-		if(l2idx == selectedidx){
+		if(l == selected){
 			attrs = sattrs;
 			l3attrs = sattrs;
 			rattrs = sattrs;
