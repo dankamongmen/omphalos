@@ -595,24 +595,21 @@ print_iface_state(const interface *i,const iface_state *is,WINDOW *w,
 				int rows,int cols,unsigned topp){
 	char buf[U64STRLEN + 1],buf2[U64STRLEN + 1];
 	unsigned long usecdomain;
-	int targ;
 
 	if(rows < 2 || topp){
 		return;
-	}else{
-		targ = 1;
 	}
 	assert(wattrset(w,A_BOLD | COLOR_PAIR(IFACE_COLOR)) != ERR);
 	// FIXME broken if bps domain ever != fps domain. need unite those
 	// into one FTD stat by letting it take an object...
 	// FIXME this leads to a "ramp-up" period where we approach steady state
 	usecdomain = i->bps.usec * i->bps.total;
-	assert(mvwprintw(w,targ,1,"%u node%s. Last %lus: %7sb/s (%sp)",
+	assert(mvwprintw(w,1,1,"%u node%s. Last %lus: %7sb/s (%sp)",
 		is->nodes,is->nodes == 1 ? "" : "s",
 		usecdomain / 1000000,
 		prefix(timestat_val(&i->bps) * CHAR_BIT * 1000000 * 100 / usecdomain,100,buf,sizeof(buf),0),
 		prefix(timestat_val(&i->fps),1,buf2,sizeof(buf2),1)) != ERR);
-	assert(mvwprintw(w,targ,cols - PREFIXSTRLEN * 2 - 5,"Total: Src     Dst") != ERR);
+	assert(mvwprintw(w,1,cols - PREFIXSTRLEN * 2 - 5,"Total: Src     Dst") != ERR);
 }
 
 void free_iface_state(iface_state *is){
@@ -635,10 +632,9 @@ int redraw_iface(const reelbox *rb,int active){
 		return OK;
 	}
 	getmaxyx(stdscr,scrrows,scrcols);
-	assert(rb->scrline >= 1);
 	if(iface_wholly_visible_p(scrrows,rb) || active){ // completely visible
 		topp = endp = 0;
-	}else if(rb->scrline == 1){ // no top
+	}else if(getbegy(rb->subwin) == 1){ // no top
 		topp = -(1 + getmaxy(rb->subwin) - iface_lines_unbounded(is));
 		endp = 0;
 	}else{
@@ -660,7 +656,7 @@ int redraw_iface(const reelbox *rb,int active){
 // up, positive delta moves down. rows and cols describe the containing window.
 void move_interface(reelbox *rb,int rows,int cols,int delta,int active){
 	const iface_state *is;
-	int nlines,rr,targ;
+	int nlines,rr;
        
 	is = rb->is;
 	//fprintf(stderr,"  moving %s (%d) from %d to %d (%d)\n",is->iface->name,
@@ -686,7 +682,6 @@ void move_interface(reelbox *rb,int rows,int cols,int delta,int active){
 			assert(hide_panel(rb->panel) != ERR);
 			return;
 		}
-		targ = rb->scrline;
 		nlines = rows - rb->scrline - 1; // sans-bottom partial
 	}else{
 		if((rr + getbegy(rb->subwin)) <= -delta){
@@ -694,11 +689,9 @@ void move_interface(reelbox *rb,int rows,int cols,int delta,int active){
 			return;
 		}
 		if(rb->scrline < 1){
-			targ = 1;
 			nlines = rr + (rb->scrline - 1);
 			rb->scrline = 1;
 		}else{
-			targ = rb->scrline;
 			nlines = iface_lines_bounded(is,rows - rb->scrline + 1);
 		}
 	}
@@ -706,13 +699,13 @@ void move_interface(reelbox *rb,int rows,int cols,int delta,int active){
 		assert(hide_panel(rb->panel) != ERR);
 		return;
 	}else if(nlines > rr){
-		assert(move_panel(rb->panel,targ,1) == OK);
+		assert(move_panel(rb->panel,rb->scrline,1) == OK);
 		assert(wresize(rb->subwin,nlines,PAD_COLS(cols)) == OK);
 	}else if(nlines < rr){
 		assert(wresize(rb->subwin,nlines,PAD_COLS(cols)) == OK);
-		assert(move_panel(rb->panel,targ,1) == OK);
+		assert(move_panel(rb->panel,rb->scrline,1) == OK);
 	}else{
-		assert(move_panel(rb->panel,targ,1) == OK);
+		assert(move_panel(rb->panel,rb->scrline,1) == OK);
 	}
 	assert(redraw_iface(rb,active) == OK);
 	assert(show_panel(rb->panel) == OK);
