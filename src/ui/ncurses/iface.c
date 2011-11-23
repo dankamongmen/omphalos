@@ -277,177 +277,198 @@ print_host_services(WINDOW *w,const l3obj *l,int *line,int rows,int cols,
 	}
 }
 
+// line: line on which this node starts, within the WINDOW w of {rows x cols}
 static void
-print_iface_hosts(const interface *i,const iface_state *is,WINDOW *w,
-		int rows,int cols,unsigned topp,unsigned endp,
-		const struct l2obj *selected){
-	const l2obj *l;
-	int l2idx,line;
+print_iface_host(const interface *i,const iface_state *is,WINDOW *w,
+		const l2obj *l,int line,int rows,int cols,int selected,
+		unsigned endp){
+	char hw[HWADDRSTRLEN(i->addrlen)];
+	int attrs,l3attrs,rattrs,sattrs;
+	const wchar_t *devname;
+	wchar_t selectchar;
+	char legend;
+	l3obj *l3;
 
-	if(is->expansion < EXPANSION_NODES){
-		return;
-	}
-	// If the interface is down, we don't lead with the summary line
-	if(topp){ // didn't print summary line due to space
-		line = -topp + !!interface_up_p(i);
-	}else{
-		line = 1 + !!interface_up_p(i);
-	}
-	l2idx = -1;
 	// lines_for_interface() counts up nodes, hosts, and up to one line of
 	// services per host. if we're a partial, we won't be displaying the
 	// first or last (or both) lines of this output. each line that *would*
 	// be printed increases 'line'. don't print if line doesn't make up for
 	// the degree of top-partialness (line >= 0), but continue. break once
 	// line is greater than the last available line, since we won't print
-	// anymore. l2idx is the current node index, needed for selection.
-	for(l = is->l2objs ; l ; l = l->next){
-		char hw[HWADDRSTRLEN(i->addrlen)];
-		int attrs,l3attrs,rattrs,sattrs;
-		const wchar_t *devname;
-		wchar_t selectchar;
-		char legend;
-		l3obj *l3;
-		
-		++l2idx;
-		if(line >= rows - !endp){
+	// anymore.
+	if(line >= rows - !endp){
+		return;
+	}
+	switch(l->cat){
+		case RTN_UNICAST:
+			attrs = COLOR_PAIR(UCAST_COLOR);
+			l3attrs = COLOR_PAIR(UCAST_L3_COLOR);
+			rattrs = COLOR_PAIR(UCAST_RES_COLOR);
+			sattrs = COLOR_PAIR(USELECTED_COLOR);
+			devname = get_devname(l->l2);
+			legend = 'U';
 			break;
-		}
-		switch(l->cat){
-			case RTN_UNICAST:
-				attrs = COLOR_PAIR(UCAST_COLOR);
-				l3attrs = COLOR_PAIR(UCAST_L3_COLOR);
-				rattrs = COLOR_PAIR(UCAST_RES_COLOR);
-				sattrs = COLOR_PAIR(USELECTED_COLOR);
-				devname = get_devname(l->l2);
-				legend = 'U';
-				break;
-			case RTN_LOCAL:
-				attrs = COLOR_PAIR(LCAST_COLOR) | OUR_BOLD;
-				l3attrs = COLOR_PAIR(LCAST_L3_COLOR) | OUR_BOLD;
-				rattrs = COLOR_PAIR(LCAST_RES_COLOR) | OUR_BOLD;
-				sattrs = COLOR_PAIR(LSELECTED_COLOR);
-				if(interface_virtual_p(i) ||
-					(devname = get_devname(l->l2)) == NULL){
-					devname = i->topinfo.devname;
-				}
-				legend = 'L';
-				break;
-			case RTN_MULTICAST:
-				attrs = COLOR_PAIR(MCAST_COLOR);
-				l3attrs = COLOR_PAIR(MCAST_L3_COLOR);
-				rattrs = COLOR_PAIR(MCAST_RES_COLOR);
-				sattrs = COLOR_PAIR(MSELECTED_COLOR);
-				devname = get_devname(l->l2);
-				legend = 'M';
-				break;
-			case RTN_BROADCAST:
-				attrs = COLOR_PAIR(BCAST_COLOR);
-				l3attrs = COLOR_PAIR(BCAST_L3_COLOR);
-				rattrs = COLOR_PAIR(BCAST_RES_COLOR);
-				sattrs = COLOR_PAIR(BSELECTED_COLOR);
-				devname = get_devname(l->l2);
-				legend = 'B';
-				break;
-			default:
-				assert(0 && "Unknown l2 category");
-				break;
-		}
-		if(l == selected){
-			attrs = sattrs;
-			l3attrs = sattrs;
-			rattrs = sattrs;
-			selectchar = l->l3objs && is->expansion >= EXPANSION_HOSTS
-					? L'⎧' : L'⎨';
+		case RTN_LOCAL:
+			attrs = COLOR_PAIR(LCAST_COLOR) | OUR_BOLD;
+			l3attrs = COLOR_PAIR(LCAST_L3_COLOR) | OUR_BOLD;
+			rattrs = COLOR_PAIR(LCAST_RES_COLOR) | OUR_BOLD;
+			sattrs = COLOR_PAIR(LSELECTED_COLOR);
+			if(interface_virtual_p(i) ||
+				(devname = get_devname(l->l2)) == NULL){
+				devname = i->topinfo.devname;
+			}
+			legend = 'L';
+			break;
+		case RTN_MULTICAST:
+			attrs = COLOR_PAIR(MCAST_COLOR);
+			l3attrs = COLOR_PAIR(MCAST_L3_COLOR);
+			rattrs = COLOR_PAIR(MCAST_RES_COLOR);
+			sattrs = COLOR_PAIR(MSELECTED_COLOR);
+			devname = get_devname(l->l2);
+			legend = 'M';
+			break;
+		case RTN_BROADCAST:
+			attrs = COLOR_PAIR(BCAST_COLOR);
+			l3attrs = COLOR_PAIR(BCAST_L3_COLOR);
+			rattrs = COLOR_PAIR(BCAST_RES_COLOR);
+			sattrs = COLOR_PAIR(BSELECTED_COLOR);
+			devname = get_devname(l->l2);
+			legend = 'B';
+			break;
+		default:
+			assert(0 && "Unknown l2 category");
+			break;
+	}
+	if(selected){
+		attrs = sattrs;
+		l3attrs = sattrs;
+		rattrs = sattrs;
+		selectchar = l->l3objs && is->expansion >= EXPANSION_HOSTS
+				? L'⎧' : L'⎨';
+	}else{
+		selectchar = L' ';
+	}
+	if(!interface_up_p(i)){
+		attrs = (attrs & A_BOLD) | COLOR_PAIR(DBORDER_COLOR);
+		l3attrs = (l3attrs & A_BOLD) | COLOR_PAIR(DBORDER_COLOR);
+		rattrs = (rattrs & A_BOLD) | COLOR_PAIR(DBORDER_COLOR);
+	}
+	assert(wattrset(w,attrs) != ERR);
+	if(line >= 0){
+		l2ntop(l->l2,i->addrlen,hw);
+		if(devname){
+			int len = cols - PREFIXSTRLEN * 2 - 6 - HWADDRSTRLEN(i->addrlen);
+			assert(mvwprintw(w,line,1,"%lc%c %s %-*.*ls",
+				selectchar,legend,hw,len,len,devname) != ERR);
 		}else{
-			selectchar = L' ';
+			int len = cols - PREFIXSTRLEN * 2 - 6;
+			assert(mvwprintw(w,line,1,"%lc%c %-*.*s",
+				selectchar,legend,len,len,hw) != ERR);
 		}
-		if(!interface_up_p(i)){
-			attrs = (attrs & A_BOLD) | COLOR_PAIR(DBORDER_COLOR);
-			l3attrs = (l3attrs & A_BOLD) | COLOR_PAIR(DBORDER_COLOR);
-			rattrs = (rattrs & A_BOLD) | COLOR_PAIR(DBORDER_COLOR);
-		}
-		assert(wattrset(w,attrs) != ERR);
-		if(line >= 0){
-			l2ntop(l->l2,i->addrlen,hw);
-			if(devname){
-				int len = cols - PREFIXSTRLEN * 2 - 6 - HWADDRSTRLEN(i->addrlen);
-				assert(mvwprintw(w,line,1,"%lc%c %s %-*.*ls",
-					selectchar,legend,hw,len,len,devname) != ERR);
+		if(interface_up_p(i)){
+			char sbuf[PREFIXSTRLEN + 1],dbuf[PREFIXSTRLEN + 1];
+			if(get_srcpkts(l->l2) == 0 && (l->cat == RTN_MULTICAST || l->cat == RTN_BROADCAST)){
+				wprintw(w,"%-*.*s"PREFIXFMT,PREFIXSTRLEN + 1,PREFIXSTRLEN + 1,
+						"",prefix(get_dstpkts(l->l2),1,dbuf,sizeof(dbuf),1));
 			}else{
-				int len = cols - PREFIXSTRLEN * 2 - 6;
-				assert(mvwprintw(w,line,1,"%lc%c %-*.*s",
-					selectchar,legend,len,len,hw) != ERR);
+				wprintw(w,PREFIXFMT" "PREFIXFMT,prefix(get_srcpkts(l->l2),1,sbuf,sizeof(sbuf),1),
+						prefix(get_dstpkts(l->l2),1,dbuf,sizeof(dbuf),1));
 			}
-			if(interface_up_p(i)){
-				char sbuf[PREFIXSTRLEN + 1],dbuf[PREFIXSTRLEN + 1];
-				if(get_srcpkts(l->l2) == 0 && (l->cat == RTN_MULTICAST || l->cat == RTN_BROADCAST)){
-					wprintw(w,"%-*.*s"PREFIXFMT,PREFIXSTRLEN + 1,PREFIXSTRLEN + 1,
-							"",prefix(get_dstpkts(l->l2),1,dbuf,sizeof(dbuf),1));
+		}else{
+			// FIXME print to end of line for selection
+		}
+	}
+	++line;
+	if(is->expansion >= EXPANSION_HOSTS){
+		for(l3 = l->l3objs ; l3 ; l3 = l3->next){
+			char nw[INET6_ADDRSTRLEN + 1]; // FIXME
+			const wchar_t *name;
+
+			if(selectchar != L' '){
+				if(l3->next || (l3->l4objs && is->expansion >= EXPANSION_SERVICES)){
+					selectchar = L'⎪';
 				}else{
-					wprintw(w,PREFIXFMT" "PREFIXFMT,prefix(get_srcpkts(l->l2),1,sbuf,sizeof(sbuf),1),
-							prefix(get_dstpkts(l->l2),1,dbuf,sizeof(dbuf),1));
+					selectchar = L'⎩';
 				}
-			}else{
-				// FIXME print to end of line for selection
 			}
-		}
-		++line;
-		if(is->expansion >= EXPANSION_HOSTS){
-			for(l3 = l->l3objs ; l3 ; l3 = l3->next){
-				char nw[INET6_ADDRSTRLEN + 1]; // FIXME
-				const wchar_t *name;
+			if(line >= rows - !endp){
+				break;
+			}
+			if(line >= 0){
+				int len,wlen;
 
-				if(selectchar != L' '){
-					if(l3->next || (l3->l4objs && is->expansion >= EXPANSION_SERVICES)){
-						selectchar = L'⎪';
+				assert(wattrset(w,l3attrs) != ERR);
+				l3ntop(l3->l3,nw,sizeof(nw));
+				if((name = get_l3name(l3->l3)) == NULL){
+					name = L"";
+				}
+				assert(mvwprintw(w,line,1,"%lc   %s ",
+					selectchar,nw) != ERR);
+				assert(wattrset(w,rattrs) != ERR);
+				len = cols - PREFIXSTRLEN * 2 - 8 - strlen(nw);
+				wlen = len - wcswidth(name,wcslen(name));
+				if(wlen < 0){
+					wlen = 0;
+				}
+				assert(wprintw(w,"%.*ls%*.*s",len,name,wlen,wlen,"") != ERR);
+				assert(wattrset(w,l3attrs) != ERR);
+				{
+					char sbuf[PREFIXSTRLEN + 1];
+					char dbuf[PREFIXSTRLEN + 1];
+					if(l3_get_srcpkt(l3->l3) == 0 && (l->cat == RTN_MULTICAST || l->cat == RTN_BROADCAST)){
+						wprintw(w,"%-*.*s"PREFIXFMT,PREFIXSTRLEN + 1,PREFIXSTRLEN + 1,
+								"",prefix(l3_get_dstpkt(l3->l3),1,dbuf,sizeof(dbuf),1));
 					}else{
-						selectchar = L'⎩';
+						wprintw(w,PREFIXFMT" "PREFIXFMT,
+								prefix(l3_get_srcpkt(l3->l3),1,sbuf,sizeof(sbuf),1),
+								prefix(l3_get_dstpkt(l3->l3),1,dbuf,sizeof(dbuf),1));
 					}
-				}
-				if(line >= rows - !endp){
-					break;
-				}
-				if(line >= 0){
-					int len,wlen;
-
-					assert(wattrset(w,l3attrs) != ERR);
-					l3ntop(l3->l3,nw,sizeof(nw));
-					if((name = get_l3name(l3->l3)) == NULL){
-						name = L"";
-					}
-					assert(mvwprintw(w,line,1,"%lc   %s ",
-						selectchar,nw) != ERR);
-					assert(wattrset(w,rattrs) != ERR);
-					len = cols - PREFIXSTRLEN * 2 - 8 - strlen(nw);
-					wlen = len - wcswidth(name,wcslen(name));
-					if(wlen < 0){
-						wlen = 0;
-					}
-					assert(wprintw(w,"%.*ls%*.*s",len,name,wlen,wlen,"") != ERR);
-					assert(wattrset(w,l3attrs) != ERR);
-					{
-						char sbuf[PREFIXSTRLEN + 1];
-						char dbuf[PREFIXSTRLEN + 1];
-						if(l3_get_srcpkt(l3->l3) == 0 && (l->cat == RTN_MULTICAST || l->cat == RTN_BROADCAST)){
-							wprintw(w,"%-*.*s"PREFIXFMT,PREFIXSTRLEN + 1,PREFIXSTRLEN + 1,
-									"",prefix(l3_get_dstpkt(l3->l3),1,dbuf,sizeof(dbuf),1));
-						}else{
-							wprintw(w,PREFIXFMT" "PREFIXFMT,
-									prefix(l3_get_srcpkt(l3->l3),1,sbuf,sizeof(sbuf),1),
-									prefix(l3_get_dstpkt(l3->l3),1,dbuf,sizeof(dbuf),1));
-						}
-					}
-				}
-				++line;
-				if(is->expansion >= EXPANSION_SERVICES){
-					if(selectchar != L' ' && !l3->next){
-						selectchar = L'⎩';
-					}
-					print_host_services(w,l3,&line,rows - !endp,cols,selectchar,attrs);
 				}
 			}
+			++line;
+			if(is->expansion >= EXPANSION_SERVICES){
+				if(selectchar != L' ' && !l3->next){
+					selectchar = L'⎩';
+				}
+				print_host_services(w,l3,&line,rows - !endp,cols,selectchar,attrs);
+			}
 		}
+	}
+}
+
+// FIXME all these casts! :/ appalling
+static void
+print_iface_hosts(const interface *i,const iface_state *is,const reelbox *rb,
+					WINDOW *w,int rows,int cols,
+					unsigned topp,unsigned endp){
+	// If the interface is down, we don't lead with the summary line
+	const int sumline = !!interface_up_p(i);
+	const struct l2obj *cur;
+	long line;
+
+	if(is->expansion < EXPANSION_NODES){
+		return;
+	}
+	// First, print the selected interface (if there is one)
+	cur = rb->selected;
+	line = rb->selline + sumline;
+	while(cur && line + (long)cur->lines >= 0l){
+		print_iface_host(i,is,w,cur,line,rows,cols,
+				cur == rb->selected,endp);
+		// here we traverse, then account...
+		if( (cur = cur->prev) ){
+			line -= cur->lines;
+		}
+	}
+	line = rb->selected ? (rb->selline + (long)rb->selected->lines) :
+		topp ? -(long)topp : 1;
+	line += sumline;
+	cur = (rb->selected ? rb->selected->next : is->l2objs);
+	while(cur && line < rows){
+		print_iface_host(i,is,w,cur,line,rows,cols,0,endp);
+		// here, we account before we traverse. this is correct.
+		line += cur->lines;
+		cur = cur->next;
 	}
 }
 
@@ -613,7 +634,7 @@ iface_box(const interface *i,const iface_state *is,WINDOW *w,int active,
 
 static void
 print_iface_state(const interface *i,const iface_state *is,WINDOW *w,
-				int rows,int cols,unsigned topp){
+				int rows,int cols,unsigned topp,int selline){
 	char buf[U64STRLEN + 1],buf2[U64STRLEN + 1];
 	unsigned long usecdomain;
 
@@ -625,8 +646,8 @@ print_iface_state(const interface *i,const iface_state *is,WINDOW *w,
 	// into one FTD stat by letting it take an object...
 	// FIXME this leads to a "ramp-up" period where we approach steady state
 	usecdomain = i->bps.usec * i->bps.total;
-	assert(mvwprintw(w,1,1,"%u node%s. Last %lus: %7sb/s (%sp)",
-		is->nodes,is->nodes == 1 ? "" : "s",
+	assert(mvwprintw(w,1,1,"%u line%s. Last %lus: %7sb/s (%sp)",
+		selline/*is->nodes*/,is->nodes == 1 ? "" : "s",
 		usecdomain / 1000000,
 		prefix(timestat_val(&i->bps) * CHAR_BIT * 1000000 * 100 / usecdomain,100,buf,sizeof(buf),0),
 		prefix(timestat_val(&i->fps),1,buf2,sizeof(buf2),1)) != ERR);
@@ -667,9 +688,9 @@ int redraw_iface(const reelbox *rb,int active){
 	assert(werase(rb->subwin) != ERR);
 	iface_box(i,is,rb->subwin,active,topp,endp);
 	if(interface_up_p(i)){
-		print_iface_state(i,is,rb->subwin,rows,cols,topp);
+		print_iface_state(i,is,rb->subwin,rows,cols,topp,rb->selline);
 	}
-	print_iface_hosts(i,is,rb->subwin,rows,cols,topp,endp,rb->selected);
+	print_iface_hosts(i,is,rb,rb->subwin,rows,cols,topp,endp);
 	return OK;
 }
 

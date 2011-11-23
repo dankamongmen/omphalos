@@ -1300,7 +1300,7 @@ int select_iface_locked(void){
 		return 0;
 	}
 	assert(rb->selline == -1);
-	return select_interface_node(rb,rb->is->l2objs,1);
+	return select_interface_node(rb,rb->is->l2objs,2);
 }
 
 int deselect_iface_locked(void){
@@ -1491,5 +1491,6 @@ void use_prev_node_locked(void){
 	if(rb->selected == NULL || l2obj_prev(rb->selected) == NULL){
 		return;
 	}
-	select_interface_node(rb,l2obj_prev(rb->selected),-l2obj_lines(rb->selected));
+	select_interface_node(rb,l2obj_prev(rb->selected),
+		-l2obj_lines(l2obj_prev(rb->selected)));
 }
