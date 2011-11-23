@@ -211,6 +211,7 @@ l4obj *add_service_to_iface(iface_state *is,struct l2obj *l2,struct l3obj *l3,
 
 		if(*prev == NULL){
 			++is->srvs;
+			++l2->lines;
 		}else do{
 			struct l4srv *c = (*prev)->l4;
 
@@ -228,9 +229,6 @@ l4obj *add_service_to_iface(iface_state *is,struct l2obj *l2,struct l3obj *l3,
 		}while( *(prev = &(*prev)->next) );
 		l4->next = *prev;
 		*prev = l4;
-	}
-	if(l4){
-		++l2->lines;
 	}
 	return l4;
 }
