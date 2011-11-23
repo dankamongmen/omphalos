@@ -311,6 +311,7 @@ static const char *stdsds[] = {
 	TCP("\x04_smb"),
 	TCP("\x04_rfb"),
 	TCP("\x05_daap"),
+	TCP("\x05_http"),
 	TCP("\x05_raop"),
 	TCP("\x08_airplay"),
 	TCP("\x08_scanner"),
