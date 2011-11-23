@@ -813,26 +813,33 @@ node_lines(int e,const l2obj *l){
 	return lines;
 }
 
-void expand_interface(iface_state *is){
+static void
+recompute_selection(iface_state *is){
+	int newsel = 0;
 	l2obj *l;
 
+	for(l = is->l2objs ; l ; l = l->next){
+		l->lines = node_lines(is->expansion,l);
+		if(l != is->rb->selected){
+			newsel += l->lines;
+		}else{
+			is->rb->selline = newsel;
+		}
+	}
+}
+
+void expand_interface(iface_state *is){
 	if(is->expansion == EXPANSION_MAX){
 		return;
 	}
 	++is->expansion;
-	for(l = is->l2objs ; l ; l = l->next){
-		l->lines = node_lines(is->expansion,l);
-	}
+	recompute_selection(is);
 }
 
 void collapse_interface(iface_state *is){
-	l2obj *l;
-
 	if(is->expansion == 0){
 		return;
 	}
 	--is->expansion;
-	for(l = is->l2objs ; l ; l = l->next){
-		l->lines = node_lines(is->expansion,l);
-	}
+	recompute_selection(is);
 }
