@@ -30,16 +30,21 @@ typedef struct l3obj {
 typedef struct l2obj {
 	struct l2obj *next,*prev;
 	struct l2host *l2;
+	unsigned lines;			// number of lines node would take up
 	int cat;			// cached result of l2categorize()
 	struct l3obj *l3objs;
 } l2obj;
 
-struct l2obj *l2obj_next(struct l2obj *l2){
+l2obj *l2obj_next(l2obj *l2){
 	return l2->next;
 }
 
-struct l2obj *l2obj_prev(struct l2obj *l2){
+l2obj *l2obj_prev(l2obj *l2){
 	return l2->prev;
+}
+
+int l2obj_lines(const l2obj *l2){
+	return l2->lines;
 }
 
 enum {
@@ -78,6 +83,7 @@ get_l2obj(const interface *i,struct l2host *l2){
 	if( (l = malloc(sizeof(*l))) ){
 		l->cat = l2categorize(i,l2);
 		l->l3objs = NULL;
+		l->lines = 1;
 		l->l2 = l2;
 	}
 	return l;

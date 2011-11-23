@@ -60,6 +60,8 @@ typedef struct reelbox {
 	struct reelbox *next,*prev;	// circular list
 	iface_state *is;		// backing interface state
 	struct l2obj *selected;		// selected subentry
+	int selline;			// line where the selection starts
+					//  within the subwindow (if != NULL)
 } reelbox;
 
 // FIXME we ought precreate the subwindows, and show/hide them rather than

@@ -37,6 +37,7 @@ create_reelbox(iface_state *is,int rows,int scrline,int cols){
 		assert( (ret->panel = new_panel(ret->subwin)) );
 		ret->scrline = scrline;
 		ret->selected = NULL;
+		ret->selline = -1;
 		ret->is = is;
 		is->rb = ret;
 	}
@@ -1275,10 +1276,17 @@ void check_consistency(void){
 	//fprintf(stderr,"CONSISTENT\n");
 }
 
+// Positive delta moves down, negative delta moves up, except for l2 == NULL
+// where we always move to -1 (and delta is ignored).
 static int
-select_interface_node(reelbox *rb,struct l2obj *l2){
+select_interface_node(reelbox *rb,struct l2obj *l2,int delta){
 	assert(l2 != rb->selected);
-	rb->selected = l2;
+	if((rb->selected = l2) == NULL){
+		rb->selline = -1;
+	}else{
+		assert(delta);
+		rb->selline += delta;
+	}
 	return redraw_iface(rb,1);
 }
 
@@ -1291,7 +1299,8 @@ int select_iface_locked(void){
 	if(rb->selected){
 		return 0;
 	}
-	return select_interface_node(rb,rb->is->l2objs);
+	assert(rb->selline == -1);
+	return select_interface_node(rb,rb->is->l2objs,1);
 }
 
 int deselect_iface_locked(void){
@@ -1303,7 +1312,7 @@ int deselect_iface_locked(void){
 	if(rb->selected == NULL){
 		return 0;
 	}
-	return select_interface_node(rb,NULL);
+	return select_interface_node(rb,NULL,0);
 }
 
 #define ENVROWS 2 // FIXME
@@ -1470,7 +1479,7 @@ void use_next_node_locked(void){
 	if(rb->selected == NULL || l2obj_next(rb->selected) == NULL){
 		return;
 	}
-	select_interface_node(rb,l2obj_next(rb->selected));
+	select_interface_node(rb,l2obj_next(rb->selected),l2obj_lines(rb->selected));
 }
 
 void use_prev_node_locked(void){
@@ -1482,5 +1491,5 @@ void use_prev_node_locked(void){
 	if(rb->selected == NULL || l2obj_prev(rb->selected) == NULL){
 		return;
 	}
-	select_interface_node(rb,l2obj_prev(rb->selected));
+	select_interface_node(rb,l2obj_prev(rb->selected),-l2obj_lines(rb->selected));
 }
