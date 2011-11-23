@@ -50,23 +50,6 @@ create_l2host(interface *i,const void *hwaddr){
 	return l2;
 }
 
-void initialize_llnsgroups(interface *i){
-	l2host *l2;
-
-	assert(i->addrlen == ETH_ALEN);
-	l2 = create_l2host(i,"\xff\xff\xcc\x0\x0\x0");
-	assert(l2);
-	i->llnsgroups = l2;
-}
-
-static inline int
-linklocal_node_solicitation(const interface *i,const void *hwaddr){
-	if(i->llnsgroups){
-		return !memcmp(hwaddr,&i->llnsgroups->hwaddr,3);
-	}
-	return 0;
-}
-
 // FIXME strictly proof-of-concept. we'll want a trie- or hash-based
 // lookup, backed by an arena-allocated LRU, etc...
 l2host *lookup_l2host(interface *i,const void *hwaddr){
@@ -75,9 +58,6 @@ l2host *lookup_l2host(interface *i,const void *hwaddr){
 	hwaddrint hwcmp;
 
 	hwcmp = 0;
-	if(linklocal_node_solicitation(i,hwaddr)){
-		return i->llnsgroups;
-	}
 	memcpy(&hwcmp,hwaddr,i->addrlen);
 	for(prev = &i->l2hosts ; (l2 = *prev) ; prev = &l2->next){
 		if(l2->hwaddr == hwcmp){
