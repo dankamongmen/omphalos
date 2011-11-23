@@ -18,6 +18,7 @@ typedef uint32_t uint128_t __attribute__ ((vector_size(16)))
 #define ZERO128 0*/
 
 int equal128(uint128_t,uint128_t);
+int equal128masked(uint128_t,uint128_t,unsigned);
 
 #ifdef __cplusplus
 }
