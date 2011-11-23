@@ -1480,7 +1480,7 @@ void use_next_node_locked(void){
 		return;
 	}
 	delta = l2obj_lines(rb->selected);
-	if(rb->selline + delta + l2obj_lines(l2obj_next(rb->selected)) >= getmaxy(rb->subwin)){
+	if(rb->selline + delta + l2obj_lines(l2obj_next(rb->selected)) >= getmaxy(rb->subwin) - 1){
 		delta = (getmaxy(rb->subwin) - 2 - l2obj_lines(l2obj_next(rb->selected)))
 			 - rb->selline;
 	}
