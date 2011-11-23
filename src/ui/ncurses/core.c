@@ -1284,7 +1284,6 @@ select_interface_node(reelbox *rb,struct l2obj *l2,int delta){
 	if((rb->selected = l2) == NULL){
 		rb->selline = -1;
 	}else{
-		assert(delta);
 		rb->selline += delta;
 	}
 	return redraw_iface(rb,1);
@@ -1481,8 +1480,8 @@ void use_next_node_locked(void){
 		return;
 	}
 	delta = l2obj_lines(rb->selected);
-	if(rb->selline + l2obj_lines(rb->selected) > getmaxy(rb->subwin)){
-		delta = (getmaxy(rb->subwin) - l2obj_lines(l2obj_next(rb->selected)))
+	if(rb->selline + delta + l2obj_lines(l2obj_next(rb->selected)) >= getmaxy(rb->subwin)){
+		delta = (getmaxy(rb->subwin) - 2 - l2obj_lines(l2obj_next(rb->selected)))
 			 - rb->selline;
 	}
 	select_interface_node(rb,l2obj_next(rb->selected),delta);
