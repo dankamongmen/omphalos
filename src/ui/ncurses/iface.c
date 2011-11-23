@@ -196,6 +196,7 @@ l3obj *add_l3_to_iface(iface_state *is,l2obj *l2,struct l3host *l3h){
 	if( (l3 = get_l3obj(l3h)) ){
 		l3->next = l2->l3objs;
 		l2->l3objs = l3;
+		++l2->lines;
 		++is->hosts;
 	}
 	return l3;
