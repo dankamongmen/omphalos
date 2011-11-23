@@ -94,36 +94,43 @@ ietf_multicast_ipv4(const uint32_t *ip){
 static const struct {
 	uint128_t ip;
 	const wchar_t *name;
+	unsigned octets;
 } ip6mcasts[] = {
 	{ // ff02::1
 		.ip = { __constant_htonl(0xff020000), __constant_htonl(0x00000000),
 			__constant_htonl(0x00000000), __constant_htonl(0x00000001), },
 		.name = L"All segment hosts (RFC 2375)",
+		.octets = 16,
 	},
 	{ // ff02::2
 		.ip = { __constant_htonl(0xff020000), __constant_htonl(0x00000000),
 			__constant_htonl(0x00000000), __constant_htonl(0x00000002), },
 		.name = L"All segment routers (RFC 2375)",
+		.octets = 16,
 	},
 	{ // ff02::16
 		.ip = { __constant_htonl(0xff020000), __constant_htonl(0x00000000),
 			__constant_htonl(0x00000000), __constant_htonl(0x00000016), },
 		.name = L"MLDv2 (RFC 4604)",
+		.octets = 16,
 	},
 	{ // ff02::fb
 		.ip = { __constant_htonl(0xff020000), __constant_htonl(0x00000000),
 			__constant_htonl(0x00000000), __constant_htonl(0x000000fb), },
 		.name = L"mDNS (IANA)",
+		.octets = 16,
 	},
 	{ // ff02::1:3
 		.ip = { __constant_htonl(0xff020000), __constant_htonl(0x00000000),
 			__constant_htonl(0x00000000), __constant_htonl(0x00010003), },
 		.name = L"LLMNR (RFC 4795)",
+		.octets = 16,
 	},
 	{ // ff05::2
 		.ip = { __constant_htonl(0xff050000), __constant_htonl(0x00000000),
 			__constant_htonl(0x00000000), __constant_htonl(0x00000002), },
 		.name = L"All site routers (RFC 2375)",
+		.octets = 16,
 	},
 	{ .name = NULL, }
 };
@@ -137,7 +144,7 @@ ietf_multicast_ipv6(const uint32_t *ip){
 		return NULL;
 	}
 	for(mcast = ip6mcasts ; (*mcast).name ; ++mcast){
-		if(equal128(alignedip,(*mcast).ip)){
+		if(equal128masked(alignedip,(*mcast).ip,(*mcast).octets)){
 			return (*mcast).name;
 		}
 	}
