@@ -1489,6 +1489,7 @@ void use_next_node_locked(void){
 
 void use_prev_node_locked(void){
 	reelbox *rb;
+	int delta;
 
 	if((rb = current_iface) == NULL){
 		return;
@@ -1496,6 +1497,9 @@ void use_prev_node_locked(void){
 	if(rb->selected == NULL || l2obj_prev(rb->selected) == NULL){
 		return;
 	}
-	select_interface_node(rb,l2obj_prev(rb->selected),
-		-l2obj_lines(l2obj_prev(rb->selected)));
+	delta = -l2obj_lines(l2obj_prev(rb->selected));
+	if(rb->selline + delta <= !!interface_up_p(rb->is->iface)){
+		delta = !!interface_up_p(rb->is->iface) - rb->selline;
+	}
+	select_interface_node(rb,l2obj_prev(rb->selected),delta);
 }
