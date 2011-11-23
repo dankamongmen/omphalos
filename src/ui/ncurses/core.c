@@ -99,7 +99,8 @@ redraw_iface_generic(const reelbox *rb){
 
 static inline void
 move_interface_generic(reelbox *rb,int rows,int cols,int delta){
-	move_interface(rb,rows,cols,delta,rb == current_iface);
+	move_interface(rb,rb->scrline,rows,cols,delta,rb == current_iface);
+	rb->scrline = getbegy(rb->subwin);
 }
 
 static int

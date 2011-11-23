@@ -654,19 +654,19 @@ int redraw_iface(const reelbox *rb,int active){
 
 // Move this interface, possibly hiding it. Negative delta indicates movement
 // up, positive delta moves down. rows and cols describe the containing window.
-void move_interface(reelbox *rb,int rows,int cols,int delta,int active){
+void move_interface(reelbox *rb,int targ,int rows,int cols,int delta,int active){
 	const iface_state *is;
 	int nlines,rr;
        
 	is = rb->is;
 	//fprintf(stderr,"  moving %s (%d) from %d to %d (%d)\n",is->iface->name,
-	//		iface_lines_bounded(is,rows),getbegy(rb->subwin),rb->scrline,delta);
+	//		iface_lines_bounded(is,rows),getbegy(rb->subwin),targ,delta);
 	assert(rb->is);
 	assert(rb->is->rb == rb);
 	assert(werase(rb->subwin) != ERR);
 	screen_update();
 	if(iface_wholly_visible_p(rows,rb)){
-		assert(move_panel(rb->panel,rb->scrline,1) != ERR);
+		assert(move_panel(rb->panel,targ,1) != ERR);
 		if(getmaxy(rb->subwin) != iface_lines_bounded(is,rows)){
 			assert(wresize(rb->subwin,iface_lines_bounded(is,rows),PAD_COLS(cols)) == OK);
 			if(panel_hidden(rb->panel)){
@@ -678,34 +678,34 @@ void move_interface(reelbox *rb,int rows,int cols,int delta,int active){
 	}
 	rr = getmaxy(rb->subwin);
 	if(delta > 0){ // moving down
-		if(rb->scrline >= rows - 1){
+		if(targ >= rows - 1){
 			assert(hide_panel(rb->panel) != ERR);
 			return;
 		}
-		nlines = rows - rb->scrline - 1; // sans-bottom partial
+		nlines = rows - targ - 1; // sans-bottom partial
 	}else{
 		if((rr + getbegy(rb->subwin)) <= -delta){
 			assert(hide_panel(rb->panel) != ERR);
 			return;
 		}
-		if(rb->scrline < 1){
-			nlines = rr + (rb->scrline - 1);
-			rb->scrline = 1;
+		if(targ < 1){
+			nlines = rr + (targ - 1);
+			targ = 1;
 		}else{
-			nlines = iface_lines_bounded(is,rows - rb->scrline + 1);
+			nlines = iface_lines_bounded(is,rows - targ + 1);
 		}
 	}
 	if(nlines < 1){
 		assert(hide_panel(rb->panel) != ERR);
 		return;
 	}else if(nlines > rr){
-		assert(move_panel(rb->panel,rb->scrline,1) == OK);
+		assert(move_panel(rb->panel,targ,1) == OK);
 		assert(wresize(rb->subwin,nlines,PAD_COLS(cols)) == OK);
 	}else if(nlines < rr){
 		assert(wresize(rb->subwin,nlines,PAD_COLS(cols)) == OK);
-		assert(move_panel(rb->panel,rb->scrline,1) == OK);
+		assert(move_panel(rb->panel,targ,1) == OK);
 	}else{
-		assert(move_panel(rb->panel,rb->scrline,1) == OK);
+		assert(move_panel(rb->panel,targ,1) == OK);
 	}
 	assert(redraw_iface(rb,active) == OK);
 	assert(show_panel(rb->panel) == OK);
