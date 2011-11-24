@@ -71,7 +71,13 @@ void handle_nd_neighsol(struct omphalos_packet *op,const void *frame __attribute
 		return;
 	}
 	len -= 4;
-	frame = (const char *)frame + 4;
+	if(len < 16){
+		diagnostic(L"%s payload too small (%zu) on %s",__func__,len,i->name);
+		op->malformed = 1;
+		return;
+	}
+	len -= 16;
+	frame = (const char *)frame + 20;
 	while(len){
 		const struct icmp6_op *iop = frame;
 
