@@ -9,6 +9,7 @@ extern "C" {
 #include <stdint.h>
 #include <ncursesw/panel.h>
 #include <ui/ncurses/core.h>
+#include <ui/ncurses/color.h>
 #include <ncursesw/ncurses.h>
 
 #define PAD_LINES 3
@@ -21,6 +22,8 @@ extern "C" {
 #define U32FMT "%-10ju"
 #define PREFIXSTRLEN 7	// Does not include a '\0' (xxx.xxU)
 #define PREFIXFMT "%7s"
+
+#define SUBDISPLAY_ATTR (COLOR_PAIR(SUBDISPLAY_COLOR) | A_BOLD)
 
 #define COMB_UNDER '\u0332'
 

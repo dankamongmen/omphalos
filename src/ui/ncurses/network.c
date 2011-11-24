@@ -33,6 +33,7 @@ update_network_details(WINDOW *w){
 	procfs_state ps;
 	int r,c,z;
 
+	assert(wattrset(w,SUBDISPLAY_ATTR) == OK);
 	if(get_procfs_state(&ps)){
 		return ERR;
 	}

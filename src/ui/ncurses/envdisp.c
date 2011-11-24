@@ -4,7 +4,7 @@
 #include <ui/ncurses/color.h>
 #include <ui/ncurses/envdisp.h>
 
-#define ENVROWS 2 // FIXME
+#define ENVROWS 10
 
 static int
 env_details(WINDOW *hw,int rows){
@@ -12,12 +12,33 @@ env_details(WINDOW *hw,int rows){
 	const int row = 1;
 	int z,srows,scols;
 
+	assert(wattrset(hw,SUBDISPLAY_ATTR) == OK);
 	getmaxyx(stdscr,srows,scols);
 	if((z = rows) >= ENVROWS){
 		z = ENVROWS - 1;
 	}
 	switch(z){ // Intentional fallthroughs all the way to 0
 	case (ENVROWS - 1):{
+		while(z > 1){
+			int c0,c1;
+
+			c0 = (z - 2) * 8;
+			c1 = c0 + 7;
+			assert(mvwprintw(hw,row + z,col,"0x%02x--0x%02x: ",c0,c1) == OK);
+			while(c0 <= c1){
+				if(c0 < COLORS){
+					assert(wattrset(hw,COLOR_PAIR(c0)) == OK);
+					assert(wprintw(hw,"X") == OK);
+				}else{
+					assert(wattrset(hw,SUBDISPLAY_ATTR) == OK);
+					assert(wprintw(hw," ") == OK);
+				}
+				++c0;
+			}
+			--z;
+			assert(wattrset(hw,SUBDISPLAY_ATTR) == OK);
+		}
+	}case 1:{
 		assert(mvwprintw(hw,row + z,col,"colors: "U64FMT"rows: "U32FMT"cols: "U32FMT"palette: %s",
 				COLORS,srows,scols,modified_colors ? "dynamic" : "fixed") != ERR);
 		--z;

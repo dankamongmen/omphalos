@@ -163,6 +163,7 @@ iface_details(WINDOW *hw,const interface *i,int rows){
 	const int row = 1;
 	int z;
 
+	assert(wattrset(hw,SUBDISPLAY_ATTR) == OK);
 	getmaxyx(hw,scrrows,scrcols);
 	assert(scrrows); // FIXME
 	if((z = rows) >= DETAILROWS){
@@ -1384,6 +1385,7 @@ helpstrs(WINDOW *hw,int row,int rows){
 	const wchar_t *hs;
 	int z;
 
+	assert(wattrset(hw,SUBDISPLAY_ATTR) == OK);
 	for(z = 0 ; (hs = helps[z]) && z < rows ; ++z){
 		assert(mvwaddwstr(hw,row + z,1,hs) != ERR);
 	}

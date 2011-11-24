@@ -108,10 +108,10 @@ int setup_extended_colors(void){
 	ret |= init_color(9,933,160,160);
 	ret |= init_color(10,539,882,203);
 	ret |= init_color(11,983,909,308);
-	ret |= init_color(12,445,620,808);
+	ret |= init_color(COLOR_LIGHTBLUE,445,620,808); // ncurses def
 	ret |= init_color(13,675,496,656);
 	ret |= init_color(14,203,882,882);
-	ret |= init_color(15,929,929,921);
+	ret |= init_color(COLOR_BRIGHTWHITE,929,929,921); // ncurses def
 	ret |= init_color(COLOR_BLUE_75,GNOME75(GNOME_BLUE_R),GNOME75(GNOME_BLUE_G),GNOME75(GNOME_BLUE_B));
 	ret |= init_color(COLOR_CYAN_75,17,445,451);
 	ret |= init_color(COLOR_BLUE_50,GNOME50(GNOME_BLUE_R),GNOME50(GNOME_BLUE_G),GNOME50(GNOME_BLUE_B));
