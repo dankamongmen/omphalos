@@ -6,6 +6,7 @@
 #include <omphalos/dns.h>
 #include <omphalos/dhcp.h>
 #include <omphalos/mdns.h>
+#include <omphalos/ssdp.h>
 #include <asm/byteorder.h>
 #include <omphalos/service.h>
 #include <omphalos/omphalos.h>
@@ -34,8 +35,13 @@ void handle_udp_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 					op->l4src,L"DNS",NULL);
 			}
 		}break;
+		case __constant_htons(SSDP_UDP_PORT):{
+			if(handle_ssdp_packet(op,ubdy,ulen) == 1){
+				observe_service(op->i,op->l2s,op->l3s,op->l3proto,
+					op->l4src,L"UPnP",NULL);
+			}
+		}break;
 		case __constant_htons(MDNS_UDP_PORT):{
-			// FIXME also check dest?
 			handle_mdns_packet(op,ubdy,ulen);
 		}break;
 		case __constant_htons(DHCP_UDP_PORT):{
