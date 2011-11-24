@@ -45,10 +45,11 @@ void handle_udp_packet(const omphalos_iface *octx,omphalos_packet *op,const void
 			handle_mdns_packet(op,ubdy,ulen);
 		}break;
 		case __constant_htons(DHCP_UDP_PORT):{
-			// FIXME also check dest?
-			if(handle_dhcp_packet(op,ubdy,ulen)){
-				observe_service(op->i,op->l2s,op->l3s,op->l3proto,
-					op->l4src,L"DHCP",NULL);
+			if(udp->source == __constant_htons(BOOTP_UDP_PORT)){
+				if(handle_dhcp_packet(op,ubdy,ulen)){
+					observe_service(op->i,op->l2s,op->l3s,op->l3proto,
+						op->l4src,L"DHCP",NULL);
+				}
 			}
 		}break;
 	}
