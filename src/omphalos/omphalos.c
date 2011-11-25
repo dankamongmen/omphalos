@@ -105,18 +105,9 @@ version(const char *arg0){
 }
 
 static inline void
-default_vdiagnostic(const wchar_t *fmt,va_list v){
-	assert(vfwprintf(stderr,fmt,v) >= 0);
-	assert(fputwc(L'\n',stderr) != WEOF);
-}
-
-static void
-default_diagnostic(const wchar_t *fmt,...){
-	va_list va;
-
-	va_start(va,fmt);
-	default_vdiagnostic(fmt,va);
-	va_end(va);
+default_vdiagnostic(const char *fmt,va_list v){
+	assert(vfprintf(stderr,fmt,v) >= 0);
+	assert(fputc(L'\n',stderr) != EOF);
 }
 
 // If we add any other signals to this list, be sure to update the signal
@@ -327,7 +318,6 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 	if(mask_cancel_sigs(NULL)){
 		return -1;
 	}
-	pctx->iface.diagnostic = default_diagnostic;
 	pctx->iface.vdiagnostic = default_vdiagnostic;
 	if(pthread_key_create(&omphalos_ctx_key,NULL)){
 		return -1;
@@ -357,8 +347,8 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 }
 
 int omphalos_init(const omphalos_ctx *pctx){
-	if(pctx->iface.diagnostic == NULL){
-		fwprintf(stderr,L"No diagnostic callback function defined, exiting\n");
+	if(pctx->iface.vdiagnostic == NULL){
+		fprintf(stderr,"No diagnostic callback function defined, exiting\n");
 		return -1;
 	}
 	if(pthread_setspecific(omphalos_ctx_key,pctx)){
@@ -370,7 +360,7 @@ int omphalos_init(const omphalos_ctx *pctx){
 		}
 	}else{
 		if(init_pci_support()){
-			diagnostic(L"Warning: no PCI support available");
+			diagnostic("Warning: no PCI support available");
 		}
 		if(handle_netlink_socket()){
 			return -1;

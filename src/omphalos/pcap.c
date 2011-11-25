@@ -73,7 +73,7 @@ handle_pcap_direct(u_char *gi,const struct pcap_pkthdr *h,const u_char *bytes){
 	++iface->frames;
 	if(h->caplen != h->len){
 		++iface->truncated;
-		pm->octx->diagnostic(L"Partial capture (%u/%ub)",h->caplen,h->len);
+		diagnostic("Partial capture (%u/%ub)",h->caplen,h->len);
 		return;
 	}
 	memset(&packet,0,sizeof(packet));
@@ -102,7 +102,7 @@ handle_pcap_cooked(u_char *gi,const struct pcap_pkthdr *h,const u_char *bytes){
 
 	++iface->frames;
 	if(h->caplen != h->len || h->caplen < sizeof(*sll)){
-		pm->octx->diagnostic(L"Partial capture (%u/%ub)",h->caplen,h->len);
+		diagnostic("Partial capture (%u/%ub)",h->caplen,h->len);
 		++iface->truncated;
 		return;
 	}
@@ -125,10 +125,10 @@ handle_pcap_cooked(u_char *gi,const struct pcap_pkthdr *h,const u_char *bytes){
 	// every time, we provide the cases in network byte-order
 	switch(sll->proto){
 		case __constant_ntohs(ETH_P_IP):{
-			handle_ipv4_packet(pm->octx,&packet,bytes + sizeof(*sll),h->len - sizeof(*sll));
+			handle_ipv4_packet(&packet,bytes + sizeof(*sll),h->len - sizeof(*sll));
 			break;
 		}case __constant_ntohs(ETH_P_IPV6):{
-			handle_ipv6_packet(pm->octx,&packet,bytes + sizeof(*sll),h->len - sizeof(*sll));
+			handle_ipv6_packet(&packet,bytes + sizeof(*sll),h->len - sizeof(*sll));
 			break;
 		}default:{
 			++iface->noprotocol;
@@ -149,7 +149,7 @@ int handle_pcap_file(const omphalos_ctx *pctx){
 	pcap_t *pcap;
 
 	free(pmarsh.i->name);
-	diagnostic(L"Processing pcap file %s",pctx->pcapfn);
+	diagnostic("Processing pcap file %s",pctx->pcapfn);
 	memset(pmarsh.i,0,sizeof(*pmarsh.i));
 	pmarsh.i->fd4 = pmarsh.i->fd6 = pmarsh.i->fd = pmarsh.i->rfd = -1;
 	pmarsh.i->flags = IFF_BROADCAST | IFF_UP | IFF_LOWER_UP;
@@ -158,7 +158,7 @@ int handle_pcap_file(const omphalos_ctx *pctx){
 		return -1;
 	}
 	if((pcap = pcap_open_offline(pctx->pcapfn,ebuf)) == NULL){
-		diagnostic(L"Couldn't open pcap input %s (%s?)",pctx->pcapfn,ebuf);
+		diagnostic("Couldn't open pcap input %s (%s?)",pctx->pcapfn,ebuf);
 		return -1;
 	}
 	fxn = NULL;
@@ -184,7 +184,7 @@ int handle_pcap_file(const omphalos_ctx *pctx){
 			fxn = handle_pcap_direct;
 			break;
 		}default:{
-			diagnostic(L"Unhandled datalink type: %d",pcap_datalink(pcap));
+			diagnostic("Unhandled datalink type: %d",pcap_datalink(pcap));
 			break;
 		}
 	}
@@ -193,7 +193,7 @@ int handle_pcap_file(const omphalos_ctx *pctx){
 		return -1;
 	}
 	if(pcap_loop(pcap,-1,fxn,(u_char *)&pmarsh)){
-		diagnostic(L"Error processing pcap file %s (%s?)",pctx->pcapfn,pcap_geterr(pcap));
+		diagnostic("Error processing pcap file %s (%s?)",pctx->pcapfn,pcap_geterr(pcap));
 		pcap_close(pcap);
 		return -1;
 	}

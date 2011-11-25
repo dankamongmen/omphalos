@@ -21,15 +21,15 @@ int discover_bluetooth(void){
 
 	if((sd = socket(AF_BLUETOOTH,SOCK_RAW,BTPROTO_HCI)) < 0){
 		if(errno == EAFNOSUPPORT){
-			diagnostic(L"No IEEE 802.15 (Bluetooth) support");
+			diagnostic("No IEEE 802.15 (Bluetooth) support");
 			return 0;
 		}
-		diagnostic(L"Couldn't get Bluetooth socket (%s?)",strerror(errno));
+		diagnostic("Couldn't get Bluetooth socket (%s?)",strerror(errno));
 		return -1;
 	}
 	devreq.list.dev_num = sizeof(devreq.devlist) / sizeof(*devreq.devlist);
 	if(ioctl(sd,HCIGETDEVLIST,&devreq)){
-		diagnostic(L"Failure listing IEEE 802.15 (Bluetooth) devices (%s?)",strerror(errno));
+		diagnostic("Failure listing IEEE 802.15 (Bluetooth) devices (%s?)",strerror(errno));
 		close(sd);
 		return -1;
 	}

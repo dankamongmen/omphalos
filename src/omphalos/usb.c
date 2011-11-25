@@ -132,7 +132,7 @@ parse_usbids_file(const char *fn){
 	FILE *fp;
 
 	if((fp = fopen(fn,"r")) == NULL){
-		diagnostic(L"Couldn't open USB ID db at %s (%s?)",fn,strerror(errno));
+		diagnostic("Couldn't open USB ID db at %s (%s?)",fn,strerror(errno));
 		return -1;
 	}
 	while(fgetws(buf,sizeof(buf),fp)){
@@ -172,7 +172,7 @@ parse_usbids_file(const char *fn){
 		}
 		// ...followed by a string.
 		if((tok = wcsdup(e)) == NULL){
-			diagnostic(L"Error allocating USB ID (%s?)",strerror(errno));
+			diagnostic("Error allocating USB ID (%s?)",strerror(errno));
 			fclose(fp);
 			return -1;
 		}
@@ -195,7 +195,7 @@ parse_usbids_file(const char *fn){
 			vend = &vendors[curvendor];
 			dev = realloc(vend->devices,sizeof(*vend->devices) * (vend->devcount + 1));
 			if(dev == NULL){
-				diagnostic(L"Error allocating USB array (%s?)",strerror(errno));
+				diagnostic("Error allocating USB array (%s?)",strerror(errno));
 				fclose(fp);
 				return -1;
 			}
@@ -208,20 +208,20 @@ parse_usbids_file(const char *fn){
 		continue;
 
 formaterr:
-		diagnostic(L"Error at line %d of %s",line,fn);
+		diagnostic("Error at line %d of %s",line,fn);
 		fclose(fp);
 		return -1;
 	}
 	if(ferror(fp)){
-		diagnostic(L"Error reading USB ID db at %s (%s?)",fn,strerror(errno));
+		diagnostic("Error reading USB ID db at %s (%s?)",fn,strerror(errno));
 		fclose(fp);
 		return -1;
 	}
 	if(fclose(fp)){
-		diagnostic(L"Couldn't close USB ID db at %s (%s?)",fn,strerror(errno));
+		diagnostic("Couldn't close USB ID db at %s (%s?)",fn,strerror(errno));
 		return -1;
 	}
-	diagnostic(L"Reloaded %d vendor%s and %d USB device%s from %s",
+	diagnostic("Reloaded %d vendor%s and %d USB device%s from %s",
 			vends,vends == 1 ? "" : "s",devs,devs == 1 ? "" : "s",fn);
 	return 0;
 }

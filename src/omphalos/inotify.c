@@ -24,7 +24,7 @@ static int
 watch_init_locked(void){
 	if(inotify_fd < 0){
 		if((inotify_fd = inotify_init1(IN_NONBLOCK|IN_CLOEXEC)) < 0){
-			diagnostic(L"Couldn't open inotify fd (%s?)",strerror(errno));
+			diagnostic("Couldn't open inotify fd (%s?)",strerror(errno));
 			return -1;
 		}
 	}
@@ -55,13 +55,13 @@ int watch_file(const char *fn,watchcbfxn fxn){
 		int wd;
 
 		if((wd = inotify_add_watch(inotify_fd,fn,IN_DELETE_SELF|IN_MODIFY)) < 0){
-			diagnostic(L"Couldn't register %s (%s?)",fn,strerror(errno));
+			diagnostic("Couldn't register %s (%s?)",fn,strerror(errno));
 		}else{
 			if(wd >= watchcbmax){
 				void *tmp;
 
 				if((tmp = realloc(fxns,(wd + 1) * sizeof(*fxns))) == NULL){
-					diagnostic(L"Couldn't register %d (%s?)",wd,strerror(errno));
+					diagnostic("Couldn't register %d (%s?)",wd,strerror(errno));
 					inotify_rm_watch(inotify_fd,wd);
 				}else{
 					fxns = tmp;
@@ -83,13 +83,13 @@ int handle_watch_event(int fd){
 
 	while((r = read(fd,&event,sizeof(event))) == sizeof(event)){
 		if(event.wd >= watchcbmax){
-			diagnostic(L"%08x event %d too large on %d",
+			diagnostic("%08x event %d too large on %d",
 					event.mask,event.wd,event.wd);
 		}
 		if(fxns[event.wd].fxn){
 			fxns[event.wd].fxn(fxns[event.wd].path);
 		}else{
-			diagnostic(L"No handler for %d (%08x) on %d",
+			diagnostic("No handler for %d (%08x) on %d",
 						event.wd,event.mask,event.wd);
 		}
 	}
@@ -97,10 +97,10 @@ int handle_watch_event(int fd){
 		if(errno == EAGAIN){
 			return 0;
 		}
-		diagnostic(L"Error reading inotify socket %d (%s?)",fd,strerror(errno));
+		diagnostic("Error reading inotify socket %d (%s?)",fd,strerror(errno));
 		// FIXME do what?
 	}else{
-		diagnostic(L"Short read on inotify socket %d (%zd)",fd,r);
+		diagnostic("Short read on inotify socket %d (%zd)",fd,r);
 		// FIXME do what?
 	}
 	return -1;
@@ -115,7 +115,7 @@ int watch_stop(void){
 	pthread_mutex_unlock(&ilock);
 	if(fd >= 0){
 		if(close(fd) != 0){
-			diagnostic(L"Couldn't close inotify fd %d",fd);
+			diagnostic("Couldn't close inotify fd %d",fd);
 			ret = -1;
 		}
 	}

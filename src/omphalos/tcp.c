@@ -15,14 +15,14 @@ void handle_tcp_packet(omphalos_packet *op,const void *frame,size_t len){
 	const struct tcphdr *tcp = frame;
 
 	if(len < sizeof(*tcp)){
-		diagnostic(L"%s malformed with %zu",__func__,len);
+		diagnostic("%s malformed with %zu",__func__,len);
 		op->malformed = 1;
 		return;
 	}
 	op->l4src = tcp->source;
 	op->l4dst = tcp->dest;
 	if(len < tcp->doff){
-		diagnostic(L"%s options malformed with %zu",__func__,len);
+		diagnostic("%s options malformed with %zu",__func__,len);
 		op->malformed = 1;
 		return;
 	}

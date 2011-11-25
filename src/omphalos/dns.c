@@ -423,7 +423,7 @@ int handle_dns_packet(omphalos_packet *op,const void *frame,size_t len){
 		nsaddr = &nsaddru.addr6;
 		memcpy(nsaddr,op->l3saddr,16);
 	}else{
-		diagnostic(L"DNS on %s:0x%x",op->i->name,op->l3proto);
+		diagnostic("DNS on %s:0x%x",op->i->name,op->l3proto);
 		op->noproto = 1;
 		return 0;
 	}
@@ -435,7 +435,7 @@ int handle_dns_packet(omphalos_packet *op,const void *frame,size_t len){
 	flags = ntohs(dns->flags);
 	len -= sizeof(*dns);
 	sec = (const unsigned char *)frame + sizeof(*dns);
-	//diagnostic(L"q/a/n/a: %hu/%hu/%hu/%hu",qd,an,ns,ar);
+	//diagnostic("q/a/n/a: %hu/%hu/%hu/%hu",qd,an,ns,ar);
 	while(qd && len){
 		buf = extract_dns_record(len,sec,&class,&type,&bsize,frame);
 		if(buf == NULL){
@@ -471,7 +471,7 @@ int handle_dns_packet(omphalos_packet *op,const void *frame,size_t len){
 		if(buf == NULL){
 			goto malformed;
 		}
-		//diagnostic(L"lookup [%s]",buf);
+		//diagnostic("lookup [%s]",buf);
 		sec += bsize;
 		len -= bsize;
 		data = extract_dns_extra(len,sec,&ttl,&bsize,frame,type);
@@ -539,7 +539,7 @@ int handle_dns_packet(omphalos_packet *op,const void *frame,size_t len){
 			}else if(type == DNS_TYPE_HINFO){
 				// FIXME do what?
 			}
-			//diagnostic(L"TYPE: %hu CLASS: %hu",
+			//diagnostic("TYPE: %hu CLASS: %hu",
 			//		,ntohs(*((uint16_t *)sec + 1)));
 		}
 		free(buf);
@@ -561,7 +561,7 @@ int handle_dns_packet(omphalos_packet *op,const void *frame,size_t len){
 	return server;
 
 malformed:
-	diagnostic(L"%s malformed with %zu on %s",__func__,len,op->i->name);
+	diagnostic("%s malformed with %zu on %s",__func__,len,op->i->name);
 	op->malformed = 1;
 	return -1;
 }

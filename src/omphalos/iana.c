@@ -57,7 +57,7 @@ parse_file(const char *fn){
 	char *b;
 
 	if((fp = fopen(fn,"r")) == NULL){
-		diagnostic(L"Coudln't open %s (%s?)",fn,strerror(errno));
+		diagnostic("Coudln't open %s (%s?)",fn,strerror(errno));
 		return -1;
 	}
 	clearerr(fp);
@@ -118,15 +118,15 @@ parse_file(const char *fn){
 	}
 	free(b);
 	if(allocerr){
-		diagnostic(L"Couldn't allocate for %s",fn);
+		diagnostic("Couldn't allocate for %s",fn);
 	}else if(ferror(fp)){
-		diagnostic(L"Error reading %s",fn);
+		diagnostic("Error reading %s",fn);
 	}else{
 		ret = 0;
 	}
 	fclose(fp);
 	if(count){
-		diagnostic(L"Reloaded %u OUI%s from %s",count,
+		diagnostic("Reloaded %u OUI%s from %s",count,
 					count == 1 ? "" : "s",fn);
 	}
 	return ret;

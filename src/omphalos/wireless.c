@@ -14,21 +14,21 @@ get_wireless_extension(const char *name,int cmd,struct iwreq *req){
 	int fd;
 
 	if(strlen(name) >= sizeof(req->ifr_name)){
-		diagnostic(L"Name too long: %s",name);
+		diagnostic("Name too long: %s",name);
 		return -1;
 	}
 	if((fd = socket(AF_INET,SOCK_DGRAM,0)) < 0){
-		diagnostic(L"Couldn't get a socket (%s?)",strerror(errno));
+		diagnostic("Couldn't get a socket (%s?)",strerror(errno));
 		return -1;
 	}
 	strcpy(req->ifr_name,name);
 	if(ioctl(fd,cmd,req)){
-		//diagnostic(L"ioctl() failed (%s?)",strerror(errno));
+		//diagnostic("ioctl() failed (%s?)",strerror(errno));
 		close(fd);
 		return -1;
 	}
 	if(close(fd)){
-		diagnostic(L"Couldn't close socket (%s?)",strerror(errno));
+		diagnostic("Couldn't close socket (%s?)",strerror(errno));
 		return -1;
 	}
 	return 0;
@@ -50,7 +50,7 @@ wireless_rate_info(const char *name,wless_info *wi){
 int handle_wireless_event(const omphalos_iface *octx,interface *i,
 				const struct iw_event *iw,size_t len){
 	if(len < IW_EV_LCP_LEN){
-		diagnostic(L"Wireless msg too short on %s (%zu)",i->name,len);
+		diagnostic("Wireless msg too short on %s (%zu)",i->name,len);
 		return -1;
 	}
 	switch(iw->cmd){
@@ -75,7 +75,7 @@ int handle_wireless_event(const omphalos_iface *octx,interface *i,
 	break;}case SIOCSIWTXPOW:{
 		// FIXME handle TX power change
 	break;}default:{
-		diagnostic(L"Unknown wireless event on %s: 0x%x",i->name,iw->cmd);
+		diagnostic("Unknown wireless event on %s: 0x%x",i->name,iw->cmd);
 		return -1;
 	} }
 	if(octx->wireless_event){

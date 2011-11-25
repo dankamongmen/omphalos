@@ -23,7 +23,7 @@ void handle_icmp_packet(omphalos_packet *op,const void *frame,size_t len){
 
 	// Check length for the mandatory minimum ICMPv4 size...
 	if(len < sizeof(*icmp)){
-		diagnostic(L"%s malformed with %zu",__func__,len);
+		diagnostic("%s malformed with %zu",__func__,len);
 		op->malformed = 1;
 		return;
 	}
@@ -58,7 +58,7 @@ void handle_icmp_packet(omphalos_packet *op,const void *frame,size_t len){
 		case ICMP_ADDRESSREPLY:
 			break;
 		default:
-			diagnostic(L"Unknown ICMPv4 type: %u",icmp->type);
+			diagnostic("Unknown ICMPv4 type: %u",icmp->type);
 			op->noproto = 1;
 			break;
 	}
@@ -75,7 +75,7 @@ void handle_icmp6_packet(omphalos_packet *op,const void *frame,size_t len){
 
 	// Check length for the mandatory minimum ICMPv6 size...
 	if(len < sizeof(*icmp)){
-		diagnostic(L"%s malformed with %zu",__func__,len);
+		diagnostic("%s malformed with %zu",__func__,len);
 		op->malformed = 1;
 		return;
 	}
@@ -121,7 +121,7 @@ void handle_icmp6_packet(omphalos_packet *op,const void *frame,size_t len){
 			handle_mld_packet(op,dframe,dlen);
 			break;
 		default:
-			diagnostic(L"Unknown ICMPv6 type: %u",icmp->icmp6_type);
+			diagnostic("Unknown ICMPv6 type: %u",icmp->icmp6_type);
 			op->noproto = 1;
 			break;
 	}

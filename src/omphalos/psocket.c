@@ -30,7 +30,7 @@ int packet_socket(unsigned protocol){
 	int fd;
 
 	if((fd = socket(AF_PACKET,SOCK_RAW,ntohs(protocol))) < 0){
-		diagnostic(L"Couldn't open packet socket (%s?)",strerror(errno));
+		diagnostic("Couldn't open packet socket (%s?)",strerror(errno));
 		return -1;
 	}
 	return fd;
@@ -44,13 +44,13 @@ get_block_size(unsigned fsize,unsigned *bsize){
 	// page size. Ought be a multiple of tp_frame_size for efficiency.
 	b = getpagesize();
 	if(b < 0){
-		diagnostic(L"Couldn't get page size (%s?)",strerror(errno));
+		diagnostic("Couldn't get page size (%s?)",strerror(errno));
 		return -1;
 	}
 	*bsize = b;
 	while(*bsize < fsize){
 		if((*bsize << 1u) < *bsize){
-			diagnostic(L"No valid configurations found");
+			diagnostic("No valid configurations found");
 			return -1;
 		}
 		*bsize <<= 1u;
@@ -99,29 +99,29 @@ mmap_psocket(int op,int idx,int fd,
 		sll.sll_family = AF_PACKET;
 		sll.sll_ifindex = idx;
 		if(bind(fd,(struct sockaddr *)&sll,sizeof(sll)) < 0){
-			diagnostic(L"Couldn't bind idx %d (%s?)",idx,strerror(errno));
+			diagnostic("Couldn't bind idx %d (%s?)",idx,strerror(errno));
 			return 0;
 		}
 	}else if(op == PACKET_TX_RING){
-		diagnostic(L"Invalid idx with op %d: %d",op,idx);
+		diagnostic("Invalid idx with op %d: %d",op,idx);
 		return -1;
 	}
 	if(op){
 		if(setsockopt(fd,SOL_PACKET,op,treq,sizeof(*treq)) < 0){
-			diagnostic(L"Couldn't set socket option (%s?)",strerror(errno));
+			diagnostic("Couldn't set socket option (%s?)",strerror(errno));
 			return 0;
 		}
 	}
 	if((*map = mmap(0,size,PROT_READ|PROT_WRITE,
 				MAP_SHARED | (op ? 0 : MAP_ANONYMOUS),
 				op ? fd : -1,0)) == MAP_FAILED){
-		diagnostic(L"Couldn't mmap %zub (%s?)",size,strerror(errno));
+		diagnostic("Couldn't mmap %zub (%s?)",size,strerror(errno));
 		return 0;
 	}
 	// FIXME MADV_HUGEPAGE support was dropped in 2.6.38.4, it seems.
 #ifdef MADV_HUGEPAGE
 	if(madvise(*map,size,MADV_HUGEPAGE)){
-		//diagnostic(L"Couldn't advise hugepages for %zu (%s?)",size,strerror(errno));
+		//diagnostic("Couldn't advise hugepages for %zu (%s?)",size,strerror(errno));
 	}
 #endif
 	return size;
@@ -137,7 +137,7 @@ size_t mmap_tx_psocket(int fd,int idx,
 
 int unmap_psocket(void *map,size_t size){
 	if(munmap(map,size)){
-		diagnostic(L"Couldn't unmap %zub ring buffer (%s?)",size,strerror(errno));
+		diagnostic("Couldn't unmap %zub ring buffer (%s?)",size,strerror(errno));
 		return -1;
 	}
 	return 0;
@@ -159,11 +159,11 @@ recover_truncated_packet(interface *iface,int fd,unsigned tlen){
 	// Passing MSG_TRUNC ensures that we get the true length of the packet
 	// from the wire (see packet(7)).
 	if((r = recvfrom(fd,iface->truncbuf,iface->truncbuflen,MSG_DONTWAIT|MSG_TRUNC,NULL,0)) <= 0){
-		diagnostic(L"Error in recvfrom(%s): %s",iface->name,strerror(errno));
+		diagnostic("Error in recvfrom(%s): %s",iface->name,strerror(errno));
 		return r;
 	}
 	if((unsigned)r > iface->truncbuflen){
-		diagnostic(L"Couldn't recover truncated packet (%d > %zu)",r,iface->truncbuflen);
+		diagnostic("Couldn't recover truncated packet (%d > %zu)",r,iface->truncbuflen);
 		return -1;
 	}
 	return r;
@@ -205,7 +205,7 @@ int handle_ring_packet(interface *iface,int fd,void *frame){
 			return 1;
 		}else if(events < 0){
 			if(errno != EINTR){
-				diagnostic(L"Error in poll() on %s (%s?)",
+				diagnostic("Error in poll() on %s (%s?)",
 						iface->name,strerror(errno));
 				return -1;
 			}
@@ -215,7 +215,7 @@ int handle_ring_packet(interface *iface,int fd,void *frame){
 			// is removed from underneath us, but also don't want
 			// to race against notification...check to see if
 			// device is down here? FIXME
-			//diagnostic(L"Error polling psocket %d on %s",fd,i->name);
+			//diagnostic("Error polling psocket %d on %s",fd,i->name);
 			return -1;
 		}
 	}
@@ -230,17 +230,17 @@ int handle_ring_packet(interface *iface,int fd,void *frame){
 		// FIXME only call once for each burst of TP_STATUS_LOSING
 		slen = sizeof(tstats);
 		if(getsockopt(fd,SOL_PACKET,PACKET_STATISTICS,&tstats,&slen)){
-			diagnostic(L"Error reading stats on %s (%s?)",iface->name,strerror(errno));
+			diagnostic("Error reading stats on %s (%s?)",iface->name,strerror(errno));
 		}else if(tstats.tp_drops){
 			iface->drops += tstats.tp_drops;
-			diagnostic(L"[%s] FUCK ME; THE RINGBUFFER'S FULL (%ju/%ju drops)!",
+			diagnostic("[%s] FUCK ME; THE RINGBUFFER'S FULL (%u/%ju drops)!",
 				iface->name,tstats.tp_drops,iface->drops);
 		}
 	}
 	if((thdr->tp_status & TP_STATUS_COPY) || thdr->tp_snaplen != thdr->tp_len){
 		++iface->truncated;
 		if((len = recover_truncated_packet(iface,fd,thdr->tp_len)) <= 0){
-			diagnostic(L"Partial capture on %s (%u/%ub)",
+			diagnostic("Partial capture on %s (%u/%ub)",
 				iface->name,thdr->tp_snaplen,thdr->tp_len);
 			frame = (char *)frame + thdr->tp_mac;
 			len = thdr->tp_snaplen;
@@ -296,7 +296,7 @@ packet_multicast(int fd,int ifindex){
 	pm.mr_ifindex = ifindex;
 	pm.mr_type = PACKET_MR_ALLMULTI;
 	if(setsockopt(fd,SOL_PACKET,PACKET_ADD_MEMBERSHIP,&pm,sizeof(pm))){
-		diagnostic(L"Couldn't PACKET_ADD_MEMBERSHIP (%s?)",strerror(errno));
+		diagnostic("Couldn't PACKET_ADD_MEMBERSHIP (%s?)",strerror(errno));
 		return -1;
 	}
 	return 0;

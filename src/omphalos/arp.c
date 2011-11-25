@@ -24,13 +24,13 @@ void handle_arp_packet(omphalos_packet *op,const void *frame,size_t len){
 	}
 	if(check_ethernet_padup(len,sizeof(*ap) + ap->ar_hln * 2 + ap->ar_pln * 2)){
 		op->malformed = 1;
-		diagnostic(L"%s %s bad length expected %zu got %zu",
+		diagnostic("%s %s bad length expected %zu got %zu",
 			__func__,op->i->name,sizeof(*ap) + ap->ar_hln * 2 + ap->ar_pln * 2,len);
 		return;
 	}
 	if(op->i->addrlen != ap->ar_hln){
 		op->malformed = 1;
-		diagnostic(L"%s %s malformed expected %u got %u",
+		diagnostic("%s %s malformed expected %zu got %d",
 			__func__,op->i->name,op->i->addrlen,ap->ar_hln);
 		return;
 	}
@@ -40,14 +40,14 @@ void handle_arp_packet(omphalos_packet *op,const void *frame,size_t len){
 				fam = AF_INET;
 			}else{
 				op->malformed = 1;
-				diagnostic(L"%s %s nw malformed expected %u got %u",
+				diagnostic("%s %s nw malformed expected %zu got %u",
 					__func__,op->i->name,sizeof(uint32_t),ap->ar_pln);
 				return;
 			}
 			break;
 		default:
 			op->noproto = 1;
-			diagnostic(L"%s %s noproto for %u",__func__,
+			diagnostic("%s %s noproto for %u",__func__,
 					op->i->name,ap->ar_pro);
 			return;
 			break;
@@ -82,7 +82,7 @@ void handle_arp_packet(omphalos_packet *op,const void *frame,size_t len){
 		break;
 	}default:{
 		op->noproto = 1;
-		diagnostic(L"%s %s unknown ARP op %u",__func__,
+		diagnostic("%s %s unknown ARP op %u",__func__,
 					op->i->name,ap->ar_op);
 		break;
 	}}
@@ -96,7 +96,7 @@ void send_arp_probe(interface *i,const void *hwaddr,const uint32_t *addr,
 	if( (frame = get_tx_frame(i,&flen)) ){
 		/*char addrstr[INET_ADDRSTRLEN];
 		inet_ntop(AF_INET,addr,addrstr,sizeof(addrstr));
-		diagnostic(L"Probing %s on %s",addrstr,i->name);*/
+		diagnostic("Probing %s on %s",addrstr,i->name);*/
 		prepare_arp_probe(i,frame,&flen,hwaddr,i->addrlen,addr,saddr);
 		send_tx_frame(i,frame);
 	}

@@ -83,16 +83,16 @@ lex_unsigned_file(const char *fn,unsigned long n){
 
 	assert(n <= INT_MAX);
 	if((fp = fopen(fn,"r")) == NULL){
-		diagnostic(L"Couldn't open %s (%s?)",fn,strerror(errno));
+		diagnostic("Couldn't open %s (%s?)",fn,strerror(errno));
 		return -1;
 	}
 	if((val = lex_state(fp,n)) < 0){
-		diagnostic(L"Error parsing %s",fn);
+		diagnostic("Error parsing %s",fn);
 		fclose(fp);
 		return -1;
 	}
 	if(fclose(fp)){
-		diagnostic(L"Error closing %s (%s?)",fn,strerror(errno));
+		diagnostic("Error closing %s (%s?)",fn,strerror(errno));
 		return -1;
 	}
 	return val;
@@ -104,16 +104,16 @@ lex_string_file(const char *fn){
 	FILE *fp;
 
 	if((fp = fopen(fn,"r")) == NULL){
-		diagnostic(L"Couldn't open %s (%s?)",fn,strerror(errno));
+		diagnostic("Couldn't open %s (%s?)",fn,strerror(errno));
 		return NULL;
 	}
 	if((val = lex_string(fp)) == NULL){
-		diagnostic(L"Error parsing %s",fn);
+		diagnostic("Error parsing %s",fn);
 		fclose(fp);
 		return NULL;
 	}
 	if(fclose(fp)){
-		diagnostic(L"Error closing %s (%s?)",fn,strerror(errno));
+		diagnostic("Error closing %s (%s?)",fn,strerror(errno));
 		free(val);
 		return NULL;
 	}
@@ -247,14 +247,14 @@ int init_procfs(const char *procroot){
 
 	ps = sizeof(path);
 	if((s = snprintf(path,sizeof(path),"%s",procroot)) >= ps){
-		diagnostic(L"Bad procfs mountpath: %s",procroot);
+		diagnostic("Bad procfs mountpath: %s",procroot);
 		return -1;
 	}
 	ps -= s;
 	pp = path + s;
 	for(p = procents ; p->path ; ++p){
 		if(snprintf(pp,ps,"%s",p->path) >= ps){
-			diagnostic(L"Bad path: %s%s",procroot,p->path);
+			diagnostic("Bad path: %s%s",procroot,p->path);
 			return -1;
 		}else if(watch_file(path,p->fxn)){
 			return -1;
@@ -267,7 +267,7 @@ int cleanup_procfs(void){
 	int err;
 
 	if( (err = pthread_mutex_destroy(&netlock)) ){
-		diagnostic(L"Error destroying netlock (%s?)",strerror(err));
+		diagnostic("Error destroying netlock (%s?)",strerror(err));
 		return -1;
 	}
 	free(netstate.tcp_ccalg);

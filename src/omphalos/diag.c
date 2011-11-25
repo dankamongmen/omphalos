@@ -3,7 +3,7 @@
 #include <omphalos/diag.h>
 #include <omphalos/omphalos.h>
 
-void diagnostic(const wchar_t *fmt,...){
+void diagnostic(const char *fmt,...){
 	const omphalos_ctx *octx = get_octx();
 	va_list va;
 

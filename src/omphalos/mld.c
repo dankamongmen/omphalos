@@ -14,7 +14,7 @@ void handle_mld_packet(omphalos_packet *op,const void *frame,size_t len){
 	const struct mld_hdr *mld = frame;
 
 	if(len < sizeof(*mld)){
-		diagnostic(L"%s malformed with %zu",__func__,len);
+		diagnostic("%s malformed with %zu",__func__,len);
 		op->malformed = 1;
 		return;
 	}

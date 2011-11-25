@@ -63,13 +63,13 @@ int handle_rtm_delroute(const struct nlmsghdr *nl){
 		break;}case RTA_IIF:{
 		break;}case RTA_OIF:{
 		break;}default:{
-			diagnostic(L"Unknown rtatype %u",ra->rta_type);
+			diagnostic("Unknown rtatype %u",ra->rta_type);
 			break;
 		break;}}
 		ra = RTA_NEXT(ra,rlen);
 	}
 	if(rlen){
-		diagnostic(L"%d excess bytes on newlink message",rlen);
+		diagnostic("%d excess bytes on newlink message",rlen);
 	}
 	// FIXME handle it!
 	return 0;
@@ -100,14 +100,14 @@ int handle_rtm_newroute(const struct nlmsghdr *nl){
 		ag = &((struct sockaddr_in6 *)&r->ssg)->sin6_addr;
 	break;}case AF_BRIDGE:{
 		// FIXME wtf is a bridge route
-		diagnostic(L"got a bridge route hrmmm FIXME");
+		diagnostic("got a bridge route hrmmm FIXME");
 		return -1; // FIXME
 	break;}default:{
 		flen = 0;
 	break;} }
 	r->maskbits = rt->rtm_dst_len;
 	if(flen == 0 || flen > sizeof(r->sss.__ss_padding)){
-		diagnostic(L"Unknown route family %u",rt->rtm_family);
+		diagnostic("Unknown route family %u",rt->rtm_family);
 		return -1;
 	}
 	rlen = nl->nlmsg_len - NLMSG_LENGTH(sizeof(*rt));
@@ -119,12 +119,12 @@ int handle_rtm_newroute(const struct nlmsghdr *nl){
 		switch(ra->rta_type){
 		case RTA_DST:{
 			if(RTA_PAYLOAD(ra) != flen){
-				diagnostic(L"Expected %zu dst bytes, got %lu",
+				diagnostic("Expected %zu dst bytes, got %lu",
 						flen,RTA_PAYLOAD(ra));
 				break;
 			}
 			if(r->ssd.ss_family){
-				diagnostic(L"Got two destinations for route");
+				diagnostic("Got two destinations for route");
 				break;
 			}
 			memcpy(ad,RTA_DATA(ra),flen);
@@ -132,38 +132,38 @@ int handle_rtm_newroute(const struct nlmsghdr *nl){
 		break;}case RTA_PREFSRC: case RTA_SRC:{
 			// FIXME do we not want to prefer PREFSRC?
 			if(RTA_PAYLOAD(ra) != flen){
-				diagnostic(L"Expected %zu src bytes, got %lu",
+				diagnostic("Expected %zu src bytes, got %lu",
 						flen,RTA_PAYLOAD(ra));
 				break;
 			}
 			if(r->sss.ss_family){
-				diagnostic(L"Got two sources for route");
+				diagnostic("Got two sources for route");
 				break;
 			}
 			memcpy(as,RTA_DATA(ra),flen);
 			r->sss.ss_family = r->family;
 		break;}case RTA_IIF:{
 			if(RTA_PAYLOAD(ra) != sizeof(int)){
-				diagnostic(L"Expected %zu iiface bytes, got %lu",
+				diagnostic("Expected %zu iiface bytes, got %lu",
 						sizeof(int),RTA_PAYLOAD(ra));
 				break;
 			}
 			// we don't use RTA_OIF: iif = *(int *)RTA_DATA(ra);
 		break;}case RTA_OIF:{
 			if(RTA_PAYLOAD(ra) != sizeof(int)){
-				diagnostic(L"Expected %zu oiface bytes, got %lu",
+				diagnostic("Expected %zu oiface bytes, got %lu",
 						sizeof(int),RTA_PAYLOAD(ra));
 				break;
 			}
 			oif = *(int *)RTA_DATA(ra);
 		break;}case RTA_GATEWAY:{
 			if(RTA_PAYLOAD(ra) != flen){
-				diagnostic(L"Expected %zu gw bytes, got %lu",
+				diagnostic("Expected %zu gw bytes, got %lu",
 						flen,RTA_PAYLOAD(ra));
 				break;
 			}
 			if(r->ssg.ss_family){
-				diagnostic(L"Got two gateways for route");
+				diagnostic("Got two gateways for route");
 				break;
 			}
 			// We get 0.0.0.0 as the gateway when there's no 'via'
@@ -184,22 +184,22 @@ int handle_rtm_newroute(const struct nlmsghdr *nl){
 		break;}case RTA_MARK:{
 #endif
 		break;}default:{
-			diagnostic(L"Unknown rtatype %u",ra->rta_type);
+			diagnostic("Unknown rtatype %u",ra->rta_type);
 		break;}}
 		ra = RTA_NEXT(ra,rlen);
 	}
 	if(rlen){
-		diagnostic(L"%d excess bytes on newlink message",rlen);
+		diagnostic("%d excess bytes on newlink message",rlen);
 	}
 	if((r->iface = iface_by_idx(oif)) == NULL){
-		diagnostic(L"Unknown output interface %d on %s",oif,r->iface->name);
+		diagnostic("Unknown output interface %d on %s",oif,r->iface->name);
 		goto err;
 	}
 	{
 		char str[INET6_ADDRSTRLEN],via[INET6_ADDRSTRLEN];
 		inet_ntop(rt->rtm_family,ad,str,sizeof(str));
 		inet_ntop(rt->rtm_family,ag,via,sizeof(via));
-		diagnostic(L"[%s] new route to %s/%u %ls%ls%s",
+		diagnostic("[%s] new route to %s/%u %ls%ls%s",
 			r->iface->name,str,r->maskbits,
 			rt->rtm_type == RTN_LOCAL ? L"(local)" :
 			rt->rtm_type == RTN_BROADCAST ? L"(broadcast)" :
@@ -245,7 +245,7 @@ int handle_rtm_newroute(const struct nlmsghdr *nl){
 					r->sss.ss_family ? as : NULL,
 					r->maskbits)){
 			unlock_interface(r->iface);
-			diagnostic(L"Couldn't add route to %s",r->iface->name);
+			diagnostic("Couldn't add route to %s",r->iface->name);
 			goto err;
 		}
 		if(r->ssg.ss_family){
@@ -276,7 +276,7 @@ int handle_rtm_newroute(const struct nlmsghdr *nl){
 		lock_interface(r->iface);
 		if(add_route6(r->iface,ad,r->ssg.ss_family ? ag : NULL,r->sss.ss_family ? as : NULL,r->maskbits)){
 			unlock_interface(r->iface);
-			diagnostic(L"Couldn't add route to %s",r->iface->name);
+			diagnostic("Couldn't add route to %s",r->iface->name);
 			goto err;
 		}
 		unlock_interface(r->iface);

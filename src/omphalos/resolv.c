@@ -162,7 +162,7 @@ int offer_wresolution(int fam,const void *addr,const wchar_t *name,namelevel nle
 
 		inet_ntop(fam,addr,abuf,sizeof(abuf));
 		inet_ntop(nsfam,nameserver,rbuf,sizeof(rbuf));
-		diagnostic(L"Resolved %s @%s as %ls",abuf,rbuf,name);
+		diagnostic("Resolved %s @%s as %ls",abuf,rbuf,name);
 	}*/
 	return 0;
 }
@@ -177,7 +177,7 @@ parse_resolv_conf(const char *fn){
 	char *b;
 
 	if((fp = fopen(fn,"r")) == NULL){
-		diagnostic(L"Couldn't open %s",fn);
+		diagnostic("Couldn't open %s",fn);
 		return -1;
 	}
 	b = NULL;
@@ -231,7 +231,7 @@ parse_resolv_conf(const char *fn){
 		resolvers = revs;
 		pthread_mutex_unlock(&resolver_lock);
 		free_resolvers(&r);
-		diagnostic(L"Reloaded %u resolver%s from %s",count,
+		diagnostic("Reloaded %u resolver%s from %s",count,
 				count == 1 ? "" : "s",fn);
 		ret = 0;
 	}
@@ -254,7 +254,7 @@ int cleanup_naming(void){
 	free_resolvers(&resolvers);
 	pthread_mutex_unlock(&resolver_lock);
 	if( (er = pthread_mutex_destroy(&resolver_lock)) ){
-		diagnostic(L"Error destroying resolver lock (%s)",strerror(er));
+		diagnostic("Error destroying resolver lock (%s)",strerror(er));
 	}
 	return er;
 }

@@ -50,7 +50,7 @@ handle_osi_packet(omphalos_packet *op __attribute__ ((unused)),
 }
 
 static void
-handle_8022(const omphalos_iface *,omphalos_packet *,const void *,size_t);
+handle_8022(omphalos_packet *,const void *,size_t);
 
 // 802.1q VLAN-tagged Ethernet II consists of:
 //  12 bytes source/dest
@@ -67,15 +67,14 @@ handle_8022(const omphalos_iface *,omphalos_packet *,const void *,size_t);
 //  and len ought correspond to this, and op->l2s/op->l2d ought already be set.
 #define IEEE8021QHDRLEN 6
 static void
-handle_8021q(const omphalos_iface *octx,omphalos_packet *op,const void *frame,
-					size_t len,int allowllc){
+handle_8021q(omphalos_packet *op,const void *frame,size_t len,int allowllc){
 	const unsigned char *type;
 	const void *dgram;
 	size_t dlen;
 	
 	if(len < IEEE8021QHDRLEN){
 		op->malformed = 1;
-		octx->diagnostic(L"%s malformed with %zu",__func__,len);
+		diagnostic("%s malformed with %zu",__func__,len);
 		return;
 	}
 	type = ((const unsigned char *)frame + 4);
@@ -84,11 +83,11 @@ handle_8021q(const omphalos_iface *octx,omphalos_packet *op,const void *frame,
 	op->l3proto = ntohs(*(const uint16_t *)type);
 	switch(op->l3proto){
 	case ETH_P_IP:{
-		handle_ipv4_packet(octx,op,dgram,dlen);
+		handle_ipv4_packet(op,dgram,dlen);
 	break;}case ETH_P_ARP:{
 		handle_arp_packet(op,dgram,dlen);
 	break;}case ETH_P_IPV6:{
-		handle_ipv6_packet(octx,op,dgram,dlen);
+		handle_ipv6_packet(op,dgram,dlen);
 	break;}case ETH_P_PAE:{
 		handle_eapol_packet(op,dgram,dlen);
 	break;}case ETH_P_IPX:{
@@ -100,17 +99,17 @@ handle_8021q(const omphalos_iface *octx,omphalos_packet *op,const void *frame,
 		// encapsulate IEEE 802.2/SNAP. See:
 		// http://www.ciscopress.com/articles/article.asp?p=1016582
 		if(allowllc && op->l3proto < LLC_MAX_LEN){
-			handle_8022(octx,op,frame,len);
+			handle_8022(op,frame,len);
 		}else{
 			op->noproto = 1;
-			octx->diagnostic(L"%s %s noproto for 0x%x",__func__,
+			diagnostic("%s %s noproto for 0x%x",__func__,
 					op->i->name,op->l3proto);
 		}
 	break;} }
 }
 
 static void
-handle_snap(const omphalos_iface *octx,omphalos_packet *op,const void *frame,size_t len){
+handle_snap(omphalos_packet *op,const void *frame,size_t len){
 	const struct fddi_snap_hdr *snap = frame;
 	const void *dgram;
 	uint16_t proto;
@@ -118,13 +117,13 @@ handle_snap(const omphalos_iface *octx,omphalos_packet *op,const void *frame,siz
 
 	if(len < sizeof(*snap)){
 		op->malformed = 1;
-		octx->diagnostic(L"%s malformed with %zu",__func__,len);
+		diagnostic("%s malformed with %zu",__func__,len);
 		return;
 	}
 	dgram = (const char *)frame + sizeof(*snap);
 	if(snap->ssap != LLC_SAP_SNAP || snap->ctrl != 0x03){
 		op->malformed = 1;
-		octx->diagnostic(L"%s malformed ssap/ctrl %zu/%zu",__func__,snap->ssap,snap->ctrl);
+		diagnostic("%s malformed ssap/ctrl %d/%d",__func__,snap->ssap,snap->ctrl);
 		return;
 	}
 	dlen = len - sizeof(*snap);
@@ -134,16 +133,16 @@ handle_snap(const omphalos_iface *octx,omphalos_packet *op,const void *frame,siz
 	op->l3proto = proto;
 	switch(proto){
 		case ETH_P_IP:{
-			handle_ipv4_packet(octx,op,dgram,dlen);
+			handle_ipv4_packet(op,dgram,dlen);
 			break;
 		}case ETH_P_ARP:{
 			handle_arp_packet(op,dgram,dlen);
 			break;
 		}case ETH_P_IPV6:{
-			handle_ipv6_packet(octx,op,dgram,dlen);
+			handle_ipv6_packet(op,dgram,dlen);
 			break;
 		}case ETH_P_8021Q:{	// 802.1q on SNAP
-			handle_8021q(octx,op,dgram - IEEE8021QHDRLEN,
+			handle_8021q(op,dgram - IEEE8021QHDRLEN,
 						dlen + IEEE8021QHDRLEN,0);
 			break; // will modify op->l3proto
 		}case ETH_P_PAE:{
@@ -160,7 +159,7 @@ handle_snap(const omphalos_iface *octx,omphalos_packet *op,const void *frame,siz
 			break;
 		}default:{
 			op->noproto = 1;
-			octx->diagnostic(L"%s %s noproto for 0x%x",__func__,
+			diagnostic("%s %s noproto for 0x%x",__func__,
 					op->i->name,proto);
 			break;
 		}
@@ -168,18 +167,18 @@ handle_snap(const omphalos_iface *octx,omphalos_packet *op,const void *frame,siz
 }
 
 static void
-handle_8022(const omphalos_iface *octx,omphalos_packet *op,const void *frame,size_t len){
+handle_8022(omphalos_packet *op,const void *frame,size_t len){
 	const struct fddi_8022_1_hdr *llc = frame;
 	uint8_t sap;
 
 	if(len < sizeof(*llc)){
 		op->malformed = 1;
-		octx->diagnostic(L"%s malformed with %zu",__func__,len);
+		diagnostic("%s malformed with %zu",__func__,len);
 		return;
 	}
 	sap = llc->dsap;
 	if(sap == LLC_SAP_SNAP){
-		handle_snap(octx,op,frame,len);
+		handle_snap(op,frame,len);
 	}else{ // 802.1q always uses SNAP with OUI 00-00-00
 		const void *dgram = (const char *)frame + sizeof(*llc);
 		size_t dlen = len - sizeof(*llc);
@@ -190,7 +189,7 @@ handle_8022(const omphalos_iface *octx,omphalos_packet *op,const void *frame,siz
 		if(((llc->ctrl & 0x3u) == 0x1u) || ((llc->ctrl & 0x3u) == 0x0)){
 			if(dlen == 0){
 				op->malformed = 1;
-				octx->diagnostic(L"%s malformed with %zu",__func__,len);
+				diagnostic("%s malformed with %zu",__func__,len);
 				return;
 			}
 			++dgram;
@@ -199,7 +198,7 @@ handle_8022(const omphalos_iface *octx,omphalos_packet *op,const void *frame,siz
 		switch(sap){
 			case LLC_SAP_IP:{
 				op->l3proto = ETH_P_IP;
-				handle_ipv4_packet(octx,op,dgram,dlen);
+				handle_ipv4_packet(op,dgram,dlen);
 				break;
 			}case LLC_SAP_BSPAN:{ // STP
 				op->l3proto = ETH_P_STP;
@@ -219,7 +218,7 @@ handle_8022(const omphalos_iface *octx,omphalos_packet *op,const void *frame,siz
 				break;
 			}default:{ // IPv6 always uses SNAP per RFC2019
 				op->noproto = 1;
-				octx->diagnostic(L"%s %s noproto for 0x%x",__func__,
+				diagnostic("%s %s noproto for 0x%x",__func__,
 						op->i->name,sap);
 				break;
 			}
@@ -234,21 +233,19 @@ handle_pppoe_packet(omphalos_packet *op,const void *frame,size_t len){
 
 	if(len < sizeof(*ppp)){
 		op->malformed = 1;
-		diagnostic(L"%s %s malformed with %zu",op->i->name,__func__,len);
+		diagnostic("%s %s malformed with %zu",op->i->name,__func__,len);
 		return;
 	}
 	dlen = len - sizeof(*ppp);
 	if(dlen < ntohs(ppp->length)){
 		op->malformed = 1;
-		diagnostic(L"%s %s malformed with %zu",op->i->name,__func__,len);
+		diagnostic("%s %s malformed with %zu",op->i->name,__func__,len);
 		return;
 	}
 	// FIXME
 }
 
 void handle_ethernet_packet(omphalos_packet *op,const void *frame,size_t len){
-	const struct omphalos_ctx *ctx = get_octx();
-	const omphalos_iface *octx = &ctx->iface;
 	const struct ethhdr *hdr = frame;
 	const void *dgram;
 	uint16_t proto;
@@ -256,7 +253,7 @@ void handle_ethernet_packet(omphalos_packet *op,const void *frame,size_t len){
 
 	if(len < sizeof(*hdr)){
 		op->malformed = 1;
-		diagnostic(L"%s %s malformed with %zu",op->i->name,__func__,len);
+		diagnostic("%s %s malformed with %zu",op->i->name,__func__,len);
 		return;
 	}
 	// Source and dest immediately follow the preamble in all frame types
@@ -269,16 +266,16 @@ void handle_ethernet_packet(omphalos_packet *op,const void *frame,size_t len){
 	// FIXME need handle IEEE 802.1ad doubly-tagged frames
 	switch(proto){
 		case ETH_P_IP:{
-			handle_ipv4_packet(octx,op,dgram,dlen);
+			handle_ipv4_packet(op,dgram,dlen);
 			break;
 		}case ETH_P_ARP:{
 			handle_arp_packet(op,dgram,dlen);
 			break;
 		}case ETH_P_IPV6:{
-			handle_ipv6_packet(octx,op,dgram,dlen);
+			handle_ipv6_packet(op,dgram,dlen);
 			break;
 		}case ETH_P_8021Q:{	// 802.1q on Ethernet II
-			handle_8021q(octx,op,(const char *)dgram - IEEE8021QHDRLEN,
+			handle_8021q(op,(const char *)dgram - IEEE8021QHDRLEN,
 						dlen + IEEE8021QHDRLEN,1);
 			break; // will modify op->l3proto
 		}case ETH_P_PAE:{
@@ -309,10 +306,10 @@ void handle_ethernet_packet(omphalos_packet *op,const void *frame,size_t len){
 		}default:{
 			if(proto < LLC_MAX_LEN){ // 802.2 DSAP (and maybe SNAP/802.1q)
 				// FIXME check the proto (LLC length) field against framelen!
-				handle_8022(octx,op,(const char *)dgram,dlen); // modifies op->l3proto
+				handle_8022(op,(const char *)dgram,dlen); // modifies op->l3proto
 			}else{
 				op->noproto = 1;
-				diagnostic(L"%s %s noproto for 0x%x",__func__,
+				diagnostic("%s %s noproto for 0x%x",__func__,
 						op->i->name,proto);
 			}
 			break;

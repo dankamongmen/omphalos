@@ -88,7 +88,7 @@ unlock_ncurses(void){
 // NULL fmt clears the status bar. wvstatus is an unlocked entry point, and
 // thus calls screen_update() on exit.
 static int
-wvstatus(WINDOW *w,const wchar_t *fmt,va_list va){
+wvstatus(WINDOW *w,const char *fmt,va_list va){
 	int ret;
 
 	lock_ncurses();
@@ -100,7 +100,7 @@ wvstatus(WINDOW *w,const wchar_t *fmt,va_list va){
 // NULL fmt clears the status bar. wstatus is an unlocked entry point, and thus
 // calls screen_update() on exit.
 static int
-wstatus(WINDOW *w,const wchar_t *fmt,...){
+wstatus(WINDOW *w,const char *fmt,...){
 	va_list va;
 	int ret;
 
@@ -282,15 +282,15 @@ ncurses_input_thread(void *unsafe_marsh){
 			const char *hstr = !help.p ? " ('h' for help)" : "";
 			// wstatus() locks/unlocks, and calls screen_update()
 			if(isprint(ch)){
-				wstatus(w,L"unknown command '%c'%s",ch,hstr);
+				wstatus(w,"unknown command '%c'%s",ch,hstr);
 			}else{
-				wstatus(w,L"unknown scancode %d%s",ch,hstr);
+				wstatus(w,"unknown scancode %d%s",ch,hstr);
 			}
 			break;
 		}
 	}
 	}
-	wstatus(w,L"%s","shutting down");
+	wstatus(w,"%s","shutting down");
 	// we can't use raise() here, as that sends the signal only
 	// to ourselves, and we have it masked.
 	kill(getpid(),SIGINT);
@@ -321,11 +321,11 @@ mandatory_cleanup(WINDOW **w){
 	}
 	pthread_mutex_unlock(&bfl);
 	switch(ret){
-	case -3: fwprintf(stderr,L"Couldn't end main window\n"); break;
-	case -2: fwprintf(stderr,L"Couldn't delete main window\n"); break;
-	case -1: fwprintf(stderr,L"Couldn't delete main pad\n"); break;
+	case -3: fprintf(stderr,"Couldn't end main window\n"); break;
+	case -2: fprintf(stderr,"Couldn't delete main window\n"); break;
+	case -1: fprintf(stderr,"Couldn't delete main pad\n"); break;
 	case 0: break;
-	default: fwprintf(stderr,L"Couldn't cleanup ncurses\n"); break;
+	default: fprintf(stderr,"Couldn't cleanup ncurses\n"); break;
 	}
 	return ret;
 }
@@ -333,98 +333,98 @@ mandatory_cleanup(WINDOW **w){
 static WINDOW *
 ncurses_setup(void){
 	struct ncurses_input_marshal *nim;
-	const wchar_t *errstr = NULL;
+	const char *errstr = NULL;
 	WINDOW *w = NULL;
 
-	fwprintf(stderr,L"Entering ncurses mode...\n");
+	fprintf(stderr,"Entering ncurses mode...\n");
 	if(initscr() == NULL){
-		fwprintf(stderr,L"Couldn't initialize ncurses\n");
+		fprintf(stderr,"Couldn't initialize ncurses\n");
 		return NULL;
 	}
 	if(cbreak() != OK){
-		errstr = L"Couldn't disable input buffering\n";
+		errstr = "Couldn't disable input buffering\n";
 		goto err;
 	}
 	if(noecho() != OK){
-		errstr = L"Couldn't disable input echoing\n";
+		errstr = "Couldn't disable input echoing\n";
 		goto err;
 	}
 	if(intrflush(stdscr,TRUE) != OK){
-		errstr = L"Couldn't set flush-on-interrupt\n";
+		errstr = "Couldn't set flush-on-interrupt\n";
 		goto err;
 	}
 	if(scrollok(stdscr,FALSE) != OK){
-		errstr = L"Couldn't disable scrolling\n";
+		errstr = "Couldn't disable scrolling\n";
 		goto err;
 	}
 	if(nonl() != OK){
-		errstr = L"Couldn't disable nl translation\n";
+		errstr = "Couldn't disable nl translation\n";
 		goto err;
 	}
 	if(start_color() != OK){
-		errstr = L"Couldn't initialize ncurses color\n";
+		errstr = "Couldn't initialize ncurses color\n";
 		goto err;
 	}
 	if(use_default_colors()){
-		errstr = L"Couldn't initialize ncurses colordefs\n";
+		errstr = "Couldn't initialize ncurses colordefs\n";
 		goto err;
 	}
 	w = stdscr;
 	keypad(stdscr,TRUE);
 	if(nodelay(stdscr,FALSE) != OK){
-		errstr = L"Couldn't set blocking input\n";
+		errstr = "Couldn't set blocking input\n";
 		goto err;
 	}
 	if(preserve_colors() != OK){
-		errstr = L"Couldn't preserve initial colors\n";
+		errstr = "Couldn't preserve initial colors\n";
 		goto err;
 	}
 	if(init_pair(BORDER_COLOR,COLOR_GREEN,-1) != OK){
-		errstr = L"Couldn't initialize ncurses colorpair\n";
+		errstr = "Couldn't initialize ncurses colorpair\n";
 		goto err;
 	}
 	if(init_pair(HEADER_COLOR,COLOR_BLUE,-1) != OK){
-		errstr = L"Couldn't initialize ncurses colorpair\n";
+		errstr = "Couldn't initialize ncurses colorpair\n";
 		goto err;
 	}
 	if(init_pair(FOOTER_COLOR,COLOR_YELLOW,-1) != OK){
-		errstr = L"Couldn't initialize ncurses colorpair\n";
+		errstr = "Couldn't initialize ncurses colorpair\n";
 		goto err;
 	}
 	if(init_pair(DBORDER_COLOR,COLOR_WHITE,-1) != OK){
-		errstr = L"Couldn't initialize ncurses colorpair\n";
+		errstr = "Couldn't initialize ncurses colorpair\n";
 		goto err;
 	}
 	if(init_pair(DHEADING_COLOR,COLOR_WHITE,-1) != OK){
-		errstr = L"Couldn't initialize ncurses colorpair\n";
+		errstr = "Couldn't initialize ncurses colorpair\n";
 		goto err;
 	}
 	if(init_pair(UBORDER_COLOR,COLOR_YELLOW,-1) != OK){
-		errstr = L"Couldn't initialize ncurses colorpair\n";
+		errstr = "Couldn't initialize ncurses colorpair\n";
 		goto err;
 	}
 	if(init_pair(UHEADING_COLOR,COLOR_GREEN,-1) != OK){
-		errstr = L"Couldn't initialize ncurses colorpair\n";
+		errstr = "Couldn't initialize ncurses colorpair\n";
 		goto err;
 	}
 	if(init_pair(PBORDER_COLOR,COLOR_CYAN,-1) != OK){
-		errstr = L"Couldn't initialize ncurses colorpair\n";
+		errstr = "Couldn't initialize ncurses colorpair\n";
 		goto err;
 	}
 	if(init_pair(PHEADING_COLOR,COLOR_RED,-1) != OK){
-		errstr = L"Couldn't initialize ncurses colorpair\n";
+		errstr = "Couldn't initialize ncurses colorpair\n";
 		goto err;
 	}
 	if(init_pair(BULKTEXT_COLOR,COLOR_WHITE,-1) != OK){
-		errstr = L"Couldn't initialize ncurses colorpair\n";
+		errstr = "Couldn't initialize ncurses colorpair\n";
 		goto err;
 	}
 	if(init_pair(IFACE_COLOR,COLOR_WHITE,-1) != OK){
-		errstr = L"Couldn't initialize ncurses colorpair\n";
+		errstr = "Couldn't initialize ncurses colorpair\n";
 		goto err;
 	}
 	if(setup_extended_colors() != OK){
-		errstr = L"Couldn't initialize extended colors\n";
+		errstr = "Couldn't initialize extended colors\n";
 		assert(init_pair(LCAST_COLOR,COLOR_CYAN,-1) == OK); // will use A_BOLD via OUR_BOLD
 		assert(init_pair(UCAST_COLOR,COLOR_CYAN,-1) == OK);
 		assert(init_pair(MCAST_COLOR,COLOR_BLUE,-1) == OK);
@@ -462,15 +462,15 @@ ncurses_setup(void){
 		assert(init_pair(SUBDISPLAY_COLOR,COLOR_BRIGHTWHITE,-1) == OK);
 	}
 	if(curs_set(0) == ERR){
-		errstr = L"Couldn't disable cursor\n";
+		errstr = "Couldn't disable cursor\n";
 		goto err;
 	}
 	if(setup_statusbar(COLS)){
-		errstr = L"Couldn't setup status bar\n";
+		errstr = "Couldn't setup status bar\n";
 		goto err;
 	}
 	if(draw_main_window(w)){
-		errstr = L"Couldn't use ncurses\n";
+		errstr = "Couldn't use ncurses\n";
 		goto err;
 	}
 	if((nim = malloc(sizeof(*nim))) == NULL){
@@ -481,7 +481,7 @@ ncurses_setup(void){
 	// paint the main window.
 	refresh();
 	if(pthread_create(&inputtid,NULL,ncurses_input_thread,nim)){
-		errstr = L"Couldn't create UI thread\n";
+		errstr = "Couldn't create UI thread\n";
 		free(nim);
 		goto err;
 	}
@@ -490,7 +490,7 @@ ncurses_setup(void){
 
 err:
 	mandatory_cleanup(&w);
-	fwprintf(stderr,L"%ls",errstr);
+	fprintf(stderr,"%s",errstr);
 	return NULL;
 }
 
@@ -580,34 +580,26 @@ interface_removed_callback(const interface *i __attribute__ ((unused)),void *uns
 }
 
 static void
-vdiag_callback(const wchar_t *fmt,va_list v){
+vdiag_callback(const char *fmt,va_list v){
 	wvstatus(stdscr,fmt,v);
-}
-
-static void
-diag_callback(const wchar_t *fmt,...){
-	va_list va;
-
-	va_start(va,fmt);
-	vdiag_callback(fmt,va);
-	va_end(va);
 }
 
 int main(int argc,char * const *argv){
 	const char *codeset;
 	omphalos_ctx pctx;
 
-	assert(fwide(stderr,1) > 0);
+	assert(fwide(stdout,-1) < 0);
+	assert(fwide(stderr,-1) < 0);
 	if(setlocale(LC_ALL,"") == NULL || ((codeset = nl_langinfo(CODESET)) == NULL)){
-		fwprintf(stderr,L"Couldn't initialize locale (%s?)\n",strerror(errno));
+		fprintf(stderr,"Couldn't initialize locale (%s?)\n",strerror(errno));
 		return EXIT_FAILURE;
 	}
 	if(strcmp(codeset,"UTF-8")){
-		fwprintf(stderr,L"Only UTF-8 is supported; got %s\n",codeset);
+		fprintf(stderr,"Only UTF-8 is supported; got %s\n",codeset);
 		return EXIT_FAILURE;
 	}
 	if(uname(&sysuts)){
-		fwprintf(stderr,L"Coudln't get OS info (%s?)\n",strerror(errno));
+		fprintf(stderr,"Coudln't get OS info (%s?)\n",strerror(errno));
 		return EXIT_FAILURE;
 	}
 	glibc_version = gnu_get_libc_version();
@@ -618,7 +610,6 @@ int main(int argc,char * const *argv){
 	pctx.iface.packet_read = packet_callback;
 	pctx.iface.iface_event = interface_callback;
 	pctx.iface.iface_removed = interface_removed_callback;
-	pctx.iface.diagnostic = diag_callback;
 	pctx.iface.vdiagnostic = vdiag_callback;
 	pctx.iface.wireless_event = wireless_callback;
 	pctx.iface.srv_event = service_callback;
@@ -631,7 +622,7 @@ int main(int argc,char * const *argv){
 		int err = errno;
 
 		mandatory_cleanup(&stdscr);
-		fwprintf(stderr,L"Error in omphalos_init() (%s?)\n",strerror(err));
+		fprintf(stderr,"Error in omphalos_init() (%s?)\n",strerror(err));
 		return EXIT_FAILURE;
 	}
 	lock_ncurses();

@@ -27,7 +27,7 @@ void handle_irda_packet(omphalos_packet *op,const void *frame,size_t len){
 
 	if(len < sizeof(*hdr)){
 		op->malformed = 1;
-		diagnostic(L"%s malformed with %zu",__func__,len);
+		diagnostic("%s malformed with %zu",__func__,len);
 		return;
 	}
 	memcpy(&addr,&hdr->saddr,sizeof(addr));

@@ -17,7 +17,7 @@ MMalloc(size_t s,const char *fname){
 	void *r;
 
 	if((r = malloc(s)) == NULL){
-		diagnostic(L"%s|couldn't allocate %zu bytes",fname,s);
+		diagnostic("%s|couldn't allocate %zu bytes",fname,s);
 	}
 	return r;
 }

@@ -4,6 +4,7 @@
 #include <netinet/ip6.h>
 #include <omphalos/udp.h>
 #include <omphalos/dns.h>
+#include <omphalos/diag.h>
 #include <omphalos/dhcp.h>
 #include <omphalos/mdns.h>
 #include <omphalos/ssdp.h>
@@ -14,13 +15,13 @@
 
 // FIXME we want an automata-based approach to generically match. until then,
 // use well-known ports, ugh...
-void handle_udp_packet(const omphalos_iface *octx,omphalos_packet *op,const void *frame,size_t len){
+void handle_udp_packet(omphalos_packet *op,const void *frame,size_t len){
 	const struct udphdr *udp = frame;
 	const void *ubdy;
 	uint16_t ulen;
 
 	if(len < sizeof(*udp)){
-		octx->diagnostic(L"%s malformed with %zu",__func__,len);
+		diagnostic("%s malformed with %zu",__func__,len);
 		op->malformed = 1;
 		return;
 	}

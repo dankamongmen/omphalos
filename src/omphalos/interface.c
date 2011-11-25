@@ -75,14 +75,14 @@ int init_interfaces(void){
 	return 0;
 }
 
-#define STAT(fp,i,x) if((i)->x) { if(fwprintf((fp),L"<"#x">%ju</"#x">",(i)->x) < 0){ return -1; } }
+#define STAT(fp,i,x) if((i)->x) { if(fprintf((fp),"<"#x">%ju</"#x">",(i)->x) < 0){ return -1; } }
 int print_iface_stats(FILE *fp,const interface *i,interface *agg,const char *decorator){
 	if(i->name == NULL){
-		if(fwprintf(fp,L"<%s>",decorator) < 0){
+		if(fprintf(fp,"<%s>",decorator) < 0){
 			return -1;
 		}
 	}else{
-		if(fwprintf(fp,L"<%s name=\"%s\">",decorator,i->name) < 0){
+		if(fprintf(fp,"<%s name=\"%s\">",decorator,i->name) < 0){
 			return -1;
 		}
 	}
@@ -90,7 +90,7 @@ int print_iface_stats(FILE *fp,const interface *i,interface *agg,const char *dec
 	STAT(fp,i,truncated);
 	STAT(fp,i,noprotocol);
 	STAT(fp,i,malformed);
-	if(fwprintf(fp,L"</%s>",decorator) < 0){
+	if(fprintf(fp,"</%s>",decorator) < 0){
 		return -1;
 	}
 	if(agg){
@@ -136,24 +136,24 @@ void free_iface(interface *i){
 	pthread_mutex_lock(&i->lock);
 	if(i->rfd >= 0){
 		if(close(i->rfd)){
-			diagnostic(L"Error closing %d: %s",i->rfd,strerror(errno));
+			diagnostic("Error closing %d: %s",i->rfd,strerror(errno));
 		}
 		i->rfd = -1;
 	}
 	if(i->fd >= 0){
 		if(close(i->fd)){
-			diagnostic(L"Error closing %d: %s",i->fd,strerror(errno));
+			diagnostic("Error closing %d: %s",i->fd,strerror(errno));
 		}
 		i->fd = -1;
 	}
 	if(i->fd4 >= 0){
 		if(close(i->fd4)){
-			diagnostic(L"Error closing %d: %s",i->fd4,strerror(errno));
+			diagnostic("Error closing %d: %s",i->fd4,strerror(errno));
 		}
 	}
 	if(i->fd6 >= 0){
 		if(close(i->fd6)){
-			diagnostic(L"Error closing %d: %s",i->fd6,strerror(errno));
+			diagnostic("Error closing %d: %s",i->fd6,strerror(errno));
 		}
 	}
 	if(i->opaque && octx->iface_removed){
@@ -196,7 +196,7 @@ void cleanup_interfaces(void){
 
 	for(i = 0 ; i < sizeof(interfaces) / sizeof(*interfaces) ; ++i){
 		if(interfaces[i].name){
-			diagnostic(L"Shutting down %s",interfaces[i].name);
+			diagnostic("Shutting down %s",interfaces[i].name);
 		}
 		free_iface(&interfaces[i]);
 	}
@@ -208,7 +208,7 @@ int destroy_interfaces(void){
 
 	for(i = 0 ; i < sizeof(interfaces) / sizeof(*interfaces) ; ++i){
 		if( (r = pthread_mutex_destroy(&interfaces[i].lock)) ){
-			diagnostic(L"Couldn't destroy lock on %d (%s?)",r,strerror(r));
+			diagnostic("Couldn't destroy lock on %d (%s?)",r,strerror(r));
 			return -1;
 		}
 	}
@@ -575,7 +575,7 @@ int disable_promiscuity(const interface *i){
 		return -1;
 	}
 	if(close(fd)){
-		diagnostic(L"couldn't close netlink socket %d (%s?)",fd,strerror(errno));
+		diagnostic("couldn't close netlink socket %d (%s?)",fd,strerror(errno));
 		return -1;
 	}
 	// FIXME we're not necessarily out of promiscuous mode yet...i->flags

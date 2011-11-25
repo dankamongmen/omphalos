@@ -17,7 +17,7 @@ static reelbox *current_iface,*top_reelbox,*last_reelbox;
 // Status bar at the bottom of the screen. Must be reallocated upon screen
 // resize and allocated based on initial screen at startup. Don't shrink
 // it; widening the window again should show the full message.
-static wchar_t *statusmsg;
+static char *statusmsg;
 static int statuschars;	// True size, not necessarily what's available
 
 static int resize_iface(reelbox *);
@@ -72,18 +72,18 @@ bottom_space_p(int rows){
 	return (rows - 1) - (getmaxy(last_reelbox->subwin) + getbegy(last_reelbox->subwin));
 }
 
-int wvstatus_locked(WINDOW *w,const wchar_t *fmt,va_list va){
+int wvstatus_locked(WINDOW *w,const char *fmt,va_list va){
 	assert(statuschars > 0);
 	if(fmt == NULL){
 		statusmsg[0] = '\0';
 	}else{
-		vswprintf(statusmsg,statuschars,fmt,va);
+		vsnprintf(statusmsg,statuschars,fmt,va);
 	}
 	return draw_main_window(w);
 }
 
 // NULL fmt clears the status bar
-int wstatus_locked(WINDOW *w,const wchar_t *fmt,...){
+int wstatus_locked(WINDOW *w,const char *fmt,...){
 	va_list va;
 	int ret;
 
@@ -596,21 +596,24 @@ int setup_statusbar(int cols){
 	}
 	if(statuschars <= cols){
 		const size_t s = cols + 1;
-		wchar_t *sm;
+		char *sm;
 
 		if((sm = realloc(statusmsg,s * sizeof(*sm))) == NULL){
 			return -1;
 		}
 		statuschars = s * sizeof(*sm);
 		if(statusmsg == NULL){
-			time_t t = time(NULL);
-			struct tm tm;
+			/*time_t t = time(NULL);
+			struct tm tm;*/
 
+			// FIXME
+			sm[0] = '\0';
+			/*
 			if(localtime_r(&t,&tm)){
 				wcsftime(sm,s,L"launched at %T. 'h' toggles help.",&tm);
 			}else{
 				sm[0] = '\0';
-			}
+			}*/
 		}
 		statusmsg = sm;
 	}
@@ -622,10 +625,10 @@ void toggle_promisc_locked(WINDOW *w){
 
 	if(i){
 		if(interface_promisc_p(i)){
-			wstatus_locked(w,L"Disabling promiscuity on %s",i->name);
+			wstatus_locked(w,"Disabling promiscuity on %s",i->name);
 			disable_promiscuity(i);
 		}else{
-			wstatus_locked(w,L"Enabling promiscuity on %s",i->name);
+			wstatus_locked(w,"Enabling promiscuity on %s",i->name);
 			enable_promiscuity(i);
 		}
 	}
@@ -637,7 +640,7 @@ void sniff_interface_locked(WINDOW *w){
 	if(i){
 		if(!interface_sniffing_p(i)){
 			if(!interface_up_p(i)){
-				wstatus_locked(w,L"Bringing up %s...",i->name);
+				wstatus_locked(w,"Bringing up %s...",i->name);
 				current_iface->is->devaction = -1;
 				up_interface(i);
 			}
@@ -652,7 +655,7 @@ void down_interface_locked(WINDOW *w){
 
 	if(i){
 		if(interface_up_p(i)){
-			wstatus_locked(w,L"Bringing down %s...",i->name);
+			wstatus_locked(w,"Bringing down %s...",i->name);
 			current_iface->is->devaction = 1;
 			down_interface(i);
 		}
@@ -744,7 +747,7 @@ void *interface_cb_locked(interface *i,iface_state *ret,struct panel_state *ps){
 			}
 			++count_interface;
 			// calls draw_main_window(), updating iface count
-			wstatus_locked(stdscr,L"Set up new interface %s",i->name);
+			wstatus_locked(stdscr,"Set up new interface %s",i->name);
 		}else{
 			rb = NULL;
 		}
@@ -760,11 +763,11 @@ void *interface_cb_locked(interface *i,iface_state *ret,struct panel_state *ps){
 	}
 	if(interface_up_p(i)){
 		if(ret->devaction < 0){
-			wstatus_locked(stdscr,L"%s","");
+			wstatus_locked(stdscr,"%s","");
 			ret->devaction = 0;
 		}
 	}else if(ret->devaction > 0){
-		wstatus_locked(stdscr,L"%s","");
+		wstatus_locked(stdscr,"%s","");
 		ret->devaction = 0;
 	}
 	return ret; // callers are responsible for screen_update()
@@ -944,7 +947,7 @@ int draw_main_window(WINDOW *w){
 	// addstr() doesn't interpret format strings, so this is safe. It will
 	// fail, however, if the string can't fit on the window, which will for
 	// instance happen if there's an embedded newline.
-	mvwaddwstr(w,rows - 1,START_COL * 2,statusmsg); // FIXME
+	mvwaddstr(w,rows - 1,START_COL * 2,statusmsg); // FIXME
 	//assert(mvwaddwstr(w,rows - 1,START_COL * 2,statusmsg) != ERR);
 	assert(wattroff(w,A_BOLD | COLOR_PAIR(FOOTER_COLOR)) != ERR);
 	return OK;
@@ -970,7 +973,7 @@ void resolve_selection(WINDOW *w){
 		// FIXME check for host selection...
 		resolve_interface(w,rb);
 	}else{
-		wstatus_locked(w,L"There is no active selection");
+		wstatus_locked(w,"There is no active selection");
 	}
 }
 
@@ -980,7 +983,7 @@ void reset_current_interface_stats(WINDOW *w){
 	if( (i = get_current_iface()) ){
 		reset_interface_stats(w,i);
 	}else{
-		wstatus_locked(w,L"There is no active selection");
+		wstatus_locked(w,"There is no active selection");
 	}
 }
 

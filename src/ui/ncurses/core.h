@@ -80,8 +80,8 @@ int draw_main_window(WINDOW *);
 int setup_statusbar(int);
 // FIXME can't use format attribute, see http://gcc.gnu.org/ml/gcc-patches/2001-12/msg01626.html
 // __attribute__ ((format (printf,2,3)));
-int wstatus_locked(WINDOW *,const wchar_t *,...);
-int wvstatus_locked(WINDOW *w,const wchar_t *,va_list);
+int wstatus_locked(WINDOW *,const char *,...);
+int wvstatus_locked(WINDOW *w,const char *,va_list);
 struct l4obj *service_callback_locked(const struct interface *,struct l2host *,
 					struct l3host *,struct l4srv *);
 struct l3obj *host_callback_locked(const struct interface *,struct l2host *,

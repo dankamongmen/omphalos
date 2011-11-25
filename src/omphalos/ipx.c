@@ -35,7 +35,7 @@ void handle_ipx_packet(omphalos_packet *op,const void *frame,size_t len){
 	uint32_t ipxlen;
 
 	if(len < sizeof(*ipxhdr)){
-		diagnostic(L"%s truncated (%zu < %zu) on %s",
+		diagnostic("%s truncated (%zu < %zu) on %s",
 				__func__,len,sizeof(*ipxhdr),op->i->name);
 		op->malformed = 1;
 		return;
@@ -47,7 +47,7 @@ void handle_ipx_packet(omphalos_packet *op,const void *frame,size_t len){
 		++ipxlen;
 	}
 	if(check_ethernet_padup(len,ipxlen)){
-		diagnostic(L"%s malformed (%u != %zu) on %s",
+		diagnostic("%s malformed (%u != %zu) on %s",
 				__func__,ipxlen,len,op->i->name);
 		op->malformed = 1;
 		return;
@@ -60,7 +60,7 @@ void handle_ipx_packet(omphalos_packet *op,const void *frame,size_t len){
 	break;}case IPX_TYPE_NCP:{
 	break;}case IPX_TYPE_PPROP:{
 	break;}default:{
-		diagnostic(L"%s noproto %u on %s",
+		diagnostic("%s noproto %u on %s",
 				__func__,ipxhdr->ipx_type,op->i->name);
 		op->noproto = 1;
 	break;} }

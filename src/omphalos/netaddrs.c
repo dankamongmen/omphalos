@@ -106,7 +106,7 @@ create_l3host(int fam,const void *addr,size_t len){
 		int ret;
 
 		if( (ret = pthread_mutex_init(&r->nlock,NULL)) ){
-			diagnostic(L"%s couldn't initialize mutex (%s?)",
+			diagnostic("%s couldn't initialize mutex (%s?)",
 					__func__,strerror(ret));
 			free(r);
 			return NULL;
@@ -139,13 +139,13 @@ void name_l3host_absolute(const interface *i,
 	size_t wlen;
 
 	if((wlen = mbstowcs(NULL,name,0)) == (size_t)-1){
-		diagnostic(L"Couldn't normalize [%s]",name);
+		diagnostic("Couldn't normalize [%s]",name);
 	}else if( (wname = Malloc((wlen + 1) * sizeof(*wname))) ){
 		size_t r;
 
 		r = mbstowcs(wname,name,wlen + 1);
 		if(r == (size_t)-1){
-			diagnostic(L"Invalid name: [%s]",name);
+			diagnostic("Invalid name: [%s]",name);
 			return;
 		}
 		if(r != wlen){
@@ -280,7 +280,7 @@ lookup_l3host_common(interface *i,struct l2host *l2,int fam,const void *addr,
 			revstrfxn = NULL;
 			break;
 		}default:{
-			diagnostic(L"Don't support l3 type %d",fam);
+			diagnostic("Don't support l3 type %d",fam);
 			return NULL; // FIXME
 		}
 	}

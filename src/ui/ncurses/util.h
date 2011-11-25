@@ -30,7 +30,7 @@ extern "C" {
 // FIXME eliminate all callers!
 static inline void
 unimplemented(WINDOW *w){
-	wstatus_locked(w,L"Sorry bro; that ain't implemented yet!");
+	wstatus_locked(w,"Sorry bro; that ain't implemented yet!");
 }
 
 static inline int

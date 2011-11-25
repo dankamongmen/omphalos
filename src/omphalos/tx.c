@@ -80,13 +80,13 @@ void *get_tx_frame(interface *i,size_t *fsize){
 	thdr = i->curtxm;
 	if(thdr == NULL){
 		pthread_mutex_unlock(&i->lock);
-		diagnostic(L"Can't transmit on %s (fd %d)",i->name,i->fd);
+		diagnostic("Can't transmit on %s (fd %d)",i->name,i->fd);
 		return NULL;
 	}
 	if(thdr->tp_status != TP_STATUS_AVAILABLE){
 		if(thdr->tp_status != TP_STATUS_WRONG_FORMAT){
 			pthread_mutex_unlock(&i->lock);
-			diagnostic(L"No available TX frames on %s",i->name);
+			diagnostic("No available TX frames on %s",i->name);
 			return NULL;
 		}
 		thdr->tp_status = TP_STATUS_AVAILABLE;
@@ -186,7 +186,7 @@ send_to_self(interface *i,void *frame){
 		return -1;
 	}
 	if((r = sendto(fd,payload,plen,0,ss,slen)) < 0){
-		diagnostic(L"Error self-TXing on %s:%d (%s)",i->name,fd,strerror(errno));
+		diagnostic("Error self-TXing on %s:%d (%s)",i->name,fd,strerror(errno));
 	}
 	return r;
 }
@@ -212,7 +212,7 @@ categorize_tx(const interface *i,const void *frame,int *self,int *out){
 			*out = 0;
 			break;
 		}default:
-			diagnostic(L"Need implement %s for %u",__func__,i->arptype);
+			diagnostic("Need implement %s for %u",__func__,i->arptype);
 			*self = 0;
 			*out = 0;
 			break;
@@ -252,9 +252,9 @@ int send_tx_frame(interface *i,void *frame){
 		if(r == 0){
 			r = tplen;
 		}
-		//diagnostic(L"Transmitted %d on %s",ret,i->name);
+		//diagnostic("Transmitted %d on %s",ret,i->name);
 		if(r < 0){
-			diagnostic(L"Error out-TXing %u on %s (%s)",tplen,i->name,strerror(errno));
+			diagnostic("Error out-TXing %u on %s (%s)",tplen,i->name,strerror(errno));
 			++i->txerrors;
 		}else{
 			i->txbytes += r;
@@ -271,7 +271,7 @@ void abort_tx_frame(interface *i,void *frame){
 
 	++i->txaborts;
 	thdr->tp_status = TP_STATUS_AVAILABLE;
-	diagnostic(L"Aborted TX %llu on %s",i->txaborts,i->name);
+	diagnostic("Aborted TX %ju on %s",i->txaborts,i->name);
 }
 
 void prepare_arp_probe(const interface *i,void *frame,size_t *flen,
@@ -286,13 +286,13 @@ void prepare_arp_probe(const interface *i,void *frame,size_t *flen,
 	pln = sizeof(*paddr);
 	thdr = frame;
 	if(*flen < sizeof(*thdr)){
-		diagnostic(L"%s %s frame too small for tx",__func__,i->name);
+		diagnostic("%s %s frame too small for tx",__func__,i->name);
 		return;
 	}
 	tlen = thdr->tp_mac + sizeof(*ehdr) + sizeof(*ahdr)
 			+ 2 * hln + 2 * pln;
 	if(*flen < tlen){
-		diagnostic(L"%s %s frame too small for tx",__func__,i->name);
+		diagnostic("%s %s frame too small for tx",__func__,i->name);
 		return;
 	}
 	assert(hln == i->addrlen); // FIXME handle this case
