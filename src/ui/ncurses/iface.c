@@ -317,8 +317,8 @@ static void
 print_iface_host(const interface *i,const iface_state *is,WINDOW *w,
 		const l2obj *l,int line,int rows,int cols,int selected,
 		int minline,unsigned endp){
+	int aattrs,al3attrs,arattrs,attrs,l3attrs,rattrs,sattrs;
 	char hw[HWADDRSTRLEN(i->addrlen)];
-	int attrs,l3attrs,rattrs,sattrs;
 	const wchar_t *devname;
 	wchar_t selectchar;
 	char legend;
@@ -340,6 +340,9 @@ print_iface_host(const interface *i,const iface_state *is,WINDOW *w,
 			l3attrs = COLOR_PAIR(UCAST_L3_COLOR);
 			rattrs = COLOR_PAIR(UCAST_RES_COLOR);
 			sattrs = COLOR_PAIR(USELECTED_COLOR);
+			aattrs = COLOR_PAIR(UCAST_ALTROW_COLOR);
+			al3attrs = COLOR_PAIR(UCAST_ALTROW_L3_COLOR);
+			arattrs = COLOR_PAIR(UCAST_ALTROW_RES_COLOR);
 			devname = get_devname(l->l2);
 			legend = 'U';
 			break;
@@ -348,6 +351,9 @@ print_iface_host(const interface *i,const iface_state *is,WINDOW *w,
 			l3attrs = COLOR_PAIR(LCAST_L3_COLOR) | OUR_BOLD;
 			rattrs = COLOR_PAIR(LCAST_RES_COLOR) | OUR_BOLD;
 			sattrs = COLOR_PAIR(LSELECTED_COLOR);
+			aattrs = COLOR_PAIR(LCAST_ALTROW_COLOR) | OUR_BOLD;
+			al3attrs = COLOR_PAIR(LCAST_ALTROW_L3_COLOR) | OUR_BOLD;
+			arattrs = COLOR_PAIR(LCAST_ALTROW_RES_COLOR) | OUR_BOLD;
 			if(interface_virtual_p(i) ||
 				(devname = get_devname(l->l2)) == NULL){
 				devname = i->topinfo.devname;
@@ -359,6 +365,9 @@ print_iface_host(const interface *i,const iface_state *is,WINDOW *w,
 			l3attrs = COLOR_PAIR(MCAST_L3_COLOR);
 			rattrs = COLOR_PAIR(MCAST_RES_COLOR);
 			sattrs = COLOR_PAIR(MSELECTED_COLOR);
+			aattrs = COLOR_PAIR(MCAST_ALTROW_COLOR);
+			al3attrs = COLOR_PAIR(MCAST_ALTROW_L3_COLOR);
+			arattrs = COLOR_PAIR(MCAST_ALTROW_RES_COLOR);
 			devname = get_devname(l->l2);
 			legend = 'M';
 			break;
@@ -367,6 +376,9 @@ print_iface_host(const interface *i,const iface_state *is,WINDOW *w,
 			l3attrs = COLOR_PAIR(BCAST_L3_COLOR);
 			rattrs = COLOR_PAIR(BCAST_RES_COLOR);
 			sattrs = COLOR_PAIR(BSELECTED_COLOR);
+			aattrs = COLOR_PAIR(BCAST_ALTROW_COLOR);
+			al3attrs = COLOR_PAIR(BCAST_ALTROW_L3_COLOR);
+			arattrs = COLOR_PAIR(BCAST_ALTROW_RES_COLOR);
 			devname = get_devname(l->l2);
 			legend = 'B';
 			break;
@@ -375,9 +387,9 @@ print_iface_host(const interface *i,const iface_state *is,WINDOW *w,
 			break;
 	}
 	if(selected){
-		attrs = sattrs;
-		l3attrs = sattrs;
-		rattrs = sattrs;
+		aattrs = attrs = sattrs;
+		al3attrs = l3attrs = sattrs;
+		arattrs = rattrs = sattrs;
 		selectchar = l->l3objs && is->expansion >= EXPANSION_HOSTS
 				? L'⎧' : L'⎨';
 	}else{
@@ -387,8 +399,11 @@ print_iface_host(const interface *i,const iface_state *is,WINDOW *w,
 		attrs = (attrs & A_BOLD) | COLOR_PAIR(DBORDER_COLOR);
 		l3attrs = (l3attrs & A_BOLD) | COLOR_PAIR(DBORDER_COLOR);
 		rattrs = (rattrs & A_BOLD) | COLOR_PAIR(DBORDER_COLOR);
+		aattrs = (attrs & A_BOLD) | COLOR_PAIR(DBORDER_COLOR);
+		al3attrs = (l3attrs & A_BOLD) | COLOR_PAIR(DBORDER_COLOR);
+		arattrs = (rattrs & A_BOLD) | COLOR_PAIR(DBORDER_COLOR);
 	}
-	assert(wattrset(w,attrs) != ERR);
+	assert(wattrset(w,!(line % 2) ? attrs : aattrs) != ERR);
 	if(line >= minline){
 		l2ntop(l->l2,i->addrlen,hw);
 		if(devname){
@@ -432,21 +447,21 @@ print_iface_host(const interface *i,const iface_state *is,WINDOW *w,
 			if(line >= minline){
 				int len,wlen;
 
-				assert(wattrset(w,l3attrs) != ERR);
+				assert(wattrset(w,!(line % 2) ? l3attrs : al3attrs) != ERR);
 				l3ntop(l3->l3,nw,sizeof(nw));
 				if((name = get_l3name(l3->l3)) == NULL){
 					name = L"";
 				}
 				assert(mvwprintw(w,line,1,"%lc   %s ",
 					selectchar,nw) != ERR);
-				assert(wattrset(w,rattrs) != ERR);
+				assert(wattrset(w,!(line % 2) ? rattrs : arattrs) != ERR);
 				len = cols - PREFIXSTRLEN * 2 - 8 - strlen(nw);
 				wlen = len - wcswidth(name,wcslen(name));
 				if(wlen < 0){
 					wlen = 0;
 				}
 				assert(wprintw(w,"%.*ls%*.*s",len,name,wlen,wlen,"") != ERR);
-				assert(wattrset(w,l3attrs) != ERR);
+				assert(wattrset(w,!(line % 2) ? l3attrs : al3attrs) != ERR);
 				{
 					char sbuf[PREFIXSTRLEN + 1];
 					char dbuf[PREFIXSTRLEN + 1];
@@ -465,7 +480,8 @@ print_iface_host(const interface *i,const iface_state *is,WINDOW *w,
 				if(selectchar != L' ' && !l3->next){
 					selectchar = L'⎩';
 				}
-				print_host_services(w,l3,&line,rows - !endp,cols,selectchar,attrs,minline);
+				print_host_services(w,l3,&line,rows - !endp,cols,selectchar,
+						!(line % 2) ? attrs : aattrs,minline);
 			}
 		}
 	}
