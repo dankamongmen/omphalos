@@ -75,7 +75,7 @@ void observe_service(struct interface *i,struct l2host *l2,struct l3host *l3,
 		*prev = cur->next;
 		free_service(cur);
 	}else if(octx->iface.srv_event){
-		octx->iface.srv_event(i,l2,l3,cur);
+		cur->opaque = octx->iface.srv_event(i,l2,l3,cur);
 	}
 }
 
