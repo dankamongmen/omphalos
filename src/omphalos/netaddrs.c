@@ -6,6 +6,7 @@
 #include <omphalos/util.h>
 #include <omphalos/diag.h>
 #include <omphalos/ietf.h>
+#include <omphalos/route.h>
 #include <omphalos/resolv.h>
 #include <omphalos/service.h>
 #include <omphalos/hwaddrs.h>
@@ -322,13 +323,7 @@ lookup_l3host_common(interface *i,struct l2host *l2,int fam,const void *addr,
 		// handle 127.0.0.1 and ::1 as special cases, but look up local
 		// addresses otherwise. multicast and broadcast are only named
 		// via special case static lookups.
-		if(cat == RTN_LOCAL){
-			const wchar_t *lname = ietf_local_lookup(fam,addr);
-			if(lname){
-				wname_l3host_absolute(i,l2,l3,lname,NAMING_LEVEL_GLOBAL);
-				return l3;
-			} // try to look locals up if they're not special cases
-		}else if(cat == RTN_MULTICAST){
+		if(cat == RTN_MULTICAST){
 			const wchar_t *mname = ietf_multicast_lookup(fam,addr);
 			if(mname){
 				wname_l3host_absolute(i,l2,l3,mname,NAMING_LEVEL_GLOBAL);
@@ -340,15 +335,26 @@ lookup_l3host_common(interface *i,struct l2host *l2,int fam,const void *addr,
 				wname_l3host_absolute(i,l2,l3,bname,NAMING_LEVEL_GLOBAL);
 			}
 			return l3; // static broadcast naming only
-		}
-		if(dnsfxn && revstrfxn && (rev = revstrfxn(addr))){
-			// Calls the host event if necessary
-			wname_l3host_absolute(i,l2,l3,L"Resolving...",NAMING_LEVEL_RESOLVING);
-			l3->lastnametry = time(NULL);
-			if(queue_for_naming(i,l3,dnsfxn,rev,fam,addr)){
-				wname_l3host_absolute(i,l2,l3,L"Resolution failed",NAMING_LEVEL_FAIL);
+		}else{
+			if(cat == RTN_LOCAL){
+				const wchar_t *lname = ietf_local_lookup(fam,addr);
+				if(lname){
+					wname_l3host_absolute(i,l2,l3,lname,NAMING_LEVEL_GLOBAL);
+					return l3;
+				}
+			} // try to look locals up if they're not special cases
+			if(dnsfxn && revstrfxn && (rev = revstrfxn(addr))){
+				// Calls the host event if necessary
+				wname_l3host_absolute(i,l2,l3,L"Resolving...",NAMING_LEVEL_RESOLVING);
+				l3->lastnametry = time(NULL);
+				if(queue_for_naming(i,l3,dnsfxn,rev,fam,addr)){
+					wname_l3host_absolute(i,l2,l3,L"Resolution failed",NAMING_LEVEL_FAIL);
+				}
+				free(rev);
 			}
-			free(rev);
+			if(is_router(fam,addr)){
+				observe_service(i,l2,l3,IPPROTO_IP,4,L"Router",NULL);
+			}
 		}
         }
         return l3;
