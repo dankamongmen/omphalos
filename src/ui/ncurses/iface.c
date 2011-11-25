@@ -25,6 +25,7 @@ typedef struct l3obj {
 	struct l3obj *next;
 	struct l3host *l3;
 	struct l4obj *l4objs;
+	struct l2obj *l2;		// FIXME coverup of real failure
 } l3obj;
 
 typedef struct l2obj {
@@ -139,6 +140,26 @@ get_l3obj(struct l3host *l3){
 	return l;
 }
 
+static unsigned
+node_lines(int e,const l2obj *l){
+	const l3obj *l3;
+	unsigned lines;
+
+	if(e == EXPANSION_NONE){
+		return 0;
+	}
+	lines = 1;
+	if(e > EXPANSION_NODES){
+		for(l3 = l->l3objs ; l3 ; l3 = l3->next){
+			++lines;
+			if(e > EXPANSION_HOSTS){
+				lines += !!l3->l4objs;
+			}
+		}
+	}
+	return lines;
+}
+
 // returns < 0 if c0 < c1, 0 if c0 == c1, > 0 if c0 > c1
 static inline int
 l2catcmp(int c0,int c1){
@@ -196,6 +217,7 @@ l3obj *add_l3_to_iface(iface_state *is,l2obj *l2,struct l3host *l3h){
 	if( (l3 = get_l3obj(l3h)) ){
 		l3->next = l2->l3objs;
 		l2->l3objs = l3;
+		l3->l2 = l2;
 		if(is->expansion >= EXPANSION_HOSTS){
 			++l2->lines;
 		}
@@ -208,13 +230,20 @@ l4obj *add_service_to_iface(iface_state *is,struct l2obj *l2,struct l3obj *l3,
 						struct l4srv *srv){
 	l4obj *l4;
 
+	// FIXME we ought be able to use this assert (or preferably get rid of
+	// l3->l2 entirely), but it's being triggered (see bug 415). until we
+	// get that resolved, we use the bogon check....
+	// assert(l3->l2 == l2);
+	/*if(l3->l2 != l2){
+		return NULL;
+	}*/
 	if( (l4 = get_l4obj(srv)) ){
 		l4obj **prev = &l3->l4objs;
 
 		if(*prev == NULL){
 			++is->srvs;
 			if(is->expansion >= EXPANSION_SERVICES){
-				++l2->lines;
+				++l3->l2->lines;
 			}
 		}else do{
 			struct l4srv *c = (*prev)->l4;
@@ -234,6 +263,8 @@ l4obj *add_service_to_iface(iface_state *is,struct l2obj *l2,struct l3obj *l3,
 		l4->next = *prev;
 		*prev = l4;
 	}
+	assert(node_lines(is->expansion,l3->l2) == l3->l2->lines);
+	assert(node_lines(is->expansion,l2) == l2->lines);
 	return l4;
 }
 
@@ -791,26 +822,6 @@ int iface_wholly_visible_p(int rows,const reelbox *rb){
 		return 0;
 	}
 	return 1;
-}
-
-static int
-node_lines(int e,const l2obj *l){
-	const l3obj *l3;
-	int lines;
-
-	if(e == EXPANSION_NONE){
-		return 0;
-	}
-	lines = 1;
-	if(e > EXPANSION_NODES){
-		for(l3 = l->l3objs ; l3 ; l3 = l3->next){
-			++lines;
-			if(e > EXPANSION_HOSTS){
-				lines += !!l3->l4objs;
-			}
-		}
-	}
-	return lines;
 }
 
 static void
