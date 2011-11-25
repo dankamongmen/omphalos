@@ -18,6 +18,28 @@
 
 #define DEFAULT_IP4_TTL 64
 #define DEFAULT_IP6_TTL 64
+#define IPPROTO_DSR	48 // Dynamic Source Routing, RFC 4728
+
+typedef struct dsrhdr {
+	uint8_t nxthdr;
+	struct {
+		unsigned fbit: 1;
+		unsigned reserved: 7;
+	} fres;
+	uint16_t plen;
+} __attribute__ ((packed)) dsrhdr;
+
+static void
+handle_dsr_packet(omphalos_packet *op,const void *frame,size_t len){
+	const dsrhdr *dsr = frame;
+
+	if(len < sizeof(*dsr)){
+		diagnostic(L"%s malformed with %zu",__func__,len);
+		op->malformed = 1;
+		return;
+	}
+	// FIXME
+}
 
 static void
 handle_igmp_packet(omphalos_packet *op,const void *frame,size_t len){
@@ -84,6 +106,9 @@ void handle_ipv6_packet(const omphalos_iface *octx,omphalos_packet *op,
 			nhdr = NULL;
 		break; }case IPPROTO_PIM:{
 			handle_pim_packet(op,nhdr,plen);
+			nhdr = NULL;
+		break; }case IPPROTO_DSR:{
+			handle_dsr_packet(op,nhdr,plen);
 			nhdr = NULL;
 		break; }case IPPROTO_HOPOPTS:{
 			const struct ip6_ext *opt = nhdr;
@@ -157,6 +182,8 @@ void handle_ipv4_packet(const omphalos_iface *octx,omphalos_packet *op,
 		handle_igmp_packet(op,nhdr,nlen);
 	break; }case IPPROTO_PIM:{
 		handle_pim_packet(op,nhdr,nlen);
+	break; }case IPPROTO_DSR:{
+		handle_dsr_packet(op,nhdr,nlen);
 	break; }default:{
 		op->noproto = 1;
 		diagnostic(L"%s %s noproto for %u",__func__,op->i->name,ip->protocol);

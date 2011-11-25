@@ -27,6 +27,9 @@
 #define MDNS_REVSTR_DECODED ".local"
 #define MDNS_REVSTR "\x05" "local"
 
+// OS X's Bonjour rejects any mDNS packets with a TTL other than 255.
+#define MDNS_IPV4_TTL	255
+
 // Mask against the flags field of the dnshdr struct
 #define RESPONSE_CODE_MASK 0x7
 enum {
@@ -614,6 +617,9 @@ int setup_dns_ptr(const struct routepath *rp,int fam,unsigned port,
 
 		totlen = &((struct iphdr *)iphdr)->tot_len;
 		r = prep_ipv4_header(iphdr,flen - tlen,src4,addr4,IPPROTO_UDP);
+		if(sport == htons(MDNS_UDP_PORT)){ // FIXME grim hack!
+			((struct iphdr *)iphdr)->ttl = MDNS_IPV4_TTL;
+		}
 		*totlen = tlen;
 	}else if(fam == AF_INET6){
 		uint128_t addr6;
