@@ -77,6 +77,7 @@ int preserve_colors(void){
 #define CURSES_RGB(x) ((x) * 1000 / 255)
 #define CURSES75_RGB(x) ((x) * 750 / 255)
 #define CURSES50_RGB(x) ((x) * 500 / 255)
+#define CURSES10_RGB(x) ((x) * 100 / 255)
 
 // FIXME dark evil hackery aieeeee
 int setup_extended_colors(void){
@@ -90,8 +91,12 @@ int setup_extended_colors(void){
 #define GNOME_BLUE_R 203
 #define GNOME_BLUE_G 394
 #define GNOME_BLUE_B 640
+#define _CYAN_R 23
+#define _CYAN_G 593
+#define _CYAN_B 601
 #define GNOME75(x) ((x) * 3 / 4)
 #define GNOME50(x) ((x) * 2 / 4)
+#define GNOME10(x) ((x) / 10)
 	// #2E3436:#CC0000:#4E9A06:#C4A000:
 	// #3465A4:#75507B:#06989A:#D3D7CF:
 	// #555753:#EF2929:#8AE234:#FCE94F:
@@ -128,6 +133,10 @@ int setup_extended_colors(void){
 	ret |= init_color(COLOR_PURPLE_50,CURSES50_RGB(_PURPLE_R),CURSES50_RGB(_PURPLE_G),CURSES50_RGB(_PURPLE_B));
 	ret |= init_color(COLOR_BGREEN_50,CURSES50_RGB(_BGREEN_R),CURSES50_RGB(_BGREEN_G),CURSES50_RGB(_BGREEN_B));
 	ret |= init_color(COLOR_ORANGE_50,CURSES50_RGB(_ORANGE_R),CURSES50_RGB(_ORANGE_G),CURSES50_RGB(_ORANGE_B));
+	ret |= init_color(COLOR_PALEORANGE,CURSES10_RGB(_ORANGE_R),CURSES50_RGB(_ORANGE_G),CURSES50_RGB(_ORANGE_B));
+	ret |= init_color(COLOR_PALEBLUE,GNOME10(GNOME_BLUE_R),GNOME10(GNOME_BLUE_G),GNOME10(GNOME_BLUE_B));
+	ret |= init_color(COLOR_PALECYAN,CURSES10_RGB(_CYAN_R),CURSES10_RGB(_CYAN_G),CURSES10_RGB(_CYAN_B));
+	ret |= init_color(COLOR_PALEPURPLE,CURSES10_RGB(_PURPLE_R),CURSES10_RGB(_PURPLE_G),CURSES10_RGB(_PURPLE_B));
 	ret |= wrefresh(curscr);
 	if(ret == OK){
 		modified_colors = 1;
