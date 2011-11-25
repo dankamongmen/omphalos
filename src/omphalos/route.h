@@ -25,6 +25,9 @@ struct routepath {
 // Determine how to send a packet to a layer 3 address.
 int get_router(int,const void *,struct routepath *);
 
+// Determine whether the address is known to be a route
+int is_router(int,const void *);
+
 // Call get_router() on the address, acquire a TX frame from the discovered
 // interface, and fill in its layer 2 and layer 3 headers appropriately,
 int get_routed_frame(int,const void *,struct routepath *,void **,size_t *,size_t *);

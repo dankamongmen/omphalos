@@ -288,6 +288,34 @@ err:
 	return -1;
 }
 
+int is_router(int fam,const void *addr){
+	size_t gwoffset,len;
+	route *rt;
+
+	// FIXME we will want an actual cross-interface routing table rather
+	// than iterating over all interfaces, eek
+	if(fam == AF_INET){
+		rt = ip_table4;
+		len = 4;
+		gwoffset = offsetof(struct sockaddr_in,sin_addr);
+	}else if(fam == AF_INET6){
+		rt = ip_table6;
+		len = 16;
+		gwoffset = offsetof(struct sockaddr_in6,sin6_addr);
+	}else{
+		return -1;
+	}
+	pthread_mutex_lock(&route_lock);
+	while(rt){
+		if(memcmp((const char *)(&rt->ssg) + gwoffset,addr,len) == 0){
+			break;
+		}
+		rt = rt->next;
+	}
+	pthread_mutex_unlock(&route_lock);
+	return rt ? 1 : 0;
+}
+
 // Determine how to send a packet to a layer 3 address.
 // FIXME this whole function is just incredibly godawful
 int get_router(int fam,const void *addr,struct routepath *rp){
