@@ -112,6 +112,9 @@ int handle_rtm_newroute(const struct nlmsghdr *nl){
 	}
 	rlen = nl->nlmsg_len - NLMSG_LENGTH(sizeof(*rt));
 	ra = (struct rtattr *)((char *)(NLMSG_DATA(nl)) + sizeof(*rt));
+	memset(&r->ssg,0,sizeof(r->ssg));
+	memset(&r->ssd,0,sizeof(r->ssd));
+	memset(&r->sss,0,sizeof(r->sss));
 	while(RTA_OK(ra,rlen)){
 		switch(ra->rta_type){
 		case RTA_DST:{
@@ -120,12 +123,21 @@ int handle_rtm_newroute(const struct nlmsghdr *nl){
 						flen,RTA_PAYLOAD(ra));
 				break;
 			}
+			if(r->ssd.ss_family){
+				diagnostic(L"Got two destinations for route");
+				break;
+			}
 			memcpy(ad,RTA_DATA(ra),flen);
+			r->ssd.ss_family = r->family;
 		break;}case RTA_PREFSRC: case RTA_SRC:{
 			// FIXME do we not want to prefer PREFSRC?
 			if(RTA_PAYLOAD(ra) != flen){
 				diagnostic(L"Expected %zu src bytes, got %lu",
 						flen,RTA_PAYLOAD(ra));
+				break;
+			}
+			if(r->sss.ss_family){
+				diagnostic(L"Got two sources for route");
 				break;
 			}
 			memcpy(as,RTA_DATA(ra),flen);
@@ -187,16 +199,17 @@ int handle_rtm_newroute(const struct nlmsghdr *nl){
 		char str[INET6_ADDRSTRLEN],via[INET6_ADDRSTRLEN];
 		inet_ntop(rt->rtm_family,ad,str,sizeof(str));
 		inet_ntop(rt->rtm_family,ag,via,sizeof(via));
-		diagnostic(L"[%s] new route to %s/%u %s%s%s",r->iface->name,str,r->maskbits,
-			rt->rtm_type == RTN_LOCAL ? "(local)" :
-			rt->rtm_type == RTN_BROADCAST ? "(broadcast)" :
-			rt->rtm_type == RTN_UNREACHABLE ? "(unreachable)" :
-			rt->rtm_type == RTN_ANYCAST ? "(anycast)" :
-			rt->rtm_type == RTN_UNICAST ? "(unicast)" :
-			rt->rtm_type == RTN_MULTICAST ? "(multicast)" :
-			rt->rtm_type == RTN_BLACKHOLE ? "(blackhole)" :
-			rt->rtm_type == RTN_MULTICAST ? "(multicast)" : "",
-			r->ssg.ss_family ? " via " : "",
+		diagnostic(L"[%s] new route to %s/%u %ls%ls%s",
+			r->iface->name,str,r->maskbits,
+			rt->rtm_type == RTN_LOCAL ? L"(local)" :
+			rt->rtm_type == RTN_BROADCAST ? L"(broadcast)" :
+			rt->rtm_type == RTN_UNREACHABLE ? L"(unreachable)" :
+			rt->rtm_type == RTN_ANYCAST ? L"(anycast)" :
+			rt->rtm_type == RTN_UNICAST ? L"(unicast)" :
+			rt->rtm_type == RTN_MULTICAST ? L"(multicast)" :
+			rt->rtm_type == RTN_BLACKHOLE ? L"(blackhole)" :
+			rt->rtm_type == RTN_MULTICAST ? L"(multicast)" : L"",
+			r->ssg.ss_family ? L" via " : L"",
 			r->ssg.ss_family ? via : "");
 	}
 	// We're not interest in blackholes, unreachables, prohibits, NATs yet
