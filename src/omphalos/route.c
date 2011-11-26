@@ -119,7 +119,7 @@ int handle_rtm_newroute(const struct nlmsghdr *nl){
 		switch(ra->rta_type){
 		case RTA_DST:{
 			if(RTA_PAYLOAD(ra) != flen){
-				diagnostic("Expected %zu dst bytes, got %lu",
+				diagnostic("Expected %zu dst bytes, got %zu",
 						flen,RTA_PAYLOAD(ra));
 				break;
 			}
@@ -132,7 +132,7 @@ int handle_rtm_newroute(const struct nlmsghdr *nl){
 		break;}case RTA_PREFSRC: case RTA_SRC:{
 			// FIXME do we not want to prefer PREFSRC?
 			if(RTA_PAYLOAD(ra) != flen){
-				diagnostic("Expected %zu src bytes, got %lu",
+				diagnostic("Expected %zu src bytes, got %zu",
 						flen,RTA_PAYLOAD(ra));
 				break;
 			}
@@ -144,21 +144,21 @@ int handle_rtm_newroute(const struct nlmsghdr *nl){
 			r->sss.ss_family = r->family;
 		break;}case RTA_IIF:{
 			if(RTA_PAYLOAD(ra) != sizeof(int)){
-				diagnostic("Expected %zu iiface bytes, got %lu",
+				diagnostic("Expected %zu iiface bytes, got %zu",
 						sizeof(int),RTA_PAYLOAD(ra));
 				break;
 			}
 			// we don't use RTA_OIF: iif = *(int *)RTA_DATA(ra);
 		break;}case RTA_OIF:{
 			if(RTA_PAYLOAD(ra) != sizeof(int)){
-				diagnostic("Expected %zu oiface bytes, got %lu",
+				diagnostic("Expected %zu oiface bytes, got %zu",
 						sizeof(int),RTA_PAYLOAD(ra));
 				break;
 			}
 			oif = *(int *)RTA_DATA(ra);
 		break;}case RTA_GATEWAY:{
 			if(RTA_PAYLOAD(ra) != flen){
-				diagnostic("Expected %zu gw bytes, got %lu",
+				diagnostic("Expected %zu gw bytes, got %zu",
 						flen,RTA_PAYLOAD(ra));
 				break;
 			}
