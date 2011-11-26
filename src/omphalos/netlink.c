@@ -158,7 +158,7 @@ handle_rtm_newneigh(const struct nlmsghdr *nl){
 		switch(ra->rta_type){
 		case NDA_DST:{
 			if(RTA_PAYLOAD(ra) != flen){
-				diagnostic("Expected %zu nw bytes on %s, got %lu",
+				diagnostic("Expected %zu nw bytes on %s, got %zu",
 						flen,iface->name,RTA_PAYLOAD(ra));
 				break;
 			}
@@ -232,7 +232,7 @@ handle_rtm_delneigh(const struct nlmsghdr *nl){
 		switch(ra->rta_type){
 		case NDA_DST:{
 			if(RTA_PAYLOAD(ra) != flen){
-				diagnostic("Expected %zu nw bytes on %s, got %lu",
+				diagnostic("Expected %zu nw bytes on %s, got %zu",
 						flen,iface->name,RTA_PAYLOAD(ra));
 				break;
 			}
@@ -661,11 +661,11 @@ handle_newlink_locked(interface *iface,const struct ifinfomsg *ii,const struct n
 				char *addr;
 
 				if(iface->addrlen && iface->addrlen != RTA_PAYLOAD(ra)){
-					diagnostic("Address illegal: %lu",RTA_PAYLOAD(ra));
+					diagnostic("Address illegal: %zu",RTA_PAYLOAD(ra));
 					return -1;
 				}
 				if((addr = malloc(RTA_PAYLOAD(ra))) == NULL){
-					diagnostic("Address too long: %lu",RTA_PAYLOAD(ra));
+					diagnostic("Address too long: %zu",RTA_PAYLOAD(ra));
 					return -1;
 				}
 				memcpy(addr,RTA_DATA(ra),RTA_PAYLOAD(ra));
@@ -676,11 +676,11 @@ handle_newlink_locked(interface *iface,const struct ifinfomsg *ii,const struct n
 				char *addr;
 
 				if(iface->addrlen && iface->addrlen != RTA_PAYLOAD(ra)){
-					diagnostic("Broadcast illegal: %lu",RTA_PAYLOAD(ra));
+					diagnostic("Broadcast illegal: %zu",RTA_PAYLOAD(ra));
 					return -1;
 				}
 				if((addr = malloc(RTA_PAYLOAD(ra))) == NULL){
-					diagnostic("Broadcast too long: %lu",RTA_PAYLOAD(ra));
+					diagnostic("Broadcast too long: %zu",RTA_PAYLOAD(ra));
 					return -1;
 				}
 				memcpy(addr,RTA_DATA(ra),RTA_PAYLOAD(ra));
@@ -691,14 +691,14 @@ handle_newlink_locked(interface *iface,const struct ifinfomsg *ii,const struct n
 				char *name;
 
 				if((name = strdup(RTA_DATA(ra))) == NULL){
-					diagnostic("Name too long: %lu",RTA_PAYLOAD(ra));
+					diagnostic("Name too long: %zu",RTA_PAYLOAD(ra));
 					return -1;
 				}
 				free(iface->name);
 				iface->name = name;
 			break;}case IFLA_MTU:{
 				if(RTA_PAYLOAD(ra) != sizeof(int)){
-					diagnostic("Expected %zu MTU bytes, got %lu",
+					diagnostic("Expected %zu MTU bytes, got %zu",
 							sizeof(int),RTA_PAYLOAD(ra));
 					break;
 				}
