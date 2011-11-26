@@ -441,6 +441,18 @@ ncurses_setup(void){
 		assert(init_pair(UCAST_RES_COLOR,COLOR_CYAN,-1) == OK);
 		assert(init_pair(MCAST_RES_COLOR,COLOR_BLUE,-1) == OK);
 		assert(init_pair(BCAST_RES_COLOR,COLOR_MAGENTA,-1) == OK);
+		assert(init_pair(LCAST_ALTROW_COLOR,COLOR_CYAN,-1) == OK);
+		assert(init_pair(UCAST_ALTROW_COLOR,COLOR_CYAN,-1) == OK);
+		assert(init_pair(MCAST_ALTROW_COLOR,COLOR_BLUE,-1) == OK);
+		assert(init_pair(BCAST_ALTROW_COLOR,COLOR_MAGENTA,-1) == OK);
+		assert(init_pair(LCAST_ALTROW_L3_COLOR,COLOR_CYAN,-1) == OK);
+		assert(init_pair(UCAST_ALTROW_L3_COLOR,COLOR_CYAN,-1) == OK);
+		assert(init_pair(MCAST_ALTROW_L3_COLOR,COLOR_BLUE,-1) == OK);
+		assert(init_pair(BCAST_ALTROW_L3_COLOR,COLOR_MAGENTA,-1) == OK);
+		assert(init_pair(LCAST_ALTROW_RES_COLOR,COLOR_CYAN,-1) == OK);
+		assert(init_pair(UCAST_ALTROW_RES_COLOR,COLOR_CYAN,-1) == OK);
+		assert(init_pair(MCAST_ALTROW_RES_COLOR,COLOR_BLUE,-1) == OK);
+		assert(init_pair(BCAST_ALTROW_RES_COLOR,COLOR_MAGENTA,-1) == OK);
 		assert(init_pair(SUBDISPLAY_COLOR,COLOR_WHITE,-1) == OK);
 	}else{
 		assert(init_pair(LCAST_COLOR,COLOR_ORANGE,-1) == OK);
@@ -459,7 +471,6 @@ ncurses_setup(void){
 		assert(init_pair(UCAST_RES_COLOR,COLOR_CYAN_50,-1) == OK);
 		assert(init_pair(MCAST_RES_COLOR,COLOR_BLUE_50,-1) == OK);
 		assert(init_pair(BCAST_RES_COLOR,COLOR_PURPLE_50,-1) == OK);
-		// FIXME duplicate above!
 		assert(init_pair(LCAST_ALTROW_COLOR,COLOR_ORANGE,COLOR_PALEORANGE) == OK);
 		assert(init_pair(UCAST_ALTROW_COLOR,COLOR_CYAN,COLOR_PALECYAN) == OK);
 		assert(init_pair(MCAST_ALTROW_COLOR,COLOR_BLUE,COLOR_PALEBLUE) == OK);
