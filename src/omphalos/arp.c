@@ -57,7 +57,7 @@ void handle_arp_packet(omphalos_packet *op,const void *frame,size_t len){
 	// 0.0.0.0; these oughtn't be linked to the hardware addresses.
 	if(ap->ar_pln <= sizeof(PROBESRC)){
 		if(memcmp(PROBESRC,saddr,ap->ar_pln)){
-			op->l3s = lookup_local_l3host(op->i,op->l2s,fam,saddr);
+			op->l3s = lookup_local_l3host(&op->tv,op->i,op->l2s,fam,saddr);
 		}
 	}
 	switch(ap->ar_op){
@@ -75,7 +75,7 @@ void handle_arp_packet(omphalos_packet *op,const void *frame,size_t len){
 			daddr = (const char *)ap + sizeof(*ap) + ap->ar_hln * 2 + ap->ar_pln;
 			if(ap->ar_pln <= sizeof(PROBESRC)){
 				if(memcmp(PROBESRC,daddr,ap->ar_pln)){
-					op->l3d = lookup_local_l3host(op->i,op->l2d,fam,daddr);
+					op->l3d = lookup_local_l3host(&op->tv,op->i,op->l2d,fam,daddr);
 				}
 			}
 		}

@@ -15,6 +15,9 @@
 #include <omphalos/ethernet.h>
 #include <omphalos/interface.h>
 
+// Don't want to backoff name resolution attempts to more than 2^9s or so.
+#define MAX_BACKOFF_EXP		9
+
 typedef struct l3host {
 	wchar_t *name;
 	int fam;	// FIXME kill determine from addr relative to arenas
@@ -27,7 +30,8 @@ typedef struct l3host {
 	namelevel nlevel;
 	unsigned nosrvs;	// FIXME kill oughtn't be necessary
 	// FIXME use usec-based ticks taken from the omphalos_packet *!
-	time_t lastnametry;	// last time we tried to do name resolution
+	time_t nextnametry;	// next time we can attempt name resolution
+	unsigned nametries;	// number of times we've tried name resolution
 	struct l4srv *services;	// services observed providing
 	struct l3host *next;	// next within the interface
 	struct l2host *l2;	// FIXME we only keep the most recent l2host
@@ -117,9 +121,10 @@ create_l3host(int fam,const void *addr,size_t len){
 		r->fam = fam;
 		r->srcpkts = r->dstpkts = 0;
 		r->nlevel = NAMING_LEVEL_NONE;
-		r->lastnametry = 0;
 		r->services = NULL;
 		r->nosrvs = 0;
+		r->nextnametry = 0;
+		r->nametries = 0;
 		memcpy(&r->addr,addr,len);
 		if( (gh = get_global_hosts(fam)) ){
 			r->gnext = gh->head;
@@ -208,7 +213,7 @@ struct l3host *find_l3host(interface *i,int fam,const void *addr){
 }
 
 static inline void
-update_l3name(struct l2host *l2,l3host *l3,
+update_l3name(const struct timeval *tv,struct l2host *l2,l3host *l3,
 		dnstxfxn dnsfxn,char *(*revstrfxn)(const void *),int cat,
 		const void *addr,interface *i,int fam){
 	char *rev;
@@ -220,11 +225,9 @@ update_l3name(struct l2host *l2,l3host *l3,
 	if(l3->name && l3->nlevel > NAMING_LEVEL_NXDOMAIN){
 		return;
 	}else if(l3->nlevel <= NAMING_LEVEL_NXDOMAIN){
-		// FIXME need an exponential backoff; retransmits too often!
-		if(time(NULL) <= l3->lastnametry){
+		if(tv->tv_sec <= l3->nextnametry){
 			return;
 		}
-		// FIXME requires references to lookup object?
 	}
 	if(dnsfxn == NULL || revstrfxn == NULL){
 		return;
@@ -232,7 +235,10 @@ update_l3name(struct l2host *l2,l3host *l3,
 	if((rev = revstrfxn(addr)) == NULL){
 		return;
 	}
-	l3->lastnametry = time(NULL);
+	++l3->nametries;
+	// FIXME add a random factor to avoid thundering herds!
+	l3->nextnametry = tv->tv_sec + (1u << (l3->nametries > MAX_BACKOFF_EXP ?
+					MAX_BACKOFF_EXP : l3->nametries));
 	if(queue_for_naming(i,l3,dnsfxn,rev,fam,addr)){
 		wname_l3host_absolute(i,l2,l3,L"Resolution failed",NAMING_LEVEL_FAIL);
 	}
@@ -241,8 +247,8 @@ update_l3name(struct l2host *l2,l3host *l3,
 
 // Interface lock needs be held upon entry
 static l3host *
-lookup_l3host_common(interface *i,struct l2host *l2,int fam,const void *addr,
-						int knownlocal){
+lookup_l3host_common(const struct timeval *tv,interface *i,struct l2host *l2,
+			int fam,const void *addr,int knownlocal){
 	char *(*revstrfxn)(const void *);
         l3host *l3,**prev,**orig;
 	typeof(l3->addr) cmp;
@@ -310,7 +316,7 @@ lookup_l3host_common(interface *i,struct l2host *l2,int fam,const void *addr,
 			l3->next = *orig;
 			*orig = l3;
 			l3->l2 = l2; // FIXME ought indicate a change!
-			update_l3name(l2,l3,dnsfxn,revstrfxn,cat,addr,i,fam);
+			update_l3name(tv,l2,l3,dnsfxn,revstrfxn,cat,addr,i,fam);
 			return l3;
 		}
 	}
@@ -346,7 +352,8 @@ lookup_l3host_common(interface *i,struct l2host *l2,int fam,const void *addr,
 			if(dnsfxn && revstrfxn && (rev = revstrfxn(addr))){
 				// Calls the host event if necessary
 				wname_l3host_absolute(i,l2,l3,L"Resolving...",NAMING_LEVEL_RESOLVING);
-				l3->lastnametry = time(NULL);
+				++l3->nextnametry;
+				l3->nextnametry = tv->tv_sec + 1;
 				if(queue_for_naming(i,l3,dnsfxn,rev,fam,addr)){
 					wname_l3host_absolute(i,l2,l3,L"Resolution failed",NAMING_LEVEL_FAIL);
 				}
@@ -390,12 +397,28 @@ struct l3host *lookup_global_l3host(int fam,const void *addr){
 // returned is different from the wire address, an ARP probe is directed to the
 // link-layer address (this is all handled by get_route()). ARP replies are
 // link-layer only, and thus processed directly (name_l2host_local()).
-l3host *lookup_l3host(interface *i,struct l2host *l2,int fam,const void *addr){
-	return lookup_l3host_common(i,l2,fam,addr,0);
+l3host *lookup_l3host(const struct timeval *tv,interface *i,struct l2host *l2,
+				int fam,const void *addr){
+	struct timeval t;
+
+	if(tv){
+		t = *tv;
+	}else{
+		gettimeofday(&t,NULL);
+	}
+	return lookup_l3host_common(&t,i,l2,fam,addr,0);
 }
 
-l3host *lookup_local_l3host(interface *i,struct l2host *l2,int fam,const void *addr){
-	return lookup_l3host_common(i,l2,fam,addr,1);
+l3host *lookup_local_l3host(const struct timeval *tv,interface *i,
+			struct l2host *l2,int fam,const void *addr){
+	struct timeval t;
+
+	if(tv){
+		t = *tv;
+	}else{
+		gettimeofday(&t,NULL);
+	}
+	return lookup_l3host_common(&t,i,l2,fam,addr,1);
 }
 
 void name_l3host_local(const interface *i,struct l2host *l2,l3host *l3,int family,const void *name,

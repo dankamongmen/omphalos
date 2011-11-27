@@ -78,8 +78,8 @@ void handle_ipv6_packet(omphalos_packet *op,const void *frame,size_t len){
 	}
 	memcpy(op->l3saddr,&ip->ip6_src,16);
 	memcpy(op->l3daddr,&ip->ip6_dst,16);
-	op->l3s = lookup_l3host(op->i,op->l2s,AF_INET6,&ip->ip6_src);
-	op->l3d = lookup_l3host(op->i,op->l2d,AF_INET6,&ip->ip6_dst);
+	op->l3s = lookup_l3host(&op->tv,op->i,op->l2s,AF_INET6,&ip->ip6_src);
+	op->l3d = lookup_l3host(&op->tv,op->i,op->l2d,AF_INET6,&ip->ip6_dst);
 	// Don't just subtract payload length from frame length, since the
 	// frame might have been padded up to a minimum size.
 	const void *nhdr = (const char *)ip + sizeof(*ip);
@@ -163,8 +163,8 @@ void handle_ipv4_packet(omphalos_packet *op,const void *frame,size_t len){
 	}
 	memcpy(op->l3saddr,&ip->saddr,4);
 	memcpy(op->l3daddr,&ip->daddr,4);
-	op->l3s = lookup_l3host(op->i,op->l2s,AF_INET,&ip->saddr);
-	op->l3d = lookup_l3host(op->i,op->l2d,AF_INET,&ip->daddr);
+	op->l3s = lookup_l3host(&op->tv,op->i,op->l2s,AF_INET,&ip->saddr);
+	op->l3d = lookup_l3host(&op->tv,op->i,op->l2d,AF_INET,&ip->daddr);
 
 	const void *nhdr = (const unsigned char *)frame + hlen;
 	const size_t nlen = ntohs(ip->tot_len) - hlen;

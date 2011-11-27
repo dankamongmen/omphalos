@@ -168,7 +168,7 @@ handle_ieee80211_mgmt(omphalos_packet *op,const void *frame,size_t len,unsigned 
 	}
 	op->l2s = lookup_l2host(op->i,ibec->h_src);
        	len -= sizeof(*ibec);
-	op->l3s = lookup_local_l3host(op->i,op->l2s,AF_BSSID,ibec->bssid);
+	op->l3s = lookup_local_l3host(&op->tv,op->i,op->l2s,AF_BSSID,ibec->bssid);
 	handle_ieee80211_mgmtfix(op,(const char *)frame + sizeof(*ibec),len,freq);
 }
 

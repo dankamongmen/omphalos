@@ -276,7 +276,7 @@ int add_route4(interface *i,const uint32_t *dst,const uint32_t *via,
 				memcpy(&(*prev)->src,src,sizeof(*src));
 			}
 		}
-		assert(lookup_local_l3host(i,l2,AF_INET,src));
+		assert(lookup_local_l3host(NULL,i,l2,AF_INET,src));
 	}
 	if(r->addrs & ROUTE_HAS_VIA && r->maskbits < 32){
 		if( (l3 = lookup_global_l3host(AF_INET,via)) ){
@@ -332,7 +332,7 @@ int add_route6(interface *i,const uint128_t dst,const uint128_t via,
 				assign128((*prev)->src,src);
 			}
 		}
-		assert(lookup_local_l3host(i,l2,AF_INET6,src));
+		assert(lookup_local_l3host(NULL,i,l2,AF_INET6,src));
 	}
 	if(r->addrs & ROUTE_HAS_VIA && r->maskbits < 128){
 		if( (l3 = lookup_global_l3host(AF_INET6,via)) ){

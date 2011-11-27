@@ -29,13 +29,13 @@ typedef enum {
 // Look up an l3 address, creating an l3host if the address isn't known on
 // this l2host. A route check will be performed; if no local route to this host
 // exists, an ARP request will be issued rather than adding the host.
-struct l3host *lookup_l3host(struct interface *,struct l2host *,int,const void *)
-				__attribute__ ((nonnull (1,2,4)));
+struct l3host *lookup_l3host(const struct timeval *tv,struct interface *,
+				struct l2host *,int,const void *);
 
 // Look up an l3 address known to be local (perhaps we got it from the host's
 // ARP cache, or it's our own address). No ARP/route lookup will be performed.
-struct l3host *lookup_local_l3host(struct interface *,struct l2host *,int,const void *)
-		__attribute__ ((nonnull (1,2,4)));
+struct l3host *lookup_local_l3host(const struct timeval *tv,struct interface *,
+					struct l2host *,int,const void *);
 
 // Look up an l3 address on this interface, ignoring l2host information. Does
 // not create an l3host on lookup failure.
