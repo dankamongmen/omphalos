@@ -80,7 +80,9 @@ void handle_ipv6_packet(omphalos_packet *op,const void *frame,size_t len){
 	memcpy(op->l3daddr,&ip->ip6_dst,16);
 	op->l3s = lookup_l3host(op->i,op->l2s,AF_INET6,&ip->ip6_src);
 	op->l3d = lookup_l3host(op->i,op->l2d,AF_INET6,&ip->ip6_dst);
-	const void *nhdr = (const char *)frame + (len - plen);
+	// Don't just subtract payload length from frame length, since the
+	// frame might have been padded up to a minimum size.
+	const void *nhdr = (const char *)ip + sizeof(*ip);
 	next = ip->ip6_ctlun.ip6_un1.ip6_un1_nxt;
 	// FIXME don't call down if we're fragmented
 	while(nhdr){
