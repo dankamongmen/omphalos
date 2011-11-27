@@ -39,8 +39,9 @@ env_details(WINDOW *hw,int rows){
 			assert(wattrset(hw,SUBDISPLAY_ATTR) == OK);
 		}
 	}case 1:{
-		assert(mvwprintw(hw,row + z,col,"colors: "U64FMT"rows: "U32FMT"cols: "U32FMT"palette: %s",
-				COLORS,srows,scols,modified_colors ? "dynamic" : "fixed") != ERR);
+		assert(mvwprintw(hw,row + z,col,"Colors (pairs): %u (%u) Geom: %dx%d Palette: %s",
+				COLORS,COLOR_PAIRS,srows,scols,
+				modified_colors ? "dynamic" : "fixed") != ERR);
 		--z;
 	}case 0:{
 		const char *lang = getenv("LANG");
