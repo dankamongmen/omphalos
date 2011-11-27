@@ -94,6 +94,9 @@ int setup_extended_colors(void){
 #define GNOME_CYAN_R 23
 #define GNOME_CYAN_G 593
 #define GNOME_CYAN_B 601
+#define GNOME_YELLOW_R 765
+#define GNOME_YELLOW_G 624
+#define GNOME_YELLOW_B 0
 #define GNOME75(x) ((x) * 3 / 4)
 #define GNOME50(x) ((x) * 2 / 4)
 #define GNOME5(x) ((x) / 20)
@@ -104,7 +107,7 @@ int setup_extended_colors(void){
 	ret |= init_color(COLOR_BLACK,156,203,211);
 	ret |= init_color(COLOR_RED,796,0,0);
 	ret |= init_color(COLOR_GREEN,304,601,23);
-	ret |= init_color(COLOR_YELLOW,765,624,0);
+	ret |= init_color(COLOR_YELLOW,GNOME_YELLOW_R,GNOME_YELLOW_G,GNOME_YELLOW_B);
 	ret |= init_color(COLOR_BLUE,GNOME_BLUE_R,GNOME_BLUE_G,GNOME_BLUE_B);
 	ret |= init_color(COLOR_MAGENTA,457,312,480);
 	ret |= init_color(COLOR_CYAN,23,593,601);
@@ -137,6 +140,7 @@ int setup_extended_colors(void){
 	ret |= init_color(COLOR_PALEBLUE,GNOME5(GNOME_BLUE_R),GNOME5(GNOME_BLUE_G),GNOME5(GNOME_BLUE_B));
 	ret |= init_color(COLOR_PALECYAN,GNOME5(GNOME_CYAN_R),GNOME5(GNOME_CYAN_G),GNOME5(GNOME_CYAN_B));
 	ret |= init_color(COLOR_PALEPURPLE,CURSES5_RGB(_PURPLE_R),CURSES5_RGB(_PURPLE_G),CURSES5_RGB(_PURPLE_B));
+	ret |= init_color(COLOR_PALEYELLOW,CURSES5_RGB(GNOME_YELLOW_R),CURSES5_RGB(GNOME_YELLOW_G),CURSES5_RGB(GNOME_YELLOW_B));
 	ret |= wrefresh(curscr);
 	if(ret == OK){
 		modified_colors = 1;

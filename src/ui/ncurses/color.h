@@ -29,6 +29,7 @@ enum {
 	COLOR_PALEBLUE,
 	COLOR_PALECYAN,
 	COLOR_PALEPURPLE,
+	COLOR_PALEYELLOW,
 };
 
 // Our color pairs
