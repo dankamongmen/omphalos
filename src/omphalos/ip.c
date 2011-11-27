@@ -214,7 +214,8 @@ int prep_ipv4_header(void *frame,size_t flen,uint32_t src,uint32_t dst,unsigned 
 // Doesn't set ->tot_len; that must be done by the caller. Prepare ->check for
 // checksum evaluation, but we cannot yet actually evaluate it (FIXME though we
 // could calculate differential).
-int prep_ipv6_header(void *frame,size_t flen,uint128_t src,uint128_t dst,unsigned proto){
+int prep_ipv6_header(void *frame,size_t flen,const uint128_t src,
+			const uint128_t dst,unsigned proto){
 	struct ip6_hdr *ip;
 
 	if(flen < sizeof(*ip)){

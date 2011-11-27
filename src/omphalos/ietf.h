@@ -32,13 +32,13 @@ unrouted_ip4(const uint32_t *ip){
 }
 
 static inline int
-unrouted_ip6(const uint128_t *ip6){
+unrouted_ip6(const uint128_t ip6){
 	const uint128_t LINKLOCAL6_MASK = { htonl(0xfe800000ul), 0, 0, 0 };
 	const uint128_t LINKLOCAL6_NET = { htonl(0xffa00000ul), 0, 0, 0 };
 	uint128_t masked;
 
-	memcpy(&masked,ip6,sizeof(masked));
-	masked &= LINKLOCAL6_MASK;
+	memcpy(masked,ip6,sizeof(masked));
+	andequals128(masked,LINKLOCAL6_MASK);
 	return !equal128(masked,LINKLOCAL6_NET);
 }
 

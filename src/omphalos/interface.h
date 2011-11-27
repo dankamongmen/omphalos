@@ -159,8 +159,8 @@ int destroy_interfaces(void);
 int print_all_iface_stats(FILE *,interface *);
 int add_route4(interface *,const uint32_t *,const uint32_t *,
 				const uint32_t *,unsigned);
-int add_route6(interface *,const uint128_t *,const uint128_t *,
-				const uint128_t *,unsigned);
+int add_route6(interface *,const uint128_t,const uint128_t,const uint128_t,
+						unsigned);
 int del_route4(interface *,const struct in_addr *,unsigned);
 int del_route6(interface *,const struct in6_addr *,unsigned);
 

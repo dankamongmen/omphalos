@@ -289,8 +289,8 @@ int add_route4(interface *i,const uint32_t *dst,const uint32_t *via,
 }
 
 // Interface lock must be held upon entry
-int add_route6(interface *i,const uint128_t *dst,const uint128_t *via,
-				const uint128_t *src,unsigned blen){
+int add_route6(interface *i,const uint128_t dst,const uint128_t via,
+				const uint128_t src,unsigned blen){
 	ip6route *r,**prev;
 	struct l3host *l3;
 	struct l2host *l2;
@@ -298,7 +298,7 @@ int add_route6(interface *i,const uint128_t *dst,const uint128_t *via,
 	if((r = malloc(sizeof(*r))) == NULL){
 		return -1;
 	}
-	memcpy(&r->dst,dst,sizeof(*dst));
+	assign128(r->dst,dst);
 	r->maskbits = blen;
 	prev = &i->ip6r;
 	// Order most-specific (largest maskbits) to least-specific (0 maskbits)
@@ -317,19 +317,19 @@ int add_route6(interface *i,const uint128_t *dst,const uint128_t *via,
 		*prev = r;
 	}
 	if(via){
-		memcpy(&r->via,via,sizeof(*via));
+		assign128(r->via,via);
 		r->addrs |= ROUTE_HAS_VIA;
 	}
 	if(src){
 		l2 = lookup_l2host(i,i->addr);
-		memcpy(&r->src,src,sizeof(*src));
+		assign128(r->src,src);
 		r->addrs |= ROUTE_HAS_SRC;
 		// Set the src for any less-specific routes we contain
 		while( *(prev = &(*prev)->next) ){
 			assert((*prev)->maskbits <= r->maskbits);
 			if(!((*prev)->addrs & ROUTE_HAS_SRC)){
 				(*prev)->addrs |= ROUTE_HAS_SRC;
-				memcpy(&(*prev)->src,src,sizeof(*src));
+				assign128((*prev)->src,src);
 			}
 		}
 		assert(lookup_local_l3host(i,l2,AF_INET6,src));
@@ -393,10 +393,11 @@ int is_local4(const interface *i,uint32_t ip){
 
 static inline int
 ip6_in_route(const ip6route *r,const uint128_t i){
-	uint128_t dst,mask;
+	uint128_t dst,mask,itmp;
 
-	memcpy(&dst,&r->dst,sizeof(dst));
-	memset(&mask,0xff,sizeof(mask));
+	memcpy(dst,&r->dst,sizeof(dst));
+	memset(mask,0xff,sizeof(mask));
+	memcpy(itmp,i,sizeof(itmp));
 	switch(r->maskbits / 32){
 		case 0:
 			mask[0] = ~0lu << (32 - r->maskbits);
@@ -419,7 +420,9 @@ ip6_in_route(const ip6route *r,const uint128_t i){
 		case 4:
 			break;
 	}
-	return equal128(dst & mask,i & mask);
+	andequals128(dst,mask);
+	andequals128(itmp,mask);
+	return equal128(dst,itmp);
 }
 
 int is_local6(const interface *i,const struct in6_addr *a){
@@ -713,5 +716,5 @@ get_unicast_address(interface *i,const void *hwaddr,int fam,const void *addr,voi
 
 // FIXME need support multiple addresses, and match best up with each route
 void set_default_ipv6src(interface *i,const uint128_t ip){
-	i->ip6defsrc = ip;
+	memcpy(i->ip6defsrc,ip,sizeof(ip));
 }
