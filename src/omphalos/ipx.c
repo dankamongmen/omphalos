@@ -46,7 +46,7 @@ void handle_ipx_packet(omphalos_packet *op,const void *frame,size_t len){
 	if(ipxlen % 2){
 		++ipxlen;
 	}
-	if(check_ethernet_padup(len,ipxlen)){
+	if(len < ipxlen){
 		diagnostic("%s malformed (%u != %zu) on %s",
 				__func__,ipxlen,len,op->i->name);
 		op->malformed = 1;

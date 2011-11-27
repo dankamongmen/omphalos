@@ -22,7 +22,7 @@ void handle_arp_packet(omphalos_packet *op,const void *frame,size_t len){
 		op->malformed = 1;
 		return;
 	}
-	if(check_ethernet_padup(len,sizeof(*ap) + ap->ar_hln * 2 + ap->ar_pln * 2)){
+	if(len < sizeof(*ap) + ap->ar_hln * 2 + ap->ar_pln * 2){
 		op->malformed = 1;
 		diagnostic("%s %s bad length expected %zu got %zu",
 			__func__,op->i->name,sizeof(*ap) + ap->ar_hln * 2 + ap->ar_pln * 2,len);

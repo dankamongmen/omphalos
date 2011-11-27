@@ -154,7 +154,8 @@ void handle_ipv4_packet(omphalos_packet *op,const void *frame,size_t len){
 				op->i->name,len,hlen);
 		return;
 	}
-	if(check_ethernet_padup(len,ntohs(ip->tot_len))){
+	// len can be greater than tot_len due to layer 2 padding requirements
+	if(len < ntohs(ip->tot_len)){
 		op->malformed = 1;
 		diagnostic("%s %s malformed with %zu vs %hu",__func__,
 				op->i->name,len,ntohs(ip->tot_len));
