@@ -42,7 +42,12 @@ equal128masked(const uint128_t v1,const uint128_t v2,unsigned octetsmasked){
 
 static inline void
 assign128(uint128_t to,const uint128_t from){
-	memcpy(to,from,sizeof(*from));
+	memcpy(to,from,sizeof(to));
+}
+
+static inline void
+set128(uint128_t to,const unsigned from){
+	memset(to,from,sizeof(to));
 }
 
 #ifdef __cplusplus

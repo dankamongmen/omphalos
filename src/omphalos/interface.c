@@ -395,9 +395,9 @@ static inline int
 ip6_in_route(const ip6route *r,const uint128_t i){
 	uint128_t dst,mask,itmp;
 
-	memcpy(dst,&r->dst,sizeof(dst));
-	memset(mask,0xff,sizeof(mask));
-	memcpy(itmp,i,sizeof(itmp));
+	assign128(dst,r->dst);
+	set128(mask,0xff);
+	assign128(itmp,i);
 	switch(r->maskbits / 32){
 		case 0:
 			mask[0] = ~0lu << (32 - r->maskbits);
@@ -608,7 +608,7 @@ get_route6(const interface *i,const void *ip){
 	for(i6r = i->ip6r ; i6r ; i6r = i6r->next){
 		uint128_t i;
 
-		memcpy(&i,ip,sizeof(i));
+		assign128(i,ip);
 		if(ip6_in_route(i6r,i)){
 			return i6r;
 		}
@@ -633,7 +633,7 @@ get_source_address(interface *i,int fam,const void *addr,void *s){
 
 			// FIXME ipv6 routes very rarely set their src :/
 			if(i6r && (i6r->addrs & ROUTE_HAS_SRC)){
-				memcpy(s,&i6r->src,sizeof(uint128_t));
+				assign128(s,i6r->src);
 			}else{
 				return NULL;
 			}
@@ -658,27 +658,7 @@ get_unicast_address(interface *i,const void *hwaddr,int fam,const void *addr,voi
 				// A routed result requires a directed ARP
 				// probe to verify the local network address
 				// (our idea of the route might be wrong).
-				if(i4r->addrs & ROUTE_HAS_VIA){
-					// FIXME even if we have a route to it,
-					// check the hwaddr to see that it matches
-					// the hwaddr of the router. if not, send
-					// an arp probe to the original address.
-					// this will detect colocated hosts
-					// with different network settings.
-					/*
-					const ip4route *i4v;
-
-					if( (i4v = get_route4(i,&i4r->via)) ){
-						if(i4v->addrs & ROUTE_HAS_SRC){
-							uint32_t v = i4v->src;
-							assert(*(const uint32_t *)&i4v->src);
-							send_arp_probe(i,hwaddr,
-									addr,
-									sizeof(uint32_t),
-									&i4v->src);
-						}
-					}*/
-				}else{
+				if(!(i4r->addrs & ROUTE_HAS_VIA)){
 					ret = 1;
 					memcpy(r,addr,sizeof(uint32_t));
 				}
@@ -697,14 +677,14 @@ get_unicast_address(interface *i,const void *hwaddr,int fam,const void *addr,voi
 			if(i6r){ // FIXME handle routed addresses!
 				if(!(i6r->addrs & ROUTE_HAS_VIA)){
 					ret = 1;
-					memcpy(r,addr,sizeof(uint128_t));
+					assign128(r,addr);
 				}
 			}else{
 				// In case we don't have a link-local address
 				// configured yet, special-case them...
 				if(unrouted_ip6(addr)){
 					ret = 1;
-					memcpy(r,addr,sizeof(uint128_t));
+					assign128(r,addr);
 				}
 			}
 			break;
@@ -716,5 +696,5 @@ get_unicast_address(interface *i,const void *hwaddr,int fam,const void *addr,voi
 
 // FIXME need support multiple addresses, and match best up with each route
 void set_default_ipv6src(interface *i,const uint128_t ip){
-	memcpy(i->ip6defsrc,ip,sizeof(ip));
+	assign128(i->ip6defsrc,ip);
 }
