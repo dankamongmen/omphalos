@@ -196,7 +196,7 @@ handle_ieee80211_data(omphalos_packet *op,const void *frame,size_t len){
 				__func__,len,op->i->name);
 		return;
 	}
-	op->l2s = lookup_l2host(op->i,idata->h_dest);
+	op->l2d = lookup_l2host(op->i,idata->h_dest);
 	op->l2s = lookup_l2host(op->i,idata->h_src);
        	len -= sizeof(*idata);
 	// FIXME and do what??
