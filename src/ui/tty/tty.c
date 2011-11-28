@@ -150,9 +150,9 @@ print_host(const interface *iface,const struct l2host *l2,const struct l3host *l
 	hwaddr = l2addrstr(l2);
 	netaddr = l3addrstr(l3);
 	if( (l3name = get_l3name(l3)) ){
-		n = printf("[%8s] host %s \"%ls\" (addr %s)\n",iface->name,hwaddr,l3name,netaddr);
+		n = printf("[%8s] node %s \"%ls\" (addr %s)\n",iface->name,hwaddr,l3name,netaddr);
 	}else{
-		n = printf("[%8s] host %s addr %s\n",iface->name,hwaddr,netaddr);
+		n = printf("[%8s] node %s addr %s\n",iface->name,hwaddr,netaddr);
 	}
 	free(netaddr);
 	free(hwaddr);
@@ -172,9 +172,11 @@ print_service(const interface *iface,const struct l2host *l2,
 	netaddr = l3addrstr(l3);
 	srv = l4srvstr(l4);
 	if( (l3name = get_l3name(l3)) ){
-		n = printf("[%8s] %ls served by host %s \"%ls\" (addr %s)\n",iface->name,srv,hwaddr,l3name,netaddr);
+		n = printf("[%8s] %ls served by node %s \"%ls\" (addr %s)\n",
+				iface->name,srv,hwaddr,l3name,netaddr);
 	}else{
-		n = printf("[%8s] %ls served by host %s addr %s\n",iface->name,srv,hwaddr,netaddr);
+		n = printf("[%8s] %ls served by node %s addr %s\n",
+				iface->name,srv,hwaddr,netaddr);
 	}
 	free(netaddr);
 	free(hwaddr);

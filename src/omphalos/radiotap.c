@@ -1,6 +1,7 @@
 #include <limits.h>
 #include <assert.h>
 #include <sys/socket.h>
+#include <linux/if_arp.h>
 #include <omphalos/diag.h>
 #include <omphalos/util.h>
 #include <omphalos/hwaddrs.h>
@@ -165,6 +166,13 @@ handle_ieee80211_mgmt(omphalos_packet *op,const void *frame,size_t len,unsigned 
 		diagnostic("%s Packet too small (%zu) on %s",
 				__func__,len,op->i->name);
 		return;
+	}
+	{
+	char b[18];
+	hwntop(ibec->h_src,ETH_ALEN,b);
+	diagnostic("SRC: %s",b);
+	hwntop(ibec->bssid,ETH_ALEN,b);
+	diagnostic("BSSID: %s",b);
 	}
 	op->l2s = lookup_l2host(op->i,ibec->h_src);
        	len -= sizeof(*ibec);

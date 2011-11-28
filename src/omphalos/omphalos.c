@@ -42,23 +42,23 @@ static void
 usage(const char *arg0,int ret){
 	FILE *fp = ret == EXIT_SUCCESS ? stdout : stderr;
 
-	fwprintf(fp,L"usage: %s [ options... ]\n",basename(arg0));
-	fwprintf(fp,L"\noptions:\n");
-	fwprintf(fp,L"-h print this help, and exit\n");
-	fwprintf(fp,L"-p do not make newly-discovered devices promiscuous\n");
-	fwprintf(fp,L"--version print version info, and exit\n");
-	fwprintf(fp,L"-u username: user name to take after creating packet socket.\n");
-	fwprintf(fp,L"\t'%s' by default. provide empty string to disable.\n",DEFAULT_USERNAME);
-	fwprintf(fp,L"-f filename: libpcap-format save file for input.\n");
-	fwprintf(fp,L"--mode silent|stealthy|active|aggressive|forceful|hostile\n");
-	fwprintf(fp,L"\t'%s' by default. See documentation for details.\n",DEFAULT_MODESTRING);
-	fwprintf(fp,L"--usbids filename: USB ID Repository (http://www.linux-usb.org/usb-ids.html).\n");
-	fwprintf(fp,L"\t'%s' by default. provide empty string to disable.\n",DEFAULT_USBIDS_FILENAME);
-	fwprintf(fp,L"--ouis filename: IANA's OUI mapping in get-oui(1) format.\n");
-	fwprintf(fp,L"\t'%s' by default. provide empty string to disable.\n",DEFAULT_IANA_FILENAME);
-	fwprintf(fp,L"--resolv filename: resolv.conf-format nameserver list.\n");
-	fwprintf(fp,L"\t'%s' by default. provide empty string to disable.\n",DEFAULT_RESOLVCONF_FILENAME);
-	fwprintf(fp,L"--plog filename: Enable malformed packet logging to this file.\n");
+	fprintf(fp,"usage: %s [ options... ]\n",basename(arg0));
+	fprintf(fp,"\noptions:\n");
+	fprintf(fp,"-h print this help, and exit\n");
+	fprintf(fp,"-p do not make newly-discovered devices promiscuous\n");
+	fprintf(fp,"--version print version info, and exit\n");
+	fprintf(fp,"-u username: user name to take after creating packet socket.\n");
+	fprintf(fp,"\t'%s' by default. provide empty string to disable.\n",DEFAULT_USERNAME);
+	fprintf(fp,"-f filename: libpcap-format save file for input.\n");
+	fprintf(fp,"--mode silent|stealthy|active|aggressive|forceful|hostile\n");
+	fprintf(fp,"\t'%s' by default. See documentation for details.\n",DEFAULT_MODESTRING);
+	fprintf(fp,"--usbids filename: USB ID Repository (http://www.linux-usb.org/usb-ids.html).\n");
+	fprintf(fp,"\t'%s' by default. provide empty string to disable.\n",DEFAULT_USBIDS_FILENAME);
+	fprintf(fp,"--ouis filename: IANA's OUI mapping in get-oui(1) format.\n");
+	fprintf(fp,"\t'%s' by default. provide empty string to disable.\n",DEFAULT_IANA_FILENAME);
+	fprintf(fp,"--resolv filename: resolv.conf-format nameserver list.\n");
+	fprintf(fp,"\t'%s' by default. provide empty string to disable.\n",DEFAULT_RESOLVCONF_FILENAME);
+	fprintf(fp,"--plog filename: Enable malformed packet logging to this file.\n");
 	exit(ret);
 }
 
@@ -193,86 +193,86 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 			break;
 		}case OPT_OUIS:{
 			if(pctx->ianafn){
-				fwprintf(stderr,L"Provided --ouis twice\n");
+				fprintf(stderr,"Provided --ouis twice\n");
 				usage(argv[0],EXIT_FAILURE);
 			}
 			pctx->ianafn = optarg;
 			break;
 		}case OPT_USBIDS:{
 			if(pctx->usbidsfn){
-				fwprintf(stderr,L"Provided --usbids twice\n");
+				fprintf(stderr,"Provided --usbids twice\n");
 				usage(argv[0],EXIT_FAILURE);
 			}
 			pctx->usbidsfn = optarg;
 			break;
 		}case OPT_RESOLV:{
 			if(pctx->resolvconf){
-				fwprintf(stderr,L"Provided --resolv twice\n");
+				fprintf(stderr,"Provided --resolv twice\n");
 				usage(argv[0],EXIT_FAILURE);
 			}
 			pctx->resolvconf = optarg;
 			break;
 		}case OPT_MODE:{
 			if(mode){
-				fwprintf(stderr,L"Provided --mode twice\n");
+				fprintf(stderr,"Provided --mode twice\n");
 				usage(argv[0],EXIT_FAILURE);
 			}
 			mode = optarg;
 			break;
 		}case OPT_PLOG:{
 			if(pctx->plog){
-				fwprintf(stderr,L"Provided --plog twice\n");
+				fprintf(stderr,"Provided --plog twice\n");
 				usage(argv[0],EXIT_FAILURE);
 			}
 			if((pctx->plogp = pcap_open_dead(DLT_EN10MB,0)) == NULL){
-				fwprintf(stderr,L"Couldn't open pcap output file\n");
+				fprintf(stderr,"Couldn't open pcap output file\n");
 				usage(argv[0],EXIT_FAILURE);
 			}
 			if((pctx->plog = pcap_dump_open(pctx->plogp,optarg)) == NULL){
 				// pcap_geterr() sticks a friendly ": " in front of itself argh
-				fwprintf(stderr,L"Couldn't write to %s%s?\n",optarg,pcap_geterr(pctx->plogp));
+				fprintf(stderr,"Couldn't write to %s%s?\n",optarg,pcap_geterr(pctx->plogp));
 				usage(argv[0],EXIT_FAILURE);
 			}
 			fprintf(stdout,"Logging malformed packets to %s\n",optarg);
 			break;
 		}case 'p':{
 			if(pctx->nopromiscuous){
-				fwprintf(stderr,L"Provided %c twice\n",opt);
+				fprintf(stderr,"Provided %c twice\n",opt);
 				usage(argv[0],EXIT_FAILURE);
 			}
 			pctx->nopromiscuous = 1;
 			break;
 		}case 'f':{
 			if(pctx->pcapfn){
-				fwprintf(stderr,L"Provided %c twice\n",opt);
+				fprintf(stderr,"Provided %c twice\n",opt);
 				usage(argv[0],EXIT_FAILURE);
 			}
 			pctx->pcapfn = optarg;
 			break;
 		}case 'u':{
 			if(user){
-				fwprintf(stderr,L"Provided %c twice\n",opt);
+				fprintf(stderr,"Provided %c twice\n",opt);
 				usage(argv[0],EXIT_FAILURE);
 			}
 			user = optarg;
 			break;
 		}case ':':{
 			// FIXME need handle long options here
-			fwprintf(stderr,L"Option requires argument: '%c'\n",optopt);
+			fprintf(stderr,"Option requires argument: '%c'\n",optopt);
 			usage(argv[0],EXIT_FAILURE);
 			break;
 		}case '?':{
-			fwprintf(stderr,L"Unknown option: '%c'\n",optopt);
+			fprintf(stderr,"Unknown option: '%c'\n",optopt);
 			usage(argv[0],EXIT_FAILURE);
 			break;
 		}default:{
-			fwprintf(stderr,L"Getopt returned %d (%c)\n",opt,opt);
+			fprintf(stderr,"Getopt returned %d (%c)\n",opt,opt);
 			usage(argv[0],EXIT_FAILURE);
 			break;
 		} }
 	}
 	if(argv[optind]){ // don't allow trailing arguments
-		fwprintf(stderr,L"Trailing argument: %s\n",argv[optind]);
+		fprintf(stderr,"Trailing argument: %s\n",argv[optind]);
 		usage(argv[0],-1);
 		return -1;
 	}
@@ -292,7 +292,7 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 		mode = DEFAULT_MODESTRING;
 	}
 	if((pctx->mode = lex_omphalos_mode(mode)) == OMPHALOS_MODE_NONE){
-		fwprintf(stderr,L"Invalid operating mode: %s\n",mode);
+		fprintf(stderr,"Invalid operating mode: %s\n",mode);
 		usage(argv[0],-1);
 		return -1;
 	}
