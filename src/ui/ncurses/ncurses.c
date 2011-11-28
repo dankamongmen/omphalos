@@ -166,6 +166,20 @@ ncurses_input_thread(void *unsafe_marsh){
 	active = NULL; // No subpanels initially
 	while((ch = getch()) != 'q' && ch != 'Q'){
 	switch(ch){
+		case KEY_HOME:
+			lock_ncurses();
+			if(selection_active){
+				use_first_node_locked();
+			}
+			unlock_ncurses();
+			break;
+		case KEY_END:
+			lock_ncurses();
+			if(selection_active){
+				use_last_node_locked();
+			}
+			unlock_ncurses();
+			break;
 		case KEY_PPAGE:
 			lock_ncurses();
 			if(selection_active){
