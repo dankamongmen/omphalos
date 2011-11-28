@@ -379,19 +379,19 @@ ncurses_setup(void){
 		errstr = "Couldn't preserve initial colors\n";
 		goto err;
 	}
-	assert(init_pair(BORDER_COLOR,COLOR_GREEN,-1) == OK);
-	assert(init_pair(HEADER_COLOR,COLOR_BLUE,-1) == OK);
-	assert(init_pair(FOOTER_COLOR,COLOR_YELLOW,-1) == OK);
-	assert(init_pair(DBORDER_COLOR,COLOR_WHITE,-1) == OK);
-	assert(init_pair(DHEADING_COLOR,COLOR_WHITE,-1) == OK);
-	assert(init_pair(UBORDER_COLOR,COLOR_YELLOW,-1) == OK);
-	assert(init_pair(UHEADING_COLOR,COLOR_GREEN,-1) == OK);
-	assert(init_pair(PBORDER_COLOR,COLOR_CYAN,-1) == OK);
-	assert(init_pair(PHEADING_COLOR,COLOR_RED,-1) == OK);
-	assert(init_pair(BULKTEXT_COLOR,COLOR_WHITE,-1) == OK);
-	assert(init_pair(IFACE_COLOR,COLOR_WHITE,-1) == OK);
 	if(setup_extended_colors() != OK){
 		errstr = "Couldn't initialize extended colors\n";
+		assert(init_pair(BORDER_COLOR,COLOR_GREEN,-1) == OK);
+		assert(init_pair(HEADER_COLOR,COLOR_BLUE,-1) == OK);
+		assert(init_pair(FOOTER_COLOR,COLOR_YELLOW,-1) == OK);
+		assert(init_pair(DBORDER_COLOR,COLOR_WHITE,-1) == OK);
+		assert(init_pair(DHEADING_COLOR,COLOR_WHITE,-1) == OK);
+		assert(init_pair(UBORDER_COLOR,COLOR_CYAN,-1) == OK);
+		assert(init_pair(UHEADING_COLOR,COLOR_GREEN,-1) == OK);
+		assert(init_pair(PBORDER_COLOR,COLOR_YELLOW,-1) == OK);
+		assert(init_pair(PHEADING_COLOR,COLOR_RED,-1) == OK);
+		assert(init_pair(BULKTEXT_COLOR,COLOR_WHITE,-1) == OK);
+		assert(init_pair(IFACE_COLOR,COLOR_WHITE,-1) == OK);
 		assert(init_pair(LCAST_COLOR,COLOR_CYAN,-1) == OK); // will use A_BOLD via OUR_BOLD
 		assert(init_pair(UCAST_COLOR,COLOR_CYAN,-1) == OK);
 		assert(init_pair(MCAST_COLOR,COLOR_BLUE,-1) == OK);
@@ -422,6 +422,17 @@ ncurses_setup(void){
 		assert(init_pair(BCAST_ALTROW_RES_COLOR,COLOR_MAGENTA,-1) == OK);
 		assert(init_pair(SUBDISPLAY_COLOR,COLOR_WHITE,-1) == OK);
 	}else{
+		assert(init_pair(BORDER_COLOR,COLOR_ALUMINIUM,-1) == OK);
+		assert(init_pair(HEADER_COLOR,COLOR_BLUE,-1) == OK);
+		assert(init_pair(FOOTER_COLOR,COLOR_YELLOW,-1) == OK);
+		assert(init_pair(DBORDER_COLOR,COLOR_ALUMINIUM,-1) == OK);
+		assert(init_pair(DHEADING_COLOR,COLOR_WHITE,-1) == OK);
+		assert(init_pair(UBORDER_COLOR,COLOR_CYAN,-1) == OK);
+		assert(init_pair(UHEADING_COLOR,COLOR_ORANGE,-1) == OK);
+		assert(init_pair(PBORDER_COLOR,COLOR_YELLOW,-1) == OK);
+		assert(init_pair(PHEADING_COLOR,COLOR_RED,-1) == OK);
+		assert(init_pair(BULKTEXT_COLOR,COLOR_WHITE,-1) == OK);
+		assert(init_pair(IFACE_COLOR,COLOR_WHITE,-1) == OK);
 		assert(init_pair(LCAST_COLOR,COLOR_CHAMELEON,-1) == OK);
 		assert(init_pair(UCAST_COLOR,COLOR_BLUE,-1) == OK);
 		assert(init_pair(MCAST_COLOR,COLOR_SKYBLUE,-1) == OK);
@@ -438,18 +449,18 @@ ncurses_setup(void){
 		assert(init_pair(UCAST_RES_COLOR,COLOR_BLUE_50,-1) == OK);
 		assert(init_pair(MCAST_RES_COLOR,COLOR_SKYBLUE_50,-1) == OK);
 		assert(init_pair(BCAST_RES_COLOR,COLOR_VIOLET_50,-1) == OK);
-		assert(init_pair(LCAST_ALTROW_COLOR,COLOR_CHAMELEON,COLOR_PALEYELLOW) == OK);
-		assert(init_pair(UCAST_ALTROW_COLOR,COLOR_BLUE,COLOR_PALEYELLOW) == OK);
-		assert(init_pair(MCAST_ALTROW_COLOR,COLOR_SKYBLUE,COLOR_PALEYELLOW) == OK);
-		assert(init_pair(BCAST_ALTROW_COLOR,COLOR_VIOLET,COLOR_PALEYELLOW) == OK);
-		assert(init_pair(LCAST_ALTROW_L3_COLOR,COLOR_CHAMELEON_75,COLOR_PALEYELLOW) == OK);
-		assert(init_pair(UCAST_ALTROW_L3_COLOR,COLOR_BLUE_75,COLOR_PALEYELLOW) == OK);
-		assert(init_pair(MCAST_ALTROW_L3_COLOR,COLOR_SKYBLUE_75,COLOR_PALEYELLOW) == OK);
-		assert(init_pair(BCAST_ALTROW_L3_COLOR,COLOR_VIOLET_75,COLOR_PALEYELLOW) == OK);
-		assert(init_pair(LCAST_ALTROW_RES_COLOR,COLOR_CHAMELEON_50,COLOR_PALEYELLOW) == OK);
-		assert(init_pair(UCAST_ALTROW_RES_COLOR,COLOR_BLUE_50,COLOR_PALEYELLOW) == OK);
-		assert(init_pair(MCAST_ALTROW_RES_COLOR,COLOR_SKYBLUE_50,COLOR_PALEYELLOW) == OK);
-		assert(init_pair(BCAST_ALTROW_RES_COLOR,COLOR_VIOLET_50,COLOR_PALEYELLOW) == OK);
+		assert(init_pair(LCAST_ALTROW_COLOR,COLOR_CHAMELEON,COLOR_PALECYAN) == OK);
+		assert(init_pair(UCAST_ALTROW_COLOR,COLOR_BLUE,COLOR_PALECYAN) == OK);
+		assert(init_pair(MCAST_ALTROW_COLOR,COLOR_SKYBLUE,COLOR_PALECYAN) == OK);
+		assert(init_pair(BCAST_ALTROW_COLOR,COLOR_VIOLET,COLOR_PALECYAN) == OK);
+		assert(init_pair(LCAST_ALTROW_L3_COLOR,COLOR_CHAMELEON_75,COLOR_PALECYAN) == OK);
+		assert(init_pair(UCAST_ALTROW_L3_COLOR,COLOR_BLUE_75,COLOR_PALECYAN) == OK);
+		assert(init_pair(MCAST_ALTROW_L3_COLOR,COLOR_SKYBLUE_75,COLOR_PALECYAN) == OK);
+		assert(init_pair(BCAST_ALTROW_L3_COLOR,COLOR_VIOLET_75,COLOR_PALECYAN) == OK);
+		assert(init_pair(LCAST_ALTROW_RES_COLOR,COLOR_CHAMELEON_50,COLOR_PALECYAN) == OK);
+		assert(init_pair(UCAST_ALTROW_RES_COLOR,COLOR_BLUE_50,COLOR_PALECYAN) == OK);
+		assert(init_pair(MCAST_ALTROW_RES_COLOR,COLOR_SKYBLUE_50,COLOR_PALECYAN) == OK);
+		assert(init_pair(BCAST_ALTROW_RES_COLOR,COLOR_VIOLET_50,COLOR_PALECYAN) == OK);
 		assert(init_pair(SUBDISPLAY_COLOR,COLOR_BRIGHTWHITE,-1) == OK);
 	}
 	if(curs_set(0) == ERR){
