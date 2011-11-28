@@ -251,8 +251,8 @@ void fade(unsigned sec){
 			b[p] = (ob[p] * (1000 - permille)) / 1000;
 			init_color(p,r[p],g[p],b[p]);
 		}
-		usleep(quanta);
 		wrefresh(curscr);
+		usleep(quanta);
 		gettimeofday(&ctime,NULL);
 		cus = ctime.tv_sec * 1000000 + ctime.tv_usec;
 	}
