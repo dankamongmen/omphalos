@@ -504,15 +504,15 @@ print_iface_hosts(const interface *i,const iface_state *is,const reelbox *rb,
 	cur = rb->selected;
 	line = rb->selline + sumline;
 	while(cur && line + (long)cur->lines >= !!topp + sumline){
-		print_iface_host(i,is,w,cur,line,rows,cols,
-				cur == rb->selected,!topp + sumline,endp);
+		print_iface_host(i,is,w,cur,line,rows,cols,cur == rb->selected,
+					!!topp + sumline,endp);
 		// here we traverse, then account...
 		if( (cur = cur->prev) ){
 			line -= cur->lines;
 		}
 	}
 	line = rb->selected ? (rb->selline + (long)rb->selected->lines) :
-		topp ? -(long)topp : 1;
+						-(long)topp + 1;
 	line += sumline;
 	cur = (rb->selected ? rb->selected->next : is->l2objs);
 	while(cur && line < rows){
@@ -728,7 +728,7 @@ int redraw_iface(const reelbox *rb,int active){
 	if(iface_wholly_visible_p(scrrows,rb) || active){ // completely visible
 		topp = endp = 0;
 	}else if(getbegy(rb->subwin) == 1){ // no top
-		topp = -(1 + getmaxy(rb->subwin) - iface_lines_unbounded(is));
+		topp = -(getmaxy(rb->subwin) - iface_lines_unbounded(is));
 		endp = 0;
 	}else{
 		topp = 0;
