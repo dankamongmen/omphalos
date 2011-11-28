@@ -1453,3 +1453,40 @@ void use_prev_node_locked(void){
 	}
 	select_interface_node(rb,l2obj_prev(rb->selected),delta);
 }
+
+// FIXME iterate multiple!
+void use_next_nodepage_locked(void){
+	reelbox *rb;
+	int delta;
+
+	if((rb = current_iface) == NULL){
+		return;
+	}
+	if(rb->selected == NULL || l2obj_next(rb->selected) == NULL){
+		return;
+	}
+	delta = l2obj_lines(rb->selected);
+	if(rb->selline + delta + l2obj_lines(l2obj_next(rb->selected)) >= getmaxy(rb->subwin) - 1){
+		delta = (getmaxy(rb->subwin) - 2 - l2obj_lines(l2obj_next(rb->selected)))
+			 - rb->selline;
+	}
+	select_interface_node(rb,l2obj_next(rb->selected),delta);
+}
+
+// FIXME iterate multiple!
+void use_prev_nodepage_locked(void){
+	reelbox *rb;
+	int delta;
+
+	if((rb = current_iface) == NULL){
+		return;
+	}
+	if(rb->selected == NULL || l2obj_prev(rb->selected) == NULL){
+		return;
+	}
+	delta = -l2obj_lines(l2obj_prev(rb->selected));
+	if(rb->selline + delta <= !!interface_up_p(rb->is->iface)){
+		delta = !!interface_up_p(rb->is->iface) - rb->selline;
+	}
+	select_interface_node(rb,l2obj_prev(rb->selected),delta);
+}

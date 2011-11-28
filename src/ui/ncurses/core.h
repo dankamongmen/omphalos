@@ -101,6 +101,8 @@ void use_prev_iface_locked(WINDOW *,struct panel_state *);
 // Actions on the current interface
 void use_next_node_locked(void);
 void use_prev_node_locked(void);
+void use_next_nodepage_locked(void);
+void use_prev_nodepage_locked(void);
 int expand_iface_locked(void);
 int collapse_iface_locked(void);
 // Select the current interface for host-granularity browsing (up and down now
