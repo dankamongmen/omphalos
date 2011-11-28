@@ -95,8 +95,7 @@ int queue_for_naming(struct interface *i,struct l3host *l3,dnstxfxn dnsfxn,
 	return ret;
 }
 
-/*static void
-offer_nameserver(int nsfam,const void *nameserver){
+void offer_nameserver(int nsfam,const void *nameserver){
 	resolver **head,*r;
 	size_t len;
 
@@ -122,7 +121,7 @@ offer_nameserver(int nsfam,const void *nameserver){
 		*head = r;
 	}
 	pthread_mutex_unlock(&resolver_lock);
-}*/
+}
 
 int offer_resolution(int fam,const void *addr,const char *name,namelevel nlevel,
 				int nsfam,const void *nameserver){
@@ -184,6 +183,7 @@ parse_resolv_conf(const char *fn){
 	l = 0;
 	errno = 0;
 	while( (line = fgetl(&b,&l,fp)) ){
+		struct in6_addr ina6;
 		struct in_addr ina;
 		resolver *r;
 		char *nl;
@@ -207,11 +207,22 @@ parse_resolv_conf(const char *fn){
 		}while(isspace(*line));
 		nl = strchr(line,'\n');
 		*nl = '\0';
-		if(inet_pton(AF_INET,line,&ina) != 1){
-			continue;
-		}
-		if((r = create_resolver(&ina,sizeof(ina))) == NULL){
-			break; // FIXME
+		if(*line == '['){
+			if(inet_pton(AF_INET6,line,&ina6) != 1){
+				continue;
+			}
+			// check terminating ']'? FIXME
+			if((r = create_resolver(&ina6,sizeof(ina6))) == NULL){
+				break; // FIXME
+			}
+		}else{
+			if(inet_pton(AF_INET,line,&ina) != 1){
+				continue;
+			}
+			// check that nothing follows? FIXME
+			if((r = create_resolver(&ina,sizeof(ina))) == NULL){
+				break; // FIXME
+			}
 		}
 		r->next = revs;
 		revs = r;

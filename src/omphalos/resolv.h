@@ -24,6 +24,8 @@ int offer_wresolution(int,const void *,const wchar_t *,namelevel,
 int offer_resolution(int,const void *,const char *,namelevel,int,const void *)
 			__attribute__ ((nonnull (2,3,6)));
 
+void offer_nameserver(int,const void *);
+
 int init_naming(const char *) __attribute__ ((nonnull (1)));
 int cleanup_naming(void);
 
