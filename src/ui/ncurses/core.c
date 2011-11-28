@@ -150,7 +150,6 @@ int new_display_panel(WINDOW *w,struct panel_state *ps,int rows,int cols,const w
 	assert(wcolor_set(psw,PHEADING_COLOR,NULL) == OK);
 	assert(mvwaddwstr(psw,0,START_COL * 2,hstr) != ERR);
 	assert(mvwaddwstr(psw,rows + 1,cols - (crightlen + START_COL * 2),crightstr) != ERR);
-	assert(wcolor_set(psw,BULKTEXT_COLOR,NULL) == OK);
 	return OK;
 }
 

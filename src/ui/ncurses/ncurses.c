@@ -419,6 +419,7 @@ ncurses_setup(void){
 		assert(init_pair(PBORDER_COLOR,COLOR_YELLOW,-1) == OK);
 		assert(init_pair(PHEADING_COLOR,COLOR_RED,-1) == OK);
 		assert(init_pair(BULKTEXT_COLOR,COLOR_WHITE,-1) == OK);
+		assert(init_pair(BULKTEXT_ALTROW_COLOR,COLOR_WHITE,-1) == OK);
 		assert(init_pair(IFACE_COLOR,COLOR_WHITE,-1) == OK);
 		assert(init_pair(LCAST_COLOR,COLOR_CYAN,-1) == OK); // will use A_BOLD via OUR_BOLD
 		assert(init_pair(UCAST_COLOR,COLOR_CYAN,-1) == OK);
@@ -460,6 +461,7 @@ ncurses_setup(void){
 		assert(init_pair(PBORDER_COLOR,COLOR_BLUE,-1) == OK);
 		assert(init_pair(PHEADING_COLOR,COLOR_RED,-1) == OK);
 		assert(init_pair(BULKTEXT_COLOR,COLOR_WHITE,-1) == OK);
+		assert(init_pair(BULKTEXT_ALTROW_COLOR,COLOR_WHITE,COLOR_PALEALUMINIUM) == OK);
 		assert(init_pair(IFACE_COLOR,COLOR_WHITE,-1) == OK);
 		assert(init_pair(LCAST_COLOR,COLOR_CHAMELEON,-1) == OK);
 		assert(init_pair(UCAST_COLOR,COLOR_BLUE,-1) == OK);

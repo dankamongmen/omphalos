@@ -396,22 +396,30 @@ print_iface_host(const interface *i,const iface_state *is,WINDOW *w,
 		selectchar = L' ';
 	}
 	if(!interface_up_p(i)){
-		attrs = (attrs & A_BOLD) | COLOR_PAIR(DBORDER_COLOR);
-		l3attrs = (l3attrs & A_BOLD) | COLOR_PAIR(DBORDER_COLOR);
-		rattrs = (rattrs & A_BOLD) | COLOR_PAIR(DBORDER_COLOR);
-		aattrs = (attrs & A_BOLD) | COLOR_PAIR(DBORDER_COLOR);
-		al3attrs = (l3attrs & A_BOLD) | COLOR_PAIR(DBORDER_COLOR);
-		arattrs = (rattrs & A_BOLD) | COLOR_PAIR(DBORDER_COLOR);
+		attrs = (attrs & A_BOLD) | COLOR_PAIR(BULKTEXT_COLOR);
+		l3attrs = (l3attrs & A_BOLD) | COLOR_PAIR(BULKTEXT_COLOR);
+		rattrs = (rattrs & A_BOLD) | COLOR_PAIR(BULKTEXT_COLOR);
+		aattrs = (aattrs & A_BOLD) | COLOR_PAIR(BULKTEXT_ALTROW_COLOR);
+		al3attrs = (al3attrs & A_BOLD) | COLOR_PAIR(BULKTEXT_ALTROW_COLOR);
+		arattrs = (arattrs & A_BOLD) | COLOR_PAIR(BULKTEXT_ALTROW_COLOR);
 	}
 	assert(wattrset(w,!(line % 2) ? attrs : aattrs) != ERR);
 	if(line >= minline){
+		int len;
+
 		l2ntop(l->l2,i->addrlen,hw);
 		if(devname){
-			int len = cols - PREFIXSTRLEN * 2 - 6 - HWADDRSTRLEN(i->addrlen);
+			len = cols - PREFIXSTRLEN * 2 - 6 - HWADDRSTRLEN(i->addrlen);
+			if(!interface_up_p(i)){
+				len += PREFIXSTRLEN * 2 + 1;
+			}
 			assert(mvwprintw(w,line,1,"%lc%c %s %-*.*ls",
 				selectchar,legend,hw,len,len,devname) != ERR);
 		}else{
-			int len = cols - PREFIXSTRLEN * 2 - 6;
+			len = cols - PREFIXSTRLEN * 2 - 6;
+			if(!interface_up_p(i)){
+				len += PREFIXSTRLEN * 2 + 1;
+			}
 			assert(mvwprintw(w,line,1,"%lc%c %-*.*s",
 				selectchar,legend,len,len,hw) != ERR);
 		}
@@ -424,8 +432,6 @@ print_iface_host(const interface *i,const iface_state *is,WINDOW *w,
 				wprintw(w,PREFIXFMT" "PREFIXFMT,prefix(get_srcpkts(l->l2),1,sbuf,sizeof(sbuf),1),
 						prefix(get_dstpkts(l->l2),1,dbuf,sizeof(dbuf),1));
 			}
-		}else{
-			// FIXME print to end of line for selection
 		}
 	}
 	++line;

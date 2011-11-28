@@ -35,6 +35,7 @@ enum {
 	COLOR_PALEVIOLET,
 	COLOR_PALEYELLOW,
 	COLOR_PALEMAGENTA,
+	COLOR_PALEALUMINIUM,
 	COLOR_SKYBLUE,
 	COLOR_SKYBLUE_75,
 	COLOR_SKYBLUE_50,
@@ -57,7 +58,8 @@ enum {
 	UHEADING_COLOR,
 	PBORDER_COLOR,			// popups
 	PHEADING_COLOR,
-	BULKTEXT_COLOR,			// bulk text (help, details)
+	BULKTEXT_COLOR,			// bulk text
+	BULKTEXT_ALTROW_COLOR,
 	IFACE_COLOR,			// interface summary text
 	UCAST_COLOR,			// unicast addresses
 	MCAST_COLOR,			// multicast addresses
