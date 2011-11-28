@@ -1,5 +1,7 @@
 #include <assert.h>
 #include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
 #include <sys/time.h>
 #include <ui/ncurses/color.h>
 #include <ncursesw/ncurses.h>
@@ -218,19 +220,22 @@ restore_our_colors(void){
 	return ret;
 }
 
-#include <unistd.h>
-void fade(unsigned sec){
+struct marsh {
+	unsigned sec;
+	pthread_mutex_t *lock;
+};
+
+static void *
+fade_thread(void *unsafe_marsh){
+	struct marsh *marsh = unsafe_marsh;
 	short r[colors_allowed],g[colors_allowed],b[colors_allowed];
 	// ncurses palettes are in terms of 0..1000, so there's no point in
 	// trying to do more than 1000 iterations, ever. This is in usec.
-	const long unsigned quanta = sec * 1000000 / 15;
+	const long unsigned quanta = marsh->sec * 1000000 / 15;
 	long unsigned sus,cus;
 	struct timeval stime;
 	int p;
 
-	if(!modified_colors){
-		return;
-	}
 	for(p = 0 ; p < colors_allowed ; ++p){
 		r[p] = or[p];
 		g[p] = og[p];
@@ -238,24 +243,50 @@ void fade(unsigned sec){
 	}
 	gettimeofday(&stime,NULL);
 	cus = sus = stime.tv_sec * 1000000 + stime.tv_usec;
-	while(cus < sus + sec * 1000000){
+	while(cus < sus + marsh->sec * 1000000){
 		long unsigned permille;
 		struct timeval ctime;
 
-		if((permille = (cus - sus) * 1000 / (sec * 1000000)) > 1000){
+		if((permille = (cus - sus) * 1000 / (marsh->sec * 1000000)) > 1000){
 			permille = 1000;
 		}
 		for(p = 0 ; p < colors_allowed ; ++p){
 			r[p] = (or[p] * (1000 - permille)) / 1000;
 			g[p] = (og[p] * (1000 - permille)) / 1000;
 			b[p] = (ob[p] * (1000 - permille)) / 1000;
-			init_color(p,r[p],g[p],b[p]);
 		}
-		wrefresh(curscr);
+		pthread_mutex_lock(marsh->lock);
+			for(p = 0 ; p < colors_allowed ; ++p){
+				init_color(p,r[p],g[p],b[p]);
+			}
+			wrefresh(curscr);
+		pthread_mutex_unlock(marsh->lock);
 		usleep(quanta);
 		gettimeofday(&ctime,NULL);
 		cus = ctime.tv_sec * 1000000 + ctime.tv_usec;
 	}
-	restore_our_colors();
-	wrefresh(curscr);
+	pthread_mutex_lock(marsh->lock);
+		restore_our_colors();
+		wrefresh(curscr);
+	pthread_mutex_unlock(marsh->lock);
+	free(marsh);
+	pthread_exit(NULL);
+}
+
+int fade(unsigned sec,pthread_mutex_t *lock,pthread_t *tid){
+	struct marsh *marsh;
+
+	if(!modified_colors){
+		return 0;
+	}
+	if((marsh = malloc(sizeof(*marsh))) == NULL){
+		return -1;
+	}
+	marsh->sec = sec;
+	marsh->lock = lock;
+	if(pthread_create(tid,NULL,fade_thread,marsh)){
+		free(marsh);
+		return -1;
+	}
+	return 0;
 }

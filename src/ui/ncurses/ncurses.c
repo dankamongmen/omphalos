@@ -617,6 +617,8 @@ vdiag_callback(const char *fmt,va_list v){
 int main(int argc,char * const *argv){
 	const char *codeset;
 	omphalos_ctx pctx;
+	pthread_t fadetid;
+	int jointid;
 
 	assert(fwide(stdout,-1) < 0);
 	assert(fwide(stderr,-1) < 0);
@@ -655,11 +657,12 @@ int main(int argc,char * const *argv){
 		fprintf(stderr,"Error in omphalos_init() (%s?)\n",strerror(err));
 		return EXIT_FAILURE;
 	}
-	lock_ncurses();
-	fade(1);
-	restore_colors();
-	unlock_ncurses();
+	jointid = !fade(1,&bfl,&fadetid);
 	omphalos_cleanup(&pctx);
+	if(jointid){
+		pthread_join(fadetid,NULL);
+		restore_colors();
+	}
 	if(mandatory_cleanup(&stdscr)){
 		return EXIT_FAILURE;
 	}

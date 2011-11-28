@@ -5,6 +5,8 @@
 extern "C" {
 #endif
 
+#include <pthread.h>
+
 // Our additional colors
 enum {
 	COLOR_BRGREEN = 10,
@@ -94,7 +96,7 @@ int preserve_colors(void);
 
 int setup_extended_colors(void);
 
-void fade(unsigned);
+int fade(unsigned,pthread_mutex_t *,pthread_t *);
 
 extern int modified_colors;
 // We only want to use bold when we couldn't define our own colors (otherwise,
