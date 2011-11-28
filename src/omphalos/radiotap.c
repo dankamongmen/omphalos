@@ -167,13 +167,6 @@ handle_ieee80211_mgmt(omphalos_packet *op,const void *frame,size_t len,unsigned 
 				__func__,len,op->i->name);
 		return;
 	}
-	{
-	char b[18];
-	hwntop(ibec->h_src,ETH_ALEN,b);
-	diagnostic("SRC: %s",b);
-	hwntop(ibec->bssid,ETH_ALEN,b);
-	diagnostic("BSSID: %s",b);
-	}
 	op->l2s = lookup_l2host(op->i,ibec->h_src);
        	len -= sizeof(*ibec);
 	op->l3s = lookup_local_l3host(&op->tv,op->i,op->l2s,AF_BSSID,ibec->bssid);
