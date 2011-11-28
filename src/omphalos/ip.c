@@ -229,7 +229,7 @@ int prep_ipv6_header(void *frame,size_t flen,const uint128_t src,
 	ip->ip6_ctlun.ip6_un1.ip6_un1_flow = htonl(6u << 28u);
 	ip->ip6_ctlun.ip6_un1.ip6_un1_hlim = DEFAULT_IP6_TTL;
 	ip->ip6_ctlun.ip6_un1.ip6_un1_nxt = proto;
-	memcpy(ip->ip6_src.s6_addr32,src,sizeof(src));
-	memcpy(ip->ip6_dst.s6_addr32,dst,sizeof(dst));
+	cast128(ip->ip6_src.s6_addr32,src);
+	cast128(ip->ip6_dst.s6_addr32,dst);
 	return sizeof(*ip);
 }

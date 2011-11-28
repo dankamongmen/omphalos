@@ -5,6 +5,7 @@
 extern "C" {
 #endif
 
+#include <assert.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -26,7 +27,7 @@ andequals128(uint128_t result,const uint128_t mask){
 
 static inline int
 equal128(const uint128_t v1,const uint128_t v2){
-	return !memcmp(v1,v2,sizeof(v1));
+	return !memcmp(v1,v2,16);
 }
 
 static inline int
@@ -37,17 +38,22 @@ equal128masked(const uint128_t v1,const uint128_t v2,unsigned octetsmasked){
 	memset(i2,0,sizeof(i2));
 	memcpy(i1,v1,octetsmasked);
 	memcpy(i2,v2,octetsmasked);
-	return !memcmp(i1,i2,sizeof(i1));
+	return !memcmp(i1,i2,16);
 }
 
 static inline void
 assign128(uint128_t to,const uint128_t from){
-	memcpy(to,from,sizeof(to));
+	memcpy(to,from,16);
+}
+
+static inline void
+cast128(void *to,const uint128_t from){
+	memcpy(to,from,16);
 }
 
 static inline void
 set128(uint128_t to,const unsigned from){
-	memset(to,from,sizeof(to));
+	memset(to,from,16);
 }
 
 #ifdef __cplusplus
