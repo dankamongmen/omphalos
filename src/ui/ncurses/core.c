@@ -1355,7 +1355,7 @@ static const wchar_t *helps[] = {
 	L"'c': crypto configuration",
 	L"       configure algorithm stepdown, WEP/WPA cracking, SSL MitM", */
 	L"'C': configuration",
-	L"'⏎Enter': browse interface    '␛Esc': leave interface browser",
+	L"'⏎Enter': browse interface    '⎋Esc': leave interface browser",
 	L"'k'/'↑': previous selection   'j'/'↓': next selection",
 	L"'⇞PgUp': previous page        '⇟PgDwn': next page",
 	L"'↖Home': first selection      '↘End': last selection",
