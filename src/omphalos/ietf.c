@@ -132,10 +132,22 @@ static const struct {
 		.name = L"mDNS (IANA)",
 		.octets = 16,
 	},
+	{ // ff02::1:2
+		.ip = { __constant_htonl(0xff020000), __constant_htonl(0x00000000),
+			__constant_htonl(0x00000000), __constant_htonl(0x00010003), },
+		.name = L"DHCPv6 servers/relays (RFC 3315)",
+		.octets = 16,
+	},
 	{ // ff02::1:3
 		.ip = { __constant_htonl(0xff020000), __constant_htonl(0x00000000),
 			__constant_htonl(0x00000000), __constant_htonl(0x00010003), },
 		.name = L"LLMNR (RFC 4795)",
+		.octets = 16,
+	},
+	{ // ff05::1:3
+		.ip = { __constant_htonl(0xff050000), __constant_htonl(0x00000000),
+			__constant_htonl(0x00000000), __constant_htonl(0x00010003), },
+		.name = L"DHCPv6 servers (RFC 3315)",
 		.octets = 16,
 	},
 	{ // ff05::2
