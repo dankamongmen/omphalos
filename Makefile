@@ -78,7 +78,7 @@ livetest: sudobless $(SUPPORT)
 	$(OMPHALOS)-ncurses -u '' --plog=$(OUTCAP)
 
 silenttest: sudobless $(SUPPORT)
-	$(OMPHALOS)-ncurses -u '' --mode silent --plog=$(OUTCAP)
+	$(OMPHALOS)-ncurses -u '' --mode=silent --plog=$(OUTCAP)
 
 test: all $(TESTPCAPS) $(SUPPORT)
 	for i in $(TESTPCAPS) ; do $(OMPHALOS)-tty --plog=$(OUTCAP) -f $$i -u "" || exit 1 ; done
