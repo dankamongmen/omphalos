@@ -5,6 +5,7 @@
 #include <netinet/icmp6.h>
 #include <asm/byteorder.h>
 #include <omphalos/diag.h>
+#include <omphalos/resolv.h>
 #include <omphalos/hwaddrs.h>
 #include <omphalos/service.h>
 #include <omphalos/netaddrs.h>
@@ -25,6 +26,7 @@ struct icmp6_op {
 #define ICMP6_OP_REDIRECTED	4
 #define ICMP6_OP_MTU		5
 #define ICMP6_OP_ROUTE		24
+#define ICMP6_OP_RDNSS		25
 #define ICMP6_OP_RAFLAGEXT	26
 
 // Take as input everything following the ICMPv6 header
@@ -119,7 +121,7 @@ void handle_nd_neighsol(struct omphalos_packet *op,const void *frame __attribute
 	}
 }
 
-void handle_nd_routerad(struct omphalos_packet *op,const void *frame __attribute__ ((unused)),size_t len){
+void handle_nd_routerad(struct omphalos_packet *op,const void *frame,size_t len){
 	const interface *i = op->i;
 
 	if(len < 4){ // CHLimit/M/O bits, 6 reserved bits, Router Lifetime
@@ -162,7 +164,29 @@ void handle_nd_routerad(struct omphalos_packet *op,const void *frame __attribute
 				break;
 			case ICMP6_OP_ROUTE: // FIXME do something?
 				break;
-			case ICMP6_OP_RAFLAGEXT: // FIXME do something?
+			case ICMP6_OP_RDNSS:{
+				const struct rdnss {
+					struct icmp6_op *iop;
+					uint16_t reserved;
+					uint32_t lifetime;
+					uint128_t servers;
+				} *rdnss = frame;
+				unsigned ilen = rdnss->iop->len;
+				const void *server;
+
+				if(ilen < 3 || !(ilen % 2)){
+					diagnostic("%s bad rdnss size (%i) on %s",
+						__func__,iop->len * 8u,i->name);
+					break;
+				}
+				server = rdnss->servers;
+				while(ilen > 1){
+					offer_nameserver(AF_INET6,server);
+					server = (const char *)server + 16;
+					ilen -= 2;
+				}
+				break;
+			}case ICMP6_OP_RAFLAGEXT: // FIXME do something?
 				break;
 			default:
 				diagnostic("%s unknown option (%u)",__func__,iop->type);
