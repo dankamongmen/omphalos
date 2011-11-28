@@ -79,15 +79,25 @@ typedef struct omphalos_iface {
 				struct l3host *,struct l4srv *);
 } omphalos_iface;
 
+typedef enum {
+	OMPHALOS_MODE_NONE,
+	OMPHALOS_MODE_SILENT,
+	OMPHALOS_MODE_STEALTHY,
+	OMPHALOS_MODE_ACTIVE,
+	OMPHALOS_MODE_AGGRESSIVE,
+	OMPHALOS_MODE_FORCEFUL,
+	OMPHALOS_MODE_HOSTILE
+} omphalos_mode_enum;
+
 // Process-scope settings, generally configured on startup based off
 // command-line options.
 typedef struct omphalos_ctx {
-	const char *pcapfn;	// PCAP-format filename FIXME support multiple?
-	const char *ianafn;	// IANA's OUI mappings in get-oui(1) format
-	const char *resolvconf;	// resolver configuration file
-	const char *usbidsfn;	// USB ID database in update-usbids(8) format
-	int mode;		// operating mode
-	int nopromiscuous;	// do not make newly-discovered devices promiscous
+	const char *pcapfn;	 // PCAP-format filename FIXME support multiple?
+	const char *ianafn;	 // IANA's OUI mappings in get-oui(1) format
+	const char *resolvconf;	 // resolver configuration file
+	const char *usbidsfn;	 // USB ID database in update-usbids(8) format
+	omphalos_mode_enum mode; // operating mode
+	int nopromiscuous;	 // do not make newly-discovered devices promiscous
 	omphalos_iface iface;
 	pcap_t *plogp;
 	pcap_dumper_t *plog;

@@ -225,42 +225,47 @@ categorize_tx(const interface *i,const void *frame,int *self,int *out){
 // Mark a frame as ready-to-send. Must have come from get_tx_frame() using this
 // same interface. Yes, we will see packets we generate on the RX ring.
 int send_tx_frame(interface *i,void *frame){
+	const omphalos_ctx *octx = get_octx();
 	struct tpacket_hdr *thdr = frame;
 	int self,out,ret = 0;
 
 	assert(thdr->tp_status == TP_STATUS_PREPARING);
 	categorize_tx(i,frame,&self,&out);
-	if(self){
-		int r;
+	if(octx->mode != OMPHALOS_MODE_SILENT){
+		if(self){
+			int r;
 
-		r = send_to_self(i,frame);
-		if(r < 0){
-			++i->txerrors;
-		}else{
-			i->txbytes += r;
-			++i->txframes;
+			r = send_to_self(i,frame);
+			if(r < 0){
+				++i->txerrors;
+			}else{
+				i->txbytes += r;
+				++i->txframes;
+			}
+			ret |= r < 0 ? -1 : 0;
 		}
-		ret |= r < 0 ? -1 : 0;
-	}
-	if(out){
-		uint32_t tplen = thdr->tp_len;
-		int r;
+		if(out){
+			uint32_t tplen = thdr->tp_len;
+			int r;
 
-		//thdr->tp_status = TP_STATUS_SEND_REQUEST;
-		//ret = send(i->fd,NULL,0,0);
-		r = send(i->fd,(const char *)frame + thdr->tp_mac,tplen,0);
-		if(r == 0){
-			r = tplen;
+			//thdr->tp_status = TP_STATUS_SEND_REQUEST;
+			//ret = send(i->fd,NULL,0,0);
+			r = send(i->fd,(const char *)frame + thdr->tp_mac,tplen,0);
+			if(r == 0){
+				r = tplen;
+			}
+			//diagnostic("Transmitted %d on %s",ret,i->name);
+			if(r < 0){
+				diagnostic("Error out-TXing %u on %s (%s)",tplen,i->name,strerror(errno));
+				++i->txerrors;
+			}else{
+				i->txbytes += r;
+				++i->txframes;
+			}
+			ret |= r < 0 ? -1 : 0;
 		}
-		//diagnostic("Transmitted %d on %s",ret,i->name);
-		if(r < 0){
-			diagnostic("Error out-TXing %u on %s (%s)",tplen,i->name,strerror(errno));
-			++i->txerrors;
-		}else{
-			i->txbytes += r;
-			++i->txframes;
-		}
-		ret |= r < 0 ? -1 : 0;
+	}else{
+		ret = 0;
 	}
 	thdr->tp_status = TP_STATUS_AVAILABLE;
 	return ret;

@@ -62,16 +62,6 @@ usage(const char *arg0,int ret){
 	exit(ret);
 }
 
-typedef enum {
-	OMPHALOS_MODE_NONE,
-	OMPHALOS_MODE_SILENT,
-	OMPHALOS_MODE_STEALTHY,
-	OMPHALOS_MODE_ACTIVE,
-	OMPHALOS_MODE_AGGRESSIVE,
-	OMPHALOS_MODE_FORCEFUL,
-	OMPHALOS_MODE_HOSTILE
-} omphalos_mode_enum;
-
 static const struct omphalos_mode {
 	omphalos_mode_enum level;
 	const char *str;	
