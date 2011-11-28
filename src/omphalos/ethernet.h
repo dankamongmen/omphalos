@@ -5,6 +5,7 @@
 extern "C" {
 #endif
 
+#include <string.h>
 #include <sys/socket.h>
 #include <linux/if_ether.h>
 #include <linux/rtnetlink.h>

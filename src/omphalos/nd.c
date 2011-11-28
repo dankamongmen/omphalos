@@ -6,6 +6,7 @@
 #include <asm/byteorder.h>
 #include <omphalos/diag.h>
 #include <omphalos/hwaddrs.h>
+#include <omphalos/service.h>
 #include <omphalos/netaddrs.h>
 #include <omphalos/omphalos.h>
 #include <omphalos/ethernet.h>
@@ -171,6 +172,7 @@ void handle_nd_routerad(struct omphalos_packet *op,const void *frame __attribute
 		len -= iop->len * 8;
 		frame = (const char *)frame + iop->len * 8;
 	}
+	observe_service(op->i,op->l2s,op->l3s,IPPROTO_IP,0,L"Router",NULL);
 }
 
 void handle_nd_neighad(struct omphalos_packet *op,const void *frame __attribute__ ((unused)),size_t len){
