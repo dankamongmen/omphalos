@@ -84,7 +84,6 @@ void handle_ipv6_packet(omphalos_packet *op,const void *frame,size_t len){
 	// frame might have been padded up to a minimum size.
 	const void *nhdr = (const char *)ip + sizeof(*ip);
 	next = ip->ip6_ctlun.ip6_un1.ip6_un1_nxt;
-	// FIXME don't call down if we're fragmented
 	while(nhdr){
 	switch(next){ // "upper-level" protocols end the packet
 		case IPPROTO_TCP:{
@@ -122,6 +121,18 @@ void handle_ipv6_packet(omphalos_packet *op,const void *frame,size_t len){
 			plen -= (opt->ip6e_len + 1) * 8;
 			nhdr = (const char *)nhdr + (opt->ip6e_len + 1) * 8;
 			next = opt->ip6e_nxt;
+		break; }case IPPROTO_FRAGMENT:{
+			const struct ip6_frag *opt = nhdr;
+
+			if(plen < sizeof(*opt)){
+				op->malformed = 1;
+				diagnostic("%s malformed with len %d on %s",__func__,plen,op->i->name);
+				return;
+			}
+			plen -= sizeof(*opt);
+			nhdr = (const char *)nhdr + sizeof(*opt);
+			next = opt->ip6f_nxt;
+			return; // FIXME reassemble fragments!
 		break; }default:{
 			op->noproto = 1;
 			diagnostic("%s %s noproto for %u",__func__,
