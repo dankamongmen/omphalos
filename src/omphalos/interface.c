@@ -134,6 +134,10 @@ void free_iface(interface *i){
 		i->pmarsh = NULL;
 	}
 	pthread_mutex_lock(&i->lock);
+	if(i->opaque && octx->iface_removed){
+		octx->iface_removed(i,i->opaque);
+		i->opaque = NULL;
+	}
 	if(i->rfd >= 0){
 		if(close(i->rfd)){
 			diagnostic("Error closing %d: %s",i->rfd,strerror(errno));
@@ -155,10 +159,6 @@ void free_iface(interface *i){
 		if(close(i->fd6)){
 			diagnostic("Error closing %d: %s",i->fd6,strerror(errno));
 		}
-	}
-	if(i->opaque && octx->iface_removed){
-		octx->iface_removed(i,i->opaque);
-		i->opaque = NULL;
 	}
 	while(i->ip6r){
 		struct ip6route *r6 = i->ip6r->next;
