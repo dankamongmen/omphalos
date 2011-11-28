@@ -315,8 +315,10 @@ int is_router(int fam,const void *addr){
 		rt = ip_table6;
 		len = 16;
 		gwoffset = offsetof(struct sockaddr_in6,sin6_addr);
+	}else if(fam == AF_BSSID){
+		return 0;
 	}else{
-		return -1;
+		assert(0);
 	}
 	pthread_mutex_lock(&route_lock);
 	while(rt){
