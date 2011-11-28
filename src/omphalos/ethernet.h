@@ -35,7 +35,7 @@ categorize_ethaddr(const void *mac){
 // Input: 48-bit MAC address as 6 octets
 static inline uint64_t
 eui64(const void *addr){
-	const uint64_t EUI64 = 0x000000fffe000000ull;
+	const uint64_t EUI64 = 0x020000fffe000000ull;
 	uint64_t front,back;
 
 	memcpy(&front,addr,3);		// FIXME borked on big-endian
