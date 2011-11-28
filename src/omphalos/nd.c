@@ -17,12 +17,14 @@ struct icmp6_op {
 } __attribute__ ((packed));
 
 // From RFC 4861 "IPv6 Neighbor Discovery Option Formats"
-#define ICMP6_OP_NEXTHOP 0
-#define ICMP6_OP_SRCLINK 1
-#define ICMP6_OP_TARGLINK 2
-#define ICMP6_OP_PREFIX 3
-#define ICMP6_OP_REDIRECTED 4
-#define ICMP6_OP_MTU 5
+#define ICMP6_OP_NEXTHOP	0
+#define ICMP6_OP_SRCLINK	1
+#define ICMP6_OP_TARGLINK	2
+#define ICMP6_OP_PREFIX		3
+#define ICMP6_OP_REDIRECTED	4
+#define ICMP6_OP_MTU		5
+#define ICMP6_OP_ROUTE		24
+#define ICMP6_OP_RAFLAGEXT	26
 
 // Take as input everything following the ICMPv6 header
 void handle_nd_routersol(struct omphalos_packet *op,const void *frame,size_t len){
@@ -156,6 +158,10 @@ void handle_nd_routerad(struct omphalos_packet *op,const void *frame __attribute
 			case ICMP6_OP_PREFIX: // FIXME do something?
 				break;
 			case ICMP6_OP_MTU: // FIXME do something?
+				break;
+			case ICMP6_OP_ROUTE: // FIXME do something?
+				break;
+			case ICMP6_OP_RAFLAGEXT: // FIXME do something?
 				break;
 			default:
 				diagnostic("%s unknown option (%u)",__func__,iop->type);
