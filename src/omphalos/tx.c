@@ -272,6 +272,7 @@ void abort_tx_frame(interface *i,void *frame){
 	++i->txaborts;
 	thdr->tp_status = TP_STATUS_AVAILABLE;
 	diagnostic("Aborted TX %ju on %s",i->txaborts,i->name);
+	assert(0);
 }
 
 void prepare_arp_probe(const interface *i,void *frame,size_t *flen,

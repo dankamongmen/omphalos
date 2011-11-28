@@ -226,15 +226,15 @@ int handle_rtm_newroute(const struct nlmsghdr *nl){
 
 		if(get_router(r->sss.ss_family,ad,&rp) == 0){
 			if(r->sss.ss_family == AF_INET){
-				memcpy(as,&rp.src[0],4);
+				memcpy(as,rp.src,4);
 			}else if(r->sss.ss_family == AF_INET6){
-				memcpy(as,&rp.src[0],16);
+				memcpy(as,rp.src,16);
 			}else{
 				assert(0);
 			}
 		}else{ // FIXME vicious hackery!
 			if(r->family == AF_INET6){
-				memcpy(as,&r->iface->ip6defsrc,flen);
+				memcpy(as,r->iface->ip6defsrc,flen);
 				r->sss.ss_family = AF_INET6;
 			}
 		}
@@ -348,7 +348,7 @@ int get_router(int fam,const void *addr,struct routepath *rp){
 	}else if(fam == AF_INET6){
 		rt = ip_table6;
 		len = 16;
-		memcpy(&maskaddr,&addr,len);
+		memcpy(maskaddr,addr,len);
 		gwoffset = offsetof(struct sockaddr_in6,sin6_addr);
 	}else{
 		return -1;
@@ -379,9 +379,9 @@ int get_router(int fam,const void *addr,struct routepath *rp){
 	}
 	if(rt){
 		rp->i = rt->iface;
-		memcpy(&rp->src,(const char *)(&rt->sss) + gwoffset,len);
-		memset(&gw,0,sizeof(gw));
-		memcpy(&gw,rt->ssg.ss_family ? (const char *)&rt->ssg + gwoffset : addr,len);
+		memcpy(rp->src,(const char *)(&rt->sss) + gwoffset,len);
+		set128(gw,0);
+		memcpy(gw,rt->ssg.ss_family ? (const char *)&rt->ssg + gwoffset : addr,len);
 		if( (rp->l3 = find_l3host(rp->i,fam,&gw)) ){
 			if( (rp->l2 = l3_getlastl2(rp->l3)) ){
 				pthread_mutex_unlock(&route_lock);
