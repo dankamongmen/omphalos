@@ -114,6 +114,12 @@ static const struct {
 		.name = L"All segment routers (RFC 2375)",
 		.octets = 16,
 	},
+	{ // ff02::c
+		.ip = { __constant_htonl(0xff020000), __constant_htonl(0x00000000),
+			__constant_htonl(0x00000000), __constant_htonl(0x0000000c), },
+		.name = L"Link-Local SSDP (UPnP 1.1)",
+		.octets = 16,
+	},
 	{ // ff02::16
 		.ip = { __constant_htonl(0xff020000), __constant_htonl(0x00000000),
 			__constant_htonl(0x00000000), __constant_htonl(0x00000016), },
@@ -136,6 +142,24 @@ static const struct {
 		.ip = { __constant_htonl(0xff050000), __constant_htonl(0x00000000),
 			__constant_htonl(0x00000000), __constant_htonl(0x00000002), },
 		.name = L"All site routers (RFC 2375)",
+		.octets = 16,
+	},
+	{ // ff05::c
+		.ip = { __constant_htonl(0xff050000), __constant_htonl(0x00000000),
+			__constant_htonl(0x00000000), __constant_htonl(0x0000000c), },
+		.name = L"Site-Local SSDP (UPnP 1.1)",
+		.octets = 16,
+	},
+	{ // ff08::c
+		.ip = { __constant_htonl(0xff080000), __constant_htonl(0x00000000),
+			__constant_htonl(0x00000000), __constant_htonl(0x0000000c), },
+		.name = L"Organization-Local SSDP (UPnP 1.1)",
+		.octets = 16,
+	},
+	{ // ff0e::c
+		.ip = { __constant_htonl(0xff0e0000), __constant_htonl(0x00000000),
+			__constant_htonl(0x00000000), __constant_htonl(0x0000000c), },
+		.name = L"Organization-Local SSDP (UPnP 1.1)",
 		.octets = 16,
 	},
 	{ .name = NULL, }
