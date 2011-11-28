@@ -130,12 +130,12 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 	static const struct option ops[] = {
 		{
 			.name = "ouis",
-			.has_arg = 1,
+			.has_arg = 2,
 			.flag = NULL,
 			.val = OPT_OUIS,
 		},{
 			.name = "usbids",
-			.has_arg = 1,
+			.has_arg = 2,
 			.flag = NULL,
 			.val = OPT_USBIDS,
 		},{
@@ -145,17 +145,17 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 			.val = OPT_VERSION,
 		},{
 			.name = "plog",
-			.has_arg = 1,
+			.has_arg = 2,
 			.flag = NULL,
 			.val = OPT_PLOG,
 		},{
 			.name = "resolv",
-			.has_arg = 1,
+			.has_arg = 2,
 			.flag = NULL,
 			.val = OPT_RESOLV,
 		},{
 			.name = "mode",
-			.has_arg = 1,
+			.has_arg = 2,
 			.flag = NULL,
 			.val = OPT_MODE,
 		},
@@ -172,7 +172,7 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 	int opt,longidx;
 	
 	memset(pctx,0,sizeof(*pctx));
-	opterr = 0; // suppress getopt() diagnostic to stderr
+	opterr = 1; // allow getopt() diagnostic to stderr
 	while((opt = getopt_long(argc,argv,":hf:u:p",ops,&longidx)) >= 0){
 		switch(opt){ // FIXME need --plog
 		case 'h':{
@@ -186,11 +186,19 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 				fprintf(stderr,"Provided --ouis twice\n");
 				usage(argv[0],EXIT_FAILURE);
 			}
+			if(!optarg){
+				fprintf(stderr,"Option requires parameter: '%s'\n",ops[longidx].name);
+				usage(argv[0],EXIT_FAILURE);
+			}
 			pctx->ianafn = optarg;
 			break;
 		}case OPT_USBIDS:{
 			if(pctx->usbidsfn){
 				fprintf(stderr,"Provided --usbids twice\n");
+				usage(argv[0],EXIT_FAILURE);
+			}
+			if(!optarg){
+				fprintf(stderr,"Option requires parameter: '%s'\n",ops[longidx].name);
 				usage(argv[0],EXIT_FAILURE);
 			}
 			pctx->usbidsfn = optarg;
@@ -200,6 +208,10 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 				fprintf(stderr,"Provided --resolv twice\n");
 				usage(argv[0],EXIT_FAILURE);
 			}
+			if(!optarg){
+				fprintf(stderr,"Option requires parameter: '%s'\n",ops[longidx].name);
+				usage(argv[0],EXIT_FAILURE);
+			}
 			pctx->resolvconf = optarg;
 			break;
 		}case OPT_MODE:{
@@ -207,11 +219,19 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 				fprintf(stderr,"Provided --mode twice\n");
 				usage(argv[0],EXIT_FAILURE);
 			}
+			if(!optarg){
+				fprintf(stderr,"Option requires parameter: '%s'\n",ops[longidx].name);
+				usage(argv[0],EXIT_FAILURE);
+			}
 			mode = optarg;
 			break;
 		}case OPT_PLOG:{
 			if(pctx->plog){
 				fprintf(stderr,"Provided --plog twice\n");
+				usage(argv[0],EXIT_FAILURE);
+			}
+			if(!optarg){
+				fprintf(stderr,"Option requires parameter: '%s'\n",ops[longidx].name);
 				usage(argv[0],EXIT_FAILURE);
 			}
 			if((pctx->plogp = pcap_open_dead(DLT_EN10MB,0)) == NULL){
@@ -247,7 +267,6 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 			user = optarg;
 			break;
 		}case ':':{
-			// FIXME need handle long options here
 			fprintf(stderr,"Option requires argument: '%c'\n",optopt);
 			usage(argv[0],EXIT_FAILURE);
 			break;
