@@ -134,7 +134,7 @@ static const struct {
 	},
 	{ // ff02::1:2
 		.ip = { __constant_htonl(0xff020000), __constant_htonl(0x00000000),
-			__constant_htonl(0x00000000), __constant_htonl(0x00010003), },
+			__constant_htonl(0x00000000), __constant_htonl(0x00010002), },
 		.name = L"DHCPv6 servers/relays (RFC 3315)",
 		.octets = 16,
 	},
