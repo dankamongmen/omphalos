@@ -63,7 +63,7 @@ void handle_nd_routersol(struct omphalos_packet *op,const void *frame,size_t len
 			default:
 				diagnostic("%s unknown option (%u)",__func__,iop->type);
 				op->noproto = 1;
-				return;
+				// Continue processing the packet
 		}
 		len -= iop->len * 8;
 		frame = (const char *)frame + iop->len * 8;
@@ -106,7 +106,7 @@ void handle_nd_neighsol(struct omphalos_packet *op,const void *frame __attribute
 			default:
 				diagnostic("%s unknown option (%u)",__func__,iop->type);
 				op->noproto = 1;
-				return;
+				// Continue processing the packet
 		}
 		if(iop->len < 1){
 			diagnostic("%s bogon oplen (%u)",__func__,iop->len);
@@ -167,7 +167,7 @@ void handle_nd_routerad(struct omphalos_packet *op,const void *frame __attribute
 			default:
 				diagnostic("%s unknown option (%u)",__func__,iop->type);
 				op->noproto = 1;
-				return;
+				// Continue processing the packet
 		}
 		len -= iop->len * 8;
 		frame = (const char *)frame + iop->len * 8;
@@ -217,7 +217,7 @@ void handle_nd_neighad(struct omphalos_packet *op,const void *frame __attribute_
 			default:
 				diagnostic("%s unknown option (%u)",__func__,iop->type);
 				op->noproto = 1;
-				return;
+				// Continue processing the packet
 		}
 		len -= iop->len * 8;
 		frame = (const char *)frame + iop->len * 8;
