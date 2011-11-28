@@ -7,6 +7,7 @@ extern "C" {
 
 // Our additional colors
 enum {
+	COLOR_BRGREEN = 10,
 	COLOR_LIGHTBLUE = 12,
 	COLOR_BRIGHTWHITE = 15,
 	COLOR_BLUE_75,
