@@ -7,10 +7,13 @@
 #include <omphalos/diag.h>
 #include <omphalos/omphalos.h>
 #include <omphalos/bluetooth.h>
-#include <bluetooth/bluetooth.h>
+
+typedef struct {
+	uint8_t b[6];
+} __attribute__((packed)) bdaddr_t;
+#define BTPROTO_HCI	1
+
 #include <bluetooth/hci.h>
-
-
 static struct {
 	struct hci_dev_list_req list;
 	struct hci_dev_req devlist[HCI_MAX_DEV];

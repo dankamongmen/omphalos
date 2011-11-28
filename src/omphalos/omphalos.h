@@ -10,6 +10,7 @@ extern "C" {
 #include <pthread.h>
 #include <sys/time.h>
 #include <pcap/pcap.h>
+#include <omphalos/128.h>
 
 #define PROGNAME "omphalos"	// FIXME
 #define VERSION  "0.99-pre"	// FIXME
@@ -28,7 +29,7 @@ typedef struct omphalos_packet {
 	struct l2host *l2s,*l2d;
 	uint16_t l3proto;
 	struct l3host *l3s,*l3d;
-	uint32_t l3saddr[4],l3daddr[4];	// FIXME workaround libbluetooth's def
+	uint128_t l3saddr,l3daddr;
 	uint16_t l4src,l4dst;
 	unsigned malformed;
 	unsigned noproto;
