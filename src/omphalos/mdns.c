@@ -214,9 +214,9 @@ tx_sd6(interface *i,const char *name){
 	int ret = 0;
 
 	for(i6 = i->ip6r ; i6 ; i6 = i6->next){
-		const unsigned char hw[ETH_ALEN] = { 0x33, 0x33, 0x00, 0x00, 0x00, 0x01 };
+		const unsigned char hw[ETH_ALEN] = { 0x33, 0x33, 0x00, 0x00, 0x00, 0xfb };
                 uint128_t net = { htonl(0xff020000ul), htonl(0x0ul),
-                                        htonl(0x0ul), htonl(0x1ul) };
+                                        htonl(0x0ul), htonl(0xfbul) };
                 struct tpacket_hdr *thdr;
                 struct udphdr *udp;
                 struct ip6_hdr *ip;
