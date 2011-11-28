@@ -367,7 +367,7 @@ handle_rtm_newaddr(const struct nlmsghdr *nl){
 	assert(inet_ntop(ia->ifa_family,as,astr,sizeof(astr)));
 	lock_interface(iface);
 	if(ia->ifa_family == AF_INET6){
-		set_default_ipv6src(iface,(const uint128_t)as);
+		set_default_ipv6src(iface,as);
 	}
 	// add_route*() will perform an l2 and l3 lookup on the source
 	if(ia->ifa_family == AF_INET){
