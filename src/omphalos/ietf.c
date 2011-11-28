@@ -117,7 +117,7 @@ static const struct {
 	{ // ff02::c
 		.ip = { __constant_htonl(0xff020000), __constant_htonl(0x00000000),
 			__constant_htonl(0x00000000), __constant_htonl(0x0000000c), },
-		.name = L"Link-Local SSDP (UPnP 1.1)",
+		.name = L"Link-local SSDP (UPnP 1.1)",
 		.octets = 16,
 	},
 	{ // ff02::16
@@ -147,19 +147,19 @@ static const struct {
 	{ // ff05::c
 		.ip = { __constant_htonl(0xff050000), __constant_htonl(0x00000000),
 			__constant_htonl(0x00000000), __constant_htonl(0x0000000c), },
-		.name = L"Site-Local SSDP (UPnP 1.1)",
+		.name = L"Site-local SSDP (UPnP 1.1)",
 		.octets = 16,
 	},
 	{ // ff08::c
 		.ip = { __constant_htonl(0xff080000), __constant_htonl(0x00000000),
 			__constant_htonl(0x00000000), __constant_htonl(0x0000000c), },
-		.name = L"Organization-Local SSDP (UPnP 1.1)",
+		.name = L"Organization-local SSDP (UPnP 1.1)",
 		.octets = 16,
 	},
 	{ // ff0e::c
 		.ip = { __constant_htonl(0xff0e0000), __constant_htonl(0x00000000),
 			__constant_htonl(0x00000000), __constant_htonl(0x0000000c), },
-		.name = L"Organization-Local SSDP (UPnP 1.1)",
+		.name = L"Global SSDP (UPnP 1.1)",
 		.octets = 16,
 	},
 	{ .name = NULL, }
