@@ -379,50 +379,17 @@ ncurses_setup(void){
 		errstr = "Couldn't preserve initial colors\n";
 		goto err;
 	}
-	if(init_pair(BORDER_COLOR,COLOR_GREEN,-1) != OK){
-		errstr = "Couldn't initialize ncurses colorpair\n";
-		goto err;
-	}
-	if(init_pair(HEADER_COLOR,COLOR_BLUE,-1) != OK){
-		errstr = "Couldn't initialize ncurses colorpair\n";
-		goto err;
-	}
-	if(init_pair(FOOTER_COLOR,COLOR_YELLOW,-1) != OK){
-		errstr = "Couldn't initialize ncurses colorpair\n";
-		goto err;
-	}
-	if(init_pair(DBORDER_COLOR,COLOR_WHITE,-1) != OK){
-		errstr = "Couldn't initialize ncurses colorpair\n";
-		goto err;
-	}
-	if(init_pair(DHEADING_COLOR,COLOR_WHITE,-1) != OK){
-		errstr = "Couldn't initialize ncurses colorpair\n";
-		goto err;
-	}
-	if(init_pair(UBORDER_COLOR,COLOR_YELLOW,-1) != OK){
-		errstr = "Couldn't initialize ncurses colorpair\n";
-		goto err;
-	}
-	if(init_pair(UHEADING_COLOR,COLOR_GREEN,-1) != OK){
-		errstr = "Couldn't initialize ncurses colorpair\n";
-		goto err;
-	}
-	if(init_pair(PBORDER_COLOR,COLOR_CYAN,-1) != OK){
-		errstr = "Couldn't initialize ncurses colorpair\n";
-		goto err;
-	}
-	if(init_pair(PHEADING_COLOR,COLOR_RED,-1) != OK){
-		errstr = "Couldn't initialize ncurses colorpair\n";
-		goto err;
-	}
-	if(init_pair(BULKTEXT_COLOR,COLOR_WHITE,-1) != OK){
-		errstr = "Couldn't initialize ncurses colorpair\n";
-		goto err;
-	}
-	if(init_pair(IFACE_COLOR,COLOR_WHITE,-1) != OK){
-		errstr = "Couldn't initialize ncurses colorpair\n";
-		goto err;
-	}
+	assert(init_pair(BORDER_COLOR,COLOR_GREEN,-1) == OK);
+	assert(init_pair(HEADER_COLOR,COLOR_BLUE,-1) == OK);
+	assert(init_pair(FOOTER_COLOR,COLOR_YELLOW,-1) == OK);
+	assert(init_pair(DBORDER_COLOR,COLOR_WHITE,-1) == OK);
+	assert(init_pair(DHEADING_COLOR,COLOR_WHITE,-1) == OK);
+	assert(init_pair(UBORDER_COLOR,COLOR_YELLOW,-1) == OK);
+	assert(init_pair(UHEADING_COLOR,COLOR_GREEN,-1) == OK);
+	assert(init_pair(PBORDER_COLOR,COLOR_CYAN,-1) == OK);
+	assert(init_pair(PHEADING_COLOR,COLOR_RED,-1) == OK);
+	assert(init_pair(BULKTEXT_COLOR,COLOR_WHITE,-1) == OK);
+	assert(init_pair(IFACE_COLOR,COLOR_WHITE,-1) == OK);
 	if(setup_extended_colors() != OK){
 		errstr = "Couldn't initialize extended colors\n";
 		assert(init_pair(LCAST_COLOR,COLOR_CYAN,-1) == OK); // will use A_BOLD via OUR_BOLD
