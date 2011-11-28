@@ -1490,3 +1490,51 @@ void use_prev_nodepage_locked(void){
 	}
 	select_interface_node(rb,l2obj_prev(rb->selected),delta);
 }
+
+void use_first_node_locked(void){
+	struct l2obj *l2;
+	reelbox *rb;
+	int delta;
+
+	if((rb = current_iface) == NULL){
+		return;
+	}
+	if((l2 = rb->selected) == NULL || l2obj_prev(l2) == NULL){
+		return;
+	}
+	delta = 0;
+	do{
+		l2 = l2obj_prev(l2);
+		delta -= l2obj_lines(l2);
+	}while(l2obj_prev(l2));
+	if(rb->selline + delta <= !!interface_up_p(rb->is->iface)){
+		delta = !!interface_up_p(rb->is->iface) - rb->selline;
+	}
+	select_interface_node(rb,l2,delta);
+}
+
+void use_last_node_locked(void){
+	struct l2obj *l2;
+	reelbox *rb;
+	int delta;
+
+	if((rb = current_iface) == NULL){
+		return;
+	}
+	if((l2 = rb->selected) == NULL || l2obj_next(l2) == NULL){
+		return;
+	}
+	delta = 0;
+	while(l2obj_next(l2)){
+		delta += l2obj_lines(l2);
+		l2 = l2obj_next(l2);
+	}
+	if(delta == 0){
+		return;
+	}
+	if(rb->selline + delta + l2obj_lines(l2) >= getmaxy(rb->subwin) - 1){
+		delta = (getmaxy(rb->subwin) - 2 - l2obj_lines(l2))
+			 - rb->selline;
+	}
+	select_interface_node(rb,l2,delta);
+}

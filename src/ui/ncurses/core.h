@@ -103,6 +103,8 @@ void use_next_node_locked(void);
 void use_prev_node_locked(void);
 void use_next_nodepage_locked(void);
 void use_prev_nodepage_locked(void);
+void use_first_node_locked(void);
+void use_last_node_locked(void);
 int expand_iface_locked(void);
 int collapse_iface_locked(void);
 // Select the current interface for host-granularity browsing (up and down now
