@@ -234,9 +234,9 @@ l4obj *add_service_to_iface(iface_state *is,struct l2obj *l2,struct l3obj *l3,
 	// l3->l2 entirely), but it's being triggered (see bug 415). until we
 	// get that resolved, we use the bogon check....
 	// assert(l3->l2 == l2);
-	/*if(l3->l2 != l2){
+	if(l3->l2 != l2){
 		return NULL;
-	}*/
+	}
 	if( (l4 = get_l4obj(srv)) ){
 		l4obj **prev = &l3->l4objs;
 
