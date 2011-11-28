@@ -11,6 +11,7 @@ int bevel_notop(WINDOW *w){
 	int rows,cols;
 
 	getmaxyx(w,rows,cols);
+	assert(rows && cols);
 	if(rows > 1){
 		assert(mvwvline(w,0,0,ACS_VLINE,rows - 1) != ERR);
 		assert(mvwvline(w,0,cols - 1,ACS_VLINE,rows - 1) != ERR);
@@ -25,6 +26,7 @@ int bevel_noborder(WINDOW *w){
 	int rows,cols;
 
 	getmaxyx(w,rows,cols);
+	assert(rows && cols);
 	if(rows > 1){
 		assert(mvwvline(w,1,0,ACS_VLINE,rows) != ERR);
 		assert(mvwvline(w,1,cols - 1,ACS_VLINE,rows) != ERR);
@@ -40,6 +42,7 @@ int bevel_nobottom(WINDOW *w){
 	int rows,cols;
 
 	getmaxyx(w,rows,cols);
+	assert(rows && cols);
 	assert(mvwadd_wch(w,0,0,&bchr[0]) != ERR);
 	assert(mvwins_wch(w,0,cols - 1,&bchr[1]) != ERR);
 	assert(mvwhline(w,0,1,ACS_HLINE,cols - 2) != ERR);
@@ -60,6 +63,7 @@ int bevel(WINDOW *w){
 	int rows,cols;
 
 	getmaxyx(w,rows,cols);
+	assert(rows && cols);
 	// called as one expects: 'mvwadd_wch(w,rows - 1,cols - 1,&bchr[3]);'
 	// we get ERR returned. this is known behavior: fuck ncurses. instead,
 	// we use mvwins_wch, which doesn't update the cursor position.
