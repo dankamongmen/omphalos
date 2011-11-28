@@ -171,8 +171,9 @@ iface_details(WINDOW *hw,const interface *i,int rows){
 	}
 	switch(z){ // Intentional fallthroughs all the way to 0
 	case (DETAILROWS - 1):{
-		assert(mvwprintw(hw,row + z,col,"drops: "U64FMT" truncs: "U64FMT" (%ju recov)",
-					i->drops,i->truncated,i->truncated_recovered) != ERR);
+		assert(mvwprintw(hw,row + z,col,"drops: "U64FMT" truncs: "U64FMT" (%ju recov)%-*s",
+					i->drops,i->truncated,i->truncated_recovered,
+					scrcols - 2 - 72,"") != ERR);
 		--z;
 	}case 7:{
 		assert(mvwprintw(hw,row + z,col,"mform: "U64FMT" noprot: "U64FMT,
