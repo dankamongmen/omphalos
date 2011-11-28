@@ -106,8 +106,7 @@ void l2ntop(const l2host *l2,size_t len,void *buf){
 }
 
 char *l2addrstr(const l2host *l2){
-	// FIXME make generic!
-	const size_t len = IFHWADDRLEN;
+	const size_t len = l2->i->addrlen;
 	char *r;
 
 	if( (r = malloc(HWADDRSTRLEN(len))) ){
