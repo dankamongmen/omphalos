@@ -80,13 +80,13 @@ typedef struct omphalos_iface {
 } omphalos_iface;
 
 typedef enum {
-	OMPHALOS_MODE_NONE,
 	OMPHALOS_MODE_SILENT,
-	OMPHALOS_MODE_STEALTHY,
+	//OMPHALOS_MODE_STEALTHY,
 	OMPHALOS_MODE_ACTIVE,
-	OMPHALOS_MODE_AGGRESSIVE,
+	/*OMPHALOS_MODE_AGGRESSIVE,
 	OMPHALOS_MODE_FORCEFUL,
-	OMPHALOS_MODE_HOSTILE
+	OMPHALOS_MODE_HOSTILE*/
+	OMPHALOS_MODE_MAX
 } omphalos_mode_enum;
 
 // Process-scope settings, generally configured on startup based off

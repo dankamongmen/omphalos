@@ -38,9 +38,23 @@ const omphalos_ctx *get_octx(void){
 	return pthread_getspecific(omphalos_ctx_key);
 }
 
+static const struct omphalos_mode {
+	omphalos_mode_enum level;
+	const char *str;	
+} omphalos_modes[] = {
+	{ OMPHALOS_MODE_SILENT,		"silent",	},
+	//{ OMPHALOS_MODE_STEALTHY,	"stealthy",	},
+	{ OMPHALOS_MODE_ACTIVE,		"active",	},
+	/*{ OMPHALOS_MODE_AGGRESSIVE,	"aggressive",	},
+	{ OMPHALOS_MODE_FORCEFUL,	"forceful",	},
+	{ OMPHALOS_MODE_HOSTILE,	"hostile",	},*/
+	{ OMPHALOS_MODE_MAX,		NULL,		}
+};
+
 static void
 usage(const char *arg0,int ret){
 	FILE *fp = ret == EXIT_SUCCESS ? stdout : stderr;
+	omphalos_mode_enum e;
 
 	fprintf(fp,"usage: %s [ options... ]\n",basename(arg0));
 	fprintf(fp,"\noptions:\n");
@@ -50,8 +64,6 @@ usage(const char *arg0,int ret){
 	fprintf(fp,"-u username: user name to take after creating packet socket.\n");
 	fprintf(fp,"\t'%s' by default. provide empty string to disable.\n",DEFAULT_USERNAME);
 	fprintf(fp,"-f filename: libpcap-format save file for input.\n");
-	fprintf(fp,"--mode silent|stealthy|active|aggressive|forceful|hostile\n");
-	fprintf(fp,"\t'%s' by default. See documentation for details.\n",DEFAULT_MODESTRING);
 	fprintf(fp,"--usbids filename: USB ID Repository (http://www.linux-usb.org/usb-ids.html).\n");
 	fprintf(fp,"\t'%s' by default. provide empty string to disable.\n",DEFAULT_USBIDS_FILENAME);
 	fprintf(fp,"--ouis filename: IANA's OUI mapping in get-oui(1) format.\n");
@@ -59,21 +71,13 @@ usage(const char *arg0,int ret){
 	fprintf(fp,"--resolv filename: resolv.conf-format nameserver list.\n");
 	fprintf(fp,"\t'%s' by default. provide empty string to disable.\n",DEFAULT_RESOLVCONF_FILENAME);
 	fprintf(fp,"--plog filename: Enable malformed packet logging to this file.\n");
+	fprintf(fp,"--mode ");
+	for(e = 0 ; e < OMPHALOS_MODE_MAX ; ++e){
+		fprintf(fp,"%s%s",omphalos_modes[e].str,e + 1 == OMPHALOS_MODE_MAX ? ": Operating mode.\n" : "|");
+	}
+	fprintf(fp,"\t'%s' by default. See documentation for details.\n",DEFAULT_MODESTRING);
 	exit(ret);
 }
-
-static const struct omphalos_mode {
-	omphalos_mode_enum level;
-	const char *str;	
-} omphalos_modes[] = {
-	{ OMPHALOS_MODE_SILENT,		"silent",	},
-	{ OMPHALOS_MODE_STEALTHY,	"stealthy",	},
-	{ OMPHALOS_MODE_ACTIVE,		"active",	},
-	{ OMPHALOS_MODE_AGGRESSIVE,	"aggressive",	},
-	{ OMPHALOS_MODE_FORCEFUL,	"forceful",	},
-	{ OMPHALOS_MODE_HOSTILE,	"hostile",	},
-	{ OMPHALOS_MODE_NONE,		NULL,		}
-};
 
 static omphalos_mode_enum
 lex_omphalos_mode(const char *str){
@@ -84,7 +88,7 @@ lex_omphalos_mode(const char *str){
 			return m->level;
 		}
 	}
-	return OMPHALOS_MODE_NONE;
+	return OMPHALOS_MODE_MAX;
 }
 
 static void
@@ -300,7 +304,7 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 	if(mode == NULL){
 		mode = DEFAULT_MODESTRING;
 	}
-	if((pctx->mode = lex_omphalos_mode(mode)) == OMPHALOS_MODE_NONE){
+	if((pctx->mode = lex_omphalos_mode(mode)) == OMPHALOS_MODE_MAX){
 		fprintf(stderr,"Invalid operating mode: %s\n",mode);
 		usage(argv[0],-1);
 		return -1;
