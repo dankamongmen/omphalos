@@ -1357,6 +1357,8 @@ static const wchar_t *helps[] = {
 	L"'C': configuration",
 	L"'⏎Enter': browse interface    '␛Esc': leave interface browser",
 	L"'k'/'↑': previous selection   'j'/'↓': next selection",
+	L"'⇞PgUp': previous page        '⇟PgDwn': next page",
+	L"'↖Home': first selection      '↘End': last selection",
 	L"'-'/'←': collapse selection   '+'/'→': expand selection",
 	L"'m': change device MAC        'u': change device MTU",
 	L"'r': reset selection's stats  'D': reresolve selection",
