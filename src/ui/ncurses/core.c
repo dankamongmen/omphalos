@@ -827,6 +827,9 @@ void interface_removed_locked(iface_state *is,struct panel_state **ps){
 		}
 		screen_update();
 		free_reelbox(rb);
+	}else{
+		is->next->prev = is->prev;
+		is->prev->next = is->next;
 	}
 	free_iface_state(is); // clears l2/l3 nodes
 	free(is);
