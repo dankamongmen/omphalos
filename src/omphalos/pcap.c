@@ -273,37 +273,57 @@ int log_pcap_packet(struct pcap_pkthdr *h,void *sp,size_t l2len,const struct pca
 	void *newframe;
 	void *rhdr;
 
-	// FIXME need to get it working for pcap-based saves on specific types
-	if(l2len < sizeof(*sll) && l2len){
-		diagnostic("Couldn't save packet (%zu)",l2len);
-		return 0;
-	}
 	if(!dumper){
 		return 0;
 	}
-	if(l2len){
+	if(l2len >= sizeof(*sll)){
 		if((rhdr = Malloc(l2len)) == NULL){
 			return -1;
 		}
 		memcpy(rhdr,sp,l2len); // preserve the true header
 		newframe = (char *)sp + (l2len - sizeof(*sll));
 		memcpy(newframe,pll,sizeof(*sll));
+		h->caplen -= (l2len - sizeof(*sll));
+		h->len -= (l2len - sizeof(*sll));
+		diagnostic(">PROTOCOL: 0x%x\n",pll->ethproto);
+	}else if(l2len){ // fall back to payload copy
+		uint32_t plen;
+
+		plen = h->caplen - l2len;
+		if((rhdr = Malloc(sizeof(*sll) + plen)) == NULL){
+			return -1;
+		}
+		newframe = rhdr;
+		memcpy(newframe,pll,sizeof(*sll));
+		memcpy((char *)newframe + sizeof(*sll),(char *)sp + l2len,plen);
+		h->caplen = sizeof(*sll) + plen;
+		h->len = sizeof(*sll) + plen;
+		sp = NULL;
+		diagnostic("<PROTOCOL: 0x%x\n",pll->ethproto);
 	}else{
 		newframe = sp;
 		rhdr = NULL;
+		sp = NULL;
+		diagnostic("=PROTOCOL: 0x%x\n",pll->ethproto);
 	}
 	if(pthread_mutex_lock(&dumplock)){
-		memcpy(sp,rhdr,l2len);
+		if(sp){
+			memcpy(sp,rhdr,l2len);
+		}
 		free(rhdr);
 		return -1;
 	}
 	pcap_dump((u_char *)dumper,h,newframe);
 	if(pthread_mutex_unlock(&dumplock)){
-		memcpy(sp,rhdr,l2len);
+		if(sp){
+			memcpy(sp,rhdr,l2len);
+		}
 		free(rhdr);
 		return -1;
 	}
-	memcpy(sp,rhdr,l2len);
+	if(sp){
+		memcpy(sp,rhdr,l2len);
+	}
 	free(rhdr);
 	return 0;
 }
