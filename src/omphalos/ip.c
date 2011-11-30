@@ -8,6 +8,7 @@
 #include <omphalos/tcp.h>
 #include <omphalos/gre.h>
 #include <omphalos/pim.h>
+#include <omphalos/csum.h>
 #include <omphalos/icmp.h>
 #include <omphalos/util.h>
 #include <omphalos/hwaddrs.h>
@@ -146,18 +147,10 @@ void handle_ipv4_packet(omphalos_packet *op,const void *frame,size_t len){
 	const struct iphdr *ip = frame;
 	unsigned hlen;
 
-	// FIXME check the checksum, and preferably issue no diagnostics if it
-	// is invalid
 	if(len < sizeof(*ip)){
 		op->malformed = 1;
 		diagnostic("%s %s malformed with %zu",__func__,
 				op->i->name,len);
-		return;
-	}
-	if(ip->version != 4){
-		op->noproto = 1;
-		diagnostic("%s %s noversion for %u",__func__,
-				op->i->name,ip->version);
 		return;
 	}
 	hlen = ip->ihl << 2u;
@@ -165,6 +158,17 @@ void handle_ipv4_packet(omphalos_packet *op,const void *frame,size_t len){
 		op->malformed = 1;
 		diagnostic("%s %s malformed with %zu vs %u",__func__,
 				op->i->name,len,hlen);
+		return;
+	}
+	if(ipv4_csum(frame)){
+		op->malformed = 1;
+		//diagnostic("[%s] bad IPv4 checksum (%04hx)",op->i->name,ipv4_csum(frame));
+		return;
+	}
+	if(ip->version != 4){
+		op->noproto = 1;
+		diagnostic("%s %s noversion for %u",__func__,
+				op->i->name,ip->version);
 		return;
 	}
 	// len can be greater than tot_len due to layer 2 padding requirements
