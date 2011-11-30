@@ -176,9 +176,19 @@
 			<term><option>--mode silent|active</option></term>
 			<listitem>
 				<para>Select the operating mode ("active" by
-				default). FIXME</para>
+				default). See the OPERATING MODES section below.
+				</para>
 			</listitem>
 		</varlistentry>
+	</refsect1>
+	<refsect1 id="modes">
+		<title>OPERATING MODES</title>
+		<simplelist>
+			<member>silent -- Omphalos will generate no packets.
+			</member>
+			<member>active -- Standard operation. Omphalos will freely transmit packets as necessary to discover the network (this includes ARP, Neighbor Discovery, SSDP, DNS, mDNS and others).
+			</member>
+		</simplelist>
 	</refsect1>
 	<refsect1 id="bugs">
 		<title>BUGS</title>
