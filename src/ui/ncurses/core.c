@@ -1471,7 +1471,7 @@ void use_next_nodepage_locked(void){
 		return;
 	}
 	delta = 0;
-	while(l2obj_next(l2) && delta < getmaxy(rb->subwin)){
+	while(l2obj_next(l2) && delta <= getmaxy(rb->subwin)){
 		delta += l2obj_lines(l2);
 		l2 = l2obj_next(l2);
 	}
