@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <sys/socket.h>
 #include <linux/if_arp.h>
+#include <omphalos/csum.h>
 #include <omphalos/diag.h>
 #include <omphalos/util.h>
 #include <omphalos/hwaddrs.h>
@@ -290,6 +291,7 @@ void handle_radiotap_packet(omphalos_packet *op,const void *frame,size_t len){
 	const radiotaphdr *rhdr = frame;
 	const void *ehdr,*vhdr;
 	unsigned rlen,alignbit;
+	size_t olen = len;
 	uint32_t pres;
 	uint16_t freq;
 
@@ -339,10 +341,19 @@ void handle_radiotap_packet(omphalos_packet *op,const void *frame,size_t len){
 		// There's a 32-bit FCS on the end built into the length here,
 		// if the FCS bit is set in Flags. This affects actual 'len'.
 		if(flags & IEEE80211_RADIOTAP_F_FCS){
+			uint32_t fcs,cfcs;
+
 			if(len < 4){
 				goto malformed;
 			}
 			len -= 4;
+			fcs = *(uint32_t *)((const char *)frame + (olen - 4));
+			if((cfcs = ieee80211_fcs(ehdr,len)) != fcs){
+				diagnostic("%s Incorrect FCS (0x%08x vs 0x%08x) on %s",
+						__func__,cfcs,fcs,op->i->name);
+				op->malformed = 1;
+				return;
+			}
 		}
 		--rlen;
 		alignbit = 8;
