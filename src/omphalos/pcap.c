@@ -179,10 +179,20 @@ int handle_pcap_file(const omphalos_ctx *pctx){
 		}case DLT_IEEE802_11_RADIO:{
 			pmarsh.handler = handle_radiotap_packet;
 			fxn = handle_pcap_direct;
+			pmarsh.i->addrlen = ETH_ALEN;
+			pmarsh.i->addr = malloc(pmarsh.i->addrlen);
+			pmarsh.i->bcast = malloc(pmarsh.i->addrlen);
+			memset(pmarsh.i->addr,0,pmarsh.i->addrlen);
+			memset(pmarsh.i->bcast,0xff,pmarsh.i->addrlen);
 			break;
 		}case DLT_LINUX_IRDA:{
 			pmarsh.handler = handle_irda_packet;
 			fxn = handle_pcap_direct;
+			pmarsh.i->addrlen = 4;
+			pmarsh.i->addr = malloc(pmarsh.i->addrlen);
+			pmarsh.i->bcast = malloc(pmarsh.i->addrlen);
+			memset(pmarsh.i->addr,0,pmarsh.i->addrlen);
+			memset(pmarsh.i->bcast,0xff,pmarsh.i->addrlen);
 			break;
 		}default:{
 			diagnostic("Unhandled datalink type: %d",pcap_datalink(pcap));
