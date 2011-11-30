@@ -285,7 +285,6 @@ int log_pcap_packet(struct pcap_pkthdr *h,void *sp,size_t l2len,const struct pca
 		memcpy(newframe,pll,sizeof(*sll));
 		h->caplen -= (l2len - sizeof(*sll));
 		h->len -= (l2len - sizeof(*sll));
-		diagnostic(">PROTOCOL: 0x%x\n",pll->ethproto);
 	}else if(l2len){ // fall back to payload copy
 		uint32_t plen;
 
@@ -299,12 +298,10 @@ int log_pcap_packet(struct pcap_pkthdr *h,void *sp,size_t l2len,const struct pca
 		h->caplen = sizeof(*sll) + plen;
 		h->len = sizeof(*sll) + plen;
 		sp = NULL;
-		diagnostic("<PROTOCOL: 0x%x\n",pll->ethproto);
 	}else{
 		newframe = sp;
 		rhdr = NULL;
 		sp = NULL;
-		diagnostic("=PROTOCOL: 0x%x\n",pll->ethproto);
 	}
 	if(pthread_mutex_lock(&dumplock)){
 		if(sp){
