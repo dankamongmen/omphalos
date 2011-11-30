@@ -1459,41 +1459,52 @@ void use_prev_node_locked(void){
 	select_interface_node(rb,l2obj_prev(rb->selected),delta);
 }
 
-// FIXME iterate multiple!
 void use_next_nodepage_locked(void){
+	struct l2obj *l2;
 	reelbox *rb;
 	int delta;
 
 	if((rb = current_iface) == NULL){
 		return;
 	}
-	if(rb->selected == NULL || l2obj_next(rb->selected) == NULL){
+	if((l2 = rb->selected) == NULL || l2obj_next(l2) == NULL){
 		return;
 	}
-	delta = l2obj_lines(rb->selected);
-	if(rb->selline + delta + l2obj_lines(l2obj_next(rb->selected)) >= getmaxy(rb->subwin) - 1){
-		delta = (getmaxy(rb->subwin) - 2 - l2obj_lines(l2obj_next(rb->selected)))
+	delta = 0;
+	while(l2obj_next(l2) && delta < getmaxy(rb->subwin)){
+		delta += l2obj_lines(l2);
+		l2 = l2obj_next(l2);
+	}
+	if(delta == 0){
+		return;
+	}
+	if(rb->selline + delta + l2obj_lines(l2) >= getmaxy(rb->subwin) - 1){
+		delta = (getmaxy(rb->subwin) - 2 - l2obj_lines(l2))
 			 - rb->selline;
 	}
-	select_interface_node(rb,l2obj_next(rb->selected),delta);
+	select_interface_node(rb,l2,delta);
 }
 
-// FIXME iterate multiple!
 void use_prev_nodepage_locked(void){
+	struct l2obj *l2;
 	reelbox *rb;
 	int delta;
 
 	if((rb = current_iface) == NULL){
 		return;
 	}
-	if(rb->selected == NULL || l2obj_prev(rb->selected) == NULL){
+	if((l2 = rb->selected) == NULL || l2obj_prev(l2) == NULL){
 		return;
 	}
-	delta = -l2obj_lines(l2obj_prev(rb->selected));
+	delta = 0;
+	do{
+		l2 = l2obj_prev(l2);
+		delta -= l2obj_lines(l2);
+	}while(l2obj_prev(l2) && delta >= -getmaxy(rb->subwin));
 	if(rb->selline + delta <= !!interface_up_p(rb->is->iface)){
 		delta = !!interface_up_p(rb->is->iface) - rb->selline;
 	}
-	select_interface_node(rb,l2obj_prev(rb->selected),delta);
+	select_interface_node(rb,l2,delta);
 }
 
 void use_first_node_locked(void){
