@@ -695,7 +695,7 @@ print_iface_state(const interface *i,const iface_state *is,WINDOW *w,
 	char buf[U64STRLEN + 1],buf2[U64STRLEN + 1];
 	unsigned long usecdomain;
 
-	if(rows < 2 || topp){
+	if(rows < 2 || topp > 1){
 		return;
 	}
 	assert(wattrset(w,A_BOLD | COLOR_PAIR(IFACE_COLOR)) != ERR);
@@ -703,7 +703,7 @@ print_iface_state(const interface *i,const iface_state *is,WINDOW *w,
 	// into one FTD stat by letting it take an object...
 	// FIXME this leads to a "ramp-up" period where we approach steady state
 	usecdomain = i->bps.usec * i->bps.total;
-	assert(mvwprintw(w,1,1,"%u node%s. Last %lus: %7sb/s (%sp)",
+	assert(mvwprintw(w,!topp,1,"%u node%s. Last %lus: %7sb/s (%sp)",
 		is->nodes,is->nodes == 1 ? "" : "s",
 		usecdomain / 1000000,
 		prefix(timestat_val(&i->bps) * CHAR_BIT * 1000000 * 100 / usecdomain,100,buf,sizeof(buf),0),
@@ -734,7 +734,7 @@ int redraw_iface(const reelbox *rb,int active){
 	if(iface_wholly_visible_p(scrrows,rb) || active){ // completely visible
 		topp = endp = 0;
 	}else if(getbegy(rb->subwin) == 1){ // no top
-		topp = -(getmaxy(rb->subwin) - iface_lines_unbounded(is));
+		topp = iface_lines_unbounded(is) - getmaxy(rb->subwin);
 		endp = 0;
 	}else{
 		topp = 0;
@@ -744,10 +744,10 @@ int redraw_iface(const reelbox *rb,int active){
 	assert(cols < scrcols); // FIXME
 	assert(werase(rb->subwin) != ERR);
 	iface_box(i,is,rb->subwin,active,topp,endp);
+	print_iface_hosts(i,is,rb,rb->subwin,rows,cols,topp,endp);
 	if(interface_up_p(i)){
 		print_iface_state(i,is,rb->subwin,rows,cols,topp);
 	}
-	print_iface_hosts(i,is,rb,rb->subwin,rows,cols,topp,endp);
 	return OK;
 }
 
