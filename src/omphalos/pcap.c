@@ -47,6 +47,10 @@ postprocess(pcap_marshal *pm,omphalos_packet *packet,interface *iface,
 		l3_dstpkt(packet->l3d);
 	}
 	if(packet->noproto || packet->malformed){
+		struct pcap_ll pll;
+		hwaddrint hw;
+
+		memset(&pll,0,sizeof(pll));
 		memcpy(&phdr,h,sizeof(phdr));
 		if(packet->noproto){
 			++iface->noprotocol;
@@ -54,7 +58,13 @@ postprocess(pcap_marshal *pm,omphalos_packet *packet,interface *iface,
 		if(packet->malformed){
 			++iface->malformed;
 		}
-		log_pcap_packet(&phdr,(void *)bytes);
+		pll.pkttype = packet_sll_type(packet);
+		pll.arphrd = htons(packet->i->arptype);
+		pll.llen = htons(packet->i->addrlen);
+		hw = get_hwaddr(packet->l2s);
+		memcpy(&pll.haddr,&hw,packet->i->addrlen > sizeof(pll.haddr) ? sizeof(pll.haddr) : packet->i->addrlen);
+		pll.ethproto = htons(packet->l3proto);
+		log_pcap_packet(&phdr,(void *)bytes,packet->i->l2hlen,&pll);
 	}
 	if(pm->octx->packet_read){
 		pm->octx->packet_read(packet);
@@ -170,6 +180,7 @@ int handle_pcap_file(const omphalos_ctx *pctx){
 			pmarsh.i->addrlen = ETH_ALEN;
 			pmarsh.i->addr = malloc(pmarsh.i->addrlen);
 			pmarsh.i->bcast = malloc(pmarsh.i->addrlen);
+			pmarsh.i->l2hlen = ETH_HLEN;
 			memset(pmarsh.i->addr,0,pmarsh.i->addrlen);
 			memset(pmarsh.i->bcast,0xff,pmarsh.i->addrlen);
 			break;
@@ -182,6 +193,7 @@ int handle_pcap_file(const omphalos_ctx *pctx){
 			pmarsh.i->addrlen = ETH_ALEN;
 			pmarsh.i->addr = malloc(pmarsh.i->addrlen);
 			pmarsh.i->bcast = malloc(pmarsh.i->addrlen);
+			pmarsh.i->l2hlen = ETH_HLEN;
 			memset(pmarsh.i->addr,0,pmarsh.i->addrlen);
 			memset(pmarsh.i->bcast,0xff,pmarsh.i->addrlen);
 			break;
@@ -191,6 +203,7 @@ int handle_pcap_file(const omphalos_ctx *pctx){
 			pmarsh.i->addrlen = 4;
 			pmarsh.i->addr = malloc(pmarsh.i->addrlen);
 			pmarsh.i->bcast = malloc(pmarsh.i->addrlen);
+			pmarsh.i->l2hlen = 15; // FIXME ???
 			memset(pmarsh.i->addr,0,pmarsh.i->addrlen);
 			memset(pmarsh.i->bcast,0xff,pmarsh.i->addrlen);
 			break;
@@ -244,16 +257,49 @@ void cleanup_pcap(const omphalos_ctx *pctx){
 	pthread_mutex_unlock(&dumplock);
 }
 
-int log_pcap_packet(struct pcap_pkthdr *h,void *sp){
+// Must convert the layer 2 header into a DLT_LINUX_SLL (sockaddr_ll) portable
+// pseudoheader. We copy the real header over to a temporary buffer, write our
+// new header, log from the new origin, then copy the real header back in.
+//
+// This requires an original header of at least 16 bytes. This is longer than
+// Ethernet and just about everything else, but thankfully we have tpacket_hdr
+// in the PACKET_RX_MMAP case. Otherwise, this won't work and we need fallback
+// to a payload copy.
+//
+// It is possible that we are using DLT_LINUX_SLL as a source. In that case,
+// pass 0 as l2len, and no transformation will take place.
+int log_pcap_packet(struct pcap_pkthdr *h,void *sp,size_t l2len,const struct pcap_ll *pll){
+	struct pcap_ll *sll;
+	void *newframe;
+	void *rhdr;
+
+	assert(!l2len || l2len >= sizeof(*sll));
 	if(!dumper){
 		return 0;
 	}
+	if(l2len){
+		if((rhdr = Malloc(l2len)) == NULL){
+			return -1;
+		}
+		memcpy(rhdr,sp,l2len); // preserve the true header
+		newframe = (char *)sp + (l2len - sizeof(*sll));
+		memcpy(newframe,pll,sizeof(*sll));
+	}else{
+		newframe = sp;
+		rhdr = NULL;
+	}
 	if(pthread_mutex_lock(&dumplock)){
+		memcpy(sp,rhdr,l2len);
+		free(rhdr);
 		return -1;
 	}
-	pcap_dump((u_char *)dumper,h,sp);
+	pcap_dump((u_char *)dumper,h,newframe);
 	if(pthread_mutex_unlock(&dumplock)){
+		memcpy(sp,rhdr,l2len);
+		free(rhdr);
 		return -1;
 	}
+	memcpy(sp,rhdr,l2len);
+	free(rhdr);
 	return 0;
 }

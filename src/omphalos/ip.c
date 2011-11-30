@@ -146,6 +146,8 @@ void handle_ipv4_packet(omphalos_packet *op,const void *frame,size_t len){
 	const struct iphdr *ip = frame;
 	unsigned hlen;
 
+	// FIXME check the checksum, and preferably issue no diagnostics if it
+	// is invalid
 	if(len < sizeof(*ip)){
 		op->malformed = 1;
 		diagnostic("%s %s malformed with %zu",__func__,

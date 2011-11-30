@@ -238,7 +238,7 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 				fprintf(stderr,"Option requires parameter: '%s'\n",ops[longidx].name);
 				usage(argv[0],EXIT_FAILURE);
 			}
-			if((pctx->plogp = pcap_open_dead(DLT_EN10MB,0)) == NULL){
+			if((pctx->plogp = pcap_open_dead(DLT_LINUX_SLL,0)) == NULL){
 				fprintf(stderr,"Couldn't open pcap output file\n");
 				usage(argv[0],EXIT_FAILURE);
 			}
@@ -393,4 +393,8 @@ void omphalos_cleanup(const omphalos_ctx *pctx){
 	cleanup_procfs();
 	destroy_interfaces();
 	pthread_key_delete(omphalos_ctx_key);
+}
+
+int packet_sll_type(const omphalos_packet *packet){
+	return packet ? 1 : 0; // FIXME
 }

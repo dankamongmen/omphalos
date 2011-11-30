@@ -271,6 +271,8 @@ int handle_ring_packet(interface *iface,int fd,void *frame){
 	}
 	if(packet.malformed || packet.noproto){
 		struct pcap_pkthdr pcap;
+		struct pcap_ll pll;
+		hwaddrint hw;
 
 		if(packet.malformed){
 			++iface->malformed;
@@ -280,7 +282,15 @@ int handle_ring_packet(interface *iface,int fd,void *frame){
 		}
 		pcap.caplen = pcap.len = len;
 		pcap.ts = packet.tv;
-		log_pcap_packet(&pcap,frame);
+		memset(&pll,0,sizeof(pll));
+		pll.pkttype = 0x0; // FIXME set correct type
+		pll.arphrd = htons(packet.i->arptype);
+		pll.llen = ntohs(packet.i->addrlen);
+		hw = get_hwaddr(packet.l2s);
+		memcpy(&pll.haddr,&hw,packet.i->addrlen > sizeof(pll.haddr) ?
+				sizeof(pll.haddr) : packet.i->addrlen);
+		pll.ethproto = htons(packet.l3proto);
+		log_pcap_packet(&pcap,frame,packet.i->l2hlen + thdr->tp_mac,&pll);
 	}
 	if(octx->packet_read){
 		octx->packet_read(&packet);

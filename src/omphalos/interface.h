@@ -93,6 +93,7 @@ typedef struct interface {
 
 	unsigned arptype;	// from rtnetlink(7) ifi_type
 	unsigned flags;		// from rtnetlink(7) ifi_flags
+	unsigned l2hlen;	// static l2 header length
 	int mtu;		// to match netdevice(7)'s ifr_mtu...
 	char *name;
 	void *addr;		// multiple hwaddrs are multiple ifaces...
