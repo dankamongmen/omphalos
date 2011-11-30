@@ -61,7 +61,7 @@ postprocess(pcap_marshal *pm,omphalos_packet *packet,interface *iface,
 		pll.pkttype = packet_sll_type(packet);
 		pll.arphrd = htons(packet->i->arptype);
 		pll.llen = htons(packet->i->addrlen);
-		hw = get_hwaddr(packet->l2s);
+		hw = packet->l2s ? get_hwaddr(packet->l2s) : 0;
 		memcpy(&pll.haddr,&hw,packet->i->addrlen > sizeof(pll.haddr) ? sizeof(pll.haddr) : packet->i->addrlen);
 		pll.ethproto = htons(packet->l3proto);
 		log_pcap_packet(&phdr,(void *)bytes,packet->i->l2hlen,&pll);
@@ -275,6 +275,7 @@ int log_pcap_packet(struct pcap_pkthdr *h,void *sp,size_t l2len,const struct pca
 
 	// FIXME need to get it working for pcap-based saves on specific types
 	if(l2len < sizeof(*sll) && l2len){
+		diagnostic("Couldn't save packet (%zu)",l2len);
 		return 0;
 	}
 	if(!dumper){
