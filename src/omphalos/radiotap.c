@@ -349,8 +349,8 @@ void handle_radiotap_packet(omphalos_packet *op,const void *frame,size_t len){
 			len -= 4;
 			fcs = *(uint32_t *)((const char *)frame + (olen - 4));
 			if((cfcs = ieee80211_fcs(ehdr,len)) != fcs){
-				diagnostic("%s Incorrect FCS (0x%08x vs 0x%08x) on %s",
-						__func__,cfcs,fcs,op->i->name);
+				//diagnostic("%s Incorrect FCS (0x%08x vs 0x%08x) on %s",
+				//		__func__,cfcs,fcs,op->i->name);
 				op->malformed = 1;
 				return;
 			}
