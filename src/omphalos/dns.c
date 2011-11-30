@@ -563,7 +563,7 @@ int handle_dns_packet(omphalos_packet *op,const void *frame,size_t len){
 malformed:
 	diagnostic("%s malformed with %zu on %s",__func__,len,op->i->name);
 	op->malformed = 1;
-	assert(0);
+	//assert(0);
 	return -1;
 }
 

@@ -71,7 +71,7 @@ handle_pcap_direct(u_char *gi,const struct pcap_pkthdr *h,const u_char *bytes){
 	omphalos_packet packet;
 
 	++iface->frames;
-	diagnostic("Frame %ju",iface->frames);
+	//diagnostic("Frame %ju",iface->frames);
 	if(h->caplen != h->len){
 		++iface->truncated;
 		diagnostic("Partial capture (%u/%ub)",h->caplen,h->len);
