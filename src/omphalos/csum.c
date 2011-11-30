@@ -1,3 +1,4 @@
+#include <zlib.h>
 #include <stdio.h>
 #include <linux/ip.h>
 #include <linux/udp.h>
@@ -164,4 +165,8 @@ uint16_t icmp6_csum(const void *hdr){
 		return 0xffffu;
 	}
 	return fold;
+}
+
+uint32_t ieee80211_fcs(const void *frame,size_t len){
+	return crc32(crc32(0L,Z_NULL,0),frame,len);
 }
