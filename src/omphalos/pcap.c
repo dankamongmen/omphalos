@@ -273,7 +273,10 @@ int log_pcap_packet(struct pcap_pkthdr *h,void *sp,size_t l2len,const struct pca
 	void *newframe;
 	void *rhdr;
 
-	assert(!l2len || l2len >= sizeof(*sll));
+	// FIXME need to get it working for pcap-based saves on specific types
+	if(l2len < sizeof(*sll) && l2len){
+		return 0;
+	}
 	if(!dumper){
 		return 0;
 	}
