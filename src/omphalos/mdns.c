@@ -50,7 +50,8 @@ int tx_mdns_ptr(interface *i,const char *str,int fam,const void *lookup){
 		mcast_netaddr = MDNS_NET4;
 		if( (rp.l3 = lookup_local_l3host(NULL,i,rp.l2,AF_INET,&mcast_netaddr)) ){
 			if( (frame = get_tx_frame(i,&flen)) ){
-				if(setup_dns_ptr(&rp,AF_INET,MDNS_UDP_PORT,flen,frame,str,
+				if(setup_dns_ptr(&rp,AF_INET,&mcast_netaddr,
+							MDNS_UDP_PORT,flen,frame,str,
 							htons(MDNS_UDP_PORT))){
 					abort_tx_frame(i,frame);
 				}else{
@@ -77,7 +78,7 @@ int tx_mdns_ptr(interface *i,const char *str,int fam,const void *lookup){
 		if((frame = get_tx_frame(i,&flen)) == NULL){
 			return -1;
 		}
-		if(setup_dns_ptr(&rp,AF_INET6,MDNS_UDP_PORT,flen,frame,str,htons(MDNS_UDP_PORT))){
+		if(setup_dns_ptr(&rp,AF_INET6,mcast_netaddr,MDNS_UDP_PORT,flen,frame,str,htons(MDNS_UDP_PORT))){
 			abort_tx_frame(i,frame);
 			return -1;
 		}

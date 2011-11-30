@@ -580,7 +580,7 @@ int tx_dns_ptr(int fam,const void *addr,const char *question){
 	if((frame = get_tx_frame(rp.i,&flen)) == NULL){
 		return -1;
 	}
-	r = setup_dns_ptr(&rp,fam,DNS_TARGET_PORT,flen,frame,question,
+	r = setup_dns_ptr(&rp,fam,addr,DNS_TARGET_PORT,flen,frame,question,
 				htons(random_udp_port()));
 	if(r){
 		abort_tx_frame(rp.i,frame);
@@ -590,7 +590,7 @@ int tx_dns_ptr(int fam,const void *addr,const char *question){
 	return 0;
 }
 
-int setup_dns_ptr(const struct routepath *rp,int fam,unsigned port,
+int setup_dns_ptr(const struct routepath *rp,int fam,const void *ns,unsigned port,
 			size_t flen,void *frame,const char *question,
 			unsigned sport){
 	struct tpacket_hdr *thdr;
@@ -613,23 +613,20 @@ int setup_dns_ptr(const struct routepath *rp,int fam,unsigned port,
 	iphdr = (char *)frame + tlen;
 	// Stash the <l3 headers' total size, so we can set tot_len when done
 	if(fam == AF_INET){
-		uint32_t addr4 = get_l3addr_in(rp->l3);
 		uint32_t src4 = rp->src[0];
 
 		totlen = &((struct iphdr *)iphdr)->tot_len;
-		r = prep_ipv4_header(iphdr,flen - tlen,src4,addr4,IPPROTO_UDP);
+		r = prep_ipv4_header(iphdr,flen - tlen,src4,*(const uint32_t *)ns,IPPROTO_UDP);
 		if(sport == htons(MDNS_UDP_PORT)){ // FIXME grim hack!
 			((struct iphdr *)iphdr)->ttl = MDNS_IPV4_TTL;
 		}
 		*totlen = tlen;
 	}else if(fam == AF_INET6){
-		uint128_t addr6;
 		uint128_t src6;
 
-		assign128(addr6,*get_l3addr_in6(rp->l3));
 		assign128(src6,rp->src);
 		totlen = &((struct ip6_hdr *)iphdr)->ip6_ctlun.ip6_un1.ip6_un1_plen;
-		r = prep_ipv6_header(iphdr,flen - tlen,src6,addr6,IPPROTO_UDP);
+		r = prep_ipv6_header(iphdr,flen - tlen,src6,ns,IPPROTO_UDP);
 		*totlen = tlen + r;
 	}else{
 		return -1;
