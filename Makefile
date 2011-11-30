@@ -23,7 +23,7 @@ DBCFLAGS+=$(DFLAGS) -pthread -I$(SRC) -fpic -fstrict-aliasing -fvisibility=hidde
 CFLAGS:=$(DBCFLAGS)
 # FIXME can't use --default-symver with GNU gold
 LFLAGS+=-Wl,-O2,--enable-new-dtags,--as-needed,--warn-common
-LFLAGS+=-lpcap -lcap -lpciaccess -lsysfs
+LFLAGS+=-lpcap -lcap -lpciaccess $(shell pkg-config --libs libsysfs) $(shell pkg-config --libs zlib)
 CTAGS?=$(shell (which ctags || echo ctags) 2> /dev/null)
 XSLTPROC?=$(shell (which xsltproc || echo xsltproc) 2> /dev/null)
 INSTALL?=install -v
