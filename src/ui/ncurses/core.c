@@ -1323,6 +1323,9 @@ int select_iface_locked(void){
 	if(rb->selected){
 		return 0;
 	}
+	if(rb->is->l2objs == NULL){
+		return 0;
+	}
 	assert(rb->selline == -1);
 	return select_interface_node(rb,rb->is->l2objs,2);
 }
