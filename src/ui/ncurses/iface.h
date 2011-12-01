@@ -65,7 +65,7 @@ struct l4obj *add_service_to_iface(struct iface_state *,struct l2obj *,struct l3
 
 // Call after changing the degree of collapse/expansion, and resizing, but
 // before redrawing.
-void recompute_selection(iface_state *);
+void recompute_selection(iface_state *,int,int,int);
 
 static inline int
 iface_lines_bounded(const iface_state *is,int rows){

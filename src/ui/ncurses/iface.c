@@ -836,18 +836,45 @@ int iface_wholly_visible_p(int rows,const reelbox *rb){
 	return 1;
 }
 
-void recompute_selection(iface_state *is){
-	int newsel;
+// Recompute ->lines values for all nodes, and return the minimum new line
+// offset of the current selection, if one exists (if none exists, the return
+// value ought not be ascribed meaning). O(N) on the number of l2hosts, not
+// just those visible FIXME.
+static int
+recompute_lines(iface_state *is){
+	int r = -1,newsel;
 	l2obj *l;
 
 	newsel = !!interface_up_p(is->iface);
 	for(l = is->l2objs ; l ; l = l->next){
 		l->lines = node_lines(is->expansion,l);
-		if(l != is->rb->selected){
-			// FIXME don't count the lines if they're hidden!
-			newsel += l->lines;
-		}else{
-			is->rb->selline = newsel;
+		if(l == is->rb->selected){
+			r = newsel;
 		}
+		newsel += l->lines;
 	}
+	return r;
+}
+
+// When we expand or collapse, we want the current selection to contain above
+// it approximately the same proportion of the entire interface. That is, if
+// we're at the top, we ought remain so; if we're at the bottom, we ought
+// remain so; if we fill the entire screen before and after the operation, we
+// oughtn't move more than a few rows at the most.
+//
+// oldsel: old line of the selection, within the window
+// oldrows: old number of rows in the iface
+// newrows: new number of rows in the iface
+void recompute_selection(iface_state *is,int oldsel,int oldrows,int newrows){
+	int newsel,min;
+
+	// Calculate the minimum new line -- we can't leave space at the top
+	min = recompute_lines(is);
+	// Calculate the new target line for the selection
+	newsel = oldsel * newrows / oldrows;
+	if(oldsel * newrows % oldrows >= oldrows / 2){
+		++newsel;
+	}
+	// We can't place it so low that there's space above, though...
+	is->rb->selline = min < newsel ? min : newsel;
 }

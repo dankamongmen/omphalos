@@ -1220,40 +1220,42 @@ void use_prev_iface_locked(WINDOW *w,struct panel_state *ps){
 	}
 }
 
-static inline void
-expand_interface(iface_state *is){
-	if(is->expansion == EXPANSION_MAX){
-		return;
-	}
-	++is->expansion;
-	assert(resize_iface(is->rb) == OK);
-	recompute_selection(is);
-}
-
-static inline void
-collapse_interface(iface_state *is){
-	if(is->expansion == 0){
-		return;
-	}
-	--is->expansion;
-	assert(resize_iface(is->rb) == OK);
-	recompute_selection(is);
-}
-
 int expand_iface_locked(void){
+	iface_state *is;
+	int old,oldrows;
+
 	if(!current_iface){
 		return 0;
 	}
-	expand_interface(current_iface->is);
+	is = current_iface->is;
+	if(is->expansion == EXPANSION_MAX){
+		return 0;
+	}
+	++is->expansion;
+	old = current_iface->selline;
+	oldrows = getmaxy(current_iface->subwin);
+	assert(resize_iface(current_iface) == OK);
+	recompute_selection(is,old,oldrows,getmaxy(current_iface->subwin));
 	redraw_iface_generic(current_iface);
 	return 0;
 }
 
 int collapse_iface_locked(void){
+	iface_state *is;
+	int old,oldrows;
+
 	if(!current_iface){
 		return 0;
 	}
-	collapse_interface(current_iface->is);
+	is = current_iface->is;
+	if(is->expansion == 0){
+		return 0;
+	}
+	--is->expansion;
+	old = current_iface->selline;
+	oldrows = getmaxy(current_iface->subwin);
+	assert(resize_iface(current_iface) == OK);
+	recompute_selection(is,old,oldrows,getmaxy(current_iface->subwin));
 	redraw_iface_generic(current_iface);
 	return 0;
 }
