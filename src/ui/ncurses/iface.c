@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <limits.h>
+#include <unistd.h>
 #include <sys/socket.h>
 #include <linux/version.h>
 #include <linux/nl80211.h>
@@ -836,24 +837,29 @@ int iface_wholly_visible_p(int rows,const reelbox *rb){
 	return 1;
 }
 
-// Recompute ->lines values for all nodes, and return the minimum new line
-// offset of the current selection, if one exists (if none exists, the return
-// value ought not be ascribed meaning). O(N) on the number of l2hosts, not
-// just those visible FIXME.
-static int
-recompute_lines(iface_state *is){
-	int r = -1,newsel;
+// Recompute ->lines values for all nodes, and return the number of lines of
+// output available before and after the current selection. If there is no
+// current selection, the return value ought not be ascribed meaning. O(N) on
+// the number of l2hosts, not just those visible -- unacceptable! FIXME
+static void
+recompute_lines(iface_state *is,int *before,int *after){
+	int newsel;
 	l2obj *l;
 
+	*after = -1;
+	*before = -1;
 	newsel = !!interface_up_p(is->iface);
 	for(l = is->l2objs ; l ; l = l->next){
 		l->lines = node_lines(is->expansion,l);
 		if(l == is->rb->selected){
-			r = newsel;
+			*before = newsel;
+			*after = l->lines ? l->lines - 1 : 0;
+		}else if(*after >= 0){
+			*after += l->lines;
+		}else{
+			newsel += l->lines;
 		}
-		newsel += l->lines;
 	}
-	return r;
 }
 
 // When we expand or collapse, we want the current selection to contain above
@@ -865,16 +871,33 @@ recompute_lines(iface_state *is){
 // oldsel: old line of the selection, within the window
 // oldrows: old number of rows in the iface
 // newrows: new number of rows in the iface
+// oldlines: number of lines selection used to occupy
 void recompute_selection(iface_state *is,int oldsel,int oldrows,int newrows){
-	int newsel,min;
+	int newsel,bef,aft;
 
-	// Calculate the minimum new line -- we can't leave space at the top
-	min = recompute_lines(is);
+	// Calculate the maximum new line -- we can't leave space at the top or
+	// bottom, so we can't be after the true number of lines of output that
+	// precede us, or before the true number that follow us.
+	recompute_lines(is,&bef,&aft);
+	// Account for lost/restored lines within the selection. Negative means
+	// we shrank, positive means we grew, 0 stayed the same.
 	// Calculate the new target line for the selection
 	newsel = oldsel * newrows / oldrows;
 	if(oldsel * newrows % oldrows >= oldrows / 2){
 		++newsel;
 	}
-	// We can't place it so low that there's space above, though...
-	is->rb->selline = min < newsel ? min : newsel;
+	assert(bef >= 0 && aft >= 0);
+	// If we have a full screen's worth after us, we can go anywhere
+	if(newsel > bef){
+		newsel = bef;
+	}
+	if(newsel + aft <= getmaxy(is->rb->subwin) - 2){
+		newsel = getmaxy(is->rb->subwin) - aft - 2;
+	}
+	if(newsel + (int)node_lines(is->expansion,is->rb->selected) >= getmaxy(is->rb->subwin) - 2){
+		newsel = getmaxy(is->rb->subwin) - 2 - node_lines(is->expansion,is->rb->selected);
+	}
+	is->rb->selline = newsel;
+	assert(is->rb->selline >= 1);
+	assert(is->rb->selline < getmaxy(is->rb->subwin) - 1);
 }

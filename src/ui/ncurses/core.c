@@ -1221,8 +1221,8 @@ void use_prev_iface_locked(WINDOW *w,struct panel_state *ps){
 }
 
 int expand_iface_locked(void){
-	iface_state *is;
 	int old,oldrows;
+	iface_state *is;
 
 	if(!current_iface){
 		return 0;
@@ -1241,8 +1241,8 @@ int expand_iface_locked(void){
 }
 
 int collapse_iface_locked(void){
-	iface_state *is;
 	int old,oldrows;
+	iface_state *is;
 
 	if(!current_iface){
 		return 0;
