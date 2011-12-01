@@ -8,7 +8,7 @@
 <!ENTITY dhemail "dank@qemfd.net">
 <!ENTITY dhusername "&dhfirstname; &dhsurname;">
 
-<!ENTITY dhrelease "0.99.0">
+<!ENTITY dhrelease "0.99.0 (β)">
 
 <!-- TITLE should be something like "User commands",		-->
 <!-- "&dhpackage; command-line reference" or similar (see e.g.	-->
@@ -192,13 +192,13 @@
 	</refsect1>
 	<refsect1 id="bugs">
 		<title>BUGS</title>
-		<para>Search <ulink url="http://dank.qemfd.net/bugzilla/buglist.cgi?product=omphalos"/>.
+		<para>Search <ulink url="http://bugs.qemfd.net/bugzilla/buglist.cgi?product=omphalos"/>.
 		Mail bug reports and/or patches to the authors.</para>
 	</refsect1>
 	<refsect1 id="see_also">
 		<title>SEE ALSO</title>
-		<para>GitHub: <ulink url="http://dank.qemfd.net/dankwiki/index.php/Omphalos"/></para>
-		<para>Project wiki: <ulink url="http://github.com/dankamongmen/omphalos"/></para>
+		<para>GitHub: <ulink url="http://github.com/dankamongmen/omphalos"/></para>
+		<para>Project wiki: <ulink url="http://dank.qemfd.net/dankwiki/index.php/Omphalos"/></para>
 		<para>
 		<citerefentry>
 			<refentrytitle>arp-scan</refentrytitle>
