@@ -894,12 +894,20 @@ void recompute_selection(iface_state *is,int oldsel,int oldrows,int newrows){
 	if(newsel > bef){
 		newsel = bef;
 	}
-	if(newsel + aft <= getmaxy(is->rb->subwin) - 2){
-		newsel = getmaxy(is->rb->subwin) - aft - 2;
+	/*wstatus_locked(stdscr,"newsel: %d bef: %d aft: %d oldsel: %d maxy: %d",
+			newsel,bef,aft,oldsel,getmaxy(is->rb->subwin));
+	update_panels();
+	doupdate();*/
+	if(newsel + aft <= getmaxy(is->rb->subwin) - 2 - !!interface_up_p(is->iface)){
+		newsel = getmaxy(is->rb->subwin) - aft - 2 - !!interface_up_p(is->iface);
 	}
 	if(newsel + (int)node_lines(is->expansion,is->rb->selected) >= getmaxy(is->rb->subwin) - 2){
 		newsel = getmaxy(is->rb->subwin) - 2 - node_lines(is->expansion,is->rb->selected);
 	}
+	/*wstatus_locked(stdscr,"newsel: %d bef: %d aft: %d oldsel: %d maxy: %d",
+			newsel,bef,aft,oldsel,getmaxy(is->rb->subwin));
+	update_panels();
+	doupdate();*/
 	is->rb->selline = newsel;
 	assert(is->rb->selline >= 1);
 	assert(is->rb->selline < getmaxy(is->rb->subwin) - 1);
