@@ -8,7 +8,7 @@
 <!ENTITY dhemail "dank@qemfd.net">
 <!ENTITY dhusername "&dhfirstname; &dhsurname;">
 
-<!ENTITY dhrelease "0.99.0 (β)">
+<!ENTITY dhrelease "1.00.0-pre">
 
 <!-- TITLE should be something like "User commands",		-->
 <!-- "&dhpackage; command-line reference" or similar (see e.g.	-->
