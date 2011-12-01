@@ -29,6 +29,8 @@ and libpanel (distributed with SVR4 curses and ncurses).
 
 arp-scan's 'get-oui' program is currently used to build the IANA OUI file.
 
+GnuPG is used to verify signed tarballs.
+
 ===================================================================
 II. Building and installation
 ===================================================================
