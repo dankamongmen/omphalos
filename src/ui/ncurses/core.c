@@ -1318,13 +1318,13 @@ int select_iface_locked(void){
 	reelbox *rb;
 
 	if((rb = current_iface) == NULL){
-		return 0;
+		return -1;
 	}
 	if(rb->selected){
 		return 0;
 	}
 	if(rb->is->l2objs == NULL){
-		return 0;
+		return -1;
 	}
 	assert(rb->selline == -1);
 	return select_interface_node(rb,rb->is->l2objs,2);

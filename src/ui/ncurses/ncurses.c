@@ -224,8 +224,9 @@ ncurses_input_thread(void *unsafe_marsh){
 			break;
 		case 13: // Enter FIXME
 			lock_ncurses();{
-				select_iface_locked();
-				selection_active = 1;
+				if(select_iface_locked() == 0){
+					selection_active = 1;
+				}
 			}unlock_ncurses();
 			break;
 		case 27: // Escape FIXME
