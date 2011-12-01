@@ -848,12 +848,13 @@ int iface_wholly_visible_p(int rows,const reelbox *rb){
 
 static void
 recompute_selection(iface_state *is){
-	int newsel = 0;
+	int newsel = !!interface_up_p(is->iface);
 	l2obj *l;
 
 	for(l = is->l2objs ; l ; l = l->next){
 		l->lines = node_lines(is->expansion,l);
 		if(l != is->rb->selected){
+			// FIXME don't count the lines if they're hidden!
 			newsel += l->lines;
 		}else{
 			is->rb->selline = newsel;
