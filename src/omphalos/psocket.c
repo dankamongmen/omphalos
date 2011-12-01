@@ -272,7 +272,6 @@ int handle_ring_packet(interface *iface,int fd,void *frame){
 	if(packet.malformed || packet.noproto){
 		struct pcap_pkthdr pcap;
 		struct pcap_ll pll;
-		hwaddrint hw;
 
 		if(packet.malformed){
 			++iface->malformed;
@@ -286,9 +285,13 @@ int handle_ring_packet(interface *iface,int fd,void *frame){
 		pll.pkttype = 0x0; // FIXME set correct type
 		pll.arphrd = htons(packet.i->arptype);
 		pll.llen = ntohs(packet.i->addrlen);
-		hw = get_hwaddr(packet.l2s);
-		memcpy(&pll.haddr,&hw,packet.i->addrlen > sizeof(pll.haddr) ?
-				sizeof(pll.haddr) : packet.i->addrlen);
+		if(packet.l2s){
+			hwaddrint hw = get_hwaddr(packet.l2s);
+			memcpy(&pll.haddr,&hw,packet.i->addrlen > sizeof(pll.haddr) ?
+					sizeof(pll.haddr) : packet.i->addrlen);
+		}else{
+			memset(&pll.haddr,0,sizeof(pll.haddr));
+		}
 		pll.ethproto = htons(packet.l3proto);
 		log_pcap_packet(&pcap,frame,packet.i->l2hlen + thdr->tp_mac,&pll);
 	}
