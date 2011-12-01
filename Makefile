@@ -19,7 +19,7 @@ BIN:=$(addprefix $(OMPHALOS)-,$(UI))
 
 DFLAGS:=-D_FILE_OFFSET_BITS=64 -D_XOPEN_SOURCE_EXTENDED -D_GNU_SOURCE
 CFLAGS+=$(DFLAGS) -O2 -march=native -pthread -I$(SRC) -fpic -fstrict-aliasing -fvisibility=hidden -Wall -W -Wextra -Werror
-DBCFLAGS+=$(DFLAGS) -pthread -I$(SRC) -fpic -fstrict-aliasing -fvisibility=hidden -Wall -W -Wextra -Werror -g -ggdb
+DBCFLAGS+=$(DFLAGS) -O2 -march=native -pthread -I$(SRC) -fpic -fstrict-aliasing -fvisibility=hidden -Wall -W -Wextra -Werror -g -ggdb
 CFLAGS:=$(DBCFLAGS)
 # FIXME can't use --default-symver with GNU gold
 LFLAGS+=-Wl,-O2,--enable-new-dtags,--as-needed,--warn-common
@@ -37,21 +37,25 @@ MANBIN?=mandb
 endif
 
 MANDIR:=doc/man
+XHTMLDIR:=doc/xhtml
 MAN1SRC:=$(wildcard $(MANDIR)/man1/*)
 MAN1:=$(addprefix $(OUT)/,$(MAN1SRC:%.xml=%.1$(PROJ)))
 MAN1OBJ:=$(addprefix $(OUT)/,$(MAN1SRC:%.xml=%.1))
-DOCS:=$(MAN1OBJ)
+XHTML:=$(addprefix $(OUT)/$(XHTMLDIR)/,$(notdir $(MAN1SRC:%.xml=%.xhtml)))
+DOCS:=$(MAN1OBJ) $(XHTML)
 
 # Any old XSLT processor ought do, but you might need change the invocation.
 XSLTPROC?=$(shell (which xsltproc || echo xsltproc) 2> /dev/null)
 # This can be a URL; it's the docbook-to-manpage XSL
+# Should the network be inaccessible, and local copies are installed, try:
 #DOC2MANXSL?=--nonet /usr/share/xml/docbook/stylesheet/docbook-xsl/manpages/docb
+DOC2XHTMLXSL?=http://docbook.sourceforge.net/release/xsl/current/xhtml/docbook.xsl
 
 all: $(TAGS) lib bin doc
 
 bin: $(BIN)
 
-doc: $(MAN1OBJ)
+doc: $(DOCS)
 
 lib: $(LIB)
 
@@ -112,11 +116,13 @@ $(OUT)/%.o: %.c $(CINCS) $(MAKEFILE)
 	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-# Should the network be inaccessible, and local copies are installed, try:
-#DOC2MANXSL?=--nonet
 $(OUT)/%.1: %.xml
 	@mkdir -p $(@D)
 	$(XSLTPROC) --writesubtree $(@D) -o $@ $(DOC2MANXSL) $<
+
+$(OUT)/%.xhtml: %.xml
+	@mkdir -p $(@D)
+	$(XSLTPROC) --writesubtree $(@D) -o $@ $(DOC2XHTMLXSL) $<
 
 $(TAGS): $(CINCS) $(CSRCS) $(wildcard $(SRC)/ui/*/*.c)
 	@mkdir -p $(@D)
