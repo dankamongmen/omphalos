@@ -584,7 +584,6 @@ resize_iface(reelbox *rb){
 			assert(wresize(rb->subwin,subrows,PAD_COLS(cols)) != ERR);
 			assert(replace_panel(rb->panel,rb->subwin) != ERR);
 		}
-		redraw_iface_generic(rb);
 	}
 	return OK;
 }
