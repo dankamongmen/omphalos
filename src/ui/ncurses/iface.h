@@ -19,6 +19,16 @@ struct reelbox;
 struct interface;
 struct iface_state;
 
+enum {
+	EXPANSION_NONE,
+	EXPANSION_NODES,
+	EXPANSION_HOSTS,
+	EXPANSION_SERVICES
+	// Update EXPANSION_MAX if you add one at the end
+};
+
+#define EXPANSION_MAX EXPANSION_SERVICES
+
 // FIXME move this into iface.c
 // Bind one of these state structures to each interface in the callback,
 // and also associate an iface with them via *iface (for UI actions).
@@ -53,8 +63,9 @@ struct l2obj *add_l2_to_iface(const struct interface *,struct iface_state *,stru
 struct l3obj *add_l3_to_iface(struct iface_state *,struct l2obj *,struct l3host *);
 struct l4obj *add_service_to_iface(struct iface_state *,struct l2obj *,struct l3obj *,struct l4srv *);
 
-void expand_interface(struct iface_state *);
-void collapse_interface(struct iface_state *);
+// Call after changing the degree of collapse/expansion, and resizing, but
+// before redrawing.
+void recompute_selection(iface_state *);
 
 static inline int
 iface_lines_bounded(const iface_state *is,int rows){

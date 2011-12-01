@@ -288,6 +288,7 @@ int log_pcap_packet(struct pcap_pkthdr *h,void *sp,size_t l2len,const struct pca
 	}else if(l2len){ // fall back to payload copy
 		uint32_t plen;
 
+		assert(h->caplen >= l2len);
 		plen = h->caplen - l2len;
 		if((rhdr = Malloc(sizeof(*sll) + plen)) == NULL){
 			return -1;

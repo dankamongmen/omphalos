@@ -48,16 +48,6 @@ int l2obj_lines(const l2obj *l2){
 	return l2->lines;
 }
 
-enum {
-	EXPANSION_NONE,
-	EXPANSION_NODES,
-	EXPANSION_HOSTS,
-	EXPANSION_SERVICES
-	// Update EXPANSION_MAX if you add one at the end
-};
-
-#define EXPANSION_MAX EXPANSION_SERVICES
-
 iface_state *create_interface_state(interface *i){
 	iface_state *ret;
 	const char *tstr;
@@ -846,11 +836,11 @@ int iface_wholly_visible_p(int rows,const reelbox *rb){
 	return 1;
 }
 
-static void
-recompute_selection(iface_state *is){
-	int newsel = !!interface_up_p(is->iface);
+void recompute_selection(iface_state *is){
+	int newsel;
 	l2obj *l;
 
+	newsel = !!interface_up_p(is->iface);
 	for(l = is->l2objs ; l ; l = l->next){
 		l->lines = node_lines(is->expansion,l);
 		if(l != is->rb->selected){
@@ -860,20 +850,4 @@ recompute_selection(iface_state *is){
 			is->rb->selline = newsel;
 		}
 	}
-}
-
-void expand_interface(iface_state *is){
-	if(is->expansion == EXPANSION_MAX){
-		return;
-	}
-	++is->expansion;
-	recompute_selection(is);
-}
-
-void collapse_interface(iface_state *is){
-	if(is->expansion == 0){
-		return;
-	}
-	--is->expansion;
-	recompute_selection(is);
 }
