@@ -879,6 +879,10 @@ void recompute_selection(iface_state *is,int oldsel,int oldrows,int newrows){
 	// bottom, so we can't be after the true number of lines of output that
 	// precede us, or before the true number that follow us.
 	recompute_lines(is,&bef,&aft);
+	if(bef < 0 || aft < 0){
+		assert(!is->rb->selected);
+		return;
+	}
 	// Account for lost/restored lines within the selection. Negative means
 	// we shrank, positive means we grew, 0 stayed the same.
 	// Calculate the new target line for the selection
@@ -886,7 +890,6 @@ void recompute_selection(iface_state *is,int oldsel,int oldrows,int newrows){
 	if(oldsel * newrows % oldrows >= oldrows / 2){
 		++newsel;
 	}
-	assert(bef >= 0 && aft >= 0);
 	// If we have a full screen's worth after us, we can go anywhere
 	if(newsel > bef){
 		newsel = bef;
