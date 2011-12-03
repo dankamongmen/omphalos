@@ -391,7 +391,6 @@ void omphalos_cleanup(const omphalos_ctx *pctx){
 	stop_pci_support();
 	stop_usb_support();
 	cleanup_procfs();
-	destroy_interfaces();
 	pthread_key_delete(omphalos_ctx_key);
 }
 

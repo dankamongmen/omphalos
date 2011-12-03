@@ -155,7 +155,6 @@ hwaddrstr(const interface *i){
 
 void free_iface(interface *);
 void cleanup_interfaces(void);
-int destroy_interfaces(void);
 
 int print_all_iface_stats(FILE *,interface *);
 int add_route4(interface *,const uint32_t *,const uint32_t *,

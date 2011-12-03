@@ -25,6 +25,10 @@
 
 #define MAXINTERFACES (1u << 16) // lame FIXME
 
+// Master lock across interfaces[], used to lazily initialize interface objects
+static pthread_mutex_t iface_lock = PTHREAD_MUTEX_INITIALIZER;
+
+static int ifaces[MAXINTERFACES];		// 1 for initialized, else 0
 static interface interfaces[MAXINTERFACES];
 
 // FIXME what the hell to do here...?
@@ -40,9 +44,9 @@ handle_void_packet(omphalos_packet *op,const void *frame __attribute__ ((unused)
 	}
 }
 
-int init_interfaces(void){
+static int
+init_iface(interface *iface){
 	pthread_mutexattr_t attr;
-	unsigned i;
 
 	if(pthread_mutexattr_init(&attr)){
 		return -1;
@@ -51,28 +55,27 @@ int init_interfaces(void){
 		pthread_mutexattr_destroy(&attr);
 		return -1;
 	}
-	for(i = 0 ; i < sizeof(interfaces) / sizeof(*interfaces) ; ++i){
-		interface *iface = &interfaces[i];
-
-		if(pthread_mutex_init(&iface->lock,&attr)){
-			while(i--){
-				pthread_mutex_destroy(&interfaces[i].lock);
-			}
-			pthread_mutexattr_destroy(&attr);
-			return -1;
-		}
-		iface->fd4 = iface->fd6 = iface->rfd = iface->fd = -1;
-		if(timestat_prep(&iface->fps,IFACE_TIMESTAT_USECS,IFACE_TIMESTAT_SLOTS)){
-			return -1;
-		}
-		if(timestat_prep(&iface->bps,IFACE_TIMESTAT_USECS,IFACE_TIMESTAT_SLOTS)){
-			timestat_destroy(&iface->fps);
-			return -1;
-		}
-	}
-	if(pthread_mutexattr_destroy(&attr)){
+	if(pthread_mutex_init(&iface->lock,&attr)){
+		pthread_mutexattr_destroy(&attr);
 		return -1;
 	}
+	if(timestat_prep(&iface->fps,IFACE_TIMESTAT_USECS,IFACE_TIMESTAT_SLOTS)){
+		pthread_mutex_destroy(&iface->lock);
+		pthread_mutexattr_destroy(&attr);
+		return -1;
+	}
+	if(timestat_prep(&iface->bps,IFACE_TIMESTAT_USECS,IFACE_TIMESTAT_SLOTS)){
+		timestat_destroy(&iface->fps);
+		pthread_mutex_destroy(&iface->lock);
+		pthread_mutexattr_destroy(&attr);
+		return -1;
+	}
+	iface->fd4 = iface->fd6 = iface->rfd = iface->fd = -1;
+	assert(pthread_mutexattr_destroy(&attr) == 0);
+	return 0;
+}
+
+int init_interfaces(void){
 	return 0;
 }
 
@@ -112,10 +115,22 @@ iface_get_idx(const interface *i){
 
 // we wouldn't naturally want to use signed integers, but that's the api...
 interface *iface_by_idx(int idx){
+	interface *i;
+
 	if(idx < 0 || (unsigned)idx >= sizeof(interfaces) / sizeof(*interfaces)){
 		return NULL;
 	}
-	return &interfaces[idx];
+	pthread_mutex_lock(&iface_lock);
+	i = &interfaces[idx];
+	if(!ifaces[idx]){
+		if(init_iface(i)){
+			i = NULL;
+		}else{
+			ifaces[idx] = 1;
+		}
+	}
+	pthread_mutex_unlock(&iface_lock);
+	return i;
 }
 
 int idx_of_iface(const interface *i){
@@ -195,25 +210,23 @@ void free_iface(interface *i){
 void cleanup_interfaces(void){
 	unsigned i;
 
+	pthread_mutex_lock(&iface_lock);
 	for(i = 0 ; i < sizeof(interfaces) / sizeof(*interfaces) ; ++i){
+		int r;
+
+		if(!ifaces[i]){
+			continue;
+		}
 		if(interfaces[i].name){
 			diagnostic("Shutting down %s",interfaces[i].name);
 		}
 		free_iface(&interfaces[i]);
-	}
-}
-
-int destroy_interfaces(void){
-	unsigned i;
-	int r;
-
-	for(i = 0 ; i < sizeof(interfaces) / sizeof(*interfaces) ; ++i){
 		if( (r = pthread_mutex_destroy(&interfaces[i].lock)) ){
 			diagnostic("Couldn't destroy lock on %d (%s?)",r,strerror(r));
-			return -1;
 		}
+		ifaces[i] = 0;
 	}
-	return 0;
+	pthread_mutex_unlock(&iface_lock);
 }
 
 int print_all_iface_stats(FILE *fp,interface *agg){
