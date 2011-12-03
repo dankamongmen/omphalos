@@ -18,12 +18,11 @@
 #include <linux/if_addr.h>
 #include <linux/netlink.h>
 #include <linux/version.h>
-#include <omphalos/mdns.h>
-#include <omphalos/icmp.h>
 #include <omphalos/diag.h>
 #include <omphalos/route.h>
 #include <omphalos/sysfs.h>
 #include <linux/rtnetlink.h>
+#include <omphalos/queries.h>
 #include <omphalos/inotify.h>
 #include <omphalos/ethtool.h>
 #include <omphalos/hwaddrs.h>
@@ -376,9 +375,7 @@ handle_rtm_newaddr(const struct nlmsghdr *nl){
 		add_route6(iface,ad,NULL,as,prefixlen);
 	}
 	// FIXME want to do this periodically, probably...
-	tx_broadcast_pings(ia->ifa_family,iface);
-	mdns_sd_enumerate(ia->ifa_family,iface);
-	mdns_stdsd_probe(ia->ifa_family,iface);
+	query_network(ia->ifa_family,iface,as);
 	unlock_interface(iface);
 	diagnostic("[%s] new local address %s",iface->name,astr);
 	return 0;

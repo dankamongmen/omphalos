@@ -130,14 +130,14 @@ void handle_icmp6_packet(omphalos_packet *op,const void *frame,size_t len){
 
 // Always goes to ff02::2 (ALL-HOSTS), from each source address.
 static int
-tx_ipv4_bcast_pings(interface *i){
-	assert(i); // FIXME
+tx_ipv4_bcast_pings(interface *i,const void *saddr){
+	assert(i && saddr); // FIXME
 	return -1;
 }
 
 // Always goes to ff02::2 (ALL-HOSTS), from each source address.
 static int
-tx_ipv6_bcast_pings(interface *i){
+tx_ipv6_bcast_pings(interface *i,const void *saddr){
 	const struct ip6route *i6;
 	int ret = 0;
 
@@ -154,6 +154,9 @@ tx_ipv6_bcast_pings(interface *i){
 
 		if(!(i6->addrs & ROUTE_HAS_SRC)){
 			continue; // not cause for an error
+		}
+		if(!equal128(i6->src,saddr)){
+			continue;
 		}
 		if((frame = get_tx_frame(i,&flen)) == NULL){
 			ret = -1;
@@ -189,15 +192,16 @@ tx_ipv6_bcast_pings(interface *i){
 			((const char *)icmp - (const char *)frame));
 		icmp->icmp6_cksum = icmp6_csum(ip);
 		send_tx_frame(i,frame); // FIXME get return value...
+		break; // we're done
 	}
 	return ret;
 }
 
-int tx_broadcast_pings(int fam,interface *i){
+int tx_broadcast_pings(int fam,interface *i,const void *saddr){
 	if(fam == AF_INET){
-		return tx_ipv4_bcast_pings(i);
+		return tx_ipv4_bcast_pings(i,saddr);
 	}else if(fam == AF_INET6){
-		return tx_ipv6_bcast_pings(i);
+		return tx_ipv6_bcast_pings(i,saddr);
 	}
 	return -1;
 }
