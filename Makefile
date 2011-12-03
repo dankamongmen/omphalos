@@ -1,6 +1,6 @@
 .DELTE_ON_ERROR:
 .DEFAULT_GOAL:=test
-.PHONY: all bin lib doc livetest silenttest test valgrind clean clobber install uninstall
+.PHONY: all bin doc livetest silenttest test valgrind clean clobber install uninstall
 .PHONY:	bless sudobless
 
 VERSION=0.0.1
@@ -51,13 +51,11 @@ XSLTPROC?=$(shell (which xsltproc || echo xsltproc) 2> /dev/null)
 #DOC2MANXSL?=--nonet /usr/share/xml/docbook/stylesheet/docbook-xsl/manpages/docb
 DOC2XHTMLXSL?=http://docbook.sourceforge.net/release/xsl/current/xhtml/docbook.xsl
 
-all: $(TAGS) lib bin doc
+all: $(TAGS) bin doc
 
 bin: $(BIN)
 
 doc: $(DOCS)
-
-lib: $(LIB)
 
 OUTCAP:=$(OUT)/plog.pcap
 TESTPCAPS:=$(wildcard test/*)
@@ -142,14 +140,13 @@ sudobless: all $(ADDCAPS) $(SETUPCORE)
 	$(SETUPCORE)
 
 install: all doc
-	@mkdir -p $(PREFIX)/lib
-	$(INSTALL) -m 0644 $(realpath $(LIB)) $(PREFIX)/lib
-	@mkdir -p $(PREFIX)/include
-	@$(INSTALL) -m 0644 $(wildcard $(SRC)/lib$(PROJ)/*.h) $(PREFIX)/include
+	@mkdir -p $(PREFIX)/bin
+	@$(INSTALL) -m 0755 $(BIN) $(PREFIX)/bin
 	@mkdir -p $(DOCPREFIX)/man1
 	@$(INSTALL) -m 0644 $(MAN1) $(DOCPREFIX)/man1
 	@echo "Running $(MANBIN) $(DOCPREFIX)..." && $(MANBIN) $(DOCPREFIX)
 
 uninstall:
+	rm -f $(addprefix $(PREFIX)/bin/,$(notdir $(BIN)))
 	rm -f $(addprefix $(DOCPREFIX)/man1/,$(notdir $(MAN1OBJ)))
 	@echo "Running $(MANBIN) $(DOCPREFIX)..." && $(MANBIN) $(DOCPREFIX)
