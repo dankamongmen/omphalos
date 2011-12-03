@@ -18,7 +18,7 @@ V. FAQs
 I. Requirements
 ===================================================================
 
-libsysfs, libiw, libpcap, libpciaccess, libz and libcap are used at both build
+libsysfs, libnl, libpcap, libpciaccess, libz and libcap are used at both build
 and runtime.
 
 Omphalos currently only builds or runs on a Linux kernel with PACKET_MMAP
