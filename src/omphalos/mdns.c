@@ -142,7 +142,7 @@ setup_service_probe(char *frame,size_t len,const char *name){
 }
 
 static int
-tx_sd4(interface *i,const char *name){
+tx_sd4(interface *i,const char *name,const uint32_t *saddr){
 	const struct ip4route *i4;
 	int ret = 0;
 
@@ -159,6 +159,9 @@ tx_sd4(interface *i,const char *name){
                 if(!(i4->addrs & ROUTE_HAS_SRC)){
                         continue; // not cause for an error
                 }
+		if(saddr && i4->src != *saddr){
+			continue;
+		}
                 if((frame = get_tx_frame(i,&flen)) == NULL){
                         ret = -1;
                         continue;
@@ -205,12 +208,15 @@ tx_sd4(interface *i,const char *name){
                 udp->check = udp4_csum(ip);
                 thdr->tp_len = tlen - thdr->tp_mac;
                 ret |= send_tx_frame(i,frame);
+		if(saddr){
+			break; // we're done
+		}
 	}
 	return ret;
 }
 
 static int
-tx_sd6(interface *i,const char *name){
+tx_sd6(interface *i,const char *name,const uint128_t saddr){
 	const struct ip6route *i6;
 	int ret = 0;
 
@@ -228,6 +234,9 @@ tx_sd6(interface *i,const char *name){
                 if(!(i6->addrs & ROUTE_HAS_SRC)){
                         continue; // not cause for an error
                 }
+		if(saddr && !equal128(i6->src,saddr)){
+			continue;
+		}
                 if((frame = get_tx_frame(i,&flen)) == NULL){
                         ret = -1;
                         continue;
@@ -275,30 +284,33 @@ tx_sd6(interface *i,const char *name){
                 udp->check = udp6_csum(ip);
                 thdr->tp_len -= thdr->tp_mac;
                 ret |= send_tx_frame(i,frame);
+		if(saddr){
+			break; // we're done
+		}
 	}
 	return ret;
 }
 
-int mdns_sd_enumerate(int fam,interface *i){
+int mdns_sd_enumerate(int fam,interface *i,const void *saddr){
 	if(!(i->flags & IFF_MULTICAST)){
 		return 0;
 	}
 	if(fam == AF_INET){
-		return tx_sd4(i,NULL);
+		return tx_sd4(i,NULL,saddr);
 	}else if(fam == AF_INET6){
-		return tx_sd6(i,NULL);
+		return tx_sd6(i,NULL,saddr);
 	}
 	return -1;
 }
 
-int mdns_sd_probe(int fam,interface *i,const char *name){
+int mdns_sd_probe(int fam,interface *i,const char *name,const void *saddr){
 	if(!(i->flags & IFF_MULTICAST)){
 		return 0;
 	}
 	if(fam == AF_INET){
-		return tx_sd4(i,name);
+		return tx_sd4(i,name,saddr);
 	}else if(fam == AF_INET6){
-		return tx_sd6(i,name);
+		return tx_sd6(i,name,saddr);
 	}
 	return -1;
 }
@@ -331,12 +343,12 @@ static const char *stdsds[] = {
 
 // This ought be more of an async launch thing -- it adds too much latency and
 // is too bursty at the moment FIXME
-int mdns_stdsd_probe(int fam,interface *i){
+int mdns_stdsd_probe(int fam,interface *i,const void *saddr){
 	const char **sd;
 	int ret = 0;
 
 	for(sd = stdsds ; *sd ; ++sd){
-		ret |= mdns_sd_probe(fam,i,*sd);
+		ret |= mdns_sd_probe(fam,i,*sd,saddr);
 	}
 	return ret;
 }
