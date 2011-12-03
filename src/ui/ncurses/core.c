@@ -132,7 +132,9 @@ int new_display_panel(WINDOW *w,struct panel_state *ps,int rows,int cols,const w
 	}
 	assert(y >= rows + 3);
 	assert((x >= crightlen + START_COL * 2));
-	assert( (psw = newwin(rows + 2,cols,y - (rows + 3),x - cols)) );
+	// Keep it one line up from the last display line, so that you get
+	// iface summaries (unless you've got a bottom-partial).
+	assert( (psw = newwin(rows + 2,cols,y - (rows + 4),x - cols)) );
 	if(psw == NULL){
 		return ERR;
 	}
