@@ -44,7 +44,7 @@ setup_ssdp_query(void *frame,size_t flen){
 		return -1;
 	}
 	memcpy(frame,m4_search,sizeof(m4_search) - 1);
-	return 0;
+	return sizeof(m4_search) - 1;
 }
 
 static int
