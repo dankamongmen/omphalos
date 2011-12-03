@@ -10,6 +10,7 @@
 #include <omphalos/128.h>
 #include <omphalos/util.h>
 #include <omphalos/irda.h>
+#include <omphalos/hdlc.h>
 #include <omphalos/ietf.h>
 #include <omphalos/service.h>
 #include <omphalos/hwaddrs.h>
@@ -479,6 +480,10 @@ static arptype arptypes[] = {
 		.ifi_type = ARPHRD_IRDA,
 		.name = "IrDA",
 		.analyze = handle_irda_packet,
+	},{
+		.ifi_type = ARPHRD_CISCO,
+		.name = "cHDLC", // Cisco HDLC
+		.analyze = handle_hdlc_packet,
 	},{
 		.ifi_type = ARPHRD_TUNNEL6,
 		.name = "Tunnelv6",

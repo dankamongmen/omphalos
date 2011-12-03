@@ -6,6 +6,7 @@
 #include <sys/socket.h>
 #include <omphalos/ip.h>
 #include <omphalos/util.h>
+#include <omphalos/hdlc.h>
 #include <asm/byteorder.h>
 #include <omphalos/irda.h>
 #include <omphalos/pcap.h>
@@ -206,6 +207,16 @@ int handle_pcap_file(const omphalos_ctx *pctx){
 			pmarsh.i->l2hlen = 15; // FIXME ???
 			memset(pmarsh.i->addr,0,pmarsh.i->addrlen);
 			memset(pmarsh.i->bcast,0xff,pmarsh.i->addrlen);
+			break;
+		}case DLT_C_HDLC:{
+			pmarsh.handler = handle_hdlc_packet;
+			fxn = handle_pcap_direct;
+			pmarsh.i->addrlen = 1;
+			pmarsh.i->addr = malloc(pmarsh.i->addrlen);
+			pmarsh.i->bcast = malloc(pmarsh.i->addrlen);
+			pmarsh.i->l2hlen = 4;
+			memset(pmarsh.i->addr,0,pmarsh.i->addrlen);
+			memset(pmarsh.i->bcast,0x8f,pmarsh.i->addrlen);
 			break;
 		}default:{
 			diagnostic("Unhandled datalink type: %d",pcap_datalink(pcap));
