@@ -27,12 +27,12 @@ LFLAGS+=-lpcap -lcap -lpciaccess $(shell pkg-config --libs libsysfs) $(shell pkg
 CTAGS?=$(shell (which ctags || echo ctags) 2> /dev/null)
 XSLTPROC?=$(shell (which xsltproc || echo xsltproc) 2> /dev/null)
 INSTALL?=install -v
-PREFIX?=/usr/local
+DESTDIR?=/usr/local
 ifeq ($(UNAME),FreeBSD)
-DOCPREFIX?=$(PREFIX)/man
+DOCPREFIX?=$(DESTDIR)/man
 MANBIN?=makewhatis
 else
-DOCPREFIX?=$(PREFIX)/share/man
+DOCPREFIX?=$(DESTDIR)/share/man
 MANBIN?=mandb
 endif
 
@@ -140,13 +140,13 @@ sudobless: all $(ADDCAPS) $(SETUPCORE)
 	$(SETUPCORE)
 
 install: all doc
-	@mkdir -p $(PREFIX)/bin
-	@$(INSTALL) -m 0755 $(BIN) $(PREFIX)/bin
+	@mkdir -p $(DESTDIR)/bin
+	@$(INSTALL) -m 0755 $(BIN) $(DESTDIR)/bin
 	@mkdir -p $(DOCPREFIX)/man1
 	@$(INSTALL) -m 0644 $(MAN1) $(DOCPREFIX)/man1
 	@echo "Running $(MANBIN) $(DOCPREFIX)..." && $(MANBIN) $(DOCPREFIX)
 
 uninstall:
-	rm -f $(addprefix $(PREFIX)/bin/,$(notdir $(BIN)))
+	rm -f $(addprefix $(DESTDIR)/bin/,$(notdir $(BIN)))
 	rm -f $(addprefix $(DOCPREFIX)/man1/,$(notdir $(MAN1OBJ)))
 	@echo "Running $(MANBIN) $(DOCPREFIX)..." && $(MANBIN) $(DOCPREFIX)

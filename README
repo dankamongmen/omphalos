@@ -47,6 +47,15 @@ If MADV_HUGEPAGE is available at compilation time, madvise() will be used
 to advise hugepage backing for important, large data structures including
 the ringbuffers. This could improve performance.
 
+The build process respects several variables:
+
+ - DESTDIR: root for installation (default: /usr/local)
+ - DOCPREFIX: root for manual installation (FreeBSD default: $(DESTDIR)/man,
+	Linux default: $(DESTDIR)/share/man))
+ - MANBIN: binary for updating system manpage index (FreeBSD
+	default: makewhatis, Linux default: mandb))
+ - XSLTPROC: binary for XSLT transformations (default: `which xsltproc`)
+
 ===================================================================
 III. Usage
 ===================================================================
