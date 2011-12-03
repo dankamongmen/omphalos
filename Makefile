@@ -143,7 +143,7 @@ install: all doc
 	@mkdir -p $(DESTDIR)/bin
 	@$(INSTALL) -m 0755 $(BIN) $(DESTDIR)/bin
 	@mkdir -p $(DOCPREFIX)/man1
-	@$(INSTALL) -m 0644 $(MAN1) $(DOCPREFIX)/man1
+	@$(INSTALL) -m 0644 $(MAN1OBJ) $(DOCPREFIX)/man1
 	@echo "Running $(MANBIN) $(DOCPREFIX)..." && $(MANBIN) $(DOCPREFIX)
 
 uninstall:
