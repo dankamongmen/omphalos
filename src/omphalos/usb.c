@@ -128,9 +128,11 @@ static struct usb_vendor {
 static int
 parse_usbids_file(const char *fn){
 	int line = 0,devs = 0,vends = 0,curvendor = -1;
+	struct timeval t0,t1,t2;
 	wchar_t buf[1024]; // FIXME ugh!
 	FILE *fp;
 
+	gettimeofday(&t0,NULL);
 	if((fp = fopen(fn,"r")) == NULL){
 		diagnostic("Couldn't open USB ID db at %s (%s?)",fn,strerror(errno));
 		return -1;
@@ -221,8 +223,11 @@ formaterr:
 		diagnostic("Couldn't close USB ID db at %s (%s?)",fn,strerror(errno));
 		return -1;
 	}
-	diagnostic("Reloaded %d vendor%s and %d USB device%s from %s",
-			vends,vends == 1 ? "" : "s",devs,devs == 1 ? "" : "s",fn);
+	gettimeofday(&t1,NULL);
+	timersub(&t1,&t0,&t2);
+	diagnostic("Reloaded %d vendor%s and %d USB device%s from %s in %lu.%07lus",
+			vends,vends == 1 ? "" : "s",devs,devs == 1 ? "" : "s",fn,
+			t2.tv_sec,t2.tv_usec);
 	return 0;
 }
 

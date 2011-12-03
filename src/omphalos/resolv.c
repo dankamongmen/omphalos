@@ -168,6 +168,7 @@ int offer_wresolution(int fam,const void *addr,const wchar_t *name,namelevel nle
 
 static int
 parse_resolv_conf(const char *fn){
+	struct timeval t0,t1,t2;
 	resolver *revs = NULL;
 	unsigned count = 0;
 	int l,ret = -1;
@@ -175,6 +176,7 @@ parse_resolv_conf(const char *fn){
 	FILE *fp;
 	char *b;
 
+	gettimeofday(&t0,NULL);
 	if((fp = fopen(fn,"r")) == NULL){
 		diagnostic("Couldn't open %s",fn);
 		return -1;
@@ -242,8 +244,10 @@ parse_resolv_conf(const char *fn){
 		resolvers = revs;
 		pthread_mutex_unlock(&resolver_lock);
 		free_resolvers(&r);
-		diagnostic("Reloaded %u resolver%s from %s",count,
-				count == 1 ? "" : "s",fn);
+		gettimeofday(&t1,NULL);
+		timersub(&t1,&t0,&t2);
+		diagnostic("Reloaded %u resolver%s from %s in %lu.%07lus",count,
+				count == 1 ? "" : "s",fn,t2.tv_sec,t2.tv_usec);
 		ret = 0;
 	}
 	return ret;

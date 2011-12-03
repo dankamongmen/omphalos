@@ -51,11 +51,13 @@ free_ouitries(ouitrie **tries){
 static int
 parse_file(const char *fn){
 	unsigned allocerr,count = 0;
+	struct timeval t0,t1,t2;
 	const char *line;
 	int l,ret = -1;
 	FILE *fp;
 	char *b;
 
+	gettimeofday(&t0,NULL);
 	if((fp = fopen(fn,"r")) == NULL){
 		diagnostic("Coudln't open %s (%s?)",fn,strerror(errno));
 		return -1;
@@ -125,10 +127,10 @@ parse_file(const char *fn){
 		ret = 0;
 	}
 	fclose(fp);
-	if(count){
-		diagnostic("Reloaded %u OUI%s from %s",count,
-					count == 1 ? "" : "s",fn);
-	}
+	gettimeofday(&t1,NULL);
+	timersub(&t1,&t0,&t2);
+	diagnostic("Reloaded %u OUI%s from %s in %ld.%06lds",count,
+		count == 1 ? "" : "s",fn,t2.tv_sec,t2.tv_usec);
 	return ret;
 }
 
