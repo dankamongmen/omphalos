@@ -13,7 +13,7 @@ extern "C" {
 #include <omphalos/128.h>
 
 #define PROGNAME "omphalos"	// FIXME
-#define VERSION  "1.0.0-pre"	// FIXME
+#define VERSION  "0.99.1-pre"	// FIXME
 
 struct l4srv;
 struct l2host;
