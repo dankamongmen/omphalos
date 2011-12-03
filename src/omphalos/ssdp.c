@@ -32,13 +32,28 @@ int handle_ssdp_packet(omphalos_packet *op,const void *frame,size_t len){
 	return 0;
 }
 
+static const char m4_search[] = "M-SEARCH * HTTP/1.1\r\n"
+"HOST: 239.255.255.250:1900\r\n"
+"MAN: \"ssdp:discover\"\r\n"
+"MX: 5\r\n"
+"ST: ssdp:all\r\n";
+
+static int
+setup_ssdp_query(void *frame,size_t flen){
+	if(flen < sizeof(m4_search) - 1){
+		return -1;
+	}
+	memcpy(frame,m4_search,sizeof(m4_search) - 1);
+	return 0;
+}
+
 static int
 ssdp_ip4_msearch(interface *i,const uint32_t *saddr){
 	const struct ip4route *i4;
 	int ret = 0;
 
 	for(i4 = i->ip4r ; i4 ; i4 = i4->next){
-		const unsigned char hw[ETH_ALEN] = { 0x01, 0x00, 0x5e, 0x00, 0x00, 0xfb };
+		const unsigned char hw[ETH_ALEN] = { 0x01, 0x00, 0x5e, 0x00, 0x00, 0xc };
                 uint32_t net = SSDP_NET4;
                 struct tpacket_hdr *thdr;
                 struct udphdr *udp;
@@ -82,7 +97,7 @@ ssdp_ip4_msearch(interface *i,const uint32_t *saddr){
                 udp->source = htons(SSDP_UDP_PORT);
                 udp->dest = htons(SSDP_UDP_PORT);
                 tlen += sizeof(*udp);
-		// FIXME
+		r = setup_ssdp_query((char *)frame + tlen,flen - tlen);
 		if(r < 0){
 			abort_tx_frame(i,frame);
 			ret = -1;
@@ -108,9 +123,9 @@ ssdp_ip6_msearch(interface *i,const uint128_t saddr){
 	int ret = 0;
 
 	for(i6 = i->ip6r ; i6 ; i6 = i6->next){
-		const unsigned char hw[ETH_ALEN] = { 0x33, 0x33, 0x00, 0x00, 0x00, 0xfb };
+		const unsigned char hw[ETH_ALEN] = { 0x33, 0x33, 0x00, 0x00, 0x00, 0xc };
                 uint128_t net = { htonl(0xff020000ul), htonl(0x0ul),
-                                        htonl(0x0ul), htonl(0xfbul) };
+                                        htonl(0x0ul), htonl(0xcul) };
                 struct tpacket_hdr *thdr;
                 struct udphdr *udp;
                 struct ip6_hdr *ip;
@@ -153,7 +168,7 @@ ssdp_ip6_msearch(interface *i,const uint128_t saddr){
                 udp->source = htons(SSDP_UDP_PORT);
                 udp->dest = htons(SSDP_UDP_PORT);
                 tlen += sizeof(*udp);
-		// FIXME
+		r = setup_ssdp_query((char *)frame + tlen,flen - tlen);
 		if(r < 0){
 			abort_tx_frame(i,frame);
 			ret = -1;
