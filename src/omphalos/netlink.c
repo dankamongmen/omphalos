@@ -784,6 +784,9 @@ handle_newlink_locked(interface *iface,const struct ifinfomsg *ii,const struct n
 		int r = -1;
 
 		iface->opaque = octx->iface_event(iface,iface->opaque);
+		if(!ctx->nopromiscuous){
+			enable_promiscuity(iface);
+		}
 		if(iface->addr){
 			lookup_l2host(iface,iface->addr);
 		}
