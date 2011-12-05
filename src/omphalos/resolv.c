@@ -273,3 +273,42 @@ int cleanup_naming(void){
 	}
 	return er;
 }
+
+char *stringize_resolvers(void){
+	char buf[INET6_ADDRSTRLEN];
+	char *ret = NULL,*tmp;
+	const resolver *r;
+	size_t s = 0;
+
+	pthread_mutex_lock(&resolver_lock);
+	for(r = resolvers ; r ; r = r->next){
+		assert(inet_ntop(AF_INET,&r->addr.ip4,buf,sizeof(buf)));
+		if((tmp = realloc(ret,s + strlen(buf) + 1)) == NULL){
+			goto err;
+		}
+		ret = tmp;
+		if(s){
+			ret[s - 1] = ',';
+		}
+		strcpy(ret + s,buf);
+		s += strlen(buf) + 1;
+	}
+	for(r = resolvers6 ; r ; r = r->next){
+		assert(inet_ntop(AF_INET6,&r->addr.ip6,buf,sizeof(buf)));
+		if((tmp = realloc(ret,s + strlen(buf) + 1)) == NULL){
+			goto err;
+		}
+		ret = tmp;
+		if(s){
+			ret[s - 1] = ',';
+		}
+		strcpy(ret + s,buf);
+		s += strlen(buf) + 1;
+	}
+	pthread_mutex_unlock(&resolver_lock);
+	return ret;
+
+err:
+	free(ret);
+	return NULL;
+}

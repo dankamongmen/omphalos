@@ -29,6 +29,8 @@ void offer_nameserver(int,const void *);
 int init_naming(const char *) __attribute__ ((nonnull (1)));
 int cleanup_naming(void);
 
+char *stringize_resolvers(void);
+
 #ifdef __cplusplus
 }
 #endif

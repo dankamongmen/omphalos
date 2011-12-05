@@ -1,4 +1,6 @@
 #include <string.h>
+#include <stdlib.h>
+#include <omphalos/resolv.h>
 #include <omphalos/procfs.h>
 #include <ui/ncurses/util.h>
 #include <ui/ncurses/core.h>
@@ -24,7 +26,7 @@ state3char(int state){
 	return L'?';
 }
 
-#define NETWORKROWS 3
+#define NETWORKROWS 4
 
 static int
 update_network_details(WINDOW *w){
@@ -49,6 +51,16 @@ update_network_details(WINDOW *w){
 					state3char(ps.tcp_dsack),
 					state3char(ps.tcp_fack),
 					state3char(ps.tcp_frto)) != ERR);
+		--z;
+	}case 2:{
+		char *dns = stringize_resolvers();
+
+		if(dns){
+			assert(mvwprintw(w,row + z,col,"DNS: %s",dns) != ERR);
+			free(dns);
+		}else{
+			assert(mvwprintw(w,row + z,col,"No DNS servers configured") != ERR);
+		}
 		--z;
 	}case 1:{
 		assert(mvwprintw(w,row + z,col,"Forwarding: IPv4%lc IPv6%lc",

@@ -7,6 +7,7 @@ extern "C" {
 
 #include <wchar.h>
 #include <stdint.h>
+#include <sys/time.h>
 #include <omphalos/128.h>
 
 struct l2host;
