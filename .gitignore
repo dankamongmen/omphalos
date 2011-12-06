@@ -1,4 +1,8 @@
 core
+debian/files
+debian/omphalos.debhelper.log
+debian/omphalos.substvars
+debian/omphalos/
 ieee-oui.txt
 ieee-oui.txt.raw
 out
