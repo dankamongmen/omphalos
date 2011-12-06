@@ -23,6 +23,22 @@ static procfs_state netstate = {
 
 static pthread_mutex_t netlock = PTHREAD_MUTEX_INITIALIZER;
 
+static inline void
+lock_net(void){
+	assert(pthread_mutex_lock(&netlock) == 0);
+}
+
+static inline void
+unlock_net(void){
+	const omphalos_ctx *ctx = get_octx();
+	const omphalos_iface *octx = &ctx->iface;
+
+	assert(pthread_mutex_unlock(&netlock) == 0);
+	if(octx->network_event){
+		octx->network_event();
+	}
+}
+
 // Destructively lex a single uint from the file.
 static int
 lex_unsigned(FILE *fp,unsigned long *val){
@@ -127,9 +143,9 @@ proc_ipv4_ip_forward(const char *fn){
 	if((ipv4f = lex_unsigned_file(fn,1)) < 0){
 		return -1;
 	}
-	pthread_mutex_lock(&netlock);
+	lock_net();
 		netstate.ipv4_forwarding = ipv4f;
-	pthread_mutex_unlock(&netlock);
+	unlock_net();
 	return 0;
 }
 
@@ -140,9 +156,9 @@ proc_ipv6_ip_forward(const char *fn){
 	if((ipv6f = lex_unsigned_file(fn,1)) < 0){
 		return -1;
 	}
-	pthread_mutex_lock(&netlock);
+	lock_net();
 		netstate.ipv6_forwarding = ipv6f;
-	pthread_mutex_unlock(&netlock);
+	unlock_net();
 	return 0;
 }
 
@@ -153,9 +169,9 @@ proc_proxy_arp(const char *fn){
 	if((parp = lex_unsigned_file(fn,1)) < 0){
 		return -1;
 	}
-	pthread_mutex_lock(&netlock);
+	lock_net();
 		netstate.proxyarp = parp;
-	pthread_mutex_unlock(&netlock);
+	unlock_net();
 	return 0;
 }
 
@@ -166,9 +182,9 @@ proc_tcp_fack(const char *fn){
 	if((fack = lex_unsigned_file(fn,1)) < 0){
 		return -1;
 	}
-	pthread_mutex_lock(&netlock);
+	lock_net();
 		netstate.tcp_fack = fack;
-	pthread_mutex_unlock(&netlock);
+	unlock_net();
 	return 0;
 }
 
@@ -179,9 +195,9 @@ proc_tcp_frto(const char *fn){
 	if((frto = lex_unsigned_file(fn,2)) < 0){
 		return -1;
 	}
-	pthread_mutex_lock(&netlock);
+	lock_net();
 		netstate.tcp_frto = frto;
-	pthread_mutex_unlock(&netlock);
+	unlock_net();
 	return 0;
 }
 
@@ -192,9 +208,9 @@ proc_tcp_sack(const char *fn){
 	if((sack = lex_unsigned_file(fn,1)) < 0){
 		return -1;
 	}
-	pthread_mutex_lock(&netlock);
+	lock_net();
 		netstate.tcp_sack = sack;
-	pthread_mutex_unlock(&netlock);
+	unlock_net();
 	return 0;
 }
 
@@ -205,9 +221,9 @@ proc_tcp_dsack(const char *fn){
 	if((dsack = lex_unsigned_file(fn,1)) < 0){
 		return -1;
 	}
-	pthread_mutex_lock(&netlock);
+	lock_net();
 		netstate.tcp_dsack = dsack;
-	pthread_mutex_unlock(&netlock);
+	unlock_net();
 	return 0;
 }
 
@@ -218,10 +234,10 @@ proc_tcp_ccalg(const char *fn){
 	if((ccalg = lex_string_file(fn)) == NULL){
 		return -1;
 	}
-	pthread_mutex_lock(&netlock);
+	lock_net();
 		free(netstate.tcp_ccalg);
 		netstate.tcp_ccalg = ccalg;
-	pthread_mutex_unlock(&netlock);
+	unlock_net();
 	return 0;
 }
 
@@ -275,12 +291,10 @@ int cleanup_procfs(void){
 }
 
 int get_procfs_state(procfs_state *ps){
-	if(pthread_mutex_lock(&netlock)){
-		return -1;
-	}
+	lock_net();
 	memcpy(ps,&netstate,sizeof(*ps));
 	ps->tcp_ccalg = strdup(ps->tcp_ccalg);
-	pthread_mutex_unlock(&netlock);
+	unlock_net();
 	if(ps->tcp_ccalg == NULL){
 		return -1;
 	}
