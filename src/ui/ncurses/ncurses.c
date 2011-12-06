@@ -617,6 +617,15 @@ vdiag_callback(const char *fmt,va_list v){
 	wvstatus(stdscr,fmt,v);
 }
 
+static void
+network_callback(void){
+	lock_ncurses();
+		if(active == &network){
+			assert(display_network_locked(stdscr,&network) == OK);
+		}
+	unlock_ncurses();
+}
+
 int main(int argc,char * const *argv){
 	const char *codeset;
 	omphalos_ctx pctx;
@@ -650,6 +659,7 @@ int main(int argc,char * const *argv){
 	pctx.iface.srv_event = service_callback;
 	pctx.iface.neigh_event = neighbor_callback;
 	pctx.iface.host_event = host_callback;
+	pctx.iface.network_event = network_callback;
 	if(ncurses_setup() == NULL){
 		return EXIT_FAILURE;
 	}

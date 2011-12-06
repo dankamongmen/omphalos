@@ -77,6 +77,10 @@ typedef struct omphalos_iface {
 	// is treated similarly to that of the device event callback.
 	void *(*srv_event)(const struct interface *,struct l2host *,
 				struct l3host *,struct l4srv *);
+
+	// Network metastatus change callback, fed by network analysis. Covers
+	// everything from /proc to DNS to routing.
+	void (*network_event)(void);
 } omphalos_iface;
 
 typedef enum {
