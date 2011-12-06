@@ -30,12 +30,13 @@ lock_net(void){
 
 static inline void
 unlock_net(void){
-	const omphalos_ctx *ctx = get_octx();
-	const omphalos_iface *octx = &ctx->iface;
+	const omphalos_ctx *ctx;
 
 	assert(pthread_mutex_unlock(&netlock) == 0);
-	if(octx->network_event){
-		octx->network_event();
+	if( (ctx = get_octx()) ){
+		if(ctx->iface.network_event){
+			ctx->iface.network_event();
+		}
 	}
 }
 
@@ -294,7 +295,7 @@ int get_procfs_state(procfs_state *ps){
 	lock_net();
 	memcpy(ps,&netstate,sizeof(*ps));
 	ps->tcp_ccalg = strdup(ps->tcp_ccalg);
-	unlock_net();
+	pthread_mutex_unlock(&netlock);
 	if(ps->tcp_ccalg == NULL){
 		return -1;
 	}

@@ -96,6 +96,8 @@ int queue_for_naming(struct interface *i,struct l3host *l3,dnstxfxn dnsfxn,
 }
 
 void offer_nameserver(int nsfam,const void *nameserver){
+	const omphalos_ctx *ctx = get_octx();
+	const omphalos_iface *octx = &ctx->iface;
 	resolver **head,*r;
 	size_t len;
 
@@ -121,6 +123,9 @@ void offer_nameserver(int nsfam,const void *nameserver){
 		*head = r;
 	}
 	pthread_mutex_unlock(&resolver_lock);
+	if(octx->network_event){
+		octx->network_event();
+	}
 }
 
 int offer_resolution(int fam,const void *addr,const char *name,namelevel nlevel,
@@ -237,12 +242,17 @@ parse_resolv_conf(const char *fn){
 	if(errno){
 		free_resolvers(&revs);
 	}else{
+		const omphalos_ctx *ctx = get_octx();
+		const omphalos_iface *octx = &ctx->iface;
 		resolver *r;
 
 		pthread_mutex_lock(&resolver_lock);
 		r = resolvers;
 		resolvers = revs;
 		pthread_mutex_unlock(&resolver_lock);
+		if(octx->network_event){
+			octx->network_event();
+		}
 		free_resolvers(&r);
 		gettimeofday(&t1,NULL);
 		timersub(&t1,&t0,&t2);

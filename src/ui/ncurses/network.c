@@ -28,8 +28,7 @@ state3char(int state){
 
 #define NETWORKROWS 4
 
-static int
-update_network_details(WINDOW *w){
+int update_network_details(WINDOW *w){
 	const int col = START_COL;
 	const int row = 1;
 	procfs_state ps;

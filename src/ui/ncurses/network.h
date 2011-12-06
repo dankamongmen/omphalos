@@ -10,6 +10,7 @@ extern "C" {
 struct panel_state;
 
 int display_network_locked(WINDOW *,struct panel_state *);
+int update_network_details(WINDOW *);
 
 #ifdef __cplusplus
 }

@@ -621,7 +621,7 @@ static void
 network_callback(void){
 	lock_ncurses();
 		if(active == &network){
-			assert(display_network_locked(stdscr,&network) == OK);
+			assert(update_network_details(panel_window(network.p)) == OK);
 		}
 	unlock_ncurses();
 }
