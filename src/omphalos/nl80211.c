@@ -16,6 +16,30 @@ static struct nl_cache *nlc;
 static struct genl_family *nl80211;
 static pthread_mutex_t nllock = PTHREAD_MUTEX_INITIALIZER;
 
+static int
+nl80211_cmd(void){
+	struct nl_msg *msg;
+	struct nl_cb *cb;
+
+	if((msg = nlmsg_alloc()) == NULL){
+		diagnostic("Couldn't allocate netlink msg (%s?)",strerror(errno));
+		return -1;
+	}
+	if((cb = nl_cb_alloc(NL_CB_VERBOSE)) == NULL){
+		diagnostic("Couldn't allocate netlink cb (%s?)",strerror(errno));
+		goto err;
+	}
+	nlmsg_free(msg);
+	return 0;
+
+err:
+	if(cb){
+		nl_cb_put(cb);
+	}
+	nlmsg_free(msg);
+	return -1;
+}
+
 int open_nl80211(void){
 	assert(pthread_mutex_lock(&nllock) == 0);
 	if(nl){ // already initialized
@@ -38,9 +62,9 @@ int open_nl80211(void){
 		diagnostic("Couldn't find nl80211 (%s?)",strerror(errno));
 		goto err;
 	}
+	assert(nl80211_cmd() == 0); // FIXME, just exploratory
 	assert(pthread_mutex_unlock(&nllock) == 0);
 	return 0;
-	//return socket(PF_NETLINK,SOCK_RAW,NETLINK_GENERIC);
 
 err:
 	if(nlc){
