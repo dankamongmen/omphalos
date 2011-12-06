@@ -5,7 +5,8 @@
 extern "C" {
 #endif
 
-int open_nl80211_socket(void);
+int open_nl80211(void);
+int close_nl80211(void);
 
 #ifdef __cplusplus
 }

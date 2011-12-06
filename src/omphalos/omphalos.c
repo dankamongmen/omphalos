@@ -19,6 +19,7 @@
 #include <omphalos/route.h>
 #include <omphalos/resolv.h>
 #include <omphalos/procfs.h>
+#include <omphalos/nl80211.h>
 #include <omphalos/hwaddrs.h>
 #include <omphalos/netlink.h>
 #include <omphalos/omphalos.h>
@@ -375,9 +376,13 @@ int omphalos_init(const omphalos_ctx *pctx){
 		if(init_pci_support()){
 			diagnostic("Warning: no PCI support available");
 		}
+		if(open_nl80211()){
+			return -1;
+		}
 		if(handle_netlink_socket()){
 			return -1;
 		}
+		close_nl80211();
 	}
 	return 0;
 }
