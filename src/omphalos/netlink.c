@@ -23,6 +23,7 @@
 #include <omphalos/sysfs.h>
 #include <linux/rtnetlink.h>
 #include <omphalos/queries.h>
+#include <omphalos/nl80211.h>
 #include <omphalos/inotify.h>
 #include <omphalos/ethtool.h>
 #include <omphalos/hwaddrs.h>
@@ -757,6 +758,7 @@ handle_newlink_locked(interface *iface,const struct ifinfomsg *ii,const struct n
 		diagnostic("No MTU in new link message for %s",iface->name);
 		return -1;
 	}
+	open_nl80211();	// protected by mutex; only opens once
 	iface->flags = ii->ifi_flags;
 	iface->settings_valid = SETTINGS_INVALID;
 	// Ethtool can fail for any given command depending on the device's
@@ -980,6 +982,7 @@ netlink_thread(void){
 		while((events = poll(pfd,sizeof(pfd) / sizeof(*pfd),-1)) == 0){
 			diagnostic("Spontaneous wakeup on netlink socket %d",pfd[0].fd);
 		}
+#include <omphalos/nl80211.h>
 		if(events < 0){
 			if(errno != EINTR){
 				diagnostic("Error polling core sockets (%s?)",strerror(errno));
@@ -1066,5 +1069,6 @@ int handle_netlink_socket(void){
 	ret = netlink_thread();
 	ret |= restore_sighandler();
 	ret |= restore_sigmask();
+	ret |= close_nl80211();
 	return ret;
 }
