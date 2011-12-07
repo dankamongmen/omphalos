@@ -5,6 +5,7 @@
 #include <sys/socket.h>
 #include <omphalos/diag.h>
 #include <linux/nl80211.h>
+#include <linux/netlink.h>
 #include <netlink/socket.h>
 #include <netlink/netlink.h>
 #include <linux/rtnetlink.h>
@@ -19,10 +20,33 @@ static struct genl_family *nl80211;
 static pthread_mutex_t nllock = PTHREAD_MUTEX_INITIALIZER;
 
 static int
+error_handler(struct sockaddr_nl *nla __attribute__ ((unused)),
+				struct nlmsgerr *err,void *arg){
+	int *ret = arg;
+	*ret = err->error;
+	return NL_STOP;
+}
+
+static int
+finish_handler(struct nl_msg *msg __attribute__ ((unused)),void *arg){
+	int *ret = arg;
+	*ret = 0;
+	return NL_SKIP;
+}
+
+static int
+ack_handler(struct nl_msg *msg __attribute__ ((unused)),void *arg){
+	int *ret = arg;
+	*ret = 0;
+	return NL_SKIP;
+}
+
+static int
 nl80211_cmd(enum nl80211_commands cmd){
 	struct nl_msg *msg;
 	struct nl_cb *cb;
 	int flags = 0;
+	int err;
 
 	if((msg = nlmsg_alloc()) == NULL){
 		diagnostic("Couldn't allocate netlink msg (%s?)",strerror(errno));
@@ -33,6 +57,18 @@ nl80211_cmd(enum nl80211_commands cmd){
 		goto err;
 	}
 	genlmsg_put(msg,0,0,genl_family_get_id(nl80211),0,flags,cmd,0);
+	if(nl_send_auto_complete(nl,msg) < 0){
+		diagnostic("Couldn't send msg (%s?)",strerror(errno));
+		goto err;
+	}
+	nl_cb_err(cb,NL_CB_CUSTOM,error_handler,&err);
+	nl_cb_set(cb,NL_CB_FINISH,NL_CB_CUSTOM,finish_handler,&err);
+	nl_cb_set(cb,NL_CB_ACK,NL_CB_CUSTOM,ack_handler,&err);
+	err = 0;
+	while(!err){
+		nl_recvmsgs(nl,cb);
+	}
+	nl_cb_put(cb);
 	nlmsg_free(msg);
 	return 0;
 
