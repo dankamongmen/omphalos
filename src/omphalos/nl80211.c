@@ -1,4 +1,5 @@
 #include <errno.h>
+#include <unistd.h>
 #include <string.h>
 #include <assert.h>
 #include <pthread.h>
@@ -42,9 +43,16 @@ ack_handler(struct nl_msg *msg __attribute__ ((unused)),void *arg){
 }
 
 static int
+valid_handler(struct nl_msg *msg __attribute__ ((unused)),void *arg){
+	int *ret = arg;
+	*ret = 0;
+	return NL_SKIP;
+}
+
+static int
 nl80211_cmd(enum nl80211_commands cmd){
+	struct nl_cb *cb = NULL,*scb = NULL;
 	struct nl_msg *msg;
-	struct nl_cb *cb;
 	int flags = 0;
 	int err;
 
@@ -56,7 +64,13 @@ nl80211_cmd(enum nl80211_commands cmd){
 		diagnostic("Couldn't allocate netlink cb (%s?)",strerror(errno));
 		goto err;
 	}
+	if((scb = nl_cb_alloc(NL_CB_VERBOSE)) == NULL){
+		diagnostic("Couldn't allocate netlink cb (%s?)",strerror(errno));
+		goto err;
+	}
 	genlmsg_put(msg,0,0,genl_family_get_id(nl80211),0,flags,cmd,0);
+	nl_cb_set(cb,NL_CB_VALID,NL_CB_CUSTOM,valid_handler,&err);
+	nl_socket_set_cb(nl,scb);
 	if(nl_send_auto_complete(nl,msg) < 0){
 		diagnostic("Couldn't send msg (%s?)",strerror(errno));
 		goto err;
@@ -68,6 +82,7 @@ nl80211_cmd(enum nl80211_commands cmd){
 	while(!err){
 		nl_recvmsgs(nl,cb);
 	}
+	nl_cb_put(scb);
 	nl_cb_put(cb);
 	nlmsg_free(msg);
 	return 0;
@@ -75,6 +90,9 @@ nl80211_cmd(enum nl80211_commands cmd){
 err:
 	if(cb){
 		nl_cb_put(cb);
+	}
+	if(scb){
+		nl_cb_put(scb);
 	}
 	nlmsg_free(msg);
 	return -1;
