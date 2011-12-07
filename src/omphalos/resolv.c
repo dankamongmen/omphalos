@@ -298,7 +298,7 @@ char *stringize_resolvers(void){
 		}
 		ret = tmp;
 		if(s){
-			ret[s - 1] = ',';
+			ret[s - 1] = ' ';
 		}
 		strcpy(ret + s,buf);
 		s += strlen(buf) + 1;
@@ -310,7 +310,7 @@ char *stringize_resolvers(void){
 		}
 		ret = tmp;
 		if(s){
-			ret[s - 1] = ',';
+			ret[s - 1] = ' ';
 		}
 		strcpy(ret + s,buf);
 		s += strlen(buf) + 1;
