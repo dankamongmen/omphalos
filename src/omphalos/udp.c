@@ -9,6 +9,7 @@
 #include <omphalos/mdns.h>
 #include <omphalos/ssdp.h>
 #include <asm/byteorder.h>
+#include <omphalos/netbios.h>
 #include <omphalos/service.h>
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
@@ -51,6 +52,11 @@ void handle_udp_packet(omphalos_packet *op,const void *frame,size_t len){
 					observe_service(op->i,op->l2s,op->l3s,op->l3proto,
 						op->l4src,L"DHCP",NULL);
 				}
+			}
+		}break;
+		case __constant_htons(NETBIOS_UDP_PORT):{
+			if(udp->source == __constant_htons(NETBIOS_UDP_PORT)){
+				handle_netbios_packet(op,ubdy,ulen);
 			}
 		}break;
 	}
