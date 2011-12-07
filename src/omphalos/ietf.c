@@ -219,7 +219,7 @@ const wchar_t *ietf_bcast_lookup(int fam,const void *addr){
 	return NULL;
 }
 
-#define	IN_LOOPBACK(a)		(((*(uint32_t *)a) & 0xff000000ul) == 0x7f000000ul)
+#define	IN_LOOPBACK(a)		(((*(uint32_t *)a) & __constant_htonl(0xff000000ul)) == __constant_htonl(0x7f000000ul))
 // Input is in network byte order
 const wchar_t *ietf_local_lookup(int fam,const void *addr){
 	if(fam == AF_INET){
