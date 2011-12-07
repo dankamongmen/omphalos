@@ -757,7 +757,7 @@ int open_nl80211(void){
 		goto err;
 	}
 	if((nl80211 = genl_ctrl_search_by_name(nlc,"nl80211")) == NULL){
-		diagnostic("Couldn't find nl80211 (%s?)",strerror(errno));
+		//diagnostic("Couldn't find nl80211 (%s?)",strerror(errno));
 		goto err;
 	}
 	assert(nl80211_cmd(NL80211_CMD_GET_WIPHY,NLM_F_DUMP) == 0); // FIXME, just exploratory
