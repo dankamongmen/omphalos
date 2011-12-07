@@ -25,13 +25,14 @@ error_handler(struct sockaddr_nl *nla __attribute__ ((unused)),
 				struct nlmsgerr *err,void *arg){
 	int *ret = arg;
 	*ret = err->error;
+	assert(0);
 	return NL_STOP;
 }
 
 static int
 finish_handler(struct nl_msg *msg __attribute__ ((unused)),void *arg){
 	int *ret = arg;
-	*ret = 0;
+	*ret = 1;
 	return NL_SKIP;
 }
 
@@ -39,21 +40,20 @@ static int
 ack_handler(struct nl_msg *msg __attribute__ ((unused)),void *arg){
 	int *ret = arg;
 	*ret = 0;
-	return NL_SKIP;
+	return NL_STOP;
 }
 
 static int
 valid_handler(struct nl_msg *msg __attribute__ ((unused)),void *arg){
 	int *ret = arg;
 	*ret = 0;
-	return NL_SKIP;
+	return NL_STOP;
 }
 
 static int
-nl80211_cmd(enum nl80211_commands cmd){
+nl80211_cmd(enum nl80211_commands cmd,int flags){
 	struct nl_cb *cb = NULL,*scb = NULL;
 	struct nl_msg *msg;
-	int flags = 0;
 	int err;
 
 	if((msg = nlmsg_alloc()) == NULL){
@@ -120,7 +120,7 @@ int open_nl80211(void){
 		diagnostic("Couldn't find nl80211 (%s?)",strerror(errno));
 		goto err;
 	}
-	assert(nl80211_cmd(NL80211_CMD_GET_WIPHY) == 0); // FIXME, just exploratory
+	assert(nl80211_cmd(NL80211_CMD_GET_WIPHY,NLM_F_DUMP) == 0); // FIXME, just exploratory
 	assert(pthread_mutex_unlock(&nllock) == 0);
 	return 0;
 
