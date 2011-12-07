@@ -219,12 +219,12 @@ const wchar_t *ietf_bcast_lookup(int fam,const void *addr){
 	return NULL;
 }
 
+#define	IN_LOOPBACK(a)		((((long int) (a)) & 0xff000000) == 0x7f000000)
+// Input is in network byte order
 const wchar_t *ietf_local_lookup(int fam,const void *addr){
 	if(fam == AF_INET){
-		const uint32_t loopback = htonl(INADDR_LOOPBACK);
-
-		if(memcmp(addr,&loopback,sizeof(loopback)) == 0){
-			return L"Internal IPv4 loopback (RFC 3330)";
+		if(IN_LOOPBACK(addr)){
+			return L"Internal IPv4 loopback (RFC 5735)";
 		}
 	}else if(fam == AF_INET6){
 		if(IN6_IS_ADDR_LOOPBACK(addr)){
@@ -233,3 +233,4 @@ const wchar_t *ietf_local_lookup(int fam,const void *addr){
 	}
 	return NULL;
 }
+#undef IN_LOOPBACK
