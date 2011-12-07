@@ -160,6 +160,11 @@ void handle_ipv4_packet(omphalos_packet *op,const void *frame,size_t len){
 				op->i->name,len,hlen);
 		return;
 	}
+	if(!hlen){
+		op->malformed = 1;
+		diagnostic("%s %s malformed with 0 hdrlen",__func__,op->i->name);
+		return;
+	}
 	if(ipv4_csum(frame)){
 		op->malformed = 1;
 		//diagnostic("[%s] bad IPv4 checksum (%04hx)",op->i->name,ipv4_csum(frame));
@@ -183,10 +188,14 @@ void handle_ipv4_packet(omphalos_packet *op,const void *frame,size_t len){
 	op->l3s = lookup_l3host(&op->tv,op->i,op->l2s,AF_INET,&ip->saddr);
 	op->l3d = lookup_l3host(&op->tv,op->i,op->l2d,AF_INET,&ip->daddr);
 
+	// FIXME need reassemble fragments
+	if((ip->frag_off & __constant_ntohs(0x1f)) || (ip->frag_off & __constant_ntohs(0x20))){
+		return;
+	}
+
 	const void *nhdr = (const unsigned char *)frame + hlen;
 	const size_t nlen = ntohs(ip->tot_len) - hlen;
 
-	// FIXME don't call down if we're fragmented
 	switch(ip->protocol){
 	case IPPROTO_TCP:{
 		handle_tcp_packet(op,nhdr,nlen);
