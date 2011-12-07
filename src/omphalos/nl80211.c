@@ -4,12 +4,14 @@
 #include <pthread.h>
 #include <sys/socket.h>
 #include <omphalos/diag.h>
+#include <linux/nl80211.h>
 #include <netlink/socket.h>
 #include <netlink/netlink.h>
 #include <linux/rtnetlink.h>
 #include <omphalos/nl80211.h>
 #include <netlink/genl/genl.h>
 #include <netlink/genl/ctrl.h>
+#include <netlink/genl/family.h>
 
 static struct nl_sock *nl;
 static struct nl_cache *nlc;
@@ -17,9 +19,10 @@ static struct genl_family *nl80211;
 static pthread_mutex_t nllock = PTHREAD_MUTEX_INITIALIZER;
 
 static int
-nl80211_cmd(void){
+nl80211_cmd(enum nl80211_commands cmd){
 	struct nl_msg *msg;
 	struct nl_cb *cb;
+	int flags = 0;
 
 	if((msg = nlmsg_alloc()) == NULL){
 		diagnostic("Couldn't allocate netlink msg (%s?)",strerror(errno));
@@ -29,6 +32,7 @@ nl80211_cmd(void){
 		diagnostic("Couldn't allocate netlink cb (%s?)",strerror(errno));
 		goto err;
 	}
+	genlmsg_put(msg,0,0,genl_family_get_id(nl80211),0,flags,cmd,0);
 	nlmsg_free(msg);
 	return 0;
 
@@ -62,7 +66,7 @@ int open_nl80211(void){
 		diagnostic("Couldn't find nl80211 (%s?)",strerror(errno));
 		goto err;
 	}
-	assert(nl80211_cmd() == 0); // FIXME, just exploratory
+	assert(nl80211_cmd(NL80211_CMD_GET_WIPHY) == 0); // FIXME, just exploratory
 	assert(pthread_mutex_unlock(&nllock) == 0);
 	return 0;
 
