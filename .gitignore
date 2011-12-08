@@ -8,4 +8,5 @@ ieee-oui.txt.raw
 out
 tags
 tools/csumtest
+tools/nl80211
 usb.ids
