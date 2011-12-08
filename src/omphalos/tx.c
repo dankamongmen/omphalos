@@ -248,9 +248,9 @@ int send_tx_frame(interface *i,void *frame){
 			uint32_t tplen = thdr->tp_len;
 			int r;
 
-			//thdr->tp_status = TP_STATUS_SEND_REQUEST;
-			//ret = send(i->fd,NULL,0,0);
-			r = send(i->fd,(const char *)frame + thdr->tp_mac,tplen,0);
+			thdr->tp_status = TP_STATUS_SEND_REQUEST;
+			r = send(i->fd,NULL,0,0);
+			//r = send(i->fd,(const char *)frame + thdr->tp_mac,tplen,0);
 			if(r == 0){
 				r = tplen;
 			}
