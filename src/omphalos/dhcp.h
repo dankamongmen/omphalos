@@ -10,6 +10,7 @@ extern "C" {
 struct omphalos_packet;
 
 int handle_dhcp_packet(struct omphalos_packet *,const void *,size_t) __attribute__ ((nonnull (1,2)));
+int handle_dhcp6_packet(struct omphalos_packet *,const void *,size_t) __attribute__ ((nonnull (1,2)));
 
 #ifdef __cplusplus
 }
