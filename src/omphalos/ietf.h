@@ -10,7 +10,10 @@ extern "C" {
 #include <arpa/inet.h>
 #include <omphalos/128.h>
 
+// This is all about naming of special-case addresses. If local information is
+// available, that's likely preferable to these generic names.
 const wchar_t *ietf_multicast_lookup(int,const void *);
+const wchar_t *ietf_unicast_lookup(int,const void *);
 const wchar_t *ietf_bcast_lookup(int,const void *);
 const wchar_t *ietf_local_lookup(int,const void *);
 
@@ -33,7 +36,7 @@ unrouted_ip4(const uint32_t *ip){
 
 static inline int
 unrouted_ip6(const uint128_t ip6){
-	const uint128_t LINKLOCAL6_MASK = { htonl(0xffb00000ul), 0, 0, 0 };
+	const uint128_t LINKLOCAL6_MASK = { htonl(0xff800000ul), 0, 0, 0 };
 	const uint128_t LINKLOCAL6_NET = { htonl(0xfe800000ul), 0, 0, 0 };
 	uint128_t masked;
 

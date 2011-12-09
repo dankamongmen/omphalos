@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <assert.h>
 #include <string.h>
 #include <sys/socket.h>
@@ -40,7 +41,28 @@
 #define IPV4_ADMINSCOPED_SSDP		__constant_htonl(0xeffffffa)
 #define IPV4_ADMINSCOPED_SLP		__constant_htonl(0xeffffffd)
 
-#include <stdio.h>
+#define IPV4_APIPA_BASE __constant_htonl(0xa9fe0000ul)
+#define IPV4_APIPA_MASK __constant_htonl(0xffff0000ul)
+
+static const wchar_t *
+ietf_unicast_ipv4(const uint32_t *ip){
+	if((*ip & IPV4_APIPA_MASK) == IPV4_APIPA_BASE){
+		return L"APIPA link-local hosts (RFC 3927)";
+	}
+	return NULL;
+}
+
+static const wchar_t *
+ietf_unicast_ipv6(const uint128_t ip){
+	const uint128_t zeroip = { 0x0, 0x0, 0x0, 0x0 };
+	// FIXME handle fe80?
+
+	if(equal128(zeroip,ip)){
+		return L"Unspecified IPv6 address (RFC 2373)";
+	}
+	return NULL;
+}
+
 static const wchar_t *
 ietf_multicast_ipv4(const uint32_t *ip){
 	if((*ip & RFC1112_MASK) != RFC1112_BASE){
@@ -191,6 +213,15 @@ ietf_multicast_ipv6(const uint32_t *ip){
 		}
 	}
 	return L"RFC 4291 multicast";
+}
+
+const wchar_t *ietf_unicast_lookup(int fam,const void *addr){
+	if(fam == AF_INET){
+		return ietf_unicast_ipv4(addr);
+	}else if(fam == AF_INET6){
+		return ietf_unicast_ipv6(addr);
+	}
+	return NULL;
 }
 
 const wchar_t *ietf_multicast_lookup(int fam,const void *addr){
