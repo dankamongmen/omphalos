@@ -1,0 +1,60 @@
+#include <stdint.h>
+#include <omphalos/diag.h>
+#include <asm/byteorder.h>
+#include <omphalos/cisco.h>
+#include <omphalos/omphalos.h>
+#include <omphalos/interface.h>
+
+typedef struct udldattr {
+	uint16_t type;
+	uint16_t len;
+} __attribute__ ((packed)) udldattr;
+
+typedef struct udldhdr {
+	struct {
+		unsigned version: 3;
+		unsigned opcode: 5;
+	} __attribute__ ((packed));
+	uint8_t flags;
+	uint16_t csum;
+	// PDUs follow
+} __attribute__ ((packed)) udldhdr;
+
+#define UDLD_TYPE_DEVID __constant_htons(0x1)
+
+void handle_udld_packet(omphalos_packet *op,const void *frame,size_t len){
+	const udldhdr *udld = frame;
+	const udldattr *ua;
+
+	if(len < sizeof(*udld)){
+		op->malformed = 1;
+		diagnostic("%s packet too small (%zu) on %s",__func__,len,op->i->name);
+		return;
+	}
+	ua = (const udldattr *)((const char *)frame + sizeof(*udld));
+	len -= sizeof(*udld);
+	while(len){
+		if(len < sizeof(*ua)){
+			op->malformed = 1;
+			diagnostic("%s attr too small (%zu) on %s",__func__,len,op->i->name);
+			return;
+		}
+		if(len < ntohs(ua->len)){
+			op->malformed = 1;
+			diagnostic("%s attr too large (%hu) on %s",__func__,ntohs(ua->len),op->i->name);
+			return;
+		}
+		// FIXME it'd be nice to use this name for some purpose
+		/*switch(ua->type){
+			case UDLD_TYPE_DEVID:{
+				int devlen = ntohs(ua->len) - 4;
+				const char *name = (const char *)ua + 4;
+
+				diagnostic("UDLD device name: %*s",devlen,name);
+				break;
+			}
+		}*/
+		len -= ntohs(ua->len);
+		ua = (const udldattr *)((const char *)ua + ntohs(ua->len));
+	}
+}
