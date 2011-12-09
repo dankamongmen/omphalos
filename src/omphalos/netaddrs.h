@@ -21,9 +21,9 @@ typedef enum {
 	NAMING_LEVEL_RESOLVING,	// Currently being looked up
 	NAMING_LEVEL_FAIL,	// Failure sending query, might retransmit
 	NAMING_LEVEL_NXDOMAIN,	// Server returned Name Error
+	NAMING_LEVEL_GLOBAL,	// Globally-assigned address (no local context)
 	NAMING_LEVEL_DNS,	// Direct lookup maps multiple names to an IP
 	NAMING_LEVEL_REVDNS,	// Reverse lookup is unique for each IP
-	NAMING_LEVEL_GLOBAL,	// Globally-assigned address
 	NAMING_LEVEL_MAX
 } namelevel;
 
