@@ -10,6 +10,7 @@
 #include <omphalos/pim.h>
 #include <omphalos/csum.h>
 #include <omphalos/icmp.h>
+#include <omphalos/vrrp.h>
 #include <omphalos/util.h>
 #include <omphalos/hwaddrs.h>
 #include <omphalos/netaddrs.h>
@@ -20,6 +21,7 @@
 #define DEFAULT_IP4_TTL 64
 #define DEFAULT_IP6_TTL 64
 #define IPPROTO_DSR	48 // Dynamic Source Routing, RFC 4728
+#define IPPROTO_VRRP	112
 
 typedef struct dsrhdr {
 	uint8_t nxthdr;
@@ -110,6 +112,9 @@ void handle_ipv6_packet(omphalos_packet *op,const void *frame,size_t len){
 			nhdr = NULL;
 		break; }case IPPROTO_DSR:{
 			handle_dsr_packet(op,nhdr,plen);
+			nhdr = NULL;
+		break; }case IPPROTO_VRRP:{
+			handle_vrrp_packet(op,nhdr,plen);
 			nhdr = NULL;
 		break; }case IPPROTO_HOPOPTS:{
 			const struct ip6_ext *opt = nhdr;
@@ -211,6 +216,8 @@ void handle_ipv4_packet(omphalos_packet *op,const void *frame,size_t len){
 		handle_pim_packet(op,nhdr,nlen);
 	break; }case IPPROTO_DSR:{
 		handle_dsr_packet(op,nhdr,nlen);
+	break; }case IPPROTO_VRRP:{
+		handle_vrrp_packet(op,nhdr,nlen);
 	break; }default:{
 		op->noproto = 1;
 		diagnostic("%s %s noproto for %u",__func__,op->i->name,ip->protocol);
