@@ -8,6 +8,7 @@
 #include <omphalos/tcp.h>
 #include <omphalos/gre.h>
 #include <omphalos/pim.h>
+#include <omphalos/sctp.h>
 #include <omphalos/csum.h>
 #include <omphalos/icmp.h>
 #include <omphalos/vrrp.h>
@@ -100,6 +101,9 @@ void handle_ipv6_packet(omphalos_packet *op,const void *frame,size_t len){
 			nhdr = NULL;
 		break; }case IPPROTO_ICMP6:{
 			handle_icmp6_packet(op,nhdr,plen);
+			nhdr = NULL;
+		break; }case IPPROTO_SCTP:{
+			handle_sctp_packet(op,nhdr,plen);
 			nhdr = NULL;
 		break; }case IPPROTO_GRE:{
 			handle_gre_packet(op,nhdr,plen);
@@ -208,6 +212,8 @@ void handle_ipv4_packet(omphalos_packet *op,const void *frame,size_t len){
 		handle_udp_packet(op,nhdr,nlen);
 	break; }case IPPROTO_ICMP:{
 		handle_icmp_packet(op,nhdr,nlen);
+	break; }case IPPROTO_SCTP:{
+		handle_sctp_packet(op,nhdr,nlen);
 	break; }case IPPROTO_GRE:{
 		handle_gre_packet(op,nhdr,nlen);
 	break; }case IPPROTO_IGMP:{

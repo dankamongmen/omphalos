@@ -1,10 +1,6 @@
-#include <sys/types.h>
 #include <linux/tcp.h>
 #include <omphalos/tcp.h>
-#include <omphalos/dns.h>
 #include <omphalos/diag.h>
-#include <omphalos/mdns.h>
-#include <asm/byteorder.h>
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
 

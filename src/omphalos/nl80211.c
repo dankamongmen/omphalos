@@ -760,6 +760,11 @@ int open_nl80211(void){
 		//diagnostic("Couldn't find nl80211 (%s?)",strerror(errno));
 		goto err;
 	}
+	// FIXME extract these from the netlink layer; they're sent back to us
+	// in the first message. there's also "regulatory" and "scan".
+	/*nl_get_multicast_id(nl,"nl80211","mlme");
+	nl_socket_add_membership(
+	nl_get_multicast_id(nl,"nl80211","config");*/
 	assert(nl80211_cmd(NL80211_CMD_GET_WIPHY,NLM_F_DUMP) == 0); // FIXME, just exploratory
 	assert(pthread_mutex_unlock(&nllock) == 0);
 	return 0;
