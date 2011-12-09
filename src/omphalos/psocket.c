@@ -272,28 +272,36 @@ int handle_ring_packet(interface *iface,int fd,void *frame){
 	if(packet.malformed || packet.noproto){
 		struct pcap_pkthdr pcap;
 		struct pcap_ll pll;
+		size_t scribble;
 
+		if(frame != iface->truncbuf){
+			scribble = thdr->tp_mac;
+		}else{
+			scribble = 0;
+		}
 		if(packet.malformed){
 			++iface->malformed;
 		}
 		if(packet.noproto){
 			++iface->noprotocol;
 		}
-		pcap.caplen = pcap.len = len;
+		pcap.caplen = pcap.len = len + scribble;
 		pcap.ts = packet.tv;
 		memset(&pll,0,sizeof(pll));
-		pll.pkttype = 0x0; // FIXME set correct type
 		pll.arphrd = htons(packet.i->arptype);
 		pll.llen = ntohs(packet.i->addrlen);
 		if(packet.l2s){
 			hwaddrint hw = get_hwaddr(packet.l2s);
 			memcpy(&pll.haddr,&hw,packet.i->addrlen > sizeof(pll.haddr) ?
 					sizeof(pll.haddr) : packet.i->addrlen);
+			if(memcmp(&hw,packet.i->addr,packet.i->addrlen) == 0){
+				pll.pkttype = htons(4);
+			}
 		}else{
 			memset(&pll.haddr,0,sizeof(pll.haddr));
 		}
 		pll.ethproto = htons(packet.l3proto);
-		log_pcap_packet(&pcap,frame,packet.i->l2hlen + thdr->tp_mac,&pll);
+		log_pcap_packet(&pcap,frame,packet.i->l2hlen + scribble,&pll);
 	}
 	if(octx->packet_read){
 		octx->packet_read(&packet);
