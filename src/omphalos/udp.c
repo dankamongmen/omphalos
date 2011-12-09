@@ -46,9 +46,9 @@ void handle_udp_packet(omphalos_packet *op,const void *frame,size_t len){
 		case __constant_htons(MDNS_UDP_PORT):{
 			handle_mdns_packet(op,ubdy,ulen);
 		}break;
-		case __constant_htons(NETBIOS_UDP_PORT):{
-			if(udp->dest == __constant_htons(NETBIOS_UDP_PORT)){
-				handle_netbios_packet(op,ubdy,ulen);
+		case __constant_htons(NETBIOS_NS_UDP_PORT):{
+			if(udp->dest == __constant_htons(NETBIOS_NS_UDP_PORT)){
+				handle_netbios_ns_packet(op,ubdy,ulen);
 			}
 		}break;
 		case __constant_htons(DHCP_UDP_PORT):{
