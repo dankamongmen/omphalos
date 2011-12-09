@@ -287,7 +287,8 @@ int log_pcap_packet(struct pcap_pkthdr *h,void *sp,size_t l2len,const struct pca
 	if(!dumper){
 		return 0;
 	}
-	if(l2len >= sizeof(*sll)){
+	assert(h->caplen >= l2len);
+	if(l2len >= sizeof(*sll)){ // copy pll over old headers
 		if((rhdr = Malloc(l2len)) == NULL){
 			return -1;
 		}
@@ -299,7 +300,6 @@ int log_pcap_packet(struct pcap_pkthdr *h,void *sp,size_t l2len,const struct pca
 	}else if(l2len){ // fall back to payload copy
 		uint32_t plen;
 
-		assert(h->caplen >= l2len);
 		plen = h->caplen - l2len;
 		if((rhdr = Malloc(sizeof(*sll) + plen)) == NULL){
 			return -1;
@@ -310,7 +310,7 @@ int log_pcap_packet(struct pcap_pkthdr *h,void *sp,size_t l2len,const struct pca
 		h->caplen = sizeof(*sll) + plen;
 		h->len = sizeof(*sll) + plen;
 		sp = NULL;
-	}else{
+	}else{ // DLT_LINUX_SLL source
 		newframe = sp;
 		rhdr = NULL;
 		sp = NULL;
