@@ -242,6 +242,7 @@ handle_8022(omphalos_packet *op,const void *frame,size_t len){
 
 static void
 handle_pppoe_packet(omphalos_packet *op,const void *frame,size_t len){
+	// Works for both PPPoE Discovery and PPPoE Session
 	const struct pppoe_hdr *ppp = frame;
 	size_t dlen;
 
@@ -306,7 +307,8 @@ void handle_ethernet_packet(omphalos_packet *op,const void *frame,size_t len){
 		}case ETH_P_UDLD:{
 			handle_udld_packet(op,dgram,dlen);
 			break;
-		}case ETH_P_PPP_DISC:{
+		}case ETH_P_PPP_DISC:
+		 case ETH_P_PPP_SES:{
 			handle_pppoe_packet(op,dgram,dlen);
 			break;
 		}case ETH_P_DEC: // 0x6000..0x6007 are all DEC jankware
