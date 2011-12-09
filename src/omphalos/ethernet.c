@@ -61,7 +61,8 @@ handle_8022(omphalos_packet *,const void *,size_t);
 //  but does so by inserting the 802.1q tag between the OUI and EtherType (IEEE
 //  802.2 without SNAP does not have a SAP associated with 802.1q, and must use
 //  SNAP). 802.1q is inserted before the EtherType whether using Ethernet II or
-//  SNAP. 802.1q does not encapsulate itself (it could); 802.1ad must be used.
+//  SNAP. 802.1q should not encapsulate itself (it could); 802.1ad ought be
+//  used. Nonetheless, some (Cisco) implementations double up on 802.1q.
 // Since 802.1q is always inserted before the EtherType, we define an "802.1q
 //  header" to be the 6 bytes at the end of any Layer 2 encapulsation. frame
 //  and len ought correspond to this, and op->l2s/op->l2d ought already be set.
@@ -94,6 +95,10 @@ handle_8021q(omphalos_packet *op,const void *frame,size_t len,int allowllc){
 		handle_ipx_packet(op,dgram,dlen);
 	break;}case ETH_P_ECTP:{
 		handle_ectp_packet(op,dgram,dlen);
+	break;}case ETH_P_8021Q:{
+		// 802.1q-under-802.1q; we need consider the 16-bit Type field
+		// to be part of the following 802.1q TPID. Account for it.
+		handle_8021q(op,dgram - 2,dlen + 2,0);
 	break;}default:{
 		// At least Cisco PVST BDPU's under VLAN use 802.1q to directly
 		// encapsulate IEEE 802.2/SNAP. See:
@@ -274,9 +279,8 @@ void handle_ethernet_packet(omphalos_packet *op,const void *frame,size_t len){
 		}case ETH_P_IPV6:{
 			handle_ipv6_packet(op,dgram,dlen);
 			break;
-		}case ETH_P_8021Q:{	// 802.1q on Ethernet II
-			handle_8021q(op,(const char *)dgram - IEEE8021QHDRLEN,
-						dlen + IEEE8021QHDRLEN,1);
+		}case ETH_P_8021Q:{// 802.1q on Ethernet II. Account for TPID.
+			handle_8021q(op,(const char *)dgram - 2,dlen + 2,1);
 			break; // will modify op->l3proto
 		}case ETH_P_PAE:{
 			handle_eapol_packet(op,dgram,dlen);
