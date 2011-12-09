@@ -342,13 +342,16 @@ lookup_l3host_common(const struct timeval *tv,interface *i,struct l2host *l2,
 			}
 			return l3; // static broadcast naming only
 		}else{
+			const wchar_t *uname;
+
 			if(cat == RTN_LOCAL){
-				const wchar_t *lname = ietf_local_lookup(fam,addr);
-				if(lname){
-					wname_l3host_absolute(i,l2,l3,lname,NAMING_LEVEL_GLOBAL);
+				uname = ietf_local_lookup(fam,addr);
+				if(uname){
+					wname_l3host_absolute(i,l2,l3,uname,NAMING_LEVEL_GLOBAL);
 					return l3;
 				}
-			} // try to look locals up if they're not special cases
+			} // fallthrough: look locals up if they're not special cases
+		       	uname = ietf_unicast_lookup(fam,addr);
 			if(dnsfxn && revstrfxn && (rev = revstrfxn(addr))){
 				// Calls the host event if necessary
 				wname_l3host_absolute(i,l2,l3,L"Resolving...",NAMING_LEVEL_RESOLVING);
