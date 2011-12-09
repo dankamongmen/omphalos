@@ -7,6 +7,7 @@
 #include <omphalos/ipx.h>
 #include <omphalos/diag.h>
 #include <omphalos/util.h>
+#include <omphalos/mpls.h>
 #include <linux/if_fddi.h>
 #include <omphalos/eapol.h>
 #include <linux/if_ether.h>
@@ -310,6 +311,9 @@ void handle_ethernet_packet(omphalos_packet *op,const void *frame,size_t len){
 		}case ETH_P_PPP_DISC:
 		 case ETH_P_PPP_SES:{
 			handle_pppoe_packet(op,dgram,dlen);
+			break;
+		}case ETH_P_MPLS_UC:{
+			handle_mpls_packet(op,dgram,dlen);
 			break;
 		}case ETH_P_DEC: // 0x6000..0x6007 are all DEC jankware
 		case ETH_P_DNA_DL:
