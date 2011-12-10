@@ -50,7 +50,9 @@ char *first_level_decode(const char *enc,size_t len){
 	}
 	--len;
 	++enc;
-	while(len && *enc >= 'A' && *enc <= 'P'){
+	while(len && slen && *enc >= 'A' && *enc <= 'P'){
+		uint8_t dec;
+
 		if((off + 1) >= blen){
 			char *tmp;
 
@@ -61,16 +63,26 @@ char *first_level_decode(const char *enc,size_t len){
 			ret = tmp;
 			blen += 16;
 		}
+		dec = *enc;
+		dec -= 'A';
+		if(!odd){
+			ret[off] = dec << 4u;
+			odd = 1;
+		}else{
+			ret[off] |= dec;
+			odd = 0;
+			++off;
+		}
+		--slen;
 		--len;
 		++enc;
-		// FIXME fill it in with decode
 	}
 	if(len == 0){
 		diagnostic("%s truncated First-Level Encoding",__func__);
 		return NULL;
 	}
-	if(odd){
-		diagnostic("%s invalid First-Level Encoding",__func__);
+	if(odd || slen){
+		diagnostic("%s invalid First-Level Encoding %u %zu",__func__,odd,slen);
 		return NULL;
 	}
 	if(ret == NULL){
@@ -78,6 +90,7 @@ char *first_level_decode(const char *enc,size_t len){
 		return NULL;
 	}
 	ret[off] = '\0';
+	// FIXME last byte indicates host type (0 == workstation/server etc)
 	return ret;
 }
 
@@ -100,6 +113,7 @@ int handle_netbios_ns_packet(omphalos_packet *op,const void *frame,size_t len){
 				return -1;
 			}
 			diagnostic("NetBIOS name: [%s]",name); // FIXME
+			free(name);
 			break;
 		}
 	}
