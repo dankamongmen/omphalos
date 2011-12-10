@@ -153,7 +153,9 @@ int offer_wresolution(int fam,const void *addr,const wchar_t *name,namelevel nle
 	struct l2host *l2;
 
 	// FIXME don't call until we filter offers better
-	// offer_nameserver(nsfam,nameserver);
+	// if(nameserver){
+	// 	offer_nameserver(nsfam,nameserver);
+	// }
 	if((l3 = lookup_global_l3host(fam,addr)) == NULL){
 		return 0;
 	}

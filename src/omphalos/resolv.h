@@ -16,13 +16,13 @@ typedef int
 
 int queue_for_naming(struct interface *i,struct l3host *,dnstxfxn,
 				const char *,int,const void *)
-			__attribute__ ((nonnull (1,2,3,4,6)));
+			__attribute__ ((nonnull (1,2,3,4)));
 
 int offer_wresolution(int,const void *,const wchar_t *,namelevel,
-		int,const void *) __attribute__ ((nonnull (2,3,6)));
+		int,const void *) __attribute__ ((nonnull (2,3)));
 
 int offer_resolution(int,const void *,const char *,namelevel,int,const void *)
-			__attribute__ ((nonnull (2,3,6)));
+			__attribute__ ((nonnull (2,3)));
 
 void offer_nameserver(int,const void *);
 
