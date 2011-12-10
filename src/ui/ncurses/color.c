@@ -278,7 +278,7 @@ int fade(unsigned sec,pthread_mutex_t *lock,pthread_t *tid){
 	struct marsh *marsh;
 
 	if(!modified_colors){
-		return 0;
+		return -1;
 	}
 	if((marsh = malloc(sizeof(*marsh))) == NULL){
 		return -1;
