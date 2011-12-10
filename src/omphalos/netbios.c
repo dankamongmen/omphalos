@@ -7,6 +7,7 @@
 #include <omphalos/udp.h>
 #include <omphalos/csum.h>
 #include <omphalos/diag.h>
+#include <omphalos/resolv.h>
 #include <omphalos/netbios.h>
 #include <omphalos/ethernet.h>
 #include <omphalos/omphalos.h>
@@ -112,7 +113,8 @@ int handle_netbios_ns_packet(omphalos_packet *op,const void *frame,size_t len){
 							len - sizeof(*ns))) == NULL){
 				return -1;
 			}
-			diagnostic("NetBIOS name: [%s]",name); // FIXME
+			// FIXME can other families be used?
+			offer_resolution(AF_INET,op->l3saddr,name,NAMING_LEVEL_REVDNS,0,NULL);
 			free(name);
 			break;
 		}
