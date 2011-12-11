@@ -268,6 +268,7 @@ const wchar_t *iana_lookup(const void *unsafe_oui,size_t addrlen){
 	const ouitrie *t;
 
 	assert(addrlen == ETH_ALEN);
+	// FIXME identify subrange 000D3A (Microsoft) D7F140::FFFFFF (LLTD)
 	if( (t = trie[oui[0]]) ){
 		if( (t = t->next[oui[1]]) ){
 			return t->next[oui[2]];
