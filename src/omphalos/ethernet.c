@@ -9,6 +9,7 @@
 #include <omphalos/util.h>
 #include <omphalos/mpls.h>
 #include <linux/if_fddi.h>
+#include <omphalos/lltd.h>
 #include <omphalos/eapol.h>
 #include <linux/if_ether.h>
 #include <linux/if_pppox.h>
@@ -21,6 +22,8 @@
 #define ETH_P_LLDP	0x88cc	// Link Layer Discovery Protocol
 #define ETH_P_ECTP	0x9000	// Ethernet Configuration Test Protocol
 #define ETH_P_UDLD	0x0111	// Unidirectional Link Detection Protocol
+#define ETH_P_LLTD	0x88d9	// Link Layer Topology Discovery Protocol
+#define ETH_P_CLD	0x2000  // Cisco Discovery Protocol
 
 #define LLC_MAX_LEN	1536 // one more than maximum length of 802.2 LLC
 
@@ -169,6 +172,9 @@ handle_snap(omphalos_packet *op,const void *frame,size_t len){
 		}case ETH_P_LLDP:{
 			handle_lldp_packet(op,dgram,dlen);
 			break;
+		}case ETH_P_CLD:{
+			handle_cld_packet(op,dgram,dlen);
+			break;
 		}case ETH_P_UDLD:{
 			handle_udld_packet(op,dgram,dlen);
 			break;
@@ -301,6 +307,9 @@ void handle_ethernet_packet(omphalos_packet *op,const void *frame,size_t len){
 			break;
 		}case ETH_P_IPX:{
 			handle_ipx_packet(op,dgram,dlen);
+			break;
+		}case ETH_P_LLTD:{
+			handle_lltd_packet(op,dgram,dlen);
 			break;
 		}case ETH_P_LLDP:{
 			handle_lldp_packet(op,dgram,dlen);

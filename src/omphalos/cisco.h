@@ -11,6 +11,9 @@ struct omphalos_packet;
 
 // Various Cisco garbage protocols
 
+// Cisco Discovery Protocol
+void handle_cld_packet(struct omphalos_packet *,const void *,size_t);
+
 // Unidirectional Link Detection Protocol
 void handle_udld_packet(struct omphalos_packet *,const void *,size_t);
 
