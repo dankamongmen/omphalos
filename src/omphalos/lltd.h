@@ -7,9 +7,12 @@ extern "C" {
 
 #include <stddef.h>
 
+struct interface;
 struct omphalos_packet;
 
 void handle_lltd_packet(struct omphalos_packet *,const void *,size_t);
+
+int initiate_lltd(int,struct interface *,const void *);
 
 #ifdef __cplusplus
 }
