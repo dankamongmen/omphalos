@@ -120,7 +120,7 @@ create_l3host(int fam,const void *addr,size_t len){
 		r->l2 = NULL;
 		r->fam = fam;
 		r->srcpkts = r->dstpkts = 0;
-		r->nlevel = NAMING_LEVEL_NONE;
+		r->nlevel = 0;
 		r->services = NULL;
 		r->nosrvs = 0;
 		r->nextnametry = 0;
