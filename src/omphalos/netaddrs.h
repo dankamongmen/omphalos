@@ -16,14 +16,25 @@ struct interface;
 
 #define AF_BSSID (AF_MAX + 1)
 
+// Reasoning:
+//  - _DNS is below _GLOBAL because a crap entry (say, mapping to 127.0.0.1)
+//     could then override a correct, if generic, entry.
+//  - _DNS is below _REVDNS because _DNS is many-to-one whereas _REVDNS is (or
+//     ought be, anyway) one-to-one and thus "definitive" (even though one
+//     might not actually be able to look up this name!).
+//  - _REVDNS is below _MDNS because _MDNS answers come from the host itself,
+//     and thus are more "accurate" than possibly obsolete reverse DNS data
+//     (even though one might not actually be able to look up this name, even
+//     if the reverse DNS and forward DNS agree and specify something else!).
+//  - _GLOBAL is below _REVDNS because it's less informative.
 typedef enum {
-	NAMING_LEVEL_NONE,	// No name
 	NAMING_LEVEL_RESOLVING,	// Currently being looked up
 	NAMING_LEVEL_FAIL,	// Failure sending query, might retransmit
 	NAMING_LEVEL_NXDOMAIN,	// Server returned Name Error
-	NAMING_LEVEL_GLOBAL,	// Globally-assigned address (no local context)
 	NAMING_LEVEL_DNS,	// Direct lookup maps multiple names to an IP
+	NAMING_LEVEL_GLOBAL,	// Globally-assigned address (no local context)
 	NAMING_LEVEL_REVDNS,	// Reverse lookup is unique for each IP
+	NAMING_LEVEL_MDNS,	// Multicast lookup is answered by the host
 	NAMING_LEVEL_MAX
 } namelevel;
 
