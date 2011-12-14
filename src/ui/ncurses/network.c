@@ -62,9 +62,10 @@ int update_network_details(WINDOW *w){
 		}
 		--z;
 	}case 1:{
-		assert(mvwprintw(w,row + z,col,"Forwarding: IPv4%lc IPv6%lc",
+		assert(mvwprintw(w,row + z,col,"Forwarding: IPv4%lc IPv6%lc   Reverse path filtering: %ls",
 					state3char(ps.ipv4_forwarding),
-					state3char(ps.ipv6_forwarding)) != ERR);
+					state3char(ps.ipv6_forwarding),
+					state3str(ps.rp_filter)) != ERR);
 		--z;
 	}case 0:{
 		assert(mvwprintw(w,row + z,col,"Proxy ARP: %ls",state3str(ps.proxyarp)) != ERR);
