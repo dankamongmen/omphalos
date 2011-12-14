@@ -246,6 +246,7 @@ handle_rtm_delneigh(const struct nlmsghdr *nl){
 						flen,iface->name,RTA_PAYLOAD(ra));
 				break;
 			}
+			assert(ad);
 			memcpy(ad,RTA_DATA(ra),flen);
 		break;}/*case NDA_LLADDR:{
 			if(RTA_PAYLOAD(ra)){
