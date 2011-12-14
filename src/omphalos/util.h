@@ -9,6 +9,7 @@ extern "C" {
 #include <stdlib.h>
 #include <string.h>
 #include <endian.h>
+#include <pthread.h>
 #include <omphalos/diag.h>
 #include <omphalos/omphalos.h>
 
@@ -23,6 +24,30 @@ MMalloc(size_t s,const char *fname){
 }
 
 #define Malloc(s) MMalloc(s,__func__)
+
+static inline void
+PPthread_mutex_lock(pthread_mutex_t *lock,const char *lname,const char *fname){
+	int r;
+
+	if( (r = pthread_mutex_lock(lock)) ){
+		diagnostic("%s|coudln't lock %s (%s?)",fname,lname,strerror(r));
+		assert(0);
+	}
+}
+
+#define Pthread_mutex_lock(l) PPthread_mutex_lock(l,#l,__func__)
+
+static inline void
+PPthread_mutex_unlock(pthread_mutex_t *lock,const char *lname,const char *fname){
+	int r;
+
+	if( (r = pthread_mutex_unlock(lock)) ){
+		diagnostic("%s|coudln't unlock %s (%s?)",fname,lname,strerror(r));
+		assert(0);
+	}
+}
+
+#define Pthread_mutex_unlock(l) PPthread_mutex_unlock(l,#l,__func__)
 
 static inline void *
 memdup(const void *,size_t) __attribute__ ((warn_unused_result))
