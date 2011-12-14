@@ -5,6 +5,7 @@
 #include <omphalos/ip.h>
 #include <omphalos/arp.h>
 #include <omphalos/ipx.h>
+#include <omphalos/stp.h>
 #include <omphalos/diag.h>
 #include <omphalos/util.h>
 #include <omphalos/mpls.h>
@@ -36,13 +37,6 @@ handle_lldp_packet(omphalos_packet *op __attribute__ ((unused)),
 
 static void
 handle_ectp_packet(omphalos_packet *op __attribute__ ((unused)),
-			const void *frame __attribute__ ((unused)),
-			size_t len __attribute__ ((unused))){
-	// FIXME
-}
-
-static void
-handle_stp_packet(omphalos_packet *op __attribute__ ((unused)),
 			const void *frame __attribute__ ((unused)),
 			size_t len __attribute__ ((unused))){
 	// FIXME
