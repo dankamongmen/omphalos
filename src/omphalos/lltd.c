@@ -64,7 +64,7 @@ void handle_lltd_packet(omphalos_packet *op,const void *frame,size_t len){
 int initiate_lltd(int fam,interface *i,const void *addr){
 	struct tpacket_hdr *thdr;
 	size_t flen,tlen;
-	//lltdhdr *lltd;
+	lltdhdr *lltd;
 	void *frame;
 	int r;
 
@@ -77,7 +77,7 @@ int initiate_lltd(int fam,interface *i,const void *addr){
 		goto err;
 	}
 	tlen += r;
-	//lltd = (lltdhdr *)((const char *)frame + tlen);
+	lltd = (lltdhdr *)((const char *)frame + tlen);
 	if(fam == AF_INET){
 		assert(addr); // FIXME
 	}else if(fam == AF_INET6){
