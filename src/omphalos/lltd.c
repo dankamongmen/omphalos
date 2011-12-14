@@ -83,12 +83,11 @@ int initiate_lltd(int fam,interface *i,const void *addr){
 	}else if(fam == AF_INET6){
 		assert(addr); // FIXME
 	}
-	/*
 	lltd->version = LLTD_VERSION;
 	lltd->tos = TOS_QUICK_DISCOVERY;
 	lltd->reserved = 0;
 	lltd->function = TOPDISC_DISCOVER;
-	tlen += sizeof(*lltd);*/
+	tlen += sizeof(*lltd);
 	thdr->tp_len = tlen - sizeof(*thdr);
 	return send_tx_frame(i,frame);
 
