@@ -25,6 +25,9 @@ struct bdpu {
 	uint16_t fwddelay;
 } __attribute__ ((packed));
 
+#define STP_VERSION_8021D	0x0
+#define STP_VERSION_RSTP	0x2
+
 void handle_stp_packet(omphalos_packet *op,const void *frame,size_t len){
 	const struct bdpu *bdpu = frame;
 	struct l2host *l2s,*l2b;
@@ -40,14 +43,19 @@ void handle_stp_packet(omphalos_packet *op,const void *frame,size_t len){
 		op->noproto = 1;
 		return;
 	}
-	if(bdpu->version){
-		diagnostic("%s Unknown STP version (%u) on %s",__func__,bdpu->version,op->i->name);
-		op->noproto = 1;
-		return;
+	switch(bdpu->version){
+		case STP_VERSION_8021D:
+			break;
+		case STP_VERSION_RSTP:
+			return; // FIXME
+		default:
+			diagnostic("%s Unknown STP version (%u) on %s",__func__,bdpu->version,op->i->name);
+			op->noproto = 1;
+			return;
 	}
+	// Probably common to all *STP's, but need verify...FIXME see above
 	l2b = lookup_l2host(op->i,bdpu->root.mac);
 	observe_proto(op->i,l2b,L"Root bridge");
 	l2s = lookup_l2host(op->i,bdpu->sender.mac);
 	observe_proto(op->i,l2s,L"Bridge");
-	// FIXME
 }
