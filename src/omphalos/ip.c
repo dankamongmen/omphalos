@@ -122,6 +122,9 @@ void handle_ipv6_packet(omphalos_packet *op,const void *frame,size_t len){
 		break; }case IPPROTO_VRRP:{
 			handle_vrrp_packet(op,nhdr,plen);
 			nhdr = NULL;
+		break; }case IPPROTO_EIGRP:{
+			handle_eigrp_packet(op,nhdr,plen);
+			nhdr = NULL;
 		break; }case IPPROTO_HOPOPTS:{
 			const struct ip6_ext *opt = nhdr;
 
