@@ -223,13 +223,6 @@ name_ethmcastaddr(const void *mac){
 			// SAP value of 0x42, rather than Ethernet II.
 			.eproto = ETH_P_STP,
 		},{
-			// FIXME it's actually 0x000D3AD7F140 through
-			// 0x000D3AFFFFFF, not all of 0x000d3a!
-			.name = L"Link Layer Topology Discovery",
-			.mac = "\x00\x0D\x3a",
-			.mlen = 3,
-			.eproto = ETH_P_LLTD,
-		},{
 			.name = L"802.3 31B Ethernet PAUSE",
 			.mac = "\x01\x80\xc2\x00\x00\x01",
 			.mlen = 6,
