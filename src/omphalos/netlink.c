@@ -145,11 +145,14 @@ handle_rtm_newneigh(const struct nlmsghdr *nl){
 	break;}case AF_INET6:{
 		flen = sizeof(uint32_t) * 4;
 		ad = &((struct sockaddr_in6 *)&ssd)->sin6_addr;
+	break;}case AF_BRIDGE:{
+		flen = ETH_ALEN;
+		ad = NULL;
 	break;}default:{
 		flen = 0;
 	break;} }
 	if(flen == 0){
-		diagnostic("Unknown neigh family %u",nd->ndm_family);
+		diagnostic("%s unknown neigh family %u",__func__,nd->ndm_family);
 		return -1;
 	}
 	llen = 0;
@@ -163,6 +166,7 @@ handle_rtm_newneigh(const struct nlmsghdr *nl){
 						flen,iface->name,RTA_PAYLOAD(ra));
 				break;
 			}
+			assert(ad);
 			memcpy(ad,RTA_DATA(ra),flen);
 		break;}case NDA_LLADDR:{
 			llen = RTA_PAYLOAD(ra);
@@ -191,7 +195,9 @@ handle_rtm_newneigh(const struct nlmsghdr *nl){
 
 			lock_interface(iface);
 			l2 = lookup_l2host(iface,ll);
-			lookup_local_l3host(NULL,iface,l2,nd->ndm_family,ad);
+			if(ad){
+				lookup_local_l3host(NULL,iface,l2,nd->ndm_family,ad);
+			}
 			unlock_interface(iface);
 		}
 	}
@@ -220,11 +226,14 @@ handle_rtm_delneigh(const struct nlmsghdr *nl){
 	break;}case AF_INET6:{
 		flen = sizeof(uint32_t) * 4;
 		ad = &((struct sockaddr_in6 *)&ssd)->sin6_addr;
+	break;}case AF_BRIDGE:{
+		flen = ETH_ALEN;
+		ad = NULL;
 	break;}default:{
 		flen = 0;
 	break;} }
 	if(flen == 0){
-		diagnostic("Unknown neigh family %u",nd->ndm_family);
+		diagnostic("%s unknown neigh family %u",__func__,nd->ndm_family);
 		return -1;
 	}
 	rlen = nl->nlmsg_len - NLMSG_LENGTH(sizeof(*nd));
