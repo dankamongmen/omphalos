@@ -149,7 +149,7 @@ handle_rtm_newneigh(const struct nlmsghdr *nl){
 		flen = 0;
 	break;} }
 	if(flen == 0){
-		diagnostic("Unknown route family %u",nd->ndm_family);
+		diagnostic("Unknown neigh family %u",nd->ndm_family);
 		return -1;
 	}
 	llen = 0;
@@ -224,7 +224,7 @@ handle_rtm_delneigh(const struct nlmsghdr *nl){
 		flen = 0;
 	break;} }
 	if(flen == 0){
-		diagnostic("Unknown route family %u",nd->ndm_family);
+		diagnostic("Unknown neigh family %u",nd->ndm_family);
 		return -1;
 	}
 	rlen = nl->nlmsg_len - NLMSG_LENGTH(sizeof(*nd));
