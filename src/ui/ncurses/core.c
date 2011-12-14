@@ -119,7 +119,7 @@ offload_details(WINDOW *w,const interface *i,int row,int col,const char *name,
 // Only one can currently be active at a time. Window decoration and placement
 // is managed here; only the rows needed for display ought be provided.
 int new_display_panel(WINDOW *w,struct panel_state *ps,int rows,int cols,const wchar_t *hstr){
-	const wchar_t crightstr[] = L"copyright © 2011 nick black";
+	const wchar_t crightstr[] = L"http://dank.qemfd.net/dankwiki/index.php/Omphalos";
 	const int crightlen = wcslen(crightstr);
 	WINDOW *psw;
 	int x,y;
