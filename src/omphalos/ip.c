@@ -2,6 +2,7 @@
 #include <netinet/ip.h>
 #include <linux/tcp.h>
 #include <linux/igmp.h>
+#include <linux/l2tp.h>
 #include <netinet/ip6.h>
 #include <omphalos/ip.h>
 #include <omphalos/udp.h>
@@ -11,6 +12,7 @@
 #include <omphalos/sctp.h>
 #include <omphalos/csum.h>
 #include <omphalos/icmp.h>
+#include <omphalos/ospf.h>
 #include <omphalos/vrrp.h>
 #include <omphalos/util.h>
 #include <omphalos/cisco.h>
@@ -44,6 +46,12 @@ handle_dsr_packet(omphalos_packet *op,const void *frame,size_t len){
 		op->malformed = 1;
 		return;
 	}
+	// FIXME
+}
+
+static void
+handle_l2tp_packet(omphalos_packet *op,const void *frame,size_t len){
+	assert(op && frame && len);
 	// FIXME
 }
 
@@ -223,6 +231,10 @@ void handle_ipv4_packet(omphalos_packet *op,const void *frame,size_t len){
 		handle_gre_packet(op,nhdr,nlen);
 	break; }case IPPROTO_IGMP:{
 		handle_igmp_packet(op,nhdr,nlen);
+	break; }case IPPROTO_L2TP:{
+		handle_l2tp_packet(op,nhdr,nlen);
+	break; }case IPPROTO_OSPF:{
+		handle_ospf_packet(op,nhdr,nlen);
 	break; }case IPPROTO_PIM:{
 		handle_pim_packet(op,nhdr,nlen);
 	break; }case IPPROTO_DSR:{
