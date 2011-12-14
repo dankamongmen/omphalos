@@ -64,7 +64,7 @@ void handle_lltd_packet(omphalos_packet *op,const void *frame,size_t len){
 int initiate_lltd(int fam,interface *i,const void *addr){
 	struct tpacket_hdr *thdr;
 	size_t flen,tlen;
-	lltdhdr *lltd;
+	//lltdhdr *lltd;
 	void *frame;
 	int r;
 
@@ -76,21 +76,21 @@ int initiate_lltd(int fam,interface *i,const void *addr){
 	if((r = prep_eth_header((char *)frame + tlen,flen - tlen,i,LLTD_L2_ADDR,ETH_P_LLTD)) < 0){
 		goto err;
 	}
-	lltd = (lltdhdr *)((const char *)frame + tlen + r);
 	tlen += r;
-	lltd->version = LLTD_VERSION;
-	lltd->tos = TOS_QUICK_DISCOVERY;
-	lltd->reserved = 0;
-	lltd->function = TOPDISC_DISCOVER;
+	//lltd = (lltdhdr *)((const char *)frame + tlen);
 	if(fam == AF_INET){
 		assert(addr); // FIXME
 	}else if(fam == AF_INET6){
 		assert(addr); // FIXME
 	}
-	tlen += sizeof(*lltd);
+	/*
+	lltd->version = LLTD_VERSION;
+	lltd->tos = TOS_QUICK_DISCOVERY;
+	lltd->reserved = 0;
+	lltd->function = TOPDISC_DISCOVER;
+	tlen += sizeof(*lltd);*/
 	thdr->tp_len = tlen - sizeof(*thdr);
-	send_tx_frame(i,frame);
-	return 0;
+	return send_tx_frame(i,frame);
 
 err:
 	abort_tx_frame(i,frame);

@@ -27,6 +27,14 @@
 
 #define LLC_MAX_LEN	1536 // one more than maximum length of 802.2 LLC
 
+// IEEE 802.3 31B Pause frames
+static void
+handle_mac_frame(omphalos_packet *op __attribute__ ((unused)),
+			const void *frame __attribute__ ((unused)),
+			size_t len __attribute__ ((unused))){
+	// FIXME
+}
+
 static void
 handle_lldp_packet(omphalos_packet *op __attribute__ ((unused)),
 			const void *frame __attribute__ ((unused)),
@@ -316,6 +324,9 @@ void handle_ethernet_packet(omphalos_packet *op,const void *frame,size_t len){
 			break;
 		}case ETH_P_MPLS_UC:{
 			handle_mpls_packet(op,dgram,dlen);
+			break;
+		}case ETH_P_PAUSE:{
+			handle_mac_frame(op,dgram,dlen);
 			break;
 		}case ETH_P_DEC: // 0x6000..0x6007 are all DEC jankware
 		case ETH_P_DNA_DL:

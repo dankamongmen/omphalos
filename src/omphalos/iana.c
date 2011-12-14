@@ -230,6 +230,11 @@ name_ethmcastaddr(const void *mac){
 			.mlen = 3,
 			.eproto = ETH_P_LLTD,
 		},{
+			.name = L"802.3 31B Ethernet PAUSE",
+			.mac = "\x01\x80\xc2\x00\x00\x01",
+			.mlen = 6,
+			.eproto = ETH_P_PAUSE,
+		},{
 			.name = L"802.3ah Ethernet OAM",
 			.mac = "\x01\x80\xc2\x00\x00\x02",
 			.mlen = 6,
@@ -238,7 +243,12 @@ name_ethmcastaddr(const void *mac){
 			.name = L"802.1ad Provider bridge STP",
 			.mac = "\x01\x80\xc2\x00\x00\x08",
 			.mlen = 6,
-			.eproto = ETH_P_STP,
+			.eproto = ETH_P_LLDP,
+		},{
+			.name = L"802.1ab Link Layer Discovery",
+			.mac = "\x01\x80\xc2\x00\x00\x0e",
+			.mlen = 6,
+			.eproto = ETH_P_PAUSE,
 		},{
 			.name = L"FDDI RMT directed beacon",
 			.mac = "\x01\x80\xc2\x00\x10\x00",
