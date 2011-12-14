@@ -170,3 +170,9 @@ V. FAQs
     will show up if you run tcpdump, wireshark, or any other user of PF_PACKET
     sockets on the interface. It has nothing to do with omphalos or the packets
     it generates.
+
+=======================================
+VI. Thanks
+=======================================
+
+* Jeremy Stretch of PacketLife.net, for supplying PCAP-format unit tests.
