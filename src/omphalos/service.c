@@ -5,6 +5,7 @@
 #include <omphalos/service.h>
 #include <omphalos/netaddrs.h>
 #include <omphalos/omphalos.h>
+#include <omphalos/interface.h>
 
 typedef struct l4srv {
 	unsigned proto,port;
@@ -42,7 +43,13 @@ free_service(l4srv *l){
 	}
 }
 
-void observe_service(struct interface *i,struct l2host *l2,struct l3host *l3,
+void observe_proto(interface *i,struct l2host *l2,const wchar_t *proto){
+	assert(i && l2 && proto);
+	diagnostic("Observed protocol '%ls' on %s",proto,i->name);
+	// FIXME
+}
+
+void observe_service(interface *i,struct l2host *l2,struct l3host *l3,
 			unsigned proto,unsigned port,
 			const wchar_t *srv,const wchar_t *srvver){
 	const omphalos_ctx *octx = get_octx();

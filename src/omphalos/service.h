@@ -19,7 +19,11 @@ struct interface;
 //  - service name
 //  - server version (may be NULL)
 void observe_service(struct interface *,struct l2host *,struct l3host *,
-			unsigned,unsigned,const wchar_t *,const wchar_t *);
+		unsigned,unsigned,const wchar_t *,const wchar_t *);
+
+// Call upon observing an l3 protocol, via an advertisement or (preferably) an
+// actual reply. Provide the protocol name.
+void observe_proto(struct interface *,struct l2host *,const wchar_t *);
 
 // Cleanup a services structure.
 void free_services(struct l4srv *);
