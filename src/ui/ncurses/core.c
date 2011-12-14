@@ -1424,8 +1424,7 @@ helpstrs(WINDOW *hw,int row,int rows){
 	return OK;
 }
 
-static int
-update_diags_locked(struct panel_state *ps){
+int update_diags_locked(struct panel_state *ps){
 	WINDOW *w = panel_window(ps->p);
 	char *l,*ol;
 	int y,x,r;

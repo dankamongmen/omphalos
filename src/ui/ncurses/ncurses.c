@@ -94,6 +94,9 @@ wvstatus(WINDOW *w,const char *fmt,va_list va){
 
 	lock_ncurses();
 	ret = wvstatus_locked(w,fmt,va);
+	if(diags.p && fmt){
+		ret |= update_diags_locked(&diags);
+	}
 	unlock_ncurses();
 	return ret;
 }

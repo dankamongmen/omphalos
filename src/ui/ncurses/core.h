@@ -114,6 +114,7 @@ int select_iface_locked(void);
 int deselect_iface_locked(void);
 
 // Subpanels
+int update_diags_locked(struct panel_state *);
 void hide_panel_locked(struct panel_state *ps);
 int display_env_locked(WINDOW *,struct panel_state *);
 int display_help_locked(WINDOW *,struct panel_state *);
