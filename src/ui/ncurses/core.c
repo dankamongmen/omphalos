@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <unistd.h>
+#include <omphalos/diag.h>
 #include <ui/ncurses/core.h>
 #include <ui/ncurses/util.h>
 #include <ui/ncurses/color.h>
@@ -1423,6 +1424,28 @@ helpstrs(WINDOW *hw,int row,int rows){
 	return OK;
 }
 
+static int
+update_diags_locked(struct panel_state *ps){
+	WINDOW *w = panel_window(ps->p);
+	char *l,*ol;
+	int y,x,r;
+
+	assert(wattrset(w,SUBDISPLAY_ATTR) == OK);
+	getmaxyx(w,y,x);
+	assert(x); // FIXME
+	assert(y > 2); // FIXME
+	if((l = get_logs(y - 1,'\0')) == NULL){
+		return -1;
+	}
+	ol = l;
+	for(r = 1 ; r < y - 1 ; ++r){
+		assert(mvwprintw(w,y - r - 1,START_COL,"%s",l) != ERR);
+		l += strlen(l) + 1;
+	}
+	free(ol);
+	return 0;
+}
+
 int display_diags_locked(WINDOW *mainw,struct panel_state *ps){
 	static const int DIAGROWS = 8; // FIXME
 	int x,y;
@@ -1433,7 +1456,9 @@ int display_diags_locked(WINDOW *mainw,struct panel_state *ps){
 	if(new_display_panel(mainw,ps,DIAGROWS,x - START_COL * 4,L"press 'l' to dismiss diagnostics")){
 		goto err;
 	}
-	// FIXME
+	if(update_diags_locked(ps)){
+		goto err;
+	}
 	return OK;
 
 err:
