@@ -11,6 +11,7 @@
 #include <langinfo.h>
 #include <sys/socket.h>
 #include <linux/if.h>
+#include <omphalos/diag.h>
 #include <omphalos/pcap.h>
 #include <linux/wireless.h>
 #include <readline/readline.h>
@@ -299,6 +300,16 @@ handle_dev(void){
 	// FIXME
 }
 
+static void
+handle_log(void){
+	char *logs;
+
+	if((logs = get_logs(0,'\n')) == NULL){
+		return;
+	}
+	printf("%s",logs);
+}
+
 // FIXME need be able to pass the handlers arguments!
 static void *
 tty_handler(void *v){
@@ -307,8 +318,9 @@ tty_handler(void *v){
 		void (*fxn)(void);
 		const char *help;
 	} cmdtable[] = {
-		{ .cmd = "dev",		.fxn = handle_dev,	.help = "select an interface",	},
-		{ .cmd = "quit",	.fxn = handle_quit,	.help = "exit the program",	},
+		{ .cmd = "dev",		.fxn = handle_dev,	.help = "select an interface",		},
+		{ .cmd = "quit",	.fxn = handle_quit,	.help = "exit the program",		},
+		{ .cmd = "log",		.fxn = handle_log,	.help = "see logged diagnostics",	},
 		{ .cmd = NULL,		.fxn = NULL,		.help = NULL, }
 	};
 
