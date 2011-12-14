@@ -54,6 +54,8 @@ char *get_logs(unsigned n,int sep){
 		}
 	}
 	Pthread_mutex_unlock(&loglock);
-	l[len - 1] = '\0';
+	if(l){
+		l[len - 1] = '\0';
+	}
 	return l;
 }
