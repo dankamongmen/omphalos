@@ -1381,12 +1381,12 @@ static const wchar_t *helps[] = {
 	L"       export pilfered passwords, cookies, and identifying data",
 	L"'c': crypto configuration",
 	L"       configure algorithm stepdown, WEP/WPA cracking, SSL MitM", */
-	L"'C': configuration",
 	L"'⏎Enter': browse interface    '⎋Esc': leave interface browser",
 	L"'k'/'↑': previous selection   'j'/'↓': next selection",
 	L"'⇞PgUp': previous page        '⇟PgDwn': next page",
 	L"'↖Home': first selection      '↘End': last selection",
 	L"'-'/'←': collapse selection   '+'/'→': expand selection",
+	L"'C': configuration            'l': view recent diagnostics",
 	L"'m': change device MAC        'u': change device MTU",
 	L"'r': reset selection's stats  'D': reresolve selection",
 	L"'d': bring down device        'p': toggle promiscuity",
@@ -1421,6 +1421,31 @@ helpstrs(WINDOW *hw,int row,int rows){
 		assert(mvwaddwstr(hw,row + z,1,hs) != ERR);
 	}
 	return OK;
+}
+
+int display_diags_locked(WINDOW *mainw,struct panel_state *ps){
+	static const int DIAGROWS = 8; // FIXME
+	int x,y;
+
+	getmaxyx(mainw,y,x);
+	assert(y);
+	memset(ps,0,sizeof(*ps));
+	if(new_display_panel(mainw,ps,DIAGROWS,x - START_COL * 4,L"press 'l' to dismiss diagnostics")){
+		goto err;
+	}
+	// FIXME
+	return OK;
+
+err:
+	if(ps->p){
+		WINDOW *psw = panel_window(ps->p);
+
+		hide_panel(ps->p);
+		del_panel(ps->p);
+		delwin(psw);
+	}
+	memset(ps,0,sizeof(*ps));
+	return ERR;
 }
 
 int display_help_locked(WINDOW *mainw,struct panel_state *ps){

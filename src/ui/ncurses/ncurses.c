@@ -46,6 +46,7 @@
 #define PANEL_STATE_INITIALIZER { .p = NULL, .ysize = -1, }
 
 static struct panel_state help = PANEL_STATE_INITIALIZER;
+static struct panel_state diags = PANEL_STATE_INITIALIZER;
 static struct panel_state details = PANEL_STATE_INITIALIZER;
 static struct panel_state network = PANEL_STATE_INITIALIZER;
 static struct panel_state environment = PANEL_STATE_INITIALIZER;
@@ -238,6 +239,11 @@ ncurses_input_thread(void *unsafe_marsh){
 		case 'C':
 			lock_ncurses();
 				configure_prefs(w);
+			unlock_ncurses();
+			break;
+		case 'l':
+			lock_ncurses();
+				toggle_panel(w,&diags,display_diags_locked);
 			unlock_ncurses();
 			break;
 		case 'D':
