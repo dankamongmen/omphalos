@@ -38,35 +38,80 @@ enum {
 	TOPDISC_QUERYLARGERESP = 0xc,
 };
 
-void handle_lltd_packet(omphalos_packet *op,const void *frame,size_t len){
-	const struct lltdhdr *lltd = frame;
-
-	if(len < sizeof(*lltd)){
-		diagnostic("%s malformed with %zu",__func__,len);
-		op->malformed = 1;
-		return;
-	}
-	if(lltd->version != LLTD_VERSION){
-		diagnostic("%s unknown LLTD version %u",__func__,lltd->version);
-		op->noproto = 1;
-		return;
-	}
-	switch(lltd->tos){
-		case TOS_TOP_DISCOVERY: case TOS_QUICK_DISCOVERY:{
-			if(lltd->function > TOPDISC_QUERYLARGERESP){
-				diagnostic("%s unknown function %u",__func__,lltd->function);
-				return;
-			}
-		break;}
-	}
-}
-
 // Used with TOS_TOP_DISCOVERY and TOS_QUICK_DISCOVERY
 struct lltdbasehdr {
 	unsigned char dst[ETH_ALEN];
 	unsigned char src[ETH_ALEN];
 	uint16_t seq;
 } __attribute__ ((packed)) lltdbasehdr;
+
+static void
+handle_lltd_discovery(omphalos_packet *op,unsigned function,const void *frame,
+							size_t flen){
+	const struct lltdbasehdr *base;
+
+	if(flen < sizeof(*base)){
+		diagnostic("%s malformed with %zu on %s",__func__,flen,op->i->name);
+		op->malformed = 1;
+		return ;
+	}
+	base = (const struct lltdbasehdr *)frame;
+	switch(function){
+		case TOPDISC_DISCOVER:{
+			// FIXME check for source
+			break;
+		}case TOPDISC_HELLO:{
+			// FIXME a responder!
+		}case TOPDISC_EMIT:
+		case TOPDISC_TRAIN:
+		case TOPDISC_PROBE:
+		case TOPDISC_ACK:
+		case TOPDISC_QUERY:
+		case TOPDISC_QUERYRESP:
+		case TOPDISC_RESET:
+		case TOPDISC_CHARGE:
+		case TOPDISC_FLAT:
+		case TOPDISC_QUERYLARGE:
+		case TOPDISC_QUERYLARGERESP:{
+			break;
+		}default:{
+			diagnostic("%s unknown function %u on %s",__func__,function,op->i->name);
+			op->noproto = 1;
+			return;
+		}
+	}
+}
+
+void handle_lltd_packet(omphalos_packet *op,const void *frame,size_t len){
+	const struct lltdhdr *lltd = frame;
+	const void *dgram;
+	size_t dlen;
+
+	if(len < sizeof(*lltd)){
+		diagnostic("%s malformed with %zu on %s",__func__,len,op->i->name);
+		op->malformed = 1;
+		return;
+	}
+	if(lltd->version != LLTD_VERSION){
+		diagnostic("%s unknown LLTD version %u on %s",__func__,lltd->version,op->i->name);
+		op->noproto = 1;
+		return;
+	}
+	dlen = len - sizeof(*lltd);
+	dgram = (const char *)frame + sizeof(*lltd);
+	switch(lltd->tos){
+		case TOS_TOP_DISCOVERY: case TOS_QUICK_DISCOVERY:{
+			handle_lltd_discovery(op,lltd->function,dgram,dlen);
+			break;
+		}case TOS_QOS_DIAGNOSTICS:{
+			break;
+		}default:{
+			diagnostic("%s unknown ToS (%u) on %s",__func__,lltd->tos,op->i->name);
+			op->noproto = 1;
+			return;
+		}
+	}
+}
 
 int initiate_lltd(int fam,interface *i,const void *addr){
 	struct tpacket_hdr *thdr;
