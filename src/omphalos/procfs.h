@@ -15,6 +15,7 @@ int init_procfs(const char *);
 typedef struct procfs_state {
 	int ipv4_forwarding,ipv6_forwarding;	// global forwarding
 	int proxyarp;				// global proxy arp
+	int rp_filter;				// global reverse path filter
 	char *tcp_ccalg;			// tcp congestion control
 	int tcp_sack,tcp_fack;			// selective ACKs, forward ACK
 	int tcp_dsack,tcp_frto;			// dup SACK, forward RTO recov

@@ -14,6 +14,7 @@ static procfs_state netstate = {
 	.ipv4_forwarding = -1,
 	.ipv6_forwarding = -1,
 	.proxyarp = -1,
+	.rp_filter = -1,
 	.tcp_ccalg = NULL,
 	.tcp_frto = -1,
 	.tcp_sack = -1,
@@ -177,6 +178,19 @@ proc_proxy_arp(const char *fn){
 }
 
 static int
+proc_rp_filter(const char *fn){
+	int rp;
+
+	if((rp = lex_unsigned_file(fn,1)) < 0){
+		return -1;
+	}
+	lock_net();
+		netstate.rp_filter = rp;
+	unlock_net();
+	return 0;
+}
+
+static int
 proc_tcp_fack(const char *fn){
 	int fack;
 
@@ -249,9 +263,9 @@ static const struct procent {
 	// List synonyms together, for now...?
 	{ .path = "sys/net/ipv4/conf/all/forwarding",	.fxn = proc_ipv4_ip_forward,	},
 	{ .path = "sys/net/ipv4/ip_forward",		.fxn = proc_ipv4_ip_forward,	},
-
 	{ .path = "sys/net/ipv6/conf/all/forwarding",	.fxn = proc_ipv6_ip_forward,	},
 	{ .path = "sys/net/ipv4/conf/all/proxy_arp",	.fxn = proc_proxy_arp,		},
+	{ .path = "sys/net/ipv4/conf/all/rp_filter",	.fxn = proc_rp_filter,		},
 	{ .path = "sys/net/ipv4/tcp_congestion_control",.fxn = proc_tcp_ccalg,		},
 	{ .path = "sys/net/ipv4/tcp_fack",		.fxn = proc_tcp_fack,		},
 	{ .path = "sys/net/ipv4/tcp_frto",		.fxn = proc_tcp_frto,		},
