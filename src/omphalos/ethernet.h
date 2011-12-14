@@ -9,6 +9,7 @@ extern "C" {
 #include <sys/socket.h>
 #include <linux/if_ether.h>
 #include <linux/rtnetlink.h>
+#include <omphalos/interface.h>
 
 struct omphalos_packet;
 
@@ -23,6 +24,11 @@ void handle_ethernet_packet(struct omphalos_packet *,const void *,size_t);
 
 int prep_eth_header(void *,size_t,const struct interface *,const void *,
 			uint16_t) __attribute__ ((nonnull (1,3,4)));
+
+static inline int
+prep_eth_bcast(void *frame,size_t len,const interface *i,uint16_t proto){
+	return prep_eth_header(frame,len,i,i->bcast,proto);
+}
 
 // Categorize an Ethernet address independent of context (this function never
 // returns RTN_LOCAL or RTN_BROADCAST, for instance).
