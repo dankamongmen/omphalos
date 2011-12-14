@@ -7,6 +7,8 @@ extern "C" {
 
 #include <stddef.h>
 
+#define ETH_P_LLTD	0x88d9	// Link Layer Topology Discovery Protocol
+
 struct interface;
 struct omphalos_packet;
 
