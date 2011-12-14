@@ -62,3 +62,7 @@ void handle_udld_packet(omphalos_packet *op,const void *frame,size_t len){
 void handle_cld_packet(omphalos_packet *op,const void *frame,size_t len){
 	assert(op && frame && len); // FIXME
 }
+
+void handle_eigrp_packet(omphalos_packet *op,const void *frame,size_t len){
+	assert(op && frame && len); // FIXME
+}

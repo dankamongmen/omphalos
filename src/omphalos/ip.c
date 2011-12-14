@@ -13,6 +13,7 @@
 #include <omphalos/icmp.h>
 #include <omphalos/vrrp.h>
 #include <omphalos/util.h>
+#include <omphalos/cisco.h>
 #include <omphalos/hwaddrs.h>
 #include <omphalos/netaddrs.h>
 #include <omphalos/ethernet.h>
@@ -22,6 +23,7 @@
 #define DEFAULT_IP4_TTL 64
 #define DEFAULT_IP6_TTL 64
 #define IPPROTO_DSR	48 // Dynamic Source Routing, RFC 4728
+#define IPPROTO_EIGRP	88 // Cisco EIGRP
 #define IPPROTO_VRRP	112
 
 typedef struct dsrhdr {
@@ -224,6 +226,8 @@ void handle_ipv4_packet(omphalos_packet *op,const void *frame,size_t len){
 		handle_dsr_packet(op,nhdr,nlen);
 	break; }case IPPROTO_VRRP:{
 		handle_vrrp_packet(op,nhdr,nlen);
+	break; }case IPPROTO_EIGRP:{
+		handle_eigrp_packet(op,nhdr,nlen);
 	break; }default:{
 		op->noproto = 1;
 		diagnostic("%s %s noproto for %u",__func__,op->i->name,ip->protocol);
