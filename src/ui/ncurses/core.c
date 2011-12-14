@@ -1438,7 +1438,8 @@ int update_diags_locked(struct panel_state *ps){
 	}
 	ol = l;
 	for(r = 1 ; r < y - 1 ; ++r){
-		assert(mvwprintw(w,y - r - 1,START_COL,"%s",l) != ERR);
+		assert(mvwprintw(w,y - r - 1,START_COL,"%-*.*s",
+				x - START_COL * 2,x - START_COL * 2,l) != ERR);
 		l += strlen(l) + 1;
 	}
 	free(ol);
