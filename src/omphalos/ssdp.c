@@ -54,7 +54,7 @@ ssdp_ip4_msearch(interface *i,const uint32_t *saddr){
 
 	for(i4 = i->ip4r ; i4 ; i4 = i4->next){
 		const unsigned char hw[ETH_ALEN] = { 0x01, 0x00, 0x5e, 0x00, 0x00, 0xc };
-                uint32_t net = SSDP_NET4;
+                uint32_t net = htonl(SSDP_NET4);
                 struct tpacket_hdr *thdr;
                 struct udphdr *udp;
                 struct iphdr *ip;
