@@ -57,7 +57,7 @@ iface_state *create_interface_state(interface *i){
 		return NULL;
 	}
 	if( (ret = malloc(sizeof(*ret))) ){
-		ret->srvs = ret->hosts = ret->nodes = 0;
+		ret->srvs = ret->hosts = ret->nodes = ret->vnodes = 0;
 		ret->l2objs = NULL;
 		ret->devaction = 0;
 		ret->typestr = tstr;
@@ -174,7 +174,7 @@ l2obj *add_l2_to_iface(const interface *i,iface_state *is,struct l2host *l2h){
 	l2obj *l2;
 
 	if( (l2 = get_l2obj(i,is,l2h)) ){
-		if(++is->nodes == 1){
+		if(is->nodes == 0 && is->vnodes == 0){
 			is->l2objs = l2;
 			l2->next = l2->prev = NULL;
 		}else{
@@ -197,6 +197,11 @@ l2obj *add_l2_to_iface(const interface *i,iface_state *is,struct l2host *l2h){
 				l2->prev = prec;
 			}
 			*prev = l2;
+		}
+		if(l2->cat == RTN_LOCAL || l2->cat == RTN_UNICAST){
+			++is->nodes;
+		}else{
+			++is->vnodes;
 		}
 	}
 	return l2;
@@ -814,6 +819,7 @@ int lines_for_interface(const iface_state *is){
 			lines += is->hosts;
 		case EXPANSION_NODES:
 			lines += is->nodes;
+			lines += is->vnodes;
 		case EXPANSION_NONE:
 			return lines;
 	}
