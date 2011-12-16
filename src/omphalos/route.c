@@ -3,6 +3,7 @@
 #include <sys/socket.h>
 #include <omphalos/tx.h>
 #include <omphalos/diag.h>
+#include <omphalos/util.h>
 #include <linux/version.h>
 #include <omphalos/route.h>
 #include <linux/rtnetlink.h>
@@ -410,7 +411,7 @@ int get_routed_frame(int fam,const void *addr,struct routepath *rp,
 void free_routes(void){
 	route *rt;
 
-	pthread_mutex_lock(&route_lock);
+	Pthread_mutex_lock(&route_lock);
 	while( (rt = ip_table4) ){
 		ip_table4 = rt->next;
 		free_route(rt);
@@ -419,6 +420,6 @@ void free_routes(void){
 		ip_table6 = rt->next;
 		free_route(rt);
 	}
-	pthread_mutex_unlock(&route_lock);
+	Pthread_mutex_unlock(&route_lock);
 	/// pthread_mutex_destroy(&route_lock);
 }
