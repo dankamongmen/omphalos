@@ -180,7 +180,7 @@ tx_ipv4_bcast_pings(interface *i,const void *saddr){
 		icmp->code = 0;
 		tlen += sizeof(*icmp);
 		thdr->tp_len = tlen;
-		ip->tot_len = htons(thdr->tp_len - ((const char *)icmp - (const char *)frame));
+		ip->tot_len = htons((const char *)icmp - (const char *)ip + sizeof(*icmp));
 		icmp->checksum = icmp4_csum(ip,sizeof(*icmp));
 		ip->check = ipv4_csum(ip);
 		send_tx_frame(i,frame); // FIXME get return value...
