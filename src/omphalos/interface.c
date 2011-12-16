@@ -70,7 +70,7 @@ init_iface(interface *iface){
 		pthread_mutexattr_destroy(&attr);
 		return -1;
 	}
-	iface->fd4 = iface->fd6 = iface->rfd = iface->fd = -1;
+	iface->fd4 = iface->fd6udp = iface->fd6icmp = iface->rfd =iface->fd = -1;
 	assert(pthread_mutexattr_destroy(&attr) == 0);
 	return 0;
 }
@@ -171,9 +171,14 @@ void free_iface(interface *i){
 			diagnostic("Error closing %d: %s",i->fd4,strerror(errno));
 		}
 	}
-	if(i->fd6 >= 0){
-		if(close(i->fd6)){
-			diagnostic("Error closing %d: %s",i->fd6,strerror(errno));
+	if(i->fd6udp >= 0){
+		if(close(i->fd6udp)){
+			diagnostic("Error closing %d: %s",i->fd6udp,strerror(errno));
+		}
+	}
+	if(i->fd6icmp >= 0){
+		if(close(i->fd6icmp)){
+			diagnostic("Error closing %d: %s",i->fd6icmp,strerror(errno));
 		}
 	}
 	while(i->ip6r){

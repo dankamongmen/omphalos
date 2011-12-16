@@ -555,8 +555,8 @@ prepare_rx_socket(interface *iface,int idx){
 }
 
 static int
-raw_socket(const interface *i,int fam){
-	int sd,idx,slevel,sopt;
+raw_socket(const interface *i,int fam,int protocol){
+	int sd,idx,slevel,sopt,type,loopopt,loop = 1;
 	struct ip_mreqn mr;
 	size_t slen;
 	void *sarg;
@@ -564,27 +564,48 @@ raw_socket(const interface *i,int fam){
 
 	idx = idx_of_iface(i);
 	if(fam == AF_INET){
+		assert(protocol == IPPROTO_IP);
 		slevel = IPPROTO_IP;
 		sopt = IP_MULTICAST_IF;
+		loopopt = IP_MULTICAST_LOOP;
 		sarg = &mr;
 		memset(&mr,0,sizeof(mr));
 		mr.imr_ifindex = idx;
 		slen = sizeof(mr);
 		proto = IPPROTO_RAW;
-	}else{
+		type = SOCK_RAW;
+	}else if(fam == AF_INET6){
 		slevel = IPPROTO_IPV6;
 		sopt = IPV6_MULTICAST_IF;
-		sarg = &idx;
-		slen = sizeof(idx);
-		proto = IPPROTO_UDP;
+		loopopt = IPV6_MULTICAST_LOOP;
+		if(protocol == IPPROTO_UDP){
+			sarg = &idx;
+			slen = sizeof(idx);
+			proto = IPPROTO_UDP;
+			type = SOCK_RAW;
+		}else if(protocol == IPPROTO_ICMPV6){
+			sarg = &idx;
+			slen = sizeof(idx);
+			proto = IPPROTO_ICMPV6;
+			type = SOCK_RAW;
+		}else{
+			assert(0);
+		}
+	}else{
+		assert(0);
 	}
-	sd = socket(fam,SOCK_RAW,proto);
+	sd = socket(fam,type,proto);
 	if(sd < 0){
 		diagnostic("Error creating raw socket for %s: %s",i->name,strerror(errno));
 		return -1;
 	}
 	if(setsockopt(sd,slevel,sopt,sarg,slen)){
 		diagnostic("Error setting %d:mcast:%d for %s: %s",fam,idx,i->name,strerror(errno));
+		close(sd);
+		return -1;
+	}
+	if(setsockopt(sd,slevel,loopopt,&loop,sizeof(loop))){
+		diagnostic("Error setting %d:mcastloop:%d for %s: %s",fam,idx,i->name,strerror(errno));
 		close(sd);
 		return -1;
 	}
@@ -598,24 +619,29 @@ raw_socket(const interface *i,int fam){
 
 static int
 prepare_packet_sockets(interface *iface,int idx){
-	if((iface->fd6 = raw_socket(iface,AF_INET6)) >= 0){
-		if((iface->fd4 = raw_socket(iface,AF_INET)) >= 0){
-			if((iface->fd = packet_socket(ETH_P_ALL)) >= 0){
-				if((iface->ts = mmap_tx_psocket(iface->fd,idx,
-						iface->mtu,&iface->txm,&iface->ttpr)) > 0){
-					if(prepare_rx_socket(iface,idx) == 0){
-						return 0;
+	if((iface->fd6udp = raw_socket(iface,AF_INET6,IPPROTO_UDP)) >= 0){
+		if((iface->fd6icmp = raw_socket(iface,AF_INET6,IPPROTO_ICMPV6)) >= 0){
+			if((iface->fd4 = raw_socket(iface,AF_INET,0)) >= 0){
+				if((iface->fd = packet_socket(ETH_P_ALL)) >= 0){
+					if((iface->ts = mmap_tx_psocket(iface->fd,idx,
+							iface->mtu,&iface->txm,&iface->ttpr)) > 0){
+						if(prepare_rx_socket(iface,idx) == 0){
+							return 0;
+						}
 					}
+					close(iface->fd); // munmaps
+					iface->fd = -1;
 				}
-				close(iface->fd); // munmaps
-				iface->fd = -1;
+				close(iface->fd4);
+				iface->fd4 = -1;
 			}
-			close(iface->fd4);
-			iface->fd4 = -1;
+			close(iface->fd6icmp);
+			iface->fd6icmp = -1;
 		}
-		close(iface->fd6);
-		iface->fd6 = -1;
+		close(iface->fd6udp);
+		iface->fd6udp = -1;
 	}
+	diagnostic("Unable to open packet sockets on %s",iface->name);
 	return -1;
 }
 

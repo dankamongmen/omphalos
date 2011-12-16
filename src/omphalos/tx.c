@@ -173,23 +173,32 @@ send_to_self(interface *i,void *frame){
 		}
 	}else if(l2proto == ntohs(ETH_P_IPV6)){
 		const struct ip6_hdr *ip;
-		const struct udphdr *udp;
 
-		fd = i->fd6;
 		ss = (struct sockaddr *)&sina6;
 		slen = sizeof(sina6);
 		memset(ss,0,slen);
 		sina6.sin6_family = AF_INET6;
 		ip = (const struct ip6_hdr *)(l2 + l2len);
-		if(ip->ip6_ctlun.ip6_un1.ip6_un1_nxt != IPPROTO_UDP){
+		// IPv6 doesn't support IP_HDRINCL.
+		if(ip->ip6_ctlun.ip6_un1.ip6_un1_nxt == IPPROTO_UDP){
+			const struct udphdr *udp;
+
+			fd = i->fd6udp;
+			udp = (const struct udphdr *)((const char *)ip + sizeof(*ip));
+			payload = udp;
+			sina6.sin6_port = htons(IPPROTO_UDP);
+		}else if(ip->ip6_ctlun.ip6_un1.ip6_un1_nxt == IPPROTO_ICMPV6){
+			const struct icmp6_hdr *icmp;
+
+			fd = i->fd6icmp;
+			icmp = (const struct icmp6_hdr *)((const char *)ip + sizeof(*ip));
+			payload = icmp;
+			sina6.sin6_port = htons(IPPROTO_ICMPV6);
+		}else{
 			assert(0);
 		}
+		plen = ip->ip6_ctlun.ip6_un1.ip6_un1_plen;
 		memcpy(&sina6.sin6_addr,&ip->ip6_dst,sizeof(ip->ip6_dst));
-		udp = (const struct udphdr *)((const char *)ip + sizeof(*ip));
-		// IPv6 doesn't support IP_HDRINCL.
-		sina6.sin6_port = 0;
-		plen = ntohs(udp->len);
-		payload = udp;
 	}else{
 		return -1;
 	}
