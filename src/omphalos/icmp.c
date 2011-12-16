@@ -181,7 +181,8 @@ tx_ipv4_bcast_pings(interface *i,const void *saddr){
 		tlen += sizeof(*icmp);
 		thdr->tp_len = tlen;
 		ip->tot_len = htons((const char *)icmp - (const char *)ip + sizeof(*icmp));
-		icmp->checksum = icmp4_csum(ip,sizeof(*icmp));
+		icmp->checksum = 0;
+		icmp->checksum = icmp4_csum(icmp,sizeof(*icmp));
 		ip->check = ipv4_csum(ip);
 		send_tx_frame(i,frame); // FIXME get return value...
 		break; // we're done

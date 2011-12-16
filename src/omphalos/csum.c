@@ -1,7 +1,9 @@
 #include <zlib.h>
 #include <stdio.h>
+#include <assert.h>
 #include <linux/ip.h>
 #include <linux/udp.h>
+#include <linux/icmp.h>
 #include <netinet/in.h>
 #include <netinet/ip6.h>
 #include <netinet/icmp6.h>
