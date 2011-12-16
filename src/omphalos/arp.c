@@ -88,6 +88,51 @@ void handle_arp_packet(omphalos_packet *op,const void *frame,size_t len){
 	}}
 }
 
+static void
+prepare_arp_probe(const interface *i,void *frame,size_t *flen,
+			const void *haddr,size_t hln,const uint32_t *paddr,
+			const uint32_t *saddr){
+	struct tpacket_hdr *thdr;
+	unsigned char *payload;
+	struct ethhdr *ehdr;
+	struct arphdr *ahdr;
+	size_t tlen,pln;
+
+	pln = sizeof(*paddr);
+	thdr = frame;
+	if(*flen < sizeof(*thdr)){
+		diagnostic("%s %s frame too small for tx",__func__,i->name);
+		return;
+	}
+	tlen = thdr->tp_mac + sizeof(*ehdr) + sizeof(*ahdr)
+			+ 2 * hln + 2 * pln;
+	if(*flen < tlen){
+		diagnostic("%s %s frame too small for tx",__func__,i->name);
+		return;
+	}
+	assert(hln == i->addrlen); // FIXME handle this case
+	// FIXME what about non-ethernet
+	ehdr = (struct ethhdr *)((char *)frame + thdr->tp_mac);
+	assert(prep_eth_header(ehdr,*flen - thdr->tp_mac,i,haddr,ETH_P_ARP) == sizeof(struct ethhdr));
+	thdr->tp_len = sizeof(struct ethhdr) + sizeof(struct arphdr)
+		+ hln * 2 + pln * 2;
+	ahdr = (struct arphdr *)((char *)ehdr + sizeof(*ehdr));
+	ahdr->ar_hrd = htons(ARPHRD_ETHER);
+	ahdr->ar_pro = htons(ETH_P_IP);
+	ahdr->ar_hln = hln;
+	ahdr->ar_pln = pln;
+	ahdr->ar_op = htons(ARPOP_REQUEST);
+	// FIXME this is all horribly unsafe
+	payload = (unsigned char *)ahdr + sizeof(*ahdr);
+	// FIXME allow for spoofing
+	memcpy(payload,i->addr,hln);
+	memcpy(payload + hln,saddr,pln);
+	// FIXME need a source network address
+	memcpy(payload + hln + pln,haddr,hln);
+	memcpy(payload + hln + pln + hln,paddr,pln);
+	*flen = tlen;
+}
+
 void send_arp_probe(interface *i,const void *hwaddr,const uint32_t *addr,
 						const uint32_t *saddr){
 	void *frame;
