@@ -25,6 +25,35 @@ uint16_t ipv4_csum(const void *hdr){
 	return ~sum;
 }
 
+// hdr must be a valid ICMPv4 header
+uint16_t icmp4_csum(const void *hdr,size_t dlen){
+	const struct icmphdr *ih = hdr;
+	const uint16_t *cur;
+	uint32_t sum,fold;
+	unsigned z;
+
+	sum = 0;
+	// ICMPv4 checksum is over ICMP header and ICMP data (zero padded to
+	// make it a multiple of 16 bits). No pseudoheader.
+	cur = (const uint16_t *)ih;
+	for(z = 0 ; z < dlen / sizeof(*cur) ; ++z){
+		sum += cur[z];
+	}
+	if(dlen % 2){
+		sum += ((uint16_t)(((const unsigned char *)ih)[dlen - 1]));
+	}
+	fold = 0;
+	for(z = 0 ; z < sizeof(sum) / 2 ; ++z){
+		fold += sum & 0xffffu;
+		sum >>= 16u;
+	}
+	fold = ~(fold & 0xffffu);
+	if(fold == 0u){
+		return 0xffffu;
+	}
+	return fold;
+}
+
 // hdr must be a valid ipv4 header
 uint16_t udp4_csum(const void *hdr){
 	const struct iphdr *ih = hdr;
