@@ -197,13 +197,13 @@ send_to_self(interface *i,void *frame){
 		}else{
 			assert(0);
 		}
-		plen = ip->ip6_ctlun.ip6_un1.ip6_un1_plen;
+		plen = ntohs(ip->ip6_ctlun.ip6_un1.ip6_un1_plen);
 		memcpy(&sina6.sin6_addr,&ip->ip6_dst,sizeof(ip->ip6_dst));
 	}else{
 		return -1;
 	}
 	if((r = sendto(fd,payload,plen,0,ss,slen)) < 0){
-		diagnostic("Error self-TXing on %s:%d (%s)",i->name,fd,strerror(errno));
+		diagnostic("Error self-TXing %d on %s:%d (%s)",plen,i->name,fd,strerror(errno));
 	}
 	return r;
 }
