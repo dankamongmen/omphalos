@@ -113,9 +113,8 @@ void *get_tx_frame(interface *i,size_t *fsize){
 // sockets (we need one per protocol family -- effectively, AF_INET and
 // AF_INET6). This suffers a copy, of course.
 //
-// We currently only support IPv4, but ought support IPv6 also. UDP is the only
-// transport protocol supported now, or likely to be supported ever (due to the
-// mechanics of the mechanism).
+// We currently only support IPv4, but ought support IPv6 also. UDP and ICMP
+// are the only transport protocols supported now.
 static ssize_t
 send_to_self(interface *i,void *frame){
 	struct tpacket_hdr *thdr = frame;
@@ -145,7 +144,6 @@ send_to_self(interface *i,void *frame){
 			break;
 	}
 	if(l2proto == ntohs(ETH_P_IP)){
-		const struct udphdr *udp;
 		const struct iphdr *ip;
 
 		fd = i->fd4;
@@ -154,15 +152,25 @@ send_to_self(interface *i,void *frame){
 		memset(ss,0,slen);
 		sina.sin_family = AF_INET;
 		ip = (const struct iphdr *)(l2 + l2len);
-		if(ip->protocol != IPPROTO_UDP){
-			return -1;
+		if(ip->protocol == IPPROTO_UDP){
+			const struct udphdr *udp;
+
+			sina.sin_addr.s_addr = ip->daddr;
+			udp = (const struct udphdr *)((const char *)ip + ip->ihl * 4u);
+			sina.sin_port = udp->dest;
+			plen = ntohs(ip->tot_len);
+			payload = ip;
+		}else if(ip->protocol == IPPROTO_ICMP){
+			const struct icmphdr *icmp;
+
+			sina.sin_addr.s_addr = ip->daddr;
+			icmp = (const struct icmphdr *)((const char *)ip + ip->ihl * 4u);
+			sina.sin_port = 0;
+			plen = ntohs(ip->tot_len);
+			payload = icmp;
+		}else{
+			assert(0);
 		}
-		sina.sin_addr.s_addr = ip->daddr;
-		udp = (const struct udphdr *)((const char *)ip + ip->ihl * 4u);
-		sina.sin_port = udp->dest;
-		sina.sin_port = htons(5353);
-		plen = ntohs(ip->tot_len);
-		payload = ip;
 	}else if(l2proto == ntohs(ETH_P_IPV6)){
 		const struct ip6_hdr *ip;
 		const struct udphdr *udp;
@@ -174,7 +182,7 @@ send_to_self(interface *i,void *frame){
 		sina6.sin6_family = AF_INET6;
 		ip = (const struct ip6_hdr *)(l2 + l2len);
 		if(ip->ip6_ctlun.ip6_un1.ip6_un1_nxt != IPPROTO_UDP){
-			return -1;
+			assert(0);
 		}
 		memcpy(&sina6.sin6_addr,&ip->ip6_dst,sizeof(ip->ip6_dst));
 		udp = (const struct udphdr *)((const char *)ip + sizeof(*ip));
