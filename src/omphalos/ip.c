@@ -189,7 +189,7 @@ void handle_ipv4_packet(omphalos_packet *op,const void *frame,size_t len){
 	}
 	if(ipv4_csum(frame)){
 		op->malformed = 1;
-		//diagnostic("[%s] bad IPv4 checksum (%04hx)",op->i->name,ipv4_csum(frame));
+		diagnostic("[%s] bad IPv4 checksum (%04hx)",op->i->name,ipv4_csum(frame));
 		return;
 	}
 	if(ip->version != 4){
