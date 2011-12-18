@@ -24,6 +24,7 @@
 #include <omphalos/interface.h>
 
 static pthread_t *input_tid;
+static pthread_mutex_t promptlock = PTHREAD_MUTEX_INITIALIZER;
 
 // Call whenever we generate output, so that the prompt is updated
 static inline void
@@ -32,6 +33,7 @@ wake_input_thread(void){
 		pthread_kill(*input_tid,SIGWINCH);
 		rl_redisplay(); // FIXME probably need call from readline context
 	}
+	pthread_mutex_unlock(&promptlock);
 }
 
 // FIXME this ought return a string rather than printing it
@@ -228,14 +230,12 @@ clear_for_output(FILE *fp){
 }
 
 #define PROMPTDELIM "> "
-static pthread_mutex_t promptlock = PTHREAD_MUTEX_INITIALIZER;
 static char promptbuf[IFNAMSIZ + __builtin_strlen(PROMPTDELIM) + 1] = "> ";
 
 static void *
 iface_event(interface *i,void *unsafe __attribute__ ((unused))){
 	pthread_mutex_lock(&promptlock);
 	snprintf(promptbuf,sizeof(promptbuf),"%s"PROMPTDELIM,i->name);
-	pthread_mutex_unlock(&promptlock);
 	clear_for_output(stdout);
 	print_iface(stdout,i);
 	rl_set_prompt(promptbuf);
@@ -247,7 +247,6 @@ static void
 iface_removed_cb(const interface *i,void *unsafe __attribute__ ((unused))){
 	pthread_mutex_lock(&promptlock);
 	snprintf(promptbuf,sizeof(promptbuf),"%s"PROMPTDELIM,i->name);
-	pthread_mutex_unlock(&promptlock);
 	clear_for_output(stdout);
 	print_iface(stdout,i);
 	rl_set_prompt(promptbuf);
@@ -257,6 +256,7 @@ iface_removed_cb(const interface *i,void *unsafe __attribute__ ((unused))){
 
 static void *
 neigh_event(const struct interface *i,struct l2host *l2){
+	pthread_mutex_lock(&promptlock);
 	clear_for_output(stdout);
 	assert(print_neigh(i,l2) >= 0);
 	wake_input_thread();
@@ -265,6 +265,7 @@ neigh_event(const struct interface *i,struct l2host *l2){
 
 static void *
 host_event(const struct interface *i,struct l2host *l2,struct l3host *l3){
+	pthread_mutex_lock(&promptlock);
 	clear_for_output(stdout);
 	assert(print_host(i,l2,l3) >= 0);
 	wake_input_thread();
@@ -274,6 +275,7 @@ host_event(const struct interface *i,struct l2host *l2,struct l3host *l3){
 static void *
 service_event(const struct interface *i,struct l2host *l2,struct l3host *l3,
 					struct l4srv *l4){
+	pthread_mutex_lock(&promptlock);
 	clear_for_output(stdout);
 	assert(print_service(i,l2,l3,l4) >= 0);
 	wake_input_thread();
@@ -282,6 +284,7 @@ service_event(const struct interface *i,struct l2host *l2,struct l3host *l3,
 
 static void *
 wireless_event(interface *i,unsigned cmd,void *unsafe __attribute__ ((unused))){
+	pthread_mutex_lock(&promptlock);
 	clear_for_output(stdout);
 	assert(print_wireless_event(stdout,i,cmd) >= 0);
 	wake_input_thread();
@@ -325,8 +328,9 @@ tty_handler(void *v){
 	};
 
 	while(!v && !cancelled){
-		char *l = readline(promptbuf); // FIXME need to use promptlock!
+		char *l;
 
+		l = readline(promptbuf);
 		if(l == NULL){
 			break;
 		}
