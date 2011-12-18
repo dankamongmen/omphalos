@@ -237,33 +237,6 @@ categorize_tx(const interface *i,const void *frame,int *self,int *out){
 	return r;
 }
 
-#ifndef NDEBUG
-static inline void
-check_packet(interface *i,void *frame){
-	const struct tpacket_hdr *thdr;
-	const struct ethhdr *eth;
-
-	if(i->arptype != ARPHRD_ETHER){
-		return;
-	}
-	thdr = frame;
-	eth = (const struct ethhdr *)((const char *)frame + thdr->tp_mac);
-	assert(eth->h_proto == htons(ETH_P_IP) ||
-			eth->h_proto == htons(ETH_P_IPV6) ||
-			eth->h_proto == htons(0x88d9) ||
-			eth->h_proto == htons(ETH_P_ARP));
-	if(eth->h_proto == ETH_P_IP){
-		const struct iphdr *ip = (const struct iphdr *)((const char *)eth + sizeof(*eth));
-		assert(ip->ihl >= 4);
-		assert(ntohs(ip->tot_len) >= ip->ihl * 5);
-	}
-#else
-	assert(i && frame);
-#endif
-}
-
-/* to log transmitted packets, use the following: {
-}*/
 // Mark a frame as ready-to-send. Must have come from get_tx_frame() using this
 // same interface. Yes, we will see packets we generate on the RX ring.
 int send_tx_frame(interface *i,void *frame){
@@ -272,9 +245,8 @@ int send_tx_frame(interface *i,void *frame){
 	int self,out,ret = 0;
 
 	assert(thdr->tp_status == TP_STATUS_PREPARING);
-	categorize_tx(i,frame,&self,&out);
-	check_packet(i,frame);
 	if(octx->mode != OMPHALOS_MODE_SILENT){
+		categorize_tx(i,frame,&self,&out);
 		if(self){
 			int r;
 
