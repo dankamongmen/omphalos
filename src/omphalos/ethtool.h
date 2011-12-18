@@ -32,9 +32,9 @@ int iface_offloaded_p(const interface *,unsigned);
 // use RX frames larger than the MTU.
 static inline int
 iface_uses_offloading(const interface *i){
-	return iface_offloaded_p(i,GENRX_OFFLOAD) ||
-		iface_offloaded_p(i,GEN_SEG_OFFLOAD) ||
-		iface_offloaded_p(i,TCP_SEG_OFFLOAD);
+	return iface_offloaded_p(i,GENRX_OFFLOAD) > 0 ||
+		iface_offloaded_p(i,GEN_SEG_OFFLOAD) > 0 ||
+		iface_offloaded_p(i,TCP_SEG_OFFLOAD) > 0;
 }
 
 #ifdef __cplusplus
