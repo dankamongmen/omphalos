@@ -1,16 +1,18 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdarg.h>
 #include <omphalos/nl80211.h>
-
-void diagnostic(const char *fmt,...){
-	va_list va;
-
-	va_start(va,fmt);
-	vfprintf(stderr,fmt,va);
-	va_end(va);
-}
+#include <omphalos/omphalos.h>
 
 int main(void){
-	open_nl80211();
-	close_nl80211();
+	int ret;
+
+	pthread_setspecific(omphalos_ctx_key,NULL);
+	if(open_nl80211()){
+		fprintf(stderr,"Failure opening nl80211\n");
+		ret = -1;
+	}else{
+		ret |= close_nl80211();
+	}
+	exit(ret ? EXIT_FAILURE : EXIT_SUCCESS);
 }
