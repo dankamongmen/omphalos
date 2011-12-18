@@ -34,7 +34,8 @@ static inline int
 iface_uses_offloading(const interface *i){
 	return iface_offloaded_p(i,GENRX_OFFLOAD) > 0 ||
 		iface_offloaded_p(i,GEN_SEG_OFFLOAD) > 0 ||
-		iface_offloaded_p(i,TCP_SEG_OFFLOAD) > 0;
+		iface_offloaded_p(i,TCP_SEG_OFFLOAD) > 0 ||
+		iface_offloaded_p(i,LARGERX_OFFLOAD) > 0;
 }
 
 #ifdef __cplusplus
