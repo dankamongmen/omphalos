@@ -323,8 +323,8 @@ packet_multicast(int fd,int ifindex){
 	return 0;
 }
 
-size_t mmap_rx_psocket(int fd,int idx,
-		unsigned maxframe,void **map,struct tpacket_req *treq){
+size_t mmap_rx_psocket(int fd,int idx,unsigned maxframe,void **map,
+					struct tpacket_req *treq){
 	size_t ret;
 	int thresh;
 

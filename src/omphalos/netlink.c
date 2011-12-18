@@ -35,6 +35,8 @@
 #include <omphalos/bluetooth.h>
 #include <omphalos/interface.h>
 
+#define OFFLOAD_MTU (32678 - (int)TPACKET2_HDRLEN)
+
 // External cancellation, tested in input-handling loops. This only works
 // without a mutex lock (memory barrier, more precisely) because we
 // restrict signal handling to the input-handling threads (via initial
@@ -531,10 +533,16 @@ pmarsh_create(void){
 }
 
 static int
-prepare_rx_socket(interface *iface,int idx){
+prepare_rx_socket(interface *iface,int idx,int offload){
+	int mtu;
+
 	if((iface->rfd = packet_socket(ETH_P_ALL)) >= 0){
-		if((iface->rs = mmap_rx_psocket(iface->rfd,idx,
-				iface->mtu,&iface->rxm,&iface->rtpr)) > 0){
+		mtu = iface->mtu;
+		if(offload && mtu < OFFLOAD_MTU){
+			mtu = OFFLOAD_MTU;
+		}
+		if((iface->rs = mmap_rx_psocket(iface->rfd,idx,mtu,&iface->rxm,
+						&iface->rtpr)) > 0){
 			if( (iface->pmarsh = pmarsh_create()) ){
 				iface->pmarsh->ctx = get_octx();
 				iface->pmarsh->i = iface;
@@ -618,14 +626,14 @@ raw_socket(const interface *i,int fam,int protocol){
 }
 
 static int
-prepare_packet_sockets(interface *iface,int idx){
+prepare_packet_sockets(interface *iface,int idx,int offload){
 	if((iface->fd6udp = raw_socket(iface,AF_INET6,IPPROTO_UDP)) >= 0){
 		if((iface->fd6icmp = raw_socket(iface,AF_INET6,IPPROTO_ICMPV6)) >= 0){
 			if((iface->fd4 = raw_socket(iface,AF_INET,0)) >= 0){
 				if((iface->fd = packet_socket(ETH_P_ALL)) >= 0){
 					if((iface->ts = mmap_tx_psocket(iface->fd,idx,
 							iface->mtu,&iface->txm,&iface->ttpr)) > 0){
-						if(prepare_rx_socket(iface,idx) == 0){
+						if(prepare_rx_socket(iface,idx,offload) == 0){
 							return 0;
 						}
 					}
@@ -832,7 +840,7 @@ handle_newlink_locked(interface *iface,const struct ifinfomsg *ii,const struct n
 		if(iface->bcast && (iface->flags & IFF_BROADCAST)){
 			lookup_l2host(iface,iface->bcast);
 		}
-		r = prepare_packet_sockets(iface,ii->ifi_index);
+		r = prepare_packet_sockets(iface,ii->ifi_index,iface_uses_offloading(iface));
 		if(r){
 			// Everything needs already be closed/freed by here
 			iface->txidx = iface->rfd = iface->fd = -1;
