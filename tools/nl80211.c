@@ -7,6 +7,8 @@
 static void
 diag(const char *fmt,va_list va){
 	fprintf(stderr,fmt,va);
+	fputc('\n',stderr);
+	va_end(va);
 }
 
 int main(void){
@@ -17,6 +19,7 @@ int main(void){
 	};
 	int ret;
 
+	pthread_key_create(&omphalos_ctx_key,NULL);
 	pthread_setspecific(omphalos_ctx_key,&ctx);
 	if(open_nl80211()){
 		fprintf(stderr,"Failure opening cfg80211\n");
