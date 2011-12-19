@@ -15,10 +15,10 @@ extern "C" {
 #include <sys/socket.h>
 #include <linux/if.h>
 #include <omphalos/128.h>
-#include <omphalos/arp.h>
 #include <linux/ethtool.h>
 #include <linux/if_packet.h>
 #include <omphalos/timing.h>
+#include <omphalos/nl80211.h>
 #include <omphalos/hwaddrs.h>
 
 struct l2host;
@@ -51,7 +51,6 @@ typedef struct wless_info {
 	unsigned mode;
 	uintmax_t freq;			// 0..999: channel, 1000+: frequency
 } wless_info;
-#define MAX_WIRELESS_CHANNEL		999
 
 typedef struct topdev_info {
 	wchar_t *devname;		// as in output from lspci or lsusb
@@ -123,6 +122,7 @@ typedef struct interface {
 	union {
 		struct ethtool_cmd ethtool;	// ethtool settings info
 		struct wless_info wext;		// wireless extensions info
+		nl80211_info nl80211;		// nl80211 info
 	} settings;
 	topdev_info topinfo;
 	// Other interfaces might also offer routes to these same
@@ -168,7 +168,7 @@ void set_default_ipv6src(interface *,const uint128_t);
 
 const void *get_source_address(interface *,int,const void *,void *);
 
-const void *get_unicast_address(interface *,const void *,int,const void *,void *);
+const void *get_unicast_address(interface *,int,const void *,void *);
 
 // predicates. racey against netlink messages.
 int is_local4(const interface *,uint32_t);

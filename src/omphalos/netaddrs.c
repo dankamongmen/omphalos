@@ -2,6 +2,7 @@
 #include <wchar.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <omphalos/arp.h>
 #include <omphalos/dns.h>
 #include <omphalos/util.h>
 #include <omphalos/diag.h>
@@ -308,13 +309,12 @@ lookup_l3host_common(const struct timeval *tv,interface *i,struct l2host *l2,
 	if(!(i->flags & IFF_NOARP) && !knownlocal){
 		if(cat == RTN_UNICAST || cat == RTN_LOCAL){
 			struct sockaddr_storage ss;
-			hwaddrint hwaddr = get_hwaddr(l2);
 
 			// Determine whether there's a known route
-			if(get_unicast_address(i,&hwaddr,fam,addr,&ss) == NULL){
+			if(get_unicast_address(i,fam,addr,&ss) == NULL){
 				if(fam == AF_INET){
 					// Issue a non-destructive ARP probe
-					send_arp_probe(i,&hwaddr,addr);
+					send_arp_probe(i,addr);
 				}
 				return &external_l3;
 			}

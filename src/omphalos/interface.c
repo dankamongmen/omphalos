@@ -671,10 +671,9 @@ get_source_address(interface *i,int fam,const void *addr,void *s){
 // address. If the route involves a gateway, the gateway address is copied into
 // 'r'. Otherwise (link route), the destination address is copied.
 const void *
-get_unicast_address(interface *i,const void *hwaddr,int fam,const void *addr,void *r){
+get_unicast_address(interface *i,int fam,const void *addr,void *r){
 	int ret = 0;
 
-	assert(hwaddr); // FIXME
 	switch(fam){
 		case AF_INET:{
 			const ip4route *i4r = get_route4(i,addr);

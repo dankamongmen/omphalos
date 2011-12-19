@@ -138,6 +138,9 @@ void send_arp_req(interface *i,const void *hwaddr,const uint32_t *addr,
 	void *frame;
 	size_t flen;
 
+	if(i->flags & IFF_NOARP){
+		return;
+	}
 	if( (frame = get_tx_frame(i,&flen)) ){
 		/*char addrstr[INET_ADDRSTRLEN];
 		inet_ntop(AF_INET,addr,addrstr,sizeof(addrstr));

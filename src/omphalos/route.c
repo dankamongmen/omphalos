@@ -2,6 +2,7 @@
 #include <stddef.h>
 #include <sys/socket.h>
 #include <omphalos/tx.h>
+#include <omphalos/arp.h>
 #include <omphalos/diag.h>
 #include <omphalos/util.h>
 #include <linux/version.h>
