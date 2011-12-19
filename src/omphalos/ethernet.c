@@ -106,6 +106,8 @@ handle_8021q(omphalos_packet *op,const void *frame,size_t len,int allowllc){
 		handle_lldp_packet(op,dgram,dlen);
 	break;}case ETH_P_UDLD:{
 		handle_udld_packet(op,dgram,dlen);
+	break;}case ETH_P_DTP:{
+		handle_dtp_packet(op,dgram,dlen);
 	break;}case ETH_P_8021Q:{
 		// 802.1q-under-802.1q; we need consider the 16-bit Type field
 		// to be part of the following 802.1q TPID. Account for it.
@@ -178,6 +180,9 @@ handle_snap(omphalos_packet *op,const void *frame,size_t len){
 			break;
 		}case ETH_P_UDLD:{
 			handle_udld_packet(op,dgram,dlen);
+			break;
+		}case ETH_P_DTP:{
+			handle_dtp_packet(op,dgram,dlen);
 			break;
 		}default:{
 			op->noproto = 1;
@@ -317,6 +322,9 @@ void handle_ethernet_packet(omphalos_packet *op,const void *frame,size_t len){
 			break;
 		}case ETH_P_UDLD:{
 			handle_udld_packet(op,dgram,dlen);
+			break;
+		}case ETH_P_DTP:{
+			handle_dtp_packet(op,dgram,dlen);
 			break;
 		}case ETH_P_PPP_DISC:
 		 case ETH_P_PPP_SES:{
