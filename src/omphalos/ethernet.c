@@ -115,7 +115,7 @@ handle_8021q(omphalos_packet *op,const void *frame,size_t len,int allowllc){
 		// encapsulate IEEE 802.2/SNAP. See:
 		// http://www.ciscopress.com/articles/article.asp?p=1016582
 		if(allowllc && op->l3proto < LLC_MAX_LEN){
-			handle_8022(op,frame,len);
+			handle_8022(op,dgram,dlen);
 		}else{
 			op->noproto = 1;
 			diagnostic("%s %s noproto for 0x%x",__func__,
