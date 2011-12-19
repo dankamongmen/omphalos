@@ -148,6 +148,8 @@ handle_snap(omphalos_packet *op,const void *frame,size_t len){
 	// FIXME need handle IEEE 802.1ad doubly-tagged frames (and likely do
 	// other crap involving OUI, etc)
        	proto = ntohs(snap->ethertype);
+	// FIXME also, things like Cisco ISL do an encapsulation and you don't
+	// know about it except by checking the dest address (01:00:0c:cc:cc:cc)
 	op->l3proto = proto;
 	switch(proto){
 		case ETH_P_IP:{
@@ -186,7 +188,7 @@ handle_snap(omphalos_packet *op,const void *frame,size_t len){
 			break;
 		}default:{
 			op->noproto = 1;
-			diagnostic("%s %s noproto for 0x%x",__func__,
+			diagnostic("%s %s noproto for 0x04%x",__func__,
 					op->i->name,proto);
 			break;
 		}
