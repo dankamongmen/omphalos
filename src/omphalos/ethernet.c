@@ -188,7 +188,7 @@ handle_snap(omphalos_packet *op,const void *frame,size_t len){
 			break;
 		}default:{
 			op->noproto = 1;
-			diagnostic("%s %s noproto for 0x04%x",__func__,
+			diagnostic("%s %s noproto for 0x%04x",__func__,
 					op->i->name,proto);
 			break;
 		}
