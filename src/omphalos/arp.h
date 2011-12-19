@@ -16,7 +16,9 @@ void send_arp_req(struct interface *,const void *,const uint32_t *,const uint32_
 
 static inline void
 send_arp_probe(struct interface *i,const void *hw,const uint32_t *addr){
-	send_arp_req(i,hw,addr,0ul);
+	uint32_t saddr = 0ul;
+
+	send_arp_req(i,hw,addr,&saddr);
 }
 
 #ifdef __cplusplus
