@@ -29,8 +29,8 @@ void handle_eapol_packet(omphalos_packet *op,const void *frame,size_t len){
 		diagnostic("Unknown EAPOL version %u",eaphdr->version);
 		op->noproto = 1;
 	}
-	if(ntohs(eaphdr->len) != len - sizeof(*eaphdr)){
-		diagnostic("%s malformed (%u != %zu)",__func__,
+	if(ntohs(eaphdr->len) > len - sizeof(*eaphdr)){
+		diagnostic("%s malformed (%u > %zu)",__func__,
 			ntohs(eaphdr->len),len - sizeof(*eaphdr));
 		op->malformed = 1;
 		return;
