@@ -54,7 +54,8 @@ void handle_arp_packet(omphalos_packet *op,const void *frame,size_t len){
 	}
 	saddr = (const char *)ap + sizeof(*ap) + ap->ar_hln;
 	// ARP probes as specified by RFC 5227 set the source address to
-	// 0.0.0.0; these oughtn't be linked to the hardware addresses.
+	// 0.0.0.0; these oughtn't be linked to the hardware addresses. We
+	// probably only ought admit LOCAL/UNICASTs FIXME.
 	if(ap->ar_pln <= sizeof(PROBESRC)){
 		if(memcmp(PROBESRC,saddr,ap->ar_pln)){
 			op->l3s = lookup_local_l3host(&op->tv,op->i,op->l2s,fam,saddr);
@@ -82,8 +83,7 @@ void handle_arp_packet(omphalos_packet *op,const void *frame,size_t len){
 		break;
 	}default:{
 		op->noproto = 1;
-		diagnostic("%s %s unknown ARP op %u",__func__,
-					op->i->name,ap->ar_op);
+		diagnostic("%s %s unknown ARP op %u",__func__,op->i->name,ap->ar_op);
 		break;
 	}}
 }
@@ -133,7 +133,7 @@ prepare_arp_probe(const interface *i,void *frame,size_t *flen,
 	*flen = tlen;
 }
 
-void send_arp_probe(interface *i,const void *hwaddr,const uint32_t *addr,
+void send_arp_req(interface *i,const void *hwaddr,const uint32_t *addr,
 						const uint32_t *saddr){
 	void *frame;
 	size_t flen;

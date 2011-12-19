@@ -295,12 +295,7 @@ lookup_l3host_common(const struct timeval *tv,interface *i,struct l2host *l2,
 		if(cat == RTN_UNICAST || cat == RTN_LOCAL){
 			struct sockaddr_storage ss;
 			hwaddrint hwaddr = get_hwaddr(l2);
-			// FIXME throwing out anything to which we have no
-			// route means we basically don't work pre-config.
-			// addresses pre-configuration have information, but
-			// are inferior to those post-configuration. we need a
-			// means of *updating* names whenever routes change,
-			// or as close to true route cache behavior as we like
+
 			if(get_unicast_address(i,&hwaddr,fam,addr,&ss) == NULL){
 				return &external_l3; // FIXME terrible
 			}
