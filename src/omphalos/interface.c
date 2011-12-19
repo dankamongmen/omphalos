@@ -667,7 +667,9 @@ get_source_address(interface *i,int fam,const void *addr,void *s){
 	return s;
 }
 
-// Network byte-order inputs
+// Network byte-order inputs. Returns non-NULL if there is a route known to the
+// address. If the route involves a gateway, the gateway address is copied into
+// 'r'. Otherwise (link route), the destination address is copied.
 const void *
 get_unicast_address(interface *i,const void *hwaddr,int fam,const void *addr,void *r){
 	int ret = 0;
@@ -678,10 +680,10 @@ get_unicast_address(interface *i,const void *hwaddr,int fam,const void *addr,voi
 			const ip4route *i4r = get_route4(i,addr);
 
 			if(i4r){
-				// A routed result requires a directed ARP
-				// probe to verify the local network address
-				// (our idea of the route might be wrong).
-				if(!(i4r->addrs & ROUTE_HAS_VIA)){
+				if(i4r->addrs & ROUTE_HAS_VIA){
+					ret = 1;
+					memcpy(r,&i4r->via,sizeof(uint32_t));
+				}else{
 					ret = 1;
 					memcpy(r,addr,sizeof(uint32_t));
 				}
@@ -697,8 +699,11 @@ get_unicast_address(interface *i,const void *hwaddr,int fam,const void *addr,voi
 		}case AF_INET6:{
 			const ip6route *i6r = get_route6(i,addr);
 
-			if(i6r){ // FIXME handle routed addresses!
-				if(!(i6r->addrs & ROUTE_HAS_VIA)){
+			if(i6r){
+				if(i6r->addrs & ROUTE_HAS_VIA){
+					ret = 1;
+					assign128(r,i6r->via);
+				}else{
 					ret = 1;
 					assign128(r,addr);
 				}

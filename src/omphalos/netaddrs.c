@@ -291,16 +291,6 @@ lookup_l3host_common(const struct timeval *tv,interface *i,struct l2host *l2,
 		}
 	}
 	cat = l2categorize(i,l2);
-	if(!(i->flags & IFF_NOARP) && !knownlocal){
-		if(cat == RTN_UNICAST || cat == RTN_LOCAL){
-			struct sockaddr_storage ss;
-			hwaddrint hwaddr = get_hwaddr(l2);
-
-			if(get_unicast_address(i,&hwaddr,fam,addr,&ss) == NULL){
-				return &external_l3; // FIXME terrible
-			}
-		}
-	}
 	// FIXME probably want to make this per-node
 	assert(len <= sizeof(cmp));
 	memcpy(&cmp,addr,len);
@@ -313,6 +303,25 @@ lookup_l3host_common(const struct timeval *tv,interface *i,struct l2host *l2,
 			l3->l2 = l2; // FIXME ought indicate a change!
 			update_l3name(tv,l2,l3,dnsfxn,revstrfxn,cat,addr,i,fam);
 			return l3;
+		}
+	}
+	if(!(i->flags & IFF_NOARP) && !knownlocal){
+		if(cat == RTN_UNICAST || cat == RTN_LOCAL){
+			struct sockaddr_storage ss;
+			hwaddrint hwaddr = get_hwaddr(l2);
+
+			// Determine whether there's a known route
+			if(get_unicast_address(i,&hwaddr,fam,addr,&ss) == NULL){
+				if(fam == AF_INET){
+					// Issue a non-destructive ARP probe
+					send_arp_probe(i,&hwaddr,addr);
+				}
+				return &external_l3;
+			}
+			// It's routed, not local
+			if(memcmp(&ss,addr,len)){
+				return &external_l3;
+			}
 		}
 	}
         if( (l3 = create_l3host(fam,addr,len)) ){
