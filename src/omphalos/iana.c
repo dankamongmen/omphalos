@@ -8,6 +8,7 @@
 #include <omphalos/diag.h>
 #include <omphalos/iana.h>
 #include <omphalos/util.h>
+#include <omphalos/cisco.h>
 #include <omphalos/inotify.h>
 #include <omphalos/ethernet.h>
 #include <omphalos/omphalos.h>
@@ -210,6 +211,11 @@ name_ethmcastaddr(const void *mac){
 			.mac = "\x01\x00\x5e",	// low order 23 bits of ip addresses from 224.0.0.0/4
 			.mlen = 3,
 			.eproto = ETH_P_IP,
+		},{
+			.name = L"CDP/VTP/DTP/PAgP/UDLD",
+			.mac = "\x01\x00\x0c\xcc\xcc\xcc",
+			.mlen = 6,
+			.eproto = ETH_P_DTP, // FIXME it's more than this!
 		},{
 			.name = L"802.1s Shared Spanning Tree Protocol",
 			.mac = "\x01\x00\x0c\xcc\xcc\xcd",
