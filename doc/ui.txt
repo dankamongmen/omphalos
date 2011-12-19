@@ -1,0 +1,54 @@
+track selection and selectionline. selectionline is relative to iface window,
+ not screen. when drawing, draw from the selection out in each direction.
+ growing can change selectionline (grow up with insert before selection) while
+ retaining the same position on-screen.
+
+we want a double list, but the traversal order is not a simple inversion. we
+walk forward via the hierarchy semantic, and backwards via the display
+semantic:
+
+NULL
+  ^--node ---------------> node -> NULL
+      | ^--.                 |
+      -> host -> NULL        |
+          | ^--.             |
+          -> service -> NULL |
+                 ^----<------/
+
+we could get rid of all these NULLs if we encoded the hierarchy level
+directly into the various nodes...which we have to do to use the display
+semantic backwards...this means we'd have to walk sublevels, though, to
+traverse upper levels.
+
+maybe we only want a backlink between nodes?
+
+if iface_lines_unbounded() > available lines, some are hidden.
+as new ones are added / removed, we want to keep the selected interface
+ in the same position, relative to the interface boundaries.
+moving up and down can change the position relative to interface boundaries.
+
+if the iface occupies the entire screen, no addition or removal should displace
+ the current selection.
+
+---------------------
+-browsing selections-
+---------------------
+move to previous or next. --selection or ++selection.
+likewise, selline -= (line of prev) or += (lines of cur)
+ if selline < 1, selline = 1.
+ if selline + (lines of new cur) >= maxy
+
+
+     ----------------------------
+     -handling interface changes-
+     ----------------------------
+(when that interface has a selection.)
+
+if the iface has room to grow in either direction, grow so that the selection
+ is not displaced (we currently prefer, arbitrarily, to grow down). this might
+ not be possible in the case where the selection is the first or last in the
+ interface.
+
+if the iface has room to grow in only one direction, grow in that direction,
+ retaining the current (possibly displaced) selection.
+
