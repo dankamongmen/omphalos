@@ -176,13 +176,11 @@ int handle_ring_packet(interface *iface,int fd,void *frame){
 	const struct omphalos_ctx *ctx = get_octx();
 	const omphalos_iface *octx = &ctx->iface;
 	struct tpacket_hdr *thdr = frame;
-	omphalos_packet packet = {
-		.i = iface,
-		.noproto = 0,
-		.malformed = 0,
-	};
+	omphalos_packet packet;
 	int len;
 
+	memset(&packet,0,sizeof(packet));
+	packet.i = iface;
 	while(thdr->tp_status == 0){
 		struct pollfd pfd[1];
 		int events,msec;
@@ -271,11 +269,12 @@ int handle_ring_packet(interface *iface,int fd,void *frame){
 	}
 	if(packet.malformed || packet.noproto){
 		struct pcap_pkthdr pcap;
+		size_t scribble = 0;
 		struct pcap_ll pll;
-		size_t scribble;
 
 		if(frame != iface->truncbuf){
 			scribble = thdr->tp_mac;
+			frame -= thdr->tp_mac;
 		}else{
 			scribble = 0;
 		}
@@ -294,14 +293,18 @@ int handle_ring_packet(interface *iface,int fd,void *frame){
 			hwaddrint hw = get_hwaddr(packet.l2s);
 			memcpy(&pll.haddr,&hw,packet.i->addrlen > sizeof(pll.haddr) ?
 					sizeof(pll.haddr) : packet.i->addrlen);
+			// FIXME handle other pkttypes
 			if(memcmp(&hw,packet.i->addr,packet.i->addrlen) == 0){
 				pll.pkttype = htons(4);
 			}
-		}else{
-			memset(&pll.haddr,0,sizeof(pll.haddr));
 		}
-		pll.ethproto = htons(packet.l3proto);
+		assert(packet.pcap_ethproto);
+		pll.ethproto = htons(packet.pcap_ethproto);
+		// 'frame' starts at the L2 header, *not* the tpacket_thdr
 		log_pcap_packet(&pcap,frame,packet.i->l2hlen + scribble,&pll);
+		if(scribble){
+			frame += thdr->tp_mac;
+		}
 	}
 	if(octx->packet_read){
 		octx->packet_read(&packet);
