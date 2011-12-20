@@ -5,6 +5,7 @@
 extern "C" {
 #endif
 
+#include <pcap.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -13,10 +14,14 @@ struct pcap_pkthdr;
 struct omphalos_ctx;
 struct omphalos_iface;
 
+// Input from a PCAP file
 int init_pcap(const struct omphalos_ctx *);
 int handle_pcap_file(const struct omphalos_ctx *);
 int print_pcap_stats(FILE *fp,struct interface *);
 void cleanup_pcap(const struct omphalos_ctx *);
+
+// Output to a PCAP savefile
+pcap_dumper_t *init_pcap_write(pcap_t **,const char *);
 
 struct pcap_ll { // see pcap-datalink(7), "DLT_LINUX_SSL"
 	uint16_t pkttype;

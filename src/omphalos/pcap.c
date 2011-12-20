@@ -337,3 +337,17 @@ int log_pcap_packet(struct pcap_pkthdr *h,void *sp,size_t l2len,const struct pca
 	free(rhdr);
 	return 0;
 }
+
+pcap_dumper_t *init_pcap_write(pcap_t **p,const char *fn){
+	pcap_dumper_t *pd;
+
+	if((*p = pcap_open_dead(DLT_LINUX_SLL,0)) == NULL){
+		return NULL;
+	}
+	if((pd = pcap_dump_open(*p,fn)) == NULL){
+		pcap_close(*p);
+		*p = NULL;
+		return NULL;
+	}
+	return pd;
+}

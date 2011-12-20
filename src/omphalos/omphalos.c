@@ -238,11 +238,7 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 				fprintf(stderr,"Option requires parameter: '%s'\n",ops[longidx].name);
 				usage(argv[0],EXIT_FAILURE);
 			}
-			if((pctx->plogp = pcap_open_dead(DLT_LINUX_SLL,0)) == NULL){
-				fprintf(stderr,"Couldn't open pcap output file\n");
-				usage(argv[0],EXIT_FAILURE);
-			}
-			if((pctx->plog = pcap_dump_open(pctx->plogp,optarg)) == NULL){
+			if((pctx->plog = init_pcap_write(&pctx->plogp,optarg)) == NULL){
 				// pcap_geterr() sticks a friendly ": " in front of itself argh
 				fprintf(stderr,"Couldn't write to %s%s?\n",optarg,pcap_geterr(pctx->plogp));
 				usage(argv[0],EXIT_FAILURE);
