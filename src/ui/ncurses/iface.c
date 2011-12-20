@@ -53,7 +53,7 @@ iface_state *create_interface_state(interface *i){
 	iface_state *ret;
 	const char *tstr;
 
-	if((tstr = lookup_arptype(i->arptype,NULL)) == NULL){
+	if((tstr = lookup_arptype(i->arptype,NULL,NULL)) == NULL){
 		return NULL;
 	}
 	if( (ret = malloc(sizeof(*ret))) ){
