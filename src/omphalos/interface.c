@@ -459,6 +459,7 @@ typedef struct arptype {
 	unsigned ifi_type;
 	const char *name;
 	analyzefxn analyze;
+	size_t l2hlen;
 } arptype;
 
 static arptype arptypes[] = {
@@ -466,58 +467,71 @@ static arptype arptypes[] = {
 		.ifi_type = ARPHRD_LOOPBACK,
 		.name = "Loopback",
 		.analyze = handle_ethernet_packet, // FIXME don't search l2 tables
+		.l2hlen = ETH_HLEN,
 	},{
 		.ifi_type = ARPHRD_ETHER,
 		.name = "Ethernet",
 		.analyze = handle_ethernet_packet,
+		.l2hlen = ETH_HLEN,
 	},{
 		.ifi_type = ARPHRD_IEEE80211,
 		.name = "Wireless",
 		.analyze = handle_ethernet_packet,
+		.l2hlen = ETH_HLEN,
 	},{
 		.ifi_type = ARPHRD_IEEE80211_RADIOTAP,
 		.name = "Radiotap",
 		.analyze = handle_radiotap_packet,
+		.l2hlen = ETH_HLEN, // FIXME???
 	},{
 		.ifi_type = ARPHRD_IEEE1394,
 		.name = "Firewire",			// RFC 2734 / 3146
 		.analyze = handle_firewire_packet,
+		.l2hlen = ETH_HLEN, // FIXME???
 	},{
 		.ifi_type = ARPHRD_TUNNEL,
 		.name = "Tunnelv4",
 		.analyze = handle_ethernet_packet,
+		.l2hlen = ETH_HLEN, // FIXME???
 	},{
 		.ifi_type = ARPHRD_SIT,
 		.name = "TunnelSIT",
 		.analyze = handle_ethernet_packet,
+		.l2hlen = ETH_HLEN, // FIXME???
 	},{
 		.ifi_type = ARPHRD_IPGRE,
 		.name = "TunnelGRE",
 		.analyze = handle_ethernet_packet,
+		.l2hlen = ETH_HLEN, // FIXME???
 	},{
 		.ifi_type = ARPHRD_IRDA,
 		.name = "IrDA",
 		.analyze = handle_irda_packet,
+		.l2hlen = ETH_HLEN, // FIXME???
 	},{
 		.ifi_type = ARPHRD_CISCO,
 		.name = "cHDLC", // Cisco HDLC
 		.analyze = handle_hdlc_packet,
+		.l2hlen = 4,
 	},{
 		.ifi_type = ARPHRD_TUNNEL6,
 		.name = "Tunnelv6",
 		.analyze = handle_ethernet_packet,
+		.l2hlen = ETH_HLEN, // FIXME???
 	},{
 		.ifi_type = ARPHRD_NONE,
 		.name = "VArpless",
 		.analyze = handle_ethernet_packet, // FIXME no l2 header at all
+		.l2hlen = ETH_HLEN, // FIXME???
 	},{
 		.ifi_type = ARPHRD_VOID,
 		.name = "Voiddev",
 		.analyze = handle_void_packet,		// FIXME likely metadata
+		.l2hlen = ETH_HLEN, // FIXME???
 	},
 };
 
-const char *lookup_arptype(unsigned arphrd,analyzefxn *analyzer){
+const char *lookup_arptype(unsigned arphrd,analyzefxn *analyzer,size_t *hlen){
 	unsigned idx;
 
 	for(idx = 0 ; idx < sizeof(arptypes) / sizeof(*arptypes) ; ++idx){
@@ -526,6 +540,9 @@ const char *lookup_arptype(unsigned arphrd,analyzefxn *analyzer){
 		if(at->ifi_type == arphrd){
 			if(analyzer){
 				*analyzer = at->analyze;
+			}
+			if(hlen){
+				*hlen = at->l2hlen;
 			}
 			return at->name;
 		}

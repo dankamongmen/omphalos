@@ -92,7 +92,7 @@ typedef struct interface {
 
 	unsigned arptype;	// from rtnetlink(7) ifi_type
 	unsigned flags;		// from rtnetlink(7) ifi_flags
-	unsigned l2hlen;	// static l2 header length
+	size_t l2hlen;		// static l2 header length
 	int mtu;		// to match netdevice(7)'s ifr_mtu...
 	char *name;
 	void *addr;		// multiple hwaddrs are multiple ifaces...
@@ -174,7 +174,7 @@ const void *get_unicast_address(interface *,int,const void *,void *);
 int is_local4(const interface *,uint32_t);
 int is_local6(const interface *,const struct in6_addr *);
 
-const char *lookup_arptype(unsigned,analyzefxn *);
+const char *lookup_arptype(unsigned,analyzefxn *,size_t *);
 
 int enable_promiscuity(const interface *);
 int disable_promiscuity(const interface *);
