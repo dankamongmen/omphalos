@@ -24,11 +24,17 @@ void cleanup_pcap(const struct omphalos_ctx *);
 pcap_dumper_t *init_pcap_write(pcap_t **,const char *);
 
 struct pcap_ll { // see pcap-datalink(7), "DLT_LINUX_SSL"
-	uint16_t pkttype;
-	uint16_t arphrd;
-	uint16_t llen;
-	uint64_t haddr;
-	uint16_t ethproto;
+	uint16_t pkttype;		// Packet type, NBO
+					//  0 for unicast to us
+					//  1 for broadcast to us
+					//  2 for multicast to us
+					//  3 for unicast remote-to-remote
+					//  4 for sent by us
+	uint16_t arphrd;		// Linux ARPHRD_* value, NBO
+	uint16_t llen;			// Link-layer addrlen, NBO
+	uint64_t haddr;			// Up to 8 bytes of LL header
+	uint16_t ethproto;		// Ethernet protocol tpye, NBO
+					//  1 for Novell 802.3, 4 for 802.2 LLC
 } __attribute__ ((packed));
 
 int log_pcap_packet(struct pcap_pkthdr *,void *,size_t,const struct pcap_ll *);
