@@ -795,7 +795,7 @@ handle_newlink_locked(interface *iface,const struct ifinfomsg *ii,const struct n
 		diagnostic("No name in link message");
 		return -1;
 	}
-	if(lookup_arptype(ii->ifi_type,&iface->analyzer) == NULL){
+	if(lookup_arptype(ii->ifi_type,&iface->analyzer,&iface->l2hlen) == NULL){
 		diagnostic("Unknown device type for %s",iface->name);
 		return -1;
 	}
