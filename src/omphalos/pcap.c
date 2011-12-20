@@ -281,7 +281,6 @@ void cleanup_pcap(const omphalos_ctx *pctx){
 // It is possible that we are using DLT_LINUX_SLL as a source. In that case,
 // pass 0 as l2len, and no transformation will take place.
 int log_pcap_packet(struct pcap_pkthdr *h,void *sp,size_t l2len,const struct pcap_ll *pll){
-	struct pcap_ll *sll;
 	void *newframe;
 	void *rhdr;
 
@@ -289,27 +288,27 @@ int log_pcap_packet(struct pcap_pkthdr *h,void *sp,size_t l2len,const struct pca
 		return 0;
 	}
 	assert(h->caplen >= l2len);
-	if(l2len >= sizeof(*sll)){ // copy pll over old headers
+	if(l2len >= sizeof(*pll)){ // copy pll over old headers
 		if((rhdr = Malloc(l2len)) == NULL){
 			return -1;
 		}
 		memcpy(rhdr,sp,l2len); // preserve the true header
-		newframe = (char *)sp + (l2len - sizeof(*sll));
-		memcpy(newframe,pll,sizeof(*sll));
-		h->caplen -= (l2len - sizeof(*sll));
-		h->len -= (l2len - sizeof(*sll));
+		newframe = (char *)sp + (l2len - sizeof(*pll));
+		memcpy(newframe,pll,sizeof(*pll));
+		h->caplen -= (l2len - sizeof(*pll));
+		h->len -= (l2len - sizeof(*pll));
 	}else if(l2len){ // fall back to payload copy
 		uint32_t plen;
 
 		plen = h->caplen - l2len;
-		if((rhdr = Malloc(sizeof(*sll) + plen)) == NULL){
+		if((rhdr = Malloc(sizeof(*pll) + plen)) == NULL){
 			return -1;
 		}
 		newframe = rhdr;
-		memcpy(newframe,pll,sizeof(*sll));
-		memcpy((char *)newframe + sizeof(*sll),(char *)sp + l2len,plen);
-		h->caplen = sizeof(*sll) + plen;
-		h->len = sizeof(*sll) + plen;
+		memcpy(newframe,pll,sizeof(*pll));
+		memcpy((char *)newframe + sizeof(*pll),(char *)sp + l2len,plen);
+		h->caplen = sizeof(*pll) + plen;
+		h->len = sizeof(*pll) + plen;
 		sp = NULL;
 	}else{ // DLT_LINUX_SLL source
 		newframe = sp;
