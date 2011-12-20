@@ -64,7 +64,7 @@ postprocess(pcap_marshal *pm,omphalos_packet *packet,interface *iface,
 		pll.llen = htons(packet->i->addrlen);
 		hw = packet->l2s ? get_hwaddr(packet->l2s) : 0;
 		memcpy(&pll.haddr,&hw,packet->i->addrlen > sizeof(pll.haddr) ? sizeof(pll.haddr) : packet->i->addrlen);
-		pll.ethproto = htons(packet->l3proto);
+		pll.ethproto = htons(packet->pcap_ethproto);
 		log_pcap_packet(&phdr,(void *)bytes,packet->i->l2hlen,&pll);
 	}
 	if(pm->octx->packet_read){
@@ -133,6 +133,7 @@ handle_pcap_cooked(u_char *gi,const struct pcap_pkthdr *h,const u_char *bytes){
 	packet.l2s = lookup_l2host(iface,sll->hwaddr);
 	packet.l2d = packet.l2s;
 	packet.l3proto = ntohs(sll->proto);
+	packet.pcap_ethproto = ntohs(sll->proto);
 	// proto is in network byte-order. rather than possibly switch it
 	// every time, we provide the cases in network byte-order
 	switch(sll->proto){
