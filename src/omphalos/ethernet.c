@@ -293,6 +293,7 @@ void handle_ethernet_packet(omphalos_packet *op,const void *frame,size_t len){
 	dlen = len - sizeof(*hdr);
        	proto = ntohs(hdr->h_proto);
 	op->l3proto = proto;
+	op->pcap_ethproto = proto;
 	// FIXME need handle IEEE 802.1ad doubly-tagged frames
 	switch(proto){
 		case ETH_P_IP:{
@@ -352,6 +353,7 @@ void handle_ethernet_packet(omphalos_packet *op,const void *frame,size_t len){
 			if(proto < LLC_MAX_LEN){ // 802.2 DSAP (and maybe SNAP/802.1q)
 				// FIXME check the proto (LLC length) field against framelen!
 				handle_8022(op,(const char *)dgram,dlen); // modifies op->l3proto
+				op->pcap_ethproto = 4;
 			}else{
 				op->noproto = 1;
 				diagnostic("%s %s noproto for 0x%x",__func__,

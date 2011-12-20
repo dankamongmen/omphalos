@@ -27,7 +27,10 @@ typedef struct omphalos_packet {
 	struct timeval tv;
 	struct interface *i;
 	struct l2host *l2s,*l2d;
-	uint16_t l3proto;
+	uint16_t pcap_ethproto;		// See pcap-linktype's DLT_LINUX_SLL.
+					//  This value is suitable to fill the
+					//  ethproto field in a struct pcap_ll.
+	uint16_t l3proto;		// Actual L3 protocol number
 	struct l3host *l3s,*l3d;
 	uint128_t l3saddr,l3daddr;
 	uint16_t l4src,l4dst;
