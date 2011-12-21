@@ -828,7 +828,7 @@ int close_nl80211(void){
 	return 0;
 }
 
-int iface_nl80211_info(const interface *i,nl80211_info *nl){
+int iface_nl80211_info(const interface *i,nl80211_info *nli){
 	int idx;
 
 	Pthread_mutex_lock(&nllock);
@@ -836,7 +836,7 @@ int iface_nl80211_info(const interface *i,nl80211_info *nl){
 		Pthread_mutex_unlock(&nllock);
 		return -1;
 	}
-	memset(nl,0,sizeof(*nl));
+	memset(nli,0,sizeof(*nli));
 	idx = idx_of_iface(i);
 	if(nl80211_cmd(NL80211_CMD_GET_WIPHY,NLM_F_DUMP,phy_handler,
 				NL80211_ATTR_WIPHY,0)){
