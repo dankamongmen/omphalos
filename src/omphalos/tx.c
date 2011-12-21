@@ -288,6 +288,7 @@ int send_tx_frame(interface *i,void *frame){
 }
 
 void abort_tx_frame(interface *i,void *frame){
+	const omphalos_ctx *octx = get_octx();
 	struct tpacket_hdr *thdr = frame;
 
 	++i->txaborts;
