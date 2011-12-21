@@ -315,7 +315,7 @@ lookup_l3host_common(const struct timeval *tv,interface *i,struct l2host *l2,
 				if(fam == AF_INET){
 					// Issue a non-destructive ARP probe
 					// FIXME need rate-limiting!
-					send_arp_probe(i,addr);
+					//send_arp_probe(i,addr);
 				}
 				return &external_l3;
 			}

@@ -233,7 +233,7 @@ ncurses_input_thread(void *unsafe_marsh){
 				}
 			}unlock_ncurses();
 			break;
-		case 27: // Escape FIXME
+		case KEY_BACKSPACE:
 			lock_ncurses();{
 				deselect_iface_locked();
 				selection_active = 0;
