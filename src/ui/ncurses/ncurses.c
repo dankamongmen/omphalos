@@ -679,7 +679,8 @@ int main(int argc,char * const *argv){
 		fprintf(stderr,"Error in omphalos_init() (%s?)\n",strerror(err));
 		return EXIT_FAILURE;
 	}
-	jointid = !fade(1,&bfl,&fadetid);
+	//jointid = !fade(1,&bfl,&fadetid);
+	jointid = 0;
 	omphalos_cleanup(&pctx);
 	if(jointid){
 		pthread_join(fadetid,NULL);
