@@ -651,6 +651,8 @@ iface_box(const interface *i,const iface_state *is,WINDOW *w,int active,
 						assert(wprintw(w,"%sHz)",prefix(i->settings.wext.freq,1,buf,sizeof(buf),1)) != ERR);
 					}
 				}
+			}else if(i->settings_valid == SETTINGS_VALID_NL80211){
+				assert(wprintw(w," NL80211") == OK); // FIXME
 			}
 		}else{
 			assert(iface_optstr(w,"down",hcolor,bcolor) != ERR);
