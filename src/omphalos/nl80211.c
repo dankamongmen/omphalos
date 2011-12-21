@@ -18,6 +18,12 @@
 #include <omphalos/interface.h>
 #include <netlink/genl/family.h>
 
+// Marshal for command-specific structs
+typedef struct nlstate {
+	int err;
+	void *state;
+} nlstate;
+
 // State extracted from / specified for NL80211_CMD_GET_INTERFACE responses
 typedef struct nl80211_dev_state {
 	int idx; 	// INPUT: index of interface
@@ -342,28 +348,31 @@ void print_ht_mcs(const __u8 *mcs)
 static int
 error_handler(struct sockaddr_nl *nla __attribute__ ((unused)),
 				struct nlmsgerr *err,void *arg){
-	int *ret = arg;
-	*ret = err->error;
+	nlstate *nl = arg;
+
+	nl->err = err->error;
 	assert(0);
 	return NL_STOP;
 }
 
 static int
 finish_handler(struct nl_msg *msg __attribute__ ((unused)),void *arg){
-	int *ret = arg;
-	*ret = 1;
+	nlstate *nl = arg;
+
+	nl->err = 1;
 	return NL_SKIP;
 }
 
 static int
 ack_handler(struct nl_msg *msg __attribute__ ((unused)),void *arg){
-	int *ret = arg;
-	*ret = 0;
+	nlstate *nl = arg;
+
+	nl->err = 0;
 	return NL_STOP;
 }
 
 static int
-phy_handler(struct nl_msg *msg,void *arg __attribute__ ((unused))){
+phy_handler(struct nl_msg *msg,void *arg){
 	struct nlattr *tb_msg[NL80211_ATTR_MAX + 1];
 	struct genlmsghdr *gnlh = nlmsg_data(nlmsg_hdr(msg));
 
@@ -393,7 +402,13 @@ phy_handler(struct nl_msg *msg,void *arg __attribute__ ((unused))){
 	//struct nlattr *nl_if, *nl_ftype;
 	int bandidx = 1;
 	int rem_band, rem_freq;//, rem_rate, rem_mode, rem_cmd, rem_ftype, rem_if;
+	nl80211_info *nli;
+	nlstate *nls;
 	int open;
+
+	nls = arg;
+	nli = nls->state;
+	memset(nli,0,sizeof(*nli));
 
 	nla_parse(tb_msg, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0),
 		  genlmsg_attrlen(gnlh, 0), NULL);
@@ -714,11 +729,6 @@ err:
 	return NL_SKIP;
 }
 
-typedef struct nlstate {
-	int err;
-	void *state;
-} nlstate;
-
 static int
 dev_handler(struct nl_msg *msg,void *arg){
 	struct genlmsghdr *gnlh = nlmsg_data(nlmsg_hdr(msg));
@@ -858,7 +868,6 @@ int iface_nl80211_info(const interface *i,nl80211_info *nli){
 	devstate.idx = idx_of_iface(i);
 	devstate.iftype = NULL;
 	devstate.phy = -1;
-	memset(nli,0,sizeof(*nli));
 	Pthread_mutex_lock(&nllock);
 	if(!nl){
 		goto done;
@@ -871,7 +880,7 @@ int iface_nl80211_info(const interface *i,nl80211_info *nli){
 		goto done;
 	}
 	if(nl80211_cmd(NL80211_CMD_GET_WIPHY,NLM_F_DUMP,phy_handler,
-				NULL,NL80211_ATTR_WIPHY,devstate.phy)){
+				nli,NL80211_ATTR_WIPHY,devstate.phy)){
 		goto done;
 	}
 	Pthread_mutex_unlock(&nllock);
