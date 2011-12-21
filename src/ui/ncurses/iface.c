@@ -652,7 +652,16 @@ iface_box(const interface *i,const iface_state *is,WINDOW *w,int active,
 					}
 				}
 			}else if(i->settings_valid == SETTINGS_VALID_NL80211){
-				assert(wprintw(w," NL80211") == OK); // FIXME
+				if(i->settings.nl80211.mode == NL80211_IFTYPE_MONITOR){
+					assert(wprintw(w," (%s)",modestr(i->settings.nl80211.mode)) != ERR);
+				}else if(!interface_carrier_p(i)){
+					assert(wprintw(w," (%s, no carrier)",modestr(i->settings.nl80211.mode)) != ERR);
+				}else{
+					assert(wprintw(w," (%sb %s ",prefix(i->settings.nl80211.bitrate,1,buf,sizeof(buf),1),
+								modestr(i->settings.nl80211.mode)) != ERR);
+					assert(wprintw(w,"ch %ju (%sHz))",i->settings.nl80211.chan,
+								prefix(i->settings.nl80211.freq,1,buf,sizeof(buf),1)) != ERR);
+				}
 			}
 		}else{
 			assert(iface_optstr(w,"down",hcolor,bcolor) != ERR);
