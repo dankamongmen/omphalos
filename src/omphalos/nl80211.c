@@ -141,16 +141,6 @@ const char *iftype_name(enum nl80211_iftype iftype)
 
 #define BIT(n) (1 << n)
 
-static void print_flag(const char *name, int *open)
-{
-	if (!*open)
-		diagnostic(" (");
-	else
-		diagnostic(", ");
-	diagnostic("%s", name);
-	*open = 1;
-}
-
 int ieee80211_frequency_to_channel(int freq)
 {
 	if (freq == 2484)
@@ -404,7 +394,6 @@ phy_handler(struct nl_msg *msg,void *arg){
 	int rem_band, rem_freq;//, rem_rate, rem_mode, rem_cmd, rem_ftype, rem_if;
 	nl80211_info *nli;
 	nlstate *nls;
-	int open;
 
 	nls = arg;
 	nli = nls->state;
@@ -461,27 +450,22 @@ phy_handler(struct nl_msg *msg,void *arg){
 			if(chan > MAX_WIRELESS_CHANNEL){
 				goto err;
 			}
-			diagnostic("\t\t\t* %d MHz [%d]", freq, ieee80211_frequency_to_channel(freq));
+			nli->freqs[chan] = freq;
 
 			if (tb_freq[NL80211_FREQUENCY_ATTR_MAX_TX_POWER] &&
-			    !tb_freq[NL80211_FREQUENCY_ATTR_DISABLED])
-				diagnostic(" (%.1f dBm)", 0.01 * nla_get_u32(tb_freq[NL80211_FREQUENCY_ATTR_MAX_TX_POWER]));
-
-			open = 0;
-			if (tb_freq[NL80211_FREQUENCY_ATTR_DISABLED]) {
-				print_flag("disabled", &open);
-				goto next;
+			    !tb_freq[NL80211_FREQUENCY_ATTR_DISABLED]){
+				nli->dBm[chan] = 0.01 * nla_get_u32(tb_freq[NL80211_FREQUENCY_ATTR_MAX_TX_POWER]);
 			}
+			diagnostic("Chan %d freq %u (%.1f dBm)",chan,freq,nli->dBm[chan]);
+
+			/*
 			if (tb_freq[NL80211_FREQUENCY_ATTR_PASSIVE_SCAN])
 				print_flag("passive scanning", &open);
 			if (tb_freq[NL80211_FREQUENCY_ATTR_NO_IBSS])
 				print_flag("no IBSS", &open);
 			if (tb_freq[NL80211_FREQUENCY_ATTR_RADAR])
 				print_flag("radar detection", &open);
- next:
-			if (open)
-				diagnostic(")");
-			diagnostic("");
+			*/
 		}
 
 		/*
