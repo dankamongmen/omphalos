@@ -18,6 +18,13 @@
 #include <omphalos/interface.h>
 #include <netlink/genl/family.h>
 
+// State extracted from / specified for NL80211_CMD_GET_INTERFACE responses
+typedef struct nl80211_dev_state {
+	int idx; 	// INPUT: index of interface
+	int phy;	// OUTPUT: physical index
+	char *iftype;	// OPTOUTPUT: type of interface
+} nl80211_dev_state;
+
 static struct nl_sock *nl;
 static struct nl_cache *nlc;
 static struct genl_family *nl80211;
@@ -707,15 +714,30 @@ err:
 	return NL_SKIP;
 }
 
+typedef struct nlstate {
+	int err;
+	void *state;
+} nlstate;
+
 static int
-dev_handler(struct nl_msg *msg,void *arg __attribute__ ((unused))){
+dev_handler(struct nl_msg *msg,void *arg){
 	struct genlmsghdr *gnlh = nlmsg_data(nlmsg_hdr(msg));
         struct nlattr *tb_msg[NL80211_ATTR_MAX + 1];
+	nl80211_dev_state *devstate;
 	unsigned wiphy;
+	nlstate *nls;
+	int idx;
 
+	nls = arg;
+	devstate = nls->state;
 	nla_parse(tb_msg, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0),
 		  genlmsg_attrlen(gnlh, 0), NULL);
+	idx = nla_get_u32(tb_msg[NL80211_ATTR_IFINDEX]);
+	if(idx != devstate->idx){
+		return NL_SKIP;
+	}
 	wiphy = nla_get_u32(tb_msg[NL80211_ATTR_WIPHY]);
+	devstate->phy = wiphy;
 	diagnostic("PHY %u %s %d",wiphy,
 			nla_get_string(tb_msg[NL80211_ATTR_IFNAME]),
 			nla_get_u32(tb_msg[NL80211_ATTR_IFINDEX]));
@@ -724,10 +746,13 @@ dev_handler(struct nl_msg *msg,void *arg __attribute__ ((unused))){
 
 static int
 nl80211_cmd(enum nl80211_commands cmd,int flags,int(*handler)(struct nl_msg *,void *),
-						int attr,uint32_t arg){
+					void *state,int attr,uint32_t arg){
 	struct nl_cb *cb = NULL,*scb = NULL;
 	struct nl_msg *msg;
-	int err;
+	nlstate nls = {
+		.state = state,
+		.err = 0,
+	};
 
 	if((msg = nlmsg_alloc()) == NULL){
 		diagnostic("Couldn't allocate netlink msg (%s?)",strerror(errno));
@@ -743,17 +768,16 @@ nl80211_cmd(enum nl80211_commands cmd,int flags,int(*handler)(struct nl_msg *,vo
 	}
 	genlmsg_put(msg,0,0,genl_family_get_id(nl80211),0,flags,cmd,0);
 	NLA_PUT_U32(msg,attr,arg);
-	nl_cb_set(cb,NL_CB_VALID,NL_CB_CUSTOM,handler,&err);
+	nl_cb_set(cb,NL_CB_VALID,NL_CB_CUSTOM,handler,&nls);
 	nl_socket_set_cb(nl,scb);
 	if(nl_send_auto_complete(nl,msg) < 0){
 		diagnostic("Couldn't send msg (%s?)",strerror(errno));
 		goto err;
 	}
-	nl_cb_err(cb,NL_CB_CUSTOM,error_handler,&err);
-	nl_cb_set(cb,NL_CB_FINISH,NL_CB_CUSTOM,finish_handler,&err);
-	nl_cb_set(cb,NL_CB_ACK,NL_CB_CUSTOM,ack_handler,&err);
-	err = 0;
-	while(!err){
+	nl_cb_err(cb,NL_CB_CUSTOM,error_handler,&nls);
+	nl_cb_set(cb,NL_CB_FINISH,NL_CB_CUSTOM,finish_handler,&nls);
+	nl_cb_set(cb,NL_CB_ACK,NL_CB_CUSTOM,ack_handler,&nls);
+	while(!nls.err){
 		nl_recvmsgs(nl,cb);
 	}
 	nl_cb_put(scb);
@@ -829,25 +853,31 @@ int close_nl80211(void){
 }
 
 int iface_nl80211_info(const interface *i,nl80211_info *nli){
-	int idx;
+	nl80211_dev_state devstate;
 
+	devstate.idx = idx_of_iface(i);
+	devstate.iftype = NULL;
+	devstate.phy = -1;
+	memset(nli,0,sizeof(*nli));
 	Pthread_mutex_lock(&nllock);
 	if(!nl){
-		Pthread_mutex_unlock(&nllock);
-		return -1;
-	}
-	memset(nli,0,sizeof(*nli));
-	idx = idx_of_iface(i);
-	if(nl80211_cmd(NL80211_CMD_GET_WIPHY,NLM_F_DUMP,phy_handler,
-				NL80211_ATTR_WIPHY,0)){
-		Pthread_mutex_unlock(&nllock);
-		return -1;
+		goto done;
 	}
 	if(nl80211_cmd(NL80211_CMD_GET_INTERFACE,NLM_F_DUMP,dev_handler,
-					NL80211_ATTR_IFINDEX,idx)){
-		Pthread_mutex_unlock(&nllock);
-		return -1;
+				&devstate,NL80211_ATTR_IFINDEX,devstate.idx)){
+		goto done;
+	}
+	if(devstate.phy < 0){
+		goto done;
+	}
+	if(nl80211_cmd(NL80211_CMD_GET_WIPHY,NLM_F_DUMP,phy_handler,
+				NULL,NL80211_ATTR_WIPHY,devstate.phy)){
+		goto done;
 	}
 	Pthread_mutex_unlock(&nllock);
 	return 0;
+
+done:
+	Pthread_mutex_unlock(&nllock);
+	return -1;
 }
