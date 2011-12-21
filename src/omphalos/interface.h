@@ -118,6 +118,7 @@ typedef struct interface {
 		SETTINGS_INVALID,
 		SETTINGS_VALID_ETHTOOL,
 		SETTINGS_VALID_WEXT,
+		SETTINGS_VALID_NL80211,
 	} settings_valid;	// set if the settings field can be trusted
 	union {
 		struct ethtool_cmd ethtool;	// ethtool settings info

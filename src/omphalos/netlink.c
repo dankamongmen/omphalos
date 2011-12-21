@@ -815,8 +815,12 @@ handle_newlink_locked(interface *iface,const struct ifinfomsg *ii,const struct n
 		if((iface->busname = lookup_bus(iface->drv.bus_info,&iface->topinfo)) == NULL){
 			iface->topinfo.devname = wcsdup(name_virtual_device(ii,&iface->drv));
 		}else{
-			// Try to get detailed wireless info first, falling back to ethtool.
-			if(iface_wireless_info(iface->name,&iface->settings.wext) == 0){
+			// Try to get detailed wireless info first (first from
+			// nl80211, then wireless extensions), falling back to
+			// ethtool. We're not guaranteed anything, really.
+			if(iface_nl80211_info(iface,&iface->settings.nl80211) == 0){
+				iface->settings_valid = SETTINGS_VALID_NL80211;
+			}else if(iface_wireless_info(iface->name,&iface->settings.wext) == 0){
 				iface->settings_valid = SETTINGS_VALID_WEXT;
 			}else if(iface_ethtool_info(iface->name,&iface->settings.ethtool) == 0){
 				iface->settings_valid = SETTINGS_VALID_ETHTOOL;
@@ -1027,7 +1031,6 @@ netlink_thread(void){
 		while((events = poll(pfd,sizeof(pfd) / sizeof(*pfd),-1)) == 0){
 			diagnostic("Spontaneous wakeup on netlink socket %d",pfd[0].fd);
 		}
-#include <omphalos/nl80211.h>
 		if(events < 0){
 			if(errno != EINTR){
 				diagnostic("Error polling core sockets (%s?)",strerror(errno));

@@ -14,6 +14,7 @@
 #include <omphalos/nl80211.h>
 #include <netlink/genl/genl.h>
 #include <netlink/genl/ctrl.h>
+#include <omphalos/interface.h>
 #include <netlink/genl/family.h>
 
 static struct nl_sock *nl;
@@ -823,4 +824,9 @@ int close_nl80211(void){
 	nl_socket_free(nl);
 	assert(pthread_mutex_unlock(&nllock) == 0);
 	return 0;
+}
+
+int iface_nl80211_info(const interface *i,nl80211_info *nl){
+	assert(i && nl);
+	return -1;
 }
