@@ -1382,6 +1382,9 @@ static const wchar_t *helps[] = {
 	L"       export pilfered passwords, cookies, and identifying data",
 	L"'c': crypto configuration",
 	L"       configure algorithm stepdown, WEP/WPA cracking, SSL MitM", */
+	L"'q': quit                     ctrl+'L': redraw the screen",
+	L"'e': view environment details 'h': toggle this help display",
+	L"'v': view interface details   'n': view networking details",
 	L"'⏎Enter': browse interface    '⌫BkSpc': leave interface browser",
 	L"'k'/'↑': previous selection   'j'/'↓': next selection",
 	L"'⇞PgUp': previous page        '⇟PgDwn': next page",
@@ -1392,9 +1395,6 @@ static const wchar_t *helps[] = {
 	L"'r': reset selection's stats  'D': reresolve selection",
 	L"'d': bring down device        'p': toggle promiscuity",
 	L"'s': toggle sniffing, bringing up interface if down",
-	L"'v': view interface details   'n': view networking details",
-	L"'e': view environment details 'h': toggle this help display",
-	L"'q': quit                     ctrl+'L': redraw the screen",
 	NULL
 };
 
