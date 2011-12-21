@@ -279,10 +279,11 @@ int send_tx_frame(interface *i,void *frame){
 			}
 			ret |= r < 0 ? -1 : 0;
 		}
+		thdr->tp_status = TP_STATUS_AVAILABLE;
 	}else{
+		abort_tx_frame(i,frame);
 		ret = 0;
 	}
-	thdr->tp_status = TP_STATUS_AVAILABLE;
 	return ret;
 }
 
@@ -291,5 +292,7 @@ void abort_tx_frame(interface *i,void *frame){
 
 	++i->txaborts;
 	thdr->tp_status = TP_STATUS_AVAILABLE;
-	diagnostic("Aborted TX %ju on %s",i->txaborts,i->name);
+	if(octx->mode != OMPHALOS_MODE_SILENT){
+		diagnostic("Aborted TX %ju on %s",i->txaborts,i->name);
+	}
 }
