@@ -202,12 +202,30 @@ process_reverse_lookup(const char *buf,int *fam,void *addr){
 	// from 'in-addr.arpa' and exit.
 	chunk = buf;
 	for(quad = 0 ; quad < 4 ; ++quad){
+		int classless = 0;
+
 		for(c = chunk ; c - chunk < 4 ; ++c){
 			if(isdigit(*c)){
 				q[quad][c - chunk] = *c;
 			}else if(*c == '.'){
-				q[quad][c - chunk] = '.';
+				if(classless){ // End of classless delegation
+					classless = 0;
+					chunk = c + 1; // throw it away
+					continue;
+				}
+				if(quad){
+					q[quad][c - chunk] = '.';
+					q[quad][c - chunk + 1] = '\0';
+				}else{
+					q[quad][c - chunk] = '\0';
+				}
 				break;
+			}else if((*c == '-' || *c == '/') && quad == 1 && !classless){
+				// Start of classless IN-ADDR.ARPA delegation:
+				//   d.netbase-maskbits.c.b.a.in-addr.arpa
+				classless = 1;
+				chunk = c + 1; // reset chunk, throw it away
+				continue;
 			}else{
 				return -1;
 			}
@@ -215,14 +233,12 @@ process_reverse_lookup(const char *buf,int *fam,void *addr){
 		if(c - chunk == 4){
 			return -1;
 		}
-		q[quad][c - chunk + 1] = '\0';
 		chunk = c + 1;
 	}
 	*obuf = '\0';
-	while(quad--){
+	while(quad--){ // FIXME we can get rid of this. build up obuf directly.
 		strcat(obuf,q[quad]);
 	}
-	obuf[xlen] = '\0';
 	if(inet_pton(AF_INET,obuf,addr) != 1){
 		return -1;
 	}
