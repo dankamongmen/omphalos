@@ -28,7 +28,7 @@ typedef struct nlstate {
 typedef struct nl80211_dev_state {
 	int idx; 	// INPUT: index of interface
 	int phy;	// OUTPUT: physical index
-	char *iftype;	// OPTOUTPUT: type of interface
+	int mode;	// OUTPUT: mode of interface
 } nl80211_dev_state;
 
 static struct nl_sock *nl;
@@ -718,7 +718,6 @@ dev_handler(struct nl_msg *msg,void *arg){
 	struct genlmsghdr *gnlh = nlmsg_data(nlmsg_hdr(msg));
         struct nlattr *tb_msg[NL80211_ATTR_MAX + 1];
 	nl80211_dev_state *devstate;
-	unsigned wiphy;
 	nlstate *nls;
 	int idx;
 
@@ -730,11 +729,8 @@ dev_handler(struct nl_msg *msg,void *arg){
 	if(idx != devstate->idx){
 		return NL_SKIP;
 	}
-	wiphy = nla_get_u32(tb_msg[NL80211_ATTR_WIPHY]);
-	devstate->phy = wiphy;
-	diagnostic("PHY %u %s %d",wiphy,
-			nla_get_string(tb_msg[NL80211_ATTR_IFNAME]),
-			nla_get_u32(tb_msg[NL80211_ATTR_IFINDEX]));
+	devstate->mode = nla_get_u32(tb_msg[NL80211_ATTR_IFTYPE]);
+	devstate->phy = nla_get_u32(tb_msg[NL80211_ATTR_WIPHY]);
 	return NL_SKIP;
 }
 
@@ -850,7 +846,7 @@ int iface_nl80211_info(const interface *i,nl80211_info *nli){
 	nl80211_dev_state devstate;
 
 	devstate.idx = idx_of_iface(i);
-	devstate.iftype = NULL;
+	devstate.mode = -1;
 	devstate.phy = -1;
 	Pthread_mutex_lock(&nllock);
 	if(!nl){
@@ -860,13 +856,14 @@ int iface_nl80211_info(const interface *i,nl80211_info *nli){
 				&devstate,NL80211_ATTR_IFINDEX,devstate.idx)){
 		goto done;
 	}
-	if(devstate.phy < 0){
+	if(devstate.phy < 0 || devstate.mode < 0){
 		goto done;
 	}
 	if(nl80211_cmd(NL80211_CMD_GET_WIPHY,NLM_F_DUMP,phy_handler,
 				nli,NL80211_ATTR_WIPHY,devstate.phy)){
 		goto done;
 	}
+	nli->mode = devstate.mode;
 	Pthread_mutex_unlock(&nllock);
 	return 0;
 
