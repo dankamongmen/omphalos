@@ -8,6 +8,7 @@
 #include <omphalos/diag.h>
 #include <linux/nl80211.h>
 #include <linux/netlink.h>
+#include <omphalos/util.h>
 #include <netlink/socket.h>
 #include <netlink/netlink.h>
 #include <linux/rtnetlink.h>
@@ -722,7 +723,8 @@ dev_handler(struct nl_msg *msg,void *arg __attribute__ ((unused))){
 }
 
 static int
-nl80211_cmd(enum nl80211_commands cmd,int flags,int(*handler)(struct nl_msg *,void *)){
+nl80211_cmd(enum nl80211_commands cmd,int flags,int(*handler)(struct nl_msg *,void *),
+						int attr,uint32_t arg){
 	struct nl_cb *cb = NULL,*scb = NULL;
 	struct nl_msg *msg;
 	int err;
@@ -740,6 +742,7 @@ nl80211_cmd(enum nl80211_commands cmd,int flags,int(*handler)(struct nl_msg *,vo
 		goto err;
 	}
 	genlmsg_put(msg,0,0,genl_family_get_id(nl80211),0,flags,cmd,0);
+	NLA_PUT_U32(msg,attr,arg);
 	nl_cb_set(cb,NL_CB_VALID,NL_CB_CUSTOM,handler,&err);
 	nl_socket_set_cb(nl,scb);
 	if(nl_send_auto_complete(nl,msg) < 0){
@@ -758,6 +761,7 @@ nl80211_cmd(enum nl80211_commands cmd,int flags,int(*handler)(struct nl_msg *,vo
 	nlmsg_free(msg);
 	return 0;
 
+nla_put_failure: // part of NLA_PUT_*() interface
 err:
 	if(cb){
 		nl_cb_put(cb);
@@ -796,8 +800,6 @@ int open_nl80211(void){
 	/*nl_get_multicast_id(nl,"nl80211","mlme");
 	nl_socket_add_membership(
 	nl_get_multicast_id(nl,"nl80211","config");*/
-	assert(nl80211_cmd(NL80211_CMD_GET_INTERFACE,NLM_F_DUMP,dev_handler) == 0); // FIXME, just exploratory
-	assert(nl80211_cmd(NL80211_CMD_GET_WIPHY,NLM_F_DUMP,phy_handler) == 0); // FIXME, just exploratory
 	assert(pthread_mutex_unlock(&nllock) == 0);
 	return 0;
 
@@ -827,6 +829,21 @@ int close_nl80211(void){
 }
 
 int iface_nl80211_info(const interface *i,nl80211_info *nl){
-	assert(i && nl);
-	return -1;
+	int idx;
+
+	Pthread_mutex_lock(&nllock);
+	memset(nl,0,sizeof(*nl));
+	idx = idx_of_iface(i);
+	if(nl80211_cmd(NL80211_CMD_GET_WIPHY,NLM_F_DUMP,phy_handler,
+				NL80211_ATTR_WIPHY,0)){
+		Pthread_mutex_unlock(&nllock);
+		return -1;
+	}
+	if(nl80211_cmd(NL80211_CMD_GET_INTERFACE,NLM_F_DUMP,dev_handler,
+					NL80211_ATTR_IFINDEX,idx)){
+		Pthread_mutex_unlock(&nllock);
+		return -1;
+	}
+	Pthread_mutex_unlock(&nllock);
+	return 0;
 }
