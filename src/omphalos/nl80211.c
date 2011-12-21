@@ -238,7 +238,7 @@ void print_ampdu_spacing(__u8 spacing)
 	       print_ampdu_space(spacing), spacing);
 }
 
-static void
+/*static void
 print_ht_capability(__u16 cap){
 #define PRINT_HT_CAP(_cond, _str) \
 	do { \
@@ -271,22 +271,22 @@ print_ht_capability(__u16 cap){
 	PRINT_HT_CAP(!(cap & BIT(11)), "Max AMSDU length: 3839 bytes");
 	PRINT_HT_CAP((cap & BIT(11)), "Max AMSDU length: 7935 bytes");
 
-	/*
-	 * For beacons and probe response this would mean the BSS
-	 * does or does not allow the usage of DSSS/CCK HT40.
-	 * Otherwise it means the STA does or does not use
-	 * DSSS/CCK HT40.
-	 */
+	//
+	// For beacons and probe response this would mean the BSS
+	// does or does not allow the usage of DSSS/CCK HT40.
+	// Otherwise it means the STA does or does not use
+	// DSSS/CCK HT40.
+	//
 	PRINT_HT_CAP((cap & BIT(12)), "DSSS/CCK HT40");
 	PRINT_HT_CAP(!(cap & BIT(12)), "No DSSS/CCK HT40");
 
-	/* BIT(13) is reserved */
+	// BIT(13) is reserved
 
 	PRINT_HT_CAP((cap & BIT(14)), "40 MHz Intolerant");
 
 	PRINT_HT_CAP((cap & BIT(15)), "L-SIG TXOP protection");
 #undef PRINT_HT_CAP
-}
+}*/
 
 void print_ht_mcs(const __u8 *mcs)
 {
@@ -354,7 +354,7 @@ ack_handler(struct nl_msg *msg __attribute__ ((unused)),void *arg){
 }
 
 static int
-valid_handler(struct nl_msg *msg,void *arg __attribute__ ((unused))){
+phy_handler(struct nl_msg *msg,void *arg __attribute__ ((unused))){
 	struct nlattr *tb_msg[NL80211_ATTR_MAX + 1];
 	struct genlmsghdr *gnlh = nlmsg_data(nlmsg_hdr(msg));
 
@@ -370,20 +370,20 @@ valid_handler(struct nl_msg *msg,void *arg __attribute__ ((unused))){
 		[NL80211_FREQUENCY_ATTR_MAX_TX_POWER] = { .type = NLA_U32 },
 	};
 
-	struct nlattr *tb_rate[NL80211_BITRATE_ATTR_MAX + 1];
-	static struct nla_policy rate_policy[NL80211_BITRATE_ATTR_MAX + 1] = {
+	//struct nlattr *tb_rate[NL80211_BITRATE_ATTR_MAX + 1];
+	/*static struct nla_policy rate_policy[NL80211_BITRATE_ATTR_MAX + 1] = {
 		[NL80211_BITRATE_ATTR_RATE] = { .type = NLA_U32 },
 		[NL80211_BITRATE_ATTR_2GHZ_SHORTPREAMBLE] = { .type = NLA_FLAG },
-	};
+	};*/
 
 	struct nlattr *nl_band;
 	struct nlattr *nl_freq;
-	struct nlattr *nl_rate;
-	struct nlattr *nl_mode;
-	struct nlattr *nl_cmd;
-	struct nlattr *nl_if, *nl_ftype;
+	//struct nlattr *nl_rate;
+	//struct nlattr *nl_mode;
+	//struct nlattr *nl_cmd;
+	//struct nlattr *nl_if, *nl_ftype;
 	int bandidx = 1;
-	int rem_band, rem_freq, rem_rate, rem_mode, rem_cmd, rem_ftype, rem_if;
+	int rem_band, rem_freq;//, rem_rate, rem_mode, rem_cmd, rem_ftype, rem_if;
 	int open;
 
 	nla_parse(tb_msg, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0),
@@ -394,7 +394,7 @@ valid_handler(struct nl_msg *msg,void *arg __attribute__ ((unused))){
 
 	if (tb_msg[NL80211_ATTR_WIPHY_NAME])
 		diagnostic("Wiphy %s", nla_get_string(tb_msg[NL80211_ATTR_WIPHY_NAME]));
-
+	
 	nla_for_each_nested(nl_band, tb_msg[NL80211_ATTR_WIPHY_BANDS], rem_band) {
 		diagnostic("\tBand %d:", bandidx);
 		bandidx++;
@@ -402,6 +402,7 @@ valid_handler(struct nl_msg *msg,void *arg __attribute__ ((unused))){
 		nla_parse(tb_band, NL80211_BAND_ATTR_MAX, nla_data(nl_band),
 			  nla_len(nl_band), NULL);
 
+		/*
 #ifdef NL80211_BAND_ATTR_HT_CAPA
 		if (tb_band[NL80211_BAND_ATTR_HT_CAPA]) {
 			__u16 cap = nla_get_u16(tb_band[NL80211_BAND_ATTR_HT_CAPA]);
@@ -419,6 +420,7 @@ valid_handler(struct nl_msg *msg,void *arg __attribute__ ((unused))){
 		    nla_len(tb_band[NL80211_BAND_ATTR_HT_MCS_SET]) == 16)
 			print_ht_mcs(nla_data(tb_band[NL80211_BAND_ATTR_HT_MCS_SET]));
 #endif
+		*/
 
 		diagnostic("\t\tFrequencies:");
 
@@ -458,6 +460,7 @@ valid_handler(struct nl_msg *msg,void *arg __attribute__ ((unused))){
 			diagnostic("");
 		}
 
+		/*
 		diagnostic("\t\tBitrates (non-HT):");
 
 		nla_for_each_nested(nl_rate, tb_band[NL80211_BAND_ATTR_RATES], rem_rate) {
@@ -473,8 +476,10 @@ valid_handler(struct nl_msg *msg,void *arg __attribute__ ((unused))){
 				diagnostic(")");
 			diagnostic("");
 		}
+		*/
 	}
 
+	/*
 	if (tb_msg[NL80211_ATTR_MAX_NUM_SCAN_SSIDS])
 		diagnostic("\tmax # scan SSIDs: %d",
 		       nla_get_u8(tb_msg[NL80211_ATTR_MAX_NUM_SCAN_SSIDS]));
@@ -502,7 +507,7 @@ valid_handler(struct nl_msg *msg,void *arg __attribute__ ((unused))){
 		unsigned char coverage;
 
 		coverage = nla_get_u8(tb_msg[NL80211_ATTR_WIPHY_COVERAGE_CLASS]);
-		/* See handle_distance() for an explanation where the '450' comes from */
+		// See handle_distance() for an explanation where the '450' comes from
 		diagnostic("\tCoverage class: %d (up to %dm)", coverage, 450 * coverage);
 	}
 
@@ -693,6 +698,7 @@ broken_combination:
 				diagnostic("\t\t * wake up on rfkill release");
 		}
 	}
+	*/
 	return NL_SKIP;
 
 err:
@@ -700,7 +706,22 @@ err:
 }
 
 static int
-nl80211_cmd(enum nl80211_commands cmd,int flags){
+dev_handler(struct nl_msg *msg,void *arg __attribute__ ((unused))){
+	struct genlmsghdr *gnlh = nlmsg_data(nlmsg_hdr(msg));
+        struct nlattr *tb_msg[NL80211_ATTR_MAX + 1];
+	unsigned wiphy;
+
+	nla_parse(tb_msg, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0),
+		  genlmsg_attrlen(gnlh, 0), NULL);
+	wiphy = nla_get_u32(tb_msg[NL80211_ATTR_WIPHY]);
+	diagnostic("PHY %u %s %d",wiphy,
+			nla_get_string(tb_msg[NL80211_ATTR_IFNAME]),
+			nla_get_u32(tb_msg[NL80211_ATTR_IFINDEX]));
+	return NL_SKIP;
+}
+
+static int
+nl80211_cmd(enum nl80211_commands cmd,int flags,int(*handler)(struct nl_msg *,void *)){
 	struct nl_cb *cb = NULL,*scb = NULL;
 	struct nl_msg *msg;
 	int err;
@@ -718,7 +739,7 @@ nl80211_cmd(enum nl80211_commands cmd,int flags){
 		goto err;
 	}
 	genlmsg_put(msg,0,0,genl_family_get_id(nl80211),0,flags,cmd,0);
-	nl_cb_set(cb,NL_CB_VALID,NL_CB_CUSTOM,valid_handler,&err);
+	nl_cb_set(cb,NL_CB_VALID,NL_CB_CUSTOM,handler,&err);
 	nl_socket_set_cb(nl,scb);
 	if(nl_send_auto_complete(nl,msg) < 0){
 		diagnostic("Couldn't send msg (%s?)",strerror(errno));
@@ -774,7 +795,8 @@ int open_nl80211(void){
 	/*nl_get_multicast_id(nl,"nl80211","mlme");
 	nl_socket_add_membership(
 	nl_get_multicast_id(nl,"nl80211","config");*/
-	assert(nl80211_cmd(NL80211_CMD_GET_WIPHY,NLM_F_DUMP) == 0); // FIXME, just exploratory
+	assert(nl80211_cmd(NL80211_CMD_GET_INTERFACE,NLM_F_DUMP,dev_handler) == 0); // FIXME, just exploratory
+	assert(nl80211_cmd(NL80211_CMD_GET_WIPHY,NLM_F_DUMP,phy_handler) == 0); // FIXME, just exploratory
 	assert(pthread_mutex_unlock(&nllock) == 0);
 	return 0;
 
