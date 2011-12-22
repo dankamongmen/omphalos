@@ -217,7 +217,7 @@ handle_lltd_tlvs(omphalos_packet *op,const void *frame,size_t len){
 					diagnostic("%s bad LLTD RepeatTable (%u) on %s",__func__,tlv->length,op->i->name);
 				}
 			break;}default:
-				diagnostic("%s unknown TLV (%u) on %s",__func__,tlv->type,op->i->name);
+				diagnostic("%s unknown TLV (0x%02x) on %s",__func__,tlv->type,op->i->name);
 				break;
 		}
 		// FIXME process TLV's
