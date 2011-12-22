@@ -13,6 +13,7 @@
 #include <omphalos/pci.h>
 #include <omphalos/diag.h>
 #include <omphalos/iana.h>
+#include <omphalos/lltd.h>
 #include <omphalos/pcap.h>
 #include <sys/capability.h>
 #include <omphalos/privs.h>
@@ -363,6 +364,9 @@ int omphalos_init(const omphalos_ctx *pctx){
 	if(pthread_setspecific(omphalos_ctx_key,pctx)){
 		return -1;
 	}
+	if(init_lltd_service()){
+		return -1;
+	}
 	if(pctx->pcapfn){
 		if(handle_pcap_file(pctx)){
 			return -1;
@@ -383,6 +387,7 @@ void omphalos_cleanup(const omphalos_ctx *pctx){
 	cleanup_naming();
 	free_routes();
 	cleanup_interfaces();
+	stop_lltd_service();
 	cleanup_iana_naming();
 	stop_pci_support();
 	stop_usb_support();

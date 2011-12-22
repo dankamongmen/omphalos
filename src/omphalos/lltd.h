@@ -12,6 +12,9 @@ extern "C" {
 struct interface;
 struct omphalos_packet;
 
+int init_lltd_service(void);
+int stop_lltd_service(void);
+
 void handle_lltd_packet(struct omphalos_packet *,const void *,size_t);
 
 int initiate_lltd(int,struct interface *,const void *);

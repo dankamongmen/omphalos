@@ -1,3 +1,4 @@
+#include <iconv.h>
 #include <omphalos/tx.h>
 #include <omphalos/diag.h>
 #include <omphalos/lltd.h>
@@ -91,6 +92,53 @@ struct lltd_characteristics {
 
 #define LLTD_SSIDLEN_MAX 32
 
+static iconv_t ucs2le;
+static pthread_mutex_t iconvlock = PTHREAD_MUTEX_INITIALIZER;
+
+int init_lltd_service(void){
+	if((ucs2le = iconv_open("UTF-8","UCS-2LE")) == NULL){
+		return -1;
+	}
+	return 0;
+}
+
+int stop_lltd_service(void){
+	if(iconv_close(ucs2le)){
+		return -1;
+	}
+	return 0;
+}
+
+char *ucs2le_to_utf8(char *ucs2,size_t len){
+	size_t out = len / 2 + 1;
+	char *r,**end;
+
+	if(len % 2){
+		diagnostic("%s bad UCS-2LE length %zu",__func__,len);
+		return NULL;
+	}
+	if((r = malloc(out)) == NULL){
+		return NULL;
+	}
+	r[out - 1] = '\0';
+	end = &r;
+	pthread_mutex_lock(&iconvlock);
+	iconv(ucs2le,&ucs2,&len,end,&out);
+	pthread_mutex_unlock(&iconvlock);
+	if(len){
+		diagnostic("%s couldn't convert UCS-2LE",__func__);
+		free(r);
+		return NULL;
+	}
+	if(!out){
+		diagnostic("%s UCS-2LE too long",__func__);
+		free(r);
+		return NULL;
+	}
+	diagnostic("CONVERTED %s",r);
+	return r;
+}
+
 static void
 handle_lltd_tlvs(omphalos_packet *op,const void *frame,size_t len){
 	const struct lltdtlv *tlv = frame;
@@ -173,8 +221,11 @@ handle_lltd_tlvs(omphalos_packet *op,const void *frame,size_t len){
 					diagnostic("%s bad LLTD SupportInfo (%u) on %s",__func__,tlv->length,op->i->name);
 				}
 			break;}case LLTD_FRIENDLYNAME:{
+				// Buffalo routers encode the FriendlyName
+				// directly (UCS-2LE) in violation of the spec!
 				if(tlv->length){
-					diagnostic("%s bad LLTD FriendlyName (%u) on %s",__func__,tlv->length,op->i->name);
+					char *r = ucs2le_to_utf8((char *)dat,tlv->length);
+					assert(r);
 				}
 			break;}case LLTD_UUID:{
 				if(tlv->length != 16){
