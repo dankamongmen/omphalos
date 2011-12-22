@@ -51,23 +51,23 @@ struct lltdtlv {
 } __attribute__ ((packed)) lltdtlv;
 
 enum {
-	LLTD_ENDOFPROP = 0,
-	LLTD_HOSTID = 1,
-	LLTD_CHARACTERISTICS = 2,
-	LLTD_PHYMEDIUM = 3,
-	LLTD_WIRELESSMODE = 4,
-	LLTD_BSSID = 5,
-	LLTD_SSID = 6,
-	LLTD_IPV4 = 7,
-	LLTD_IPV6 = 8,
-	LLTD_MAXRATE = 9,
-	LLTD_PERFCNTFREQ = 10,
-	LLTD_LINKSPEED = 12,
-	LLTD_RSSI = 13,
-	LLTD_ICON = 14,
-	LLTD_NAME = 15,
-	LLTD_SUPPORTINFO = 16,
-	LLTD_FRIENDLYNAME = 17,
+	LLTD_ENDOFPROP = 0x0,
+	LLTD_HOSTID = 0x1,
+	LLTD_CHARACTERISTICS = 0x2,
+	LLTD_PHYMEDIUM = 0x3,
+	LLTD_WIRELESSMODE = 0x4,
+	LLTD_BSSID = 0x5,
+	LLTD_SSID = 0x6,
+	LLTD_IPV4 = 0x7,
+	LLTD_IPV6 = 0x8,
+	LLTD_MAXRATE = 0x9,
+	LLTD_PERFCNTFREQ = 0xa,
+	LLTD_LINKSPEED = 0xc,
+	LLTD_RSSI = 0xd,
+	LLTD_ICON = 0xe,
+	LLTD_NAME = 0xf,
+	LLTD_SUPPORTINFO = 0x10,
+	LLTD_FRIENDLYNAME = 0x11,
 	LLTD_UUID = 0x12,
 	LLTD_HARDWAREID = 0x13,
 	LLTD_QOSCHARACTERISTICS = 0x14,
@@ -80,6 +80,17 @@ enum {
 	LLTD_REPEATER_AP_TABLE = 0x1c,
 };
 
+struct lltd_characteristics {
+	unsigned pubnat: 1;
+	unsigned privnat: 1;
+	unsigned fulldpx: 1;
+	unsigned httpmgmt: 1;
+	unsigned loopback: 1;
+	unsigned reserved: 11;
+} __attribute__ ((packed));
+
+#define LLTD_SSIDLEN_MAX 32
+
 static void
 handle_lltd_tlvs(omphalos_packet *op,const void *frame,size_t len){
 	const struct lltdtlv *tlv = frame;
@@ -87,21 +98,125 @@ handle_lltd_tlvs(omphalos_packet *op,const void *frame,size_t len){
 
 	// Every LLTD frame must have an End-of-Properties TLV
 	while(len >= sizeof(*tlv)){
+		const void *dat;
+
 		if(len < tlv->length + sizeof(*tlv)){
 			diagnostic("%s bad LLTD TLV length (%u) on %s",__func__,tlv->length,op->i->name);
 			return;
 		}
+		dat = (const char *)tlv + sizeof(*tlv);
 		switch(tlv->type){
-			case LLTD_ENDOFPROP:
+			case LLTD_ENDOFPROP:{
 				eop = 1;
-				break;
-			case LLTD_HOSTID:
+			break;}case LLTD_HOSTID:{
 				if(tlv->length != op->i->addrlen){
 					diagnostic("%s bad LLTD HostID (%u) on %s",__func__,tlv->length,op->i->name);
 				}
 				// FIXME
-				break;
-			default:
+			break;}case LLTD_CHARACTERISTICS:{
+				const struct lltd_characteristics *chars = dat;
+				if(tlv->length != sizeof(*chars)){
+					diagnostic("%s bad LLTD characteristics (%u) on %s",__func__,tlv->length,op->i->name);
+				}
+			break;}case LLTD_PHYMEDIUM:{
+				// FIXME parse up the ifType MIB
+				if(tlv->length != 4){
+					diagnostic("%s bad LLTD ifType (%u) on %s",__func__,tlv->length,op->i->name);
+				}
+			break;}case LLTD_WIRELESSMODE:{
+				if(tlv->length != 1){
+					diagnostic("%s bad LLTD IEEE 802.11 (%u) on %s",__func__,tlv->length,op->i->name);
+				}
+			break;}case LLTD_BSSID:{
+				if(tlv->length != ETH_ALEN){
+					diagnostic("%s bad LLTD BSSID (%u) on %s",__func__,tlv->length,op->i->name);
+				}
+			break;}case LLTD_SSID:{
+				if(tlv->length > LLTD_SSIDLEN_MAX){
+					diagnostic("%s bad LLTD SSID (%u) on %s",__func__,tlv->length,op->i->name);
+				}
+			break;}case LLTD_IPV4:{
+				if(tlv->length != 4){
+					diagnostic("%s bad LLTD IPv4 (%u) on %s",__func__,tlv->length,op->i->name);
+				}
+			break;}case LLTD_IPV6:{
+				if(tlv->length != 16){
+					diagnostic("%s bad LLTD IPv6 (%u) on %s",__func__,tlv->length,op->i->name);
+				}
+			break;}case LLTD_MAXRATE:{
+				// Units of 0.5Mbps, in NBO
+				if(tlv->length != 2){
+					diagnostic("%s bad LLTD maxrate (%u) on %s",__func__,tlv->length,op->i->name);
+				}
+			break;}case LLTD_PERFCNTFREQ:{
+				if(tlv->length != 8){
+					diagnostic("%s bad LLTD PerfCntRate (%u) on %s",__func__,tlv->length,op->i->name);
+				}
+			break;}case LLTD_LINKSPEED:{
+				if(tlv->length != 4){
+					diagnostic("%s bad LLTD MaxLinkSpeed (%u) on %s",__func__,tlv->length,op->i->name);
+				}
+			break;}case LLTD_RSSI:{
+				if(tlv->length != 4){
+					diagnostic("%s bad LLTD RSSI (%u) on %s",__func__,tlv->length,op->i->name);
+				}
+			break;}case LLTD_ICON:{
+				if(tlv->length){
+					diagnostic("%s bad LLTD Icon (%u) on %s",__func__,tlv->length,op->i->name);
+				}
+			break;}case LLTD_NAME:{
+				if(tlv->length < 2 || tlv->length > 32){
+					diagnostic("%s bad LLTD MachineName (%u) on %s",__func__,tlv->length,op->i->name);
+				}
+			break;}case LLTD_SUPPORTINFO:{
+				if(tlv->length < 1 || tlv->length > 64){
+					diagnostic("%s bad LLTD SupportInfo (%u) on %s",__func__,tlv->length,op->i->name);
+				}
+			break;}case LLTD_FRIENDLYNAME:{
+				if(tlv->length){
+					diagnostic("%s bad LLTD FriendlyName (%u) on %s",__func__,tlv->length,op->i->name);
+				}
+			break;}case LLTD_UUID:{
+				if(tlv->length != 16){
+					diagnostic("%s bad LLTD UUID (%u) on %s",__func__,tlv->length,op->i->name);
+				}
+			break;}case LLTD_HARDWAREID:{
+				if(tlv->length){
+					diagnostic("%s bad LLTD HwID (%u) on %s",__func__,tlv->length,op->i->name);
+				}
+			break;}case LLTD_QOSCHARACTERISTICS:{
+				if(tlv->length != 4){
+					diagnostic("%s bad LLTD QoSCharacteristics (%u) on %s",__func__,tlv->length,op->i->name);
+				}
+			break;}case LLTD_80211_PHYMEDIUM:{
+				if(tlv->length != 1){
+					diagnostic("%s bad LLTD 80211PhyMedium (%u) on %s",__func__,tlv->length,op->i->name);
+				}
+			break;}case LLTD_AP_TABLE:{
+				if(tlv->length){
+					diagnostic("%s bad LLTD APTable (%u) on %s",__func__,tlv->length,op->i->name);
+				}
+			break;}case LLTD_ICON_DETAIL:{
+				if(tlv->length){
+					diagnostic("%s bad LLTD DetailIcon (%u) on %s",__func__,tlv->length,op->i->name);
+				}
+			break;}case LLTD_SEESLIST:{
+				if(tlv->length != 2){
+					diagnostic("%s bad LLTD SeesList (%u) on %s",__func__,tlv->length,op->i->name);
+				}
+			break;}case LLTD_COMPONENTS:{
+				if(tlv->length){
+					diagnostic("%s bad LLTD ComponentTable (%u) on %s",__func__,tlv->length,op->i->name);
+				}
+			break;}case LLTD_REPEATER_LINEAGE:{
+				if(tlv->length % ETH_ALEN){
+					diagnostic("%s bad LLTD RepeatLineage (%u) on %s",__func__,tlv->length,op->i->name);
+				}
+			break;}case LLTD_REPEATER_AP_TABLE:{
+				if(tlv->length){
+					diagnostic("%s bad LLTD RepeatTable (%u) on %s",__func__,tlv->length,op->i->name);
+				}
+			break;}default:
 				diagnostic("%s unknown TLV (%u) on %s",__func__,tlv->type,op->i->name);
 				break;
 		}
@@ -113,6 +228,17 @@ handle_lltd_tlvs(omphalos_packet *op,const void *frame,size_t len){
 		diagnostic("%s LLTD lacked EoP on %s",__func__,op->i->name);
 	}
 }
+
+struct lltddischdr {
+	uint16_t gennum;
+	uint16_t numstations;
+} __attribute__ ((packed));
+
+struct lltdhellohdr {
+	uint16_t gennum;
+	char curmapper[ETH_ALEN];
+	char appmapper[ETH_ALEN];
+} __attribute__ ((packed));
 
 static void
 handle_lltd_discovery(omphalos_packet *op,unsigned function,const void *frame,
@@ -130,11 +256,23 @@ handle_lltd_discovery(omphalos_packet *op,unsigned function,const void *frame,
 	dlen = flen - sizeof(*base);
 	switch(function){
 		case TOPDISC_DISCOVER:{
+			const struct lltddischdr *disc;
+
 			// FIXME check for source
-			handle_lltd_tlvs(op,dframe,dlen);					      
+			disc = dframe;
+			dframe = (const char *)dframe + sizeof(*disc);
+			dlen -= sizeof(*disc);
+			if(dlen % ETH_ALEN){ // station list
+				diagnostic("%s malformed LLTD Hello (%zu) on %s",__func__,dlen,op->i->name);
+				return;
+			}
 			break;
-		}case TOPDISC_HELLO:{
-			// FIXME a responder!
+		}case TOPDISC_HELLO:{ // FIXME a responder!
+			const struct lltdhellohdr *hello;
+
+			hello = dframe;
+			dframe = (const char *)dframe + sizeof(*hello);
+			dlen -= sizeof(*hello);
 			handle_lltd_tlvs(op,dframe,dlen);					      
 			break;
 		}case TOPDISC_EMIT:
