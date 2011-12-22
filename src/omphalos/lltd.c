@@ -45,23 +45,98 @@ struct lltdbasehdr {
 	uint16_t seq;
 } __attribute__ ((packed)) lltdbasehdr;
 
+struct lltdtlv {
+	uint8_t type;
+	uint8_t length;
+} __attribute__ ((packed)) lltdtlv;
+
+enum {
+	LLTD_ENDOFPROP = 0,
+	LLTD_HOSTID = 1,
+	LLTD_CHARACTERISTICS = 2,
+	LLTD_PHYMEDIUM = 3,
+	LLTD_WIRELESSMODE = 4,
+	LLTD_BSSID = 5,
+	LLTD_SSID = 6,
+	LLTD_IPV4 = 7,
+	LLTD_IPV6 = 8,
+	LLTD_MAXRATE = 9,
+	LLTD_PERFCNTFREQ = 10,
+	LLTD_LINKSPEED = 12,
+	LLTD_RSSI = 13,
+	LLTD_ICON = 14,
+	LLTD_NAME = 15,
+	LLTD_SUPPORTINFO = 16,
+	LLTD_FRIENDLYNAME = 17,
+	LLTD_UUID = 0x12,
+	LLTD_HARDWAREID = 0x13,
+	LLTD_QOSCHARACTERISTICS = 0x14,
+	LLTD_80211_PHYMEDIUM = 0x15,
+	LLTD_AP_TABLE = 0x16,
+	LLTD_ICON_DETAIL = 0x18,
+	LLTD_SEESLIST = 0x19,
+	LLTD_COMPONENTS = 0x1a,
+	LLTD_REPEATER_LINEAGE = 0x1b,
+	LLTD_REPEATER_AP_TABLE = 0x1c,
+};
+
+static void
+handle_lltd_tlvs(omphalos_packet *op,const void *frame,size_t len){
+	const struct lltdtlv *tlv = frame;
+	int eop = 0;
+
+	// Every LLTD frame must have an End-of-Properties TLV
+	while(len >= sizeof(*tlv)){
+		if(len < tlv->length + sizeof(*tlv)){
+			diagnostic("%s bad LLTD TLV length (%u) on %s",__func__,tlv->length,op->i->name);
+			return;
+		}
+		switch(tlv->type){
+			case LLTD_ENDOFPROP:
+				eop = 1;
+				break;
+			case LLTD_HOSTID:
+				if(tlv->length != op->i->addrlen){
+					diagnostic("%s bad LLTD HostID (%u) on %s",__func__,tlv->length,op->i->name);
+				}
+				// FIXME
+				break;
+			default:
+				diagnostic("%s unknown TLV (%u) on %s",__func__,tlv->type,op->i->name);
+				break;
+		}
+		// FIXME process TLV's
+		len -= sizeof(*tlv) + tlv->length;
+		tlv = (const struct lltdtlv *)((const char *)tlv + sizeof(*tlv) + tlv->length);
+	}
+	if(!eop){
+		diagnostic("%s LLTD lacked EoP on %s",__func__,op->i->name);
+	}
+}
+
 static void
 handle_lltd_discovery(omphalos_packet *op,unsigned function,const void *frame,
 							size_t flen){
-	const struct lltdbasehdr *base;
+	const struct lltdbasehdr *base = frame;
+	const void *dframe;
+	size_t dlen;
 
 	if(flen < sizeof(*base)){
 		diagnostic("%s malformed with %zu on %s",__func__,flen,op->i->name);
 		op->malformed = 1;
 		return ;
 	}
-	base = (const struct lltdbasehdr *)frame;
+	dframe = ((const char *)base + sizeof(*base));
+	dlen = flen - sizeof(*base);
 	switch(function){
 		case TOPDISC_DISCOVER:{
 			// FIXME check for source
+			handle_lltd_tlvs(op,dframe,dlen);					      
 			break;
 		}case TOPDISC_HELLO:{
 			// FIXME a responder!
+			handle_lltd_tlvs(op,dframe,dlen);					      
+			break;
 		}case TOPDISC_EMIT:
 		case TOPDISC_TRAIN:
 		case TOPDISC_PROBE:
