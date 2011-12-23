@@ -65,6 +65,7 @@ enum {
 	LLTD_IPV6 = 0x8,
 	LLTD_MAXRATE = 0x9,
 	LLTD_PERFCNTFREQ = 0xa,
+	LLTD_BUFFALO_UNKNOWN = 0xb,	// Sent by some Buffalo routers
 	LLTD_LINKSPEED = 0xc,
 	LLTD_RSSI = 0xd,
 	LLTD_ICON = 0xe,
@@ -76,6 +77,7 @@ enum {
 	LLTD_QOSCHARACTERISTICS = 0x14,
 	LLTD_80211_PHYMEDIUM = 0x15,
 	LLTD_AP_TABLE = 0x16,
+	LLTD_BUFFALO_UNKNOWN2 = 0x17,	// Sent by some Buffalo routers
 	LLTD_ICON_DETAIL = 0x18,
 	LLTD_SEESLIST = 0x19,
 	LLTD_COMPONENTS = 0x1a,
@@ -280,6 +282,9 @@ handle_lltd_tlvs(omphalos_packet *op,const void *frame,size_t len){
 				if(tlv->length){
 					diagnostic("%s bad LLTD RepeatTable (%u) on %s",__func__,tlv->length,op->i->name);
 				}
+			break;}case LLTD_BUFFALO_UNKNOWN:
+				case LLTD_BUFFALO_UNKNOWN2:{
+				// FIXME unsure what these are
 			break;}default:
 				diagnostic("%s unknown TLV (0x%02x, %ub) on %s",__func__,tlv->type,tlv->length,op->i->name);
 				break;
