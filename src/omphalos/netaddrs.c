@@ -138,9 +138,8 @@ create_l3host(int fam,const void *addr,size_t len){
 	return r;
 }
 
-void name_l3host_absolute(const interface *i,
-			struct l2host *l2,l3host *l3,const char *name,
-			namelevel nlevel){
+void name_l3host_absolute(const interface *i,struct l2host *l2,l3host *l3,
+				const char *name,namelevel nlevel){
 	wchar_t *wname;
 	size_t wlen;
 
@@ -162,9 +161,8 @@ void name_l3host_absolute(const interface *i,
 	}
 }
 
-void wname_l3host_absolute(const interface *i,
-			struct l2host *l2,l3host *l3,const wchar_t *name,
-			namelevel nlevel){
+void wname_l3host_absolute(const interface *i,struct l2host *l2,l3host *l3,
+				const wchar_t *name,namelevel nlevel){
 	pthread_mutex_lock(&l3->nlock);
 	if(l3->nlevel < nlevel){
 		wchar_t *tmp;

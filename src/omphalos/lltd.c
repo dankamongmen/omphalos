@@ -1,8 +1,10 @@
 #include <iconv.h>
+#include <errno.h>
 #include <omphalos/tx.h>
 #include <omphalos/diag.h>
 #include <omphalos/lltd.h>
 #include <omphalos/service.h>
+#include <omphalos/netaddrs.h>
 #include <omphalos/ethernet.h>
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
@@ -97,6 +99,7 @@ static pthread_mutex_t iconvlock = PTHREAD_MUTEX_INITIALIZER;
 
 int init_lltd_service(void){
 	if((ucs2le = iconv_open("UTF-8","UCS-2LE")) == NULL){
+		diagnostic("%s can't convert UCS-2LE to UTF-8 (%s)",__func__,strerror(errno));
 		return -1;
 	}
 	return 0;
@@ -104,6 +107,7 @@ int init_lltd_service(void){
 
 int stop_lltd_service(void){
 	if(iconv_close(ucs2le)){
+		diagnostic("%s error closing iconv (%s)",__func__,strerror(errno));
 		return -1;
 	}
 	return 0;
@@ -111,7 +115,8 @@ int stop_lltd_service(void){
 
 char *ucs2le_to_utf8(char *ucs2,size_t len){
 	size_t out = len / 2 + 1;
-	char *r,**end;
+	int badconvert = 0;
+	char *r,*end;
 
 	if(len % 2){
 		diagnostic("%s bad UCS-2LE length %zu",__func__,len);
@@ -121,11 +126,13 @@ char *ucs2le_to_utf8(char *ucs2,size_t len){
 		return NULL;
 	}
 	r[out - 1] = '\0';
-	end = &r;
+	end = r;
 	pthread_mutex_lock(&iconvlock);
-	iconv(ucs2le,&ucs2,&len,end,&out);
+	if(iconv(ucs2le,&ucs2,&len,&end,&out) == (size_t)-1){
+		badconvert = 1;
+	}
 	pthread_mutex_unlock(&iconvlock);
-	if(len){
+	if(len || badconvert){
 		diagnostic("%s couldn't convert UCS-2LE",__func__);
 		free(r);
 		return NULL;
@@ -135,14 +142,15 @@ char *ucs2le_to_utf8(char *ucs2,size_t len){
 		free(r);
 		return NULL;
 	}
-	diagnostic("CONVERTED %s",r);
 	return r;
 }
 
 static void
 handle_lltd_tlvs(omphalos_packet *op,const void *frame,size_t len){
 	const struct lltdtlv *tlv = frame;
-	int eop = 0;
+	char *name = NULL;
+	int setip = 0;
+	uint32_t ip;
 
 	// Every LLTD frame must have an End-of-Properties TLV
 	while(len >= sizeof(*tlv)){
@@ -155,7 +163,6 @@ handle_lltd_tlvs(omphalos_packet *op,const void *frame,size_t len){
 		dat = (const char *)tlv + sizeof(*tlv);
 		switch(tlv->type){
 			case LLTD_ENDOFPROP:{
-				eop = 1;
 			break;}case LLTD_HOSTID:{
 				if(tlv->length != op->i->addrlen){
 					diagnostic("%s bad LLTD HostID (%u) on %s",__func__,tlv->length,op->i->name);
@@ -187,6 +194,8 @@ handle_lltd_tlvs(omphalos_packet *op,const void *frame,size_t len){
 				if(tlv->length != 4){
 					diagnostic("%s bad LLTD IPv4 (%u) on %s",__func__,tlv->length,op->i->name);
 				}
+				ip = *(const uint32_t *)dat;
+				setip = 1;
 			break;}case LLTD_IPV6:{
 				if(tlv->length != 16){
 					diagnostic("%s bad LLTD IPv6 (%u) on %s",__func__,tlv->length,op->i->name);
@@ -224,8 +233,7 @@ handle_lltd_tlvs(omphalos_packet *op,const void *frame,size_t len){
 				// Buffalo routers encode the FriendlyName
 				// directly (UCS-2LE) in violation of the spec!
 				if(tlv->length){
-					char *r = ucs2le_to_utf8((char *)dat,tlv->length);
-					assert(r);
+					name = ucs2le_to_utf8((char *)dat,tlv->length);
 				}
 			break;}case LLTD_UUID:{
 				if(tlv->length != 16){
@@ -275,8 +283,14 @@ handle_lltd_tlvs(omphalos_packet *op,const void *frame,size_t len){
 		len -= sizeof(*tlv) + tlv->length;
 		tlv = (const struct lltdtlv *)((const char *)tlv + sizeof(*tlv) + tlv->length);
 	}
-	if(!eop){
-		diagnostic("%s LLTD lacked EoP on %s",__func__,op->i->name);
+	if(name){
+		if(setip){
+			struct l3host *l3;
+
+			l3 = lookup_local_l3host(NULL,op->i,op->l2s,AF_INET,&ip);
+			name_l3host_absolute(op->i,op->l2s,l3,name,NAMING_LEVEL_MDNS);
+		}
+		free(name);
 	}
 }
 
