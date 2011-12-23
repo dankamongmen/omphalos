@@ -148,9 +148,8 @@ char *ucs2le_to_utf8(char *ucs2,size_t len){
 static void
 handle_lltd_tlvs(omphalos_packet *op,const void *frame,size_t len){
 	const struct lltdtlv *tlv = frame;
+	const void *ip = NULL,*ip6 = NULL;
 	char *name = NULL;
-	int setip = 0;
-	uint32_t ip;
 
 	// Every LLTD frame must have an End-of-Properties TLV
 	while(len >= sizeof(*tlv)){
@@ -194,12 +193,12 @@ handle_lltd_tlvs(omphalos_packet *op,const void *frame,size_t len){
 				if(tlv->length != 4){
 					diagnostic("%s bad LLTD IPv4 (%u) on %s",__func__,tlv->length,op->i->name);
 				}
-				ip = *(const uint32_t *)dat;
-				setip = 1;
+				ip = dat;
 			break;}case LLTD_IPV6:{
 				if(tlv->length != 16){
 					diagnostic("%s bad LLTD IPv6 (%u) on %s",__func__,tlv->length,op->i->name);
 				}
+				ip6 = dat;
 			break;}case LLTD_MAXRATE:{
 				// Units of 0.5Mbps, in NBO
 				if(tlv->length != 2){
@@ -284,10 +283,14 @@ handle_lltd_tlvs(omphalos_packet *op,const void *frame,size_t len){
 		tlv = (const struct lltdtlv *)((const char *)tlv + sizeof(*tlv) + tlv->length);
 	}
 	if(name){
-		if(setip){
-			struct l3host *l3;
+		struct l3host *l3;
 
-			l3 = lookup_local_l3host(NULL,op->i,op->l2s,AF_INET,&ip);
+		if(ip){
+			l3 = lookup_local_l3host(NULL,op->i,op->l2s,AF_INET,ip);
+			name_l3host_absolute(op->i,op->l2s,l3,name,NAMING_LEVEL_MDNS);
+		}
+		if(ip6){
+			l3 = lookup_local_l3host(NULL,op->i,op->l2s,AF_INET6,ip6);
 			name_l3host_absolute(op->i,op->l2s,l3,name,NAMING_LEVEL_MDNS);
 		}
 		free(name);
