@@ -168,8 +168,9 @@ handle_lltd_tlvs(omphalos_packet *op,const void *frame,size_t len){
 				}
 				// FIXME
 			break;}case LLTD_CHARACTERISTICS:{
+				// Buffalo routers send 4 bytes of characteristics
 				const struct lltd_characteristics *chars = dat;
-				if(tlv->length != sizeof(*chars)){
+				if(tlv->length != sizeof(*chars) && tlv->length != 4){
 					diagnostic("%s bad LLTD characteristics (%u) on %s",__func__,tlv->length,op->i->name);
 				}
 			break;}case LLTD_PHYMEDIUM:{
@@ -221,6 +222,11 @@ handle_lltd_tlvs(omphalos_packet *op,const void *frame,size_t len){
 					diagnostic("%s bad LLTD Icon (%u) on %s",__func__,tlv->length,op->i->name);
 				}
 			break;}case LLTD_NAME:{
+				if(tlv->length == 0){
+					// Some hosts send a 0-byte MachineName, and
+					// need a LargeTLV request to get it FIXME
+					break;
+				}
 				if(tlv->length < 2 || tlv->length > 32){
 					diagnostic("%s bad LLTD MachineName (%u) on %s",__func__,tlv->length,op->i->name);
 				}
