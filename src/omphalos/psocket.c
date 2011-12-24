@@ -8,7 +8,7 @@
 #include <sys/poll.h>
 #include <sys/mman.h>
 #include <sys/socket.h>
-#include <linux/if_arp.h>
+#include <net/if_arp.h>
 #include <omphalos/pci.h>
 #include <omphalos/pcap.h>
 #include <omphalos/diag.h>

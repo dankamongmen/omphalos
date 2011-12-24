@@ -1,5 +1,6 @@
 #include <errno.h>
 #include <ctype.h>
+#include <net/if.h>
 #include <assert.h>
 #include <unistd.h>
 #include <stdarg.h>
@@ -13,7 +14,6 @@
 #include <langinfo.h>
 #include <sys/time.h>
 #include <sys/socket.h>
-#include <linux/if.h>
 
 // The wireless extensions headers are not so fantastic. This workaround comes
 // to us courtesy of Jean II in iwlib.h. Ugh.

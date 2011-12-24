@@ -1,7 +1,7 @@
 #include <limits.h>
 #include <assert.h>
 #include <sys/socket.h>
-#include <linux/if_arp.h>
+#include <net/if_arp.h>
 #include <omphalos/csum.h>
 #include <omphalos/diag.h>
 #include <omphalos/util.h>

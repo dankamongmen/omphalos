@@ -13,8 +13,8 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <net/if_arp.h>
 #include <net/ethernet.h>
-#include <linux/if_arp.h>
 #include <linux/if_addr.h>
 #include <linux/netlink.h>
 #include <linux/version.h>

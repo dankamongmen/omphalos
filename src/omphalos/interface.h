@@ -10,16 +10,26 @@ extern "C" {
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <net/if.h>
 #include <pthread.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
-#include <linux/if.h>
 #include <omphalos/128.h>
 #include <linux/ethtool.h>
 #include <linux/if_packet.h>
 #include <omphalos/timing.h>
 #include <omphalos/nl80211.h>
 #include <omphalos/hwaddrs.h>
+
+// Taken from linux/if.h as of 3.1-rc6
+#define IFF_LOWER_UP	0x10000		// driver signals L1 up
+#define IFF_DORMANT	0x20000		// driver signals dormant
+
+#define IFF_ECHO	0x40000		// echo sent packets
+
+#define IFF_VOLATILE	(IFF_LOOPBACK|IFF_POINTOPOINT|IFF_BROADCAST|IFF_ECHO|\
+		IFF_MASTER|IFF_SLAVE|IFF_RUNNING|IFF_LOWER_UP|IFF_DORMANT)
+// end linux/if.h copies */
 
 struct l2host;
 struct l3host;

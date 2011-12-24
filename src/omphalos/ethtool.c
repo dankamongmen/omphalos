@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
-#include <linux/if.h>
+//#include <linux/if.h>
 #include <linux/sockios.h>
 #include <linux/version.h>
 #include <linux/ethtool.h>

@@ -6,7 +6,7 @@
 #include <assert.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
-#include <linux/if_arp.h>
+#include <net/if_arp.h>
 #include <omphalos/128.h>
 #include <omphalos/util.h>
 #include <omphalos/irda.h>

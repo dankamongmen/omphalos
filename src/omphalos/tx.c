@@ -4,9 +4,9 @@
 #include <linux/ip.h>
 #include <linux/udp.h>
 #include <sys/socket.h>
+#include <net/if_arp.h>
 #include <netinet/ip6.h>
 #include <omphalos/tx.h>
-#include <linux/if_arp.h>
 #include <omphalos/diag.h>
 #include <omphalos/pcap.h>
 #include <linux/if_ether.h>
@@ -204,6 +204,7 @@ send_to_self(interface *i,void *frame){
 	}
 	if((r = sendto(fd,payload,plen,0,ss,slen)) < 0){
 		diagnostic("Error self-TXing %d on %s:%d (%s)",plen,i->name,fd,strerror(errno));
+		assert(0);
 	}
 	return r;
 }

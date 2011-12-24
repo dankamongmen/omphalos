@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <wchar.h>
 #include <errno.h>
+#include <iwlib.h>
 #include <locale.h>
 #include <unistd.h>
 #include <stdarg.h>
@@ -8,12 +9,13 @@
 #include <string.h>
 #include <signal.h>
 #include <pthread.h>
+#include <net/if.h>
 #include <langinfo.h>
+#include <asm/types.h>
 #include <sys/socket.h>
-#include <linux/if.h>
+#include <wireless.h>
 #include <omphalos/diag.h>
 #include <omphalos/pcap.h>
-#include <linux/wireless.h>
 #include <readline/readline.h>
 #include <readline/history.h>
 #include <omphalos/service.h>

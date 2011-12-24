@@ -1,7 +1,7 @@
 #include <assert.h>
 #include <sys/socket.h>
+#include <net/if_arp.h>
 #include <omphalos/tx.h>
-#include <linux/if_arp.h>
 #include <omphalos/arp.h>
 #include <omphalos/diag.h>
 #include <asm/byteorder.h>

@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <arpa/inet.h>
-#include <linux/if_arp.h>
+#include <net/if_arp.h>
 #include <omphalos/iana.h>
 #include <linux/rtnetlink.h>
 #include <omphalos/hwaddrs.h>
