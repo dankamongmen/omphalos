@@ -259,9 +259,6 @@ int tx_broadcast_pings(int fam,interface *i,const void *saddr){
 	if(fam == AF_INET){
 		return tx_ipv4_bcast_pings(i,saddr);
 	}else if(fam == AF_INET6){
-		if(strcmp(i->name,"lo") == 0){
-			return 0;
-		}
 		return tx_ipv6_bcast_pings(i,saddr);
 	}
 	return -1;
