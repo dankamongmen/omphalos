@@ -607,6 +607,11 @@ raw_socket(const interface *i,int fam,int protocol){
 		diagnostic("Error creating raw socket for %s: %s",i->name,strerror(errno));
 		return -1;
 	}
+	if(setsockopt(sd,SOL_SOCKET,SO_BROADCAST,&loop,sizeof(loop))){
+		diagnostic("Error setting SO_BROADCAST for %s: %s",i->name,strerror(errno));
+		close(sd);
+		return -1;
+	}
 	if(setsockopt(sd,slevel,sopt,sarg,slen)){
 		diagnostic("Error setting %d:mcast:%d for %s: %s",fam,idx,i->name,strerror(errno));
 		close(sd);

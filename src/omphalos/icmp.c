@@ -129,6 +129,9 @@ void handle_icmp6_packet(omphalos_packet *op,const void *frame,size_t len){
 }
 #undef COMMON_ICMPV6_LEN
 
+// We have to give some minimum payload, or else we'll draw an EINVAL.
+#define PING4_PAYLOAD_LEN 20
+
 // Always goes to ff02::2 (ALL-HOSTS), from each source address.
 static int
 tx_ipv4_bcast_pings(interface *i,const void *saddr){
@@ -170,7 +173,7 @@ tx_ipv4_bcast_pings(interface *i,const void *saddr){
 			continue;
 		}
 		tlen += r;
-		if(flen - tlen < sizeof(*icmp)){
+		if(flen - tlen < sizeof(*icmp) + PING4_PAYLOAD_LEN){
 			abort_tx_frame(i,frame);
 			ret = -1;
 			continue;
@@ -178,9 +181,9 @@ tx_ipv4_bcast_pings(interface *i,const void *saddr){
 		icmp = (struct icmphdr *)((char *)frame + tlen);
 		icmp->type = ICMP_ECHO;
 		icmp->code = 0;
-		tlen += sizeof(*icmp);
+		tlen += sizeof(*icmp) + PING4_PAYLOAD_LEN;
 		thdr->tp_len = tlen;
-		ip->tot_len = htons((const char *)icmp - (const char *)ip + sizeof(*icmp));
+		ip->tot_len = htons((const char *)icmp - (const char *)ip + sizeof(*icmp) + PING4_PAYLOAD_LEN);
 		icmp->checksum = 0;
 		icmp->checksum = icmp4_csum(icmp,sizeof(*icmp));
 		ip->check = ipv4_csum(ip);
