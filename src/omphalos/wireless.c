@@ -1,8 +1,8 @@
 #include <errno.h>
+#include <iwlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <sys/ioctl.h>
-#include <sys/socket.h>
 #include <omphalos/diag.h>
 #include <linux/wireless.h>
 #include <omphalos/wireless.h>
@@ -44,6 +44,25 @@ wireless_rate_info(const char *name,wless_info *wi){
 	}
 	ip = &req.u.bitrate;
 	wi->bitrate = ip->value;
+	return 0;
+}
+
+static int
+wireless_freq_info(const char *name,wless_info *wi){
+	struct iw_range range;
+	int fd;
+
+	assert(wi);
+	if((fd = socket(AF_INET,SOCK_DGRAM,0)) < 0){
+		diagnostic("Couldn't get a socket (%s?)",strerror(errno));
+		return -1;
+	}
+	if(iw_get_range_info(fd,name,&range)){
+		diagnostic("Couldn't get range info on %s (%s)",name,strerror(errno));
+		close(fd);
+		return -1;
+	}
+	close(fd);
 	return 0;
 }
 
@@ -105,6 +124,9 @@ int iface_wireless_info(const char *name,wless_info *wi){
 	}
 	if(wireless_rate_info(name,wi)){
 		wi->bitrate = 0; // no bitrate for eg monitor mode
+	}
+	if(wireless_freq_info(name,wi)){
+		return -1;
 	}
 	if(get_wireless_extension(name,SIOCGIWMODE,&req)){
 		return -1;
