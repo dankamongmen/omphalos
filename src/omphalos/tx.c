@@ -204,7 +204,6 @@ send_to_self(interface *i,void *frame){
 	}
 	if((r = sendto(fd,payload,plen,0,ss,slen)) < 0){
 		diagnostic("Error self-TXing %d on %s:%d (%s)",plen,i->name,fd,strerror(errno));
-		assert(0);
 	}
 	return r;
 }
