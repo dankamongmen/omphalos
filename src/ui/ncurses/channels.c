@@ -7,26 +7,44 @@
 #include <omphalos/interface.h>
 #include <ui/ncurses/channels.h>
 
-#define WIRELESSROWS 5 // FIXME
+#define WIRELESSROWS 10 // FIXME
 
 static unsigned ifaces_used;
-static const struct iface_state *ifaces[WIRELESSROWS];
 
 // We take advantage of the fact that bgn, an, and y all support multiples of
 // 14 channels to avoid doing a fully dynamic layout. Unfortunately, this
 // assumes at least 70 columns (14 * 4 + IFNAMSIZ + 1).
 #define FREQSPERROW 14	// FIXME do it dynamically based on cols
 
+#define COLSPERFREQ 4 // FIXME based off < 1000 distinct licensed frequencies
+
+// In addition to color changes, each interface is represented by a different
+// character. The interfaces supporting a frequency are displayed underneath,
+// so we can only use as many wireless interfaces as columns taken up by
+// frequencies under this scheme. All very brittle. FIXME
+static const char iface_chars[COLSPERFREQ] = { '*', '#', '&', '@', };
+static const struct iface_state *ifaces[COLSPERFREQ];
+
 static int
 channel_row(WINDOW *w,unsigned freqrow,int srow,int scol){
 	unsigned f;
 
-	assert(wmove(w,srow,scol + IFNAMSIZ + 1) == OK);
+	assert(wmove(w,srow,scol + IFNAMSIZ + 2) == OK);
 	for(f = freqrow * FREQSPERROW ; f < (freqrow + 1) * FREQSPERROW ; ++f){
 		unsigned chan = wireless_chan_byidx(f);
 
 		assert(chan && chan < 1000);
 		assert(wprintw(w," %3u",chan) == OK);
+	}
+	return 0;
+}
+
+static int
+iface_row(WINDOW *w,unsigned freqrow,int srow,int scol){
+	assert(wmove(w,srow,scol) == OK);
+	if(freqrow < sizeof(ifaces) / sizeof(*ifaces) && ifaces[freqrow]){
+		assert(wprintw(w,"%c%-*.*s ",iface_chars[freqrow],
+			IFNAMSIZ,IFNAMSIZ,ifaces[freqrow]->iface->name) == OK);
 	}
 	return 0;
 }
@@ -38,27 +56,42 @@ channel_details(WINDOW *w){
 	int r,c,col;
 
 	getmaxyx(w,r,c);
-	col = c - (START_COL + FREQSPERROW * 4 + IFNAMSIZ + 1);
+	col = c - (START_COL + FREQSPERROW * 4 + IFNAMSIZ + 1 + 1);
 	assert(col >= 0);
 	assert(wattrset(w,SUBDISPLAY_ATTR) == OK);
 	freqs = wireless_freq_count();
-	assert(freqs == FREQSPERROW * WIRELESSROWS);
+	assert(freqs == FREQSPERROW * (WIRELESSROWS / 2));
 	freqrows = freqs / FREQSPERROW;
 	if((z = r) >= WIRELESSROWS){
 		z = WIRELESSROWS - 1;
 	}
 	switch(z){ // Intentional fallthroughs all the way through 0
 		case (WIRELESSROWS - 1):{
+			iface_row(w,freqrows - 1,row + z,col);
+			--z;
+		}case 8:{
 			channel_row(w,freqrows - 1,row + z,col);
 			--z;
-		}case 3:{
+		}case 7:{
+			iface_row(w,freqrows - 2,row + z,col);
+			--z;
+		}case 6:{
 			channel_row(w,freqrows - 2,row + z,col);
 			--z;
-		}case 2:{
+		}case 5:{
+			iface_row(w,freqrows - 3,row + z,col);
+			--z;
+		}case 4:{
 			channel_row(w,freqrows - 3,row + z,col);
 			--z;
-		}case 1:{
+		}case 3:{
+			iface_row(w,freqrows - 4,row + z,col);
+			--z;
+		}case 2:{
 			channel_row(w,freqrows - 4,row + z,col);
+			--z;
+		}case 1:{
+			iface_row(w,freqrows - 5,row + z,col);
 			--z;
 		}case 0:{
 			channel_row(w,freqrows - 5,row + z,col);
