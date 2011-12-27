@@ -1385,7 +1385,7 @@ static const wchar_t *helps[] = {
 	L"'q': quit                     ctrl+'L': redraw the screen",
 	L"'e': view environment details 'h': toggle this help display",
 	L"'v': view interface details   'n': view networking details",
-	L"'c': view channel map",
+	L"'w': view wireless info",
 	L"'⏎Enter': browse interface    '⌫BkSpc': leave interface browser",
 	L"'k'/'↑': previous selection   'j'/'↓': next selection",
 	L"'⇞PgUp': previous page        '⇟PgDwn': next page",

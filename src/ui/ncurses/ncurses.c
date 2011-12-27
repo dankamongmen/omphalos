@@ -313,7 +313,7 @@ ncurses_input_thread(void *unsafe_marsh){
 				toggle_panel(w,&environment,display_env_locked);
 			unlock_ncurses();
 			break;
-		}case 'c':{
+		}case 'w':{
 			lock_ncurses();
 				toggle_panel(w,&channels,display_channels_locked);
 			unlock_ncurses();
