@@ -10,6 +10,7 @@
 #include <omphalos/netaddrs.h>
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
+#include <ui/ncurses/channels.h>
 
 static unsigned count_interface;
 // dequeue + single selection
@@ -753,6 +754,7 @@ void *interface_cb_locked(interface *i,iface_state *ret,struct panel_state *ps){
 		}else{
 			rb = NULL;
 		}
+		add_channel_support(ret);
 	}else{
 		rb = ret->rb;
 	}
@@ -833,6 +835,7 @@ void interface_removed_locked(iface_state *is,struct panel_state **ps){
 		is->next->prev = is->prev;
 		is->prev->next = is->next;
 	}
+	del_channel_support(is);
 	free_iface_state(is); // clears l2/l3 nodes
 	free(is);
 	--count_interface;

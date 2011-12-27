@@ -4,6 +4,7 @@
 #include <ui/ncurses/core.h>
 #include <ui/ncurses/util.h>
 #include <omphalos/wireless.h>
+#include <omphalos/interface.h>
 #include <ui/ncurses/channels.h>
 
 #define WIRELESSROWS 5 // FIXME
@@ -93,14 +94,30 @@ err:
 }
 
 int add_channel_support(struct iface_state *is){
+	if(is->iface->settings_valid != SETTINGS_VALID_WEXT &&
+			is->iface->settings_valid != SETTINGS_VALID_NL80211){
+		return 0;
+	}
 	if(ifaces_used == sizeof(ifaces) / sizeof(*ifaces)){
 		return 0;
 	}
 	ifaces[ifaces_used++] = is;
+	// FIXME update if active!
 	return 0;
 }
 
 int del_channel_support(struct iface_state *is){
-	assert(is); // FIXME
+	unsigned z;
+
+	for(z = 0 ; z < ifaces_used ; ++z){
+		if(ifaces[z] == is){
+			if(z < ifaces_used - 1){
+				memmove(ifaces + z,ifaces + z + 1,sizeof(*ifaces) * (ifaces_used - z - 1));
+			}
+			--ifaces_used;
+			// FIXME update if active!
+			break;
+		}
+	}
 	return 0;
 }
