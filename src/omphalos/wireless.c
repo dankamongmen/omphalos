@@ -146,27 +146,73 @@ int iface_wireless_info(const char *name,wless_info *wi){
 #define FREQ_80211N	0x08
 #define FREQ_80211Y	0x10
 #define FREQ_24		(FREQ_80211B|FREQ_80211G|FREQ_80211N)
+#define FREQ_36		(FREQ_80211Y)
+#define FREQ_5		(FREQ_80211A|FREQ_80211N)
+#define MHZ(hz)		(hz * 1000000ull)
+#define HMHZ(hz)	(hz * 100000ull)
 static const struct freq {
-	unsigned hz;		// unique Hz
+	uint64_t hz;		// unique Hz
 	unsigned channel;	// channel #. multiple freqs per channel!
 	unsigned modes;		// bitmask of FREQ_* values
 } freqtable[] = {
-	{ 2412,		1,	FREQ_24,	},
-	{ 2417,		2,	FREQ_24,	},
-	{ 2422,		3,	FREQ_24,	},
-	{ 2427,		4,	FREQ_24,	},
-	{ 2432,		5,	FREQ_24,	},
-	{ 2437,		6,	FREQ_24,	},
-	{ 2442,		7,	FREQ_24,	},
-	{ 2447,		8,	FREQ_24,	},
-	{ 2452,		9,	FREQ_24,	},
-	{ 2457,		10,	FREQ_24,	},
-	{ 2462,		11,	FREQ_24,	},
-	{ 2467,		12,	FREQ_24,	},
-	{ 2472,		13,	FREQ_24,	},
-	{ 2482,		14,	FREQ_24,	},
+	{ MHZ(2412),		1,	FREQ_24,	},
+	{ MHZ(2417),		2,	FREQ_24,	},
+	{ MHZ(2422),		3,	FREQ_24,	},
+	{ MHZ(2427),		4,	FREQ_24,	},
+	{ MHZ(2432),		5,	FREQ_24,	},
+	{ MHZ(2437),		6,	FREQ_24,	},
+	{ MHZ(2442),		7,	FREQ_24,	},
+	{ MHZ(2447),		8,	FREQ_24,	},
+	{ MHZ(2452),		9,	FREQ_24,	},
+	{ MHZ(2457),		10,	FREQ_24,	},
+	{ MHZ(2462),		11,	FREQ_24,	},
+	{ MHZ(2467),		12,	FREQ_24,	},
+	{ MHZ(2472),		13,	FREQ_24,	},
+	{ MHZ(2482),		14,	FREQ_24,	},
+	{ HMHZ(36575),		131,	FREQ_36,	},
+	{ HMHZ(36625),		132,	FREQ_36,	},
+	{ HMHZ(36600),		132,	FREQ_36,	},
+	{ HMHZ(36650),		133,	FREQ_36,	},
+	{ HMHZ(36675),		133,	FREQ_36,	},
+	{ HMHZ(36700),		134,	FREQ_36,	},
+	{ HMHZ(36725),		134,	FREQ_36,	},
+	{ HMHZ(36775),		135,	FREQ_36,	},
+	{ HMHZ(36800),		136,	FREQ_36,	},
+	{ HMHZ(36825),		136,	FREQ_36,	},
+	{ HMHZ(36850),		137,	FREQ_36,	},
+	{ HMHZ(36875),		137,	FREQ_36,	},
+	{ HMHZ(36895),		138,	FREQ_36,	},
+	{ HMHZ(36900),		138,	FREQ_36,	},
+	{ MHZ(4915),		183,	FREQ_5,	},
+	{ MHZ(4920),		184,	FREQ_5,	},
+	{ MHZ(4925),		185,	FREQ_5,	},
+	{ MHZ(4935),		187,	FREQ_5,	},
+	{ MHZ(4940),		188,	FREQ_5,	},
+	{ MHZ(4945),		189,	FREQ_5,	},
+	{ MHZ(4960),		192,	FREQ_5,	},
+	{ MHZ(4980),		196,	FREQ_5,	},
+	{ MHZ(5035),		7,	FREQ_5,	},
+	{ MHZ(5040),		8,	FREQ_5,	},
+	{ MHZ(5045),		9,	FREQ_5,	},
+	{ MHZ(5055),		11,	FREQ_5,	},
+	{ MHZ(5060),		12,	FREQ_5,	},
+	{ MHZ(5080),		16,	FREQ_5,	},
 };
 
 unsigned wireless_freq_count(void){
 	return sizeof(freqtable) / sizeof(*freqtable);
+}
+
+unsigned wireless_freq_byidx(unsigned idx){
+	if(idx >= wireless_freq_count()){
+		return 0;
+	}
+	return freqtable[idx].hz;
+}
+
+unsigned wireless_chan_byidx(unsigned idx){
+	if(idx >= wireless_freq_count()){
+		return 0;
+	}
+	return freqtable[idx].channel;
 }

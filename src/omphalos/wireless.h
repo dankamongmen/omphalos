@@ -40,6 +40,8 @@ modestr(unsigned dplx){
 }
 
 unsigned wireless_freq_count(void);
+unsigned wireless_freq_byidx(unsigned);
+unsigned wireless_chan_byidx(unsigned);
 
 #ifdef __cplusplus
 }
