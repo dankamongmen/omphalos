@@ -139,3 +139,34 @@ int iface_wireless_info(const char *name,wless_info *wi){
 	}
 	return 0;
 }
+
+#define FREQ_80211A	0x01
+#define FREQ_80211B	0x02
+#define FREQ_80211G	0x04
+#define FREQ_80211N	0x08
+#define FREQ_80211Y	0x10
+#define FREQ_24		(FREQ_80211B|FREQ_80211G|FREQ_80211N)
+static const struct freq {
+	unsigned hz;		// unique Hz
+	unsigned channel;	// channel #. multiple freqs per channel!
+	unsigned modes;		// bitmask of FREQ_* values
+} freqtable[] = {
+	{ 2412,		1,	FREQ_24,	},
+	{ 2417,		2,	FREQ_24,	},
+	{ 2422,		3,	FREQ_24,	},
+	{ 2427,		4,	FREQ_24,	},
+	{ 2432,		5,	FREQ_24,	},
+	{ 2437,		6,	FREQ_24,	},
+	{ 2442,		7,	FREQ_24,	},
+	{ 2447,		8,	FREQ_24,	},
+	{ 2452,		9,	FREQ_24,	},
+	{ 2457,		10,	FREQ_24,	},
+	{ 2462,		11,	FREQ_24,	},
+	{ 2467,		12,	FREQ_24,	},
+	{ 2472,		13,	FREQ_24,	},
+	{ 2482,		14,	FREQ_24,	},
+};
+
+unsigned wireless_freq_count(void){
+	return sizeof(freqtable) / sizeof(*freqtable);
+}

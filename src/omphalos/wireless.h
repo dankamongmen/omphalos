@@ -39,6 +39,8 @@ modestr(unsigned dplx){
 	return "";
 }
 
+unsigned wireless_freq_count(void);
+
 #ifdef __cplusplus
 }
 #endif
