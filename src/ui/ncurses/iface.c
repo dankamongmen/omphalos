@@ -925,7 +925,9 @@ void recompute_selection(iface_state *is,int oldsel,int oldrows,int newrows){
 			newsel,bef,aft,oldsel,getmaxy(is->rb->subwin));
 	update_panels();
 	doupdate();*/
-	is->rb->selline = newsel;
+	if(newsel){
+		is->rb->selline = newsel;
+	}
 	assert(is->rb->selline >= 1);
-	assert(is->rb->selline < getmaxy(is->rb->subwin) - 1);
+	assert(is->rb->selline < getmaxy(is->rb->subwin) - 1 || !is->expansion);
 }
