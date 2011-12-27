@@ -8,6 +8,9 @@
 
 #define WIRELESSROWS 5 // FIXME
 
+static unsigned ifaces_used;
+static const struct iface_state *ifaces[WIRELESSROWS];
+
 // We take advantage of the fact that bgn, an, and y all support multiples of
 // 14 channels to avoid doing a fully dynamic layout. Unfortunately, this
 // assumes at least 70 columns (14 * 4 + IFNAMSIZ + 1).
@@ -87,4 +90,17 @@ err:
 	}
 	memset(ps,0,sizeof(*ps));
 	return ERR;
+}
+
+int add_channel_support(struct iface_state *is){
+	if(ifaces_used == sizeof(ifaces) / sizeof(*ifaces)){
+		return 0;
+	}
+	ifaces[ifaces_used++] = is;
+	return 0;
+}
+
+int del_channel_support(struct iface_state *is){
+	assert(is); // FIXME
+	return 0;
 }
