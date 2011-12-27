@@ -40,6 +40,7 @@
 #include <omphalos/omphalos.h>
 #include <ui/ncurses/network.h>
 #include <omphalos/interface.h>
+#include <ui/ncurses/channels.h>
 
 #define ERREXIT endwin() ; fprintf(stderr,"ncurses failure|%s|%d\n",__func__,__LINE__); abort() ; goto err
 
@@ -49,6 +50,7 @@ static struct panel_state help = PANEL_STATE_INITIALIZER;
 static struct panel_state diags = PANEL_STATE_INITIALIZER;
 static struct panel_state details = PANEL_STATE_INITIALIZER;
 static struct panel_state network = PANEL_STATE_INITIALIZER;
+static struct panel_state channels = PANEL_STATE_INITIALIZER;
 static struct panel_state environment = PANEL_STATE_INITIALIZER;
 
 // Add ((format (printf))) attributes to ncurses functions, which sadly
@@ -309,6 +311,11 @@ ncurses_input_thread(void *unsafe_marsh){
 		}case 'e':{
 			lock_ncurses();
 				toggle_panel(w,&environment,display_env_locked);
+			unlock_ncurses();
+			break;
+		}case 'c':{
+			lock_ncurses();
+				toggle_panel(w,&channels,display_channels_locked);
 			unlock_ncurses();
 			break;
 		}case 'h':{
