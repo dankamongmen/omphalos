@@ -6,7 +6,7 @@
 #include <omphalos/wireless.h>
 #include <ui/ncurses/channels.h>
 
-#define WIRELESSROWS 4 // FIXME
+#define WIRELESSROWS 5 // FIXME
 
 // We take advantage of the fact that bgn, an, and y all support multiples of
 // 14 channels to avoid doing a fully dynamic layout. Unfortunately, this
@@ -17,7 +17,7 @@ static int
 channel_row(WINDOW *w,unsigned freqrow,int srow,int scol){
 	unsigned f;
 
-	assert(wmove(w,srow,scol) == OK);
+	assert(wmove(w,srow,scol + IFNAMSIZ + 1) == OK);
 	for(f = freqrow * FREQSPERROW ; f < (freqrow + 1) * FREQSPERROW ; ++f){
 		unsigned chan = wireless_chan_byidx(f);
 
@@ -30,31 +30,34 @@ channel_row(WINDOW *w,unsigned freqrow,int srow,int scol){
 static int
 channel_details(WINDOW *w){
 	unsigned freqs,freqrows,z;
-	const int col = START_COL;
 	const int row = 1;
-	int r,c;
+	int r,c,col;
 
 	getmaxyx(w,r,c);
-	assert(c >= FREQSPERROW * 4 + IFNAMSIZ + 1); // FIXME see above
+	col = c - (START_COL + FREQSPERROW * 4 + IFNAMSIZ + 1);
+	assert(col >= 0);
 	assert(wattrset(w,SUBDISPLAY_ATTR) == OK);
 	freqs = wireless_freq_count();
-	assert(freqs % FREQSPERROW == 0);
+	assert(freqs == FREQSPERROW * WIRELESSROWS);
 	freqrows = freqs / FREQSPERROW;
 	if((z = r) >= WIRELESSROWS){
 		z = WIRELESSROWS - 1;
 	}
-	assert(z >= freqrows); // FIXME scroll display
 	switch(z){ // Intentional fallthroughs all the way through 0
 		case (WIRELESSROWS - 1):{
-			channel_row(w,freqrows - 1,row + z,col + IFNAMSIZ + 1);
+			channel_row(w,freqrows - 1,row + z,col);
+			--z;
+		}case 3:{
+			channel_row(w,freqrows - 2,row + z,col);
 			--z;
 		}case 2:{
-			channel_row(w,freqrows - 2,row + z,col + IFNAMSIZ + 1);
+			channel_row(w,freqrows - 3,row + z,col);
 			--z;
 		}case 1:{
-			channel_row(w,freqrows - 3,row + z,col + IFNAMSIZ + 1);
+			channel_row(w,freqrows - 4,row + z,col);
 			--z;
 		}case 0:{
+			channel_row(w,freqrows - 5,row + z,col);
 			--z;
 			break;
 		}default:{
