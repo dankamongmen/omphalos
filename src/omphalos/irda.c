@@ -1,5 +1,4 @@
 #include <sys/socket.h>
-#include <linux/irda.h>
 #include <omphalos/diag.h>
 #include <omphalos/irda.h>
 #include <omphalos/hwaddrs.h>

@@ -6,13 +6,11 @@ extern "C" {
 #endif
 
 #include <stdint.h>
+#include <omphalos/wireless.h>
 
 struct interface;
 
-#define MAX_WIRELESS_CHANNEL		999
-
 typedef struct nl80211_info {
-	uintmax_t freqs[MAX_WIRELESS_CHANNEL];	// Set if channel is defined
 	float dBm[MAX_WIRELESS_CHANNEL];	// Set if enabled
 	int chan;				// Current channel or -1
 	uintmax_t freq;				// Current freq or 0

@@ -57,6 +57,7 @@ typedef struct ip6route {
 } ip6route;
 
 typedef struct wless_info {
+	float dBm[MAX_WIRELESS_CHANNEL];
 	unsigned bitrate;
 	unsigned mode;
 	uintmax_t freq;			// 0..999: channel, 1000+: frequency

@@ -39,12 +39,30 @@ channel_row(WINDOW *w,unsigned freqrow,int srow,int scol){
 	return 0;
 }
 
+static inline int
+iface_supports_freq(const struct iface_state *is,unsigned idx){
+	if(is){
+		return wireless_freq_supported_byidx(is->iface,idx) > 0.0;
+	}
+	return 0;
+}
+
 static int
 iface_row(WINDOW *w,unsigned freqrow,int srow,int scol){
-	assert(wmove(w,srow,scol) == OK);
+	unsigned f;
+
 	if(freqrow < sizeof(ifaces) / sizeof(*ifaces) && ifaces[freqrow]){
-		assert(wprintw(w,"%c%-*.*s ",iface_chars[freqrow],
+		assert(mvwprintw(w,srow,scol,"%c%-*.*s ",iface_chars[freqrow],
 			IFNAMSIZ,IFNAMSIZ,ifaces[freqrow]->iface->name) == OK);
+	}else{
+		assert(wmove(w,srow,scol + 1 + IFNAMSIZ + 1) == OK);
+	}
+	for(f = freqrow * FREQSPERROW ; f < (freqrow + 1) * FREQSPERROW ; ++f){
+		assert(wprintw(w,"%c%c%c%c",
+				iface_supports_freq(ifaces[0],f) ? iface_chars[0] : ' ',
+				iface_supports_freq(ifaces[1],f) ? iface_chars[1] : ' ',
+				iface_supports_freq(ifaces[2],f) ? iface_chars[2] : ' ',
+				iface_supports_freq(ifaces[3],f) ? iface_chars[3] : ' ') == OK);
 	}
 	return 0;
 }

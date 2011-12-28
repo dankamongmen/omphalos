@@ -137,6 +137,7 @@ int iface_wireless_info(const char *name,wless_info *wi){
 	}else{
 		wi->freq = iwfreq_defreak(&req.u.freq);
 	}
+	memset(wi->dBm,0x7f,sizeof(wi->dBm)); // FIXME detect supported freqs!
 	return 0;
 }
 
@@ -231,11 +232,44 @@ unsigned wireless_freq_count(void){
 	return sizeof(freqtable) / sizeof(*freqtable);
 }
 
+float wireless_freq_supported_byidx(const interface *i,unsigned idx){
+	if(idx >= wireless_freq_count()){
+		return 0;
+	}
+	switch(i->settings_valid){
+		case SETTINGS_VALID_NL80211:
+			return i->settings.nl80211.dBm[idx];
+		case SETTINGS_VALID_WEXT:
+			return i->settings.wext.dBm[idx];
+		// shouldn't see anything but wireless here
+		case SETTINGS_VALID_ETHTOOL: default:
+			assert(0);
+	}
+}
+
 unsigned wireless_freq_byidx(unsigned idx){
 	if(idx >= wireless_freq_count()){
 		return 0;
 	}
 	return freqtable[idx].hz;
+}
+
+int wireless_idx_byfreq(unsigned freq){
+	int idx,lb,ub;
+
+	lb = 0;
+	ub = sizeof(freqtable) / sizeof(*freqtable);
+	do{
+		idx = (lb + ub) / 2;
+		if(freqtable[idx].hz == freq){
+			return idx;
+		}else if(freqtable[idx].hz < freq){
+			lb = idx;
+		}else{
+			ub = idx;
+		}
+	}while(lb != ub);
+	return -1;	// invalid frequency!
 }
 
 unsigned wireless_chan_byidx(unsigned idx){

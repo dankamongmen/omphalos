@@ -19,6 +19,8 @@ int handle_wireless_event(const struct omphalos_iface *,struct interface *,
 int iface_wireless_info(const char *,struct wless_info *)
 				__attribute__ ((nonnull (1,2)));
 
+#define MAX_WIRELESS_CHANNEL		999
+
 static inline const char *
 modestr(unsigned dplx){
 	switch(dplx){
@@ -39,9 +41,13 @@ modestr(unsigned dplx){
 	return "";
 }
 
+int wireless_idx_byfreq(unsigned);
 unsigned wireless_freq_count(void);
 unsigned wireless_freq_byidx(unsigned);
 unsigned wireless_chan_byidx(unsigned);
+
+// Returns dBm supported on frequency, if any
+float wireless_freq_supported_byidx(const struct interface *,unsigned);
 
 #ifdef __cplusplus
 }
