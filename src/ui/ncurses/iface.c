@@ -639,28 +639,35 @@ iface_box(const interface *i,const iface_state *is,WINDOW *w,int active,
 				}
 			}else if(i->settings_valid == SETTINGS_VALID_WEXT){
 				if(i->settings.wext.mode == NL80211_IFTYPE_MONITOR){
-					assert(wprintw(w," (%s)",modestr(i->settings.wext.mode)) != ERR);
+					assert(wprintw(w," (%s",modestr(i->settings.wext.mode)) != ERR);
 				}else if(!interface_carrier_p(i)){
-					assert(wprintw(w," (%s, no carrier)",modestr(i->settings.wext.mode)) != ERR);
+					assert(wprintw(w," (%s, no carrier",modestr(i->settings.wext.mode)) != ERR);
 				}else{
-					assert(wprintw(w," (%sb %s ",prefix(i->settings.wext.bitrate,1,buf,sizeof(buf),1),
+					assert(wprintw(w," (%sb %s",prefix(i->settings.wext.bitrate,1,buf,sizeof(buf),1),
 								modestr(i->settings.wext.mode)) != ERR);
-					if(i->settings.wext.freq <= MAX_WIRELESS_CHANNEL){
-						assert(wprintw(w,"ch %ju)",i->settings.wext.freq) != ERR);
-					}else{
-						assert(wprintw(w,"%sHz)",prefix(i->settings.wext.freq,1,buf,sizeof(buf),1)) != ERR);
-					}
+				}
+				if(i->settings.wext.freq >= MAX_WIRELESS_CHANNEL){
+					assert(wprintw(w," %sHz)",prefix(i->settings.wext.freq,1,buf,sizeof(buf),1)) != ERR);
+				}else if(i->settings.wext.freq){
+					assert(wprintw(w," ch %ju)",i->settings.wext.freq) != ERR);
+				}else{
+					assert(wprintw(w,")") == OK);
 				}
 			}else if(i->settings_valid == SETTINGS_VALID_NL80211){
 				if(i->settings.nl80211.mode == NL80211_IFTYPE_MONITOR){
-					assert(wprintw(w," (%s)",modestr(i->settings.nl80211.mode)) != ERR);
+					assert(wprintw(w," (%s",modestr(i->settings.nl80211.mode)) != ERR);
 				}else if(!interface_carrier_p(i)){
-					assert(wprintw(w," (%s, no carrier)",modestr(i->settings.nl80211.mode)) != ERR);
+					assert(wprintw(w," (%s, no carrier",modestr(i->settings.nl80211.mode)) != ERR);
 				}else{
-					assert(wprintw(w," (%sb %s ",prefix(i->settings.nl80211.bitrate,1,buf,sizeof(buf),1),
+					assert(wprintw(w," (%sb %s",prefix(i->settings.nl80211.bitrate,1,buf,sizeof(buf),1),
 								modestr(i->settings.nl80211.mode)) != ERR);
-					assert(wprintw(w,"ch %ju (%sHz))",i->settings.nl80211.chan,
-								prefix(i->settings.nl80211.freq,1,buf,sizeof(buf),1)) != ERR);
+				}
+				if(i->settings.nl80211.freq >= MAX_WIRELESS_CHANNEL){
+					assert(wprintw(w," %sHz)",prefix(i->settings.nl80211.freq,1,buf,sizeof(buf),1)) != ERR);
+				}else if(i->settings.nl80211.freq){
+					assert(wprintw(w," ch %ju)",i->settings.nl80211.freq) != ERR);
+				}else{
+					assert(wprintw(w,")") == OK);
 				}
 			}
 		}else{
