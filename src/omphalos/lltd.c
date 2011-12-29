@@ -233,6 +233,11 @@ handle_lltd_tlvs(omphalos_packet *op,const void *frame,size_t len){
 					diagnostic("%s bad LLTD MachineName (%u) on %s",__func__,tlv->length,op->i->name);
 				}
 			break;}case LLTD_SUPPORTINFO:{
+				// Some hosts send a 0-byte MachineName, and
+				// need a LargeTLV request to get it FIXME
+				if(tlv->length == 0){
+					break;
+				}
 				if(tlv->length < 1 || tlv->length > 64){
 					diagnostic("%s bad LLTD SupportInfo (%u) on %s",__func__,tlv->length,op->i->name);
 				}
