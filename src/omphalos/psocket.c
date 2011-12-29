@@ -131,9 +131,7 @@ mmap_psocket(int op,int idx,int fd,unsigned maxframe,void **map,
 
 size_t mmap_tx_psocket(int fd,int idx,unsigned maxframe,void **map,
 					struct tpacket_req *treq){
-	// PACKET_TX_RING leads to bad craziness, perhaps due to threading
-	//return mmap_psocket(PACKET_TX_RING,idx,fd,maxframe,map,treq);
-	return mmap_psocket(0,idx,fd,maxframe,map,treq);
+	return mmap_psocket(PACKET_TX_RING,idx,fd,maxframe,map,treq);
 }
 
 int unmap_psocket(void *map,size_t size){
