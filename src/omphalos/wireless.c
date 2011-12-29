@@ -268,7 +268,7 @@ int wireless_idx_byfreq(unsigned freq){
 	int idx,lb,ub;
 
 	lb = 0;
-	ub = sizeof(freqtable) / sizeof(*freqtable);
+	ub = sizeof(freqtable) / sizeof(*freqtable) - 1;
 	do{
 		idx = (lb + ub) / 2;
 		if(freqtable[idx].hz == freq){
@@ -278,7 +278,7 @@ int wireless_idx_byfreq(unsigned freq){
 		}else{
 			ub = idx - 1;
 		}
-	}while(lb < ub);
+	}while(lb <= ub);
 	return -1;	// invalid frequency!
 }
 
