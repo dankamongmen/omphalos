@@ -42,6 +42,8 @@ get_block_size(unsigned fsize,unsigned *bsize){
 
 	// Ought be a power of two for performance. Must be a multiple of
 	// page size. Ought be a multiple of tp_frame_size for efficiency.
+	// Ought otherwise be as small as possible, or else the allocation
+	// blocks/fails due to need for large VMA's.
 	b = getpagesize();
 	if(b < 0){
 		diagnostic("Couldn't get page size (%s?)",strerror(errno));
@@ -84,8 +86,8 @@ size_mmap_psocket(struct tpacket_req *treq,unsigned maxframe){
 }
 
 static size_t
-mmap_psocket(int op,int idx,int fd,
-			unsigned maxframe,void **map,struct tpacket_req *treq){
+mmap_psocket(int op,int idx,int fd,unsigned maxframe,void **map,
+				struct tpacket_req *treq){
 	size_t size;
 
 	*map = MAP_FAILED;
@@ -127,9 +129,8 @@ mmap_psocket(int op,int idx,int fd,
 	return size;
 }
 
-size_t mmap_tx_psocket(int fd,int idx,
-				unsigned maxframe,void **map,
-				struct tpacket_req *treq){
+size_t mmap_tx_psocket(int fd,int idx,unsigned maxframe,void **map,
+					struct tpacket_req *treq){
 	// PACKET_TX_RING leads to bad craziness, perhaps due to threading
 	//return mmap_psocket(PACKET_TX_RING,idx,fd,maxframe,map,treq);
 	return mmap_psocket(0,idx,fd,maxframe,map,treq);
