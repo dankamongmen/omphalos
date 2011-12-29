@@ -47,9 +47,21 @@ wireless_rate_info(const char *name,wless_info *wi){
 	return 0;
 }
 
+static inline uintmax_t
+iwfreq_defreak(const struct iw_freq *iwf){
+	uintmax_t ret = iwf->m;
+	unsigned e = iwf->e;
+
+	while(e--){
+		ret *= 10;
+	}
+	return ret;
+}
+
 static int
 wireless_freq_info(const char *name,wless_info *wi){
 	struct iw_range range;
+	unsigned f;
 	int fd;
 
 	assert(wi);
@@ -63,6 +75,16 @@ wireless_freq_info(const char *name,wless_info *wi){
 		return -1;
 	}
 	close(fd);
+	for(f = 0 ; f < range.num_frequency ; ++f){
+		uintmax_t freq = iwfreq_defreak(&range.freq[f]);
+		int idx = wireless_idx_byfreq(freq);
+
+		if(idx < 0){
+			diagnostic("Unknown frequency: %ju",freq);
+			return -1;
+		}
+		wi->dBm[idx] = 1.0; // FIXME get real maxstrength
+	}
 	return 0;
 }
 
@@ -103,17 +125,6 @@ int handle_wireless_event(const omphalos_iface *octx,interface *i,
 	return 0;
 }
 
-static inline uintmax_t
-iwfreq_defreak(const struct iw_freq *iwf){
-	uintmax_t ret = iwf->m;
-	unsigned e = iwf->e;
-
-	while(e--){
-		ret *= 10;
-	}
-	return ret;
-}
-
 int iface_wireless_info(const char *name,wless_info *wi){
 	struct iwreq req;
 
@@ -137,7 +148,6 @@ int iface_wireless_info(const char *name,wless_info *wi){
 	}else{
 		wi->freq = iwfreq_defreak(&req.u.freq);
 	}
-	memset(wi->dBm,0x7f,sizeof(wi->dBm)); // FIXME detect supported freqs!
 	return 0;
 }
 
