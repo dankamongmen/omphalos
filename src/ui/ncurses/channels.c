@@ -58,11 +58,17 @@ iface_row(WINDOW *w,unsigned freqrow,int srow,int scol){
 		assert(wmove(w,srow,scol + 1 + IFNAMSIZ + 1) == OK);
 	}
 	for(f = freqrow * FREQSPERROW ; f < (freqrow + 1) * FREQSPERROW ; ++f){
-		assert(wprintw(w,"%c%c%c%c",
-				iface_supports_freq(ifaces[0],f) ? iface_chars[0] : ' ',
-				iface_supports_freq(ifaces[1],f) ? iface_chars[1] : ' ',
-				iface_supports_freq(ifaces[2],f) ? iface_chars[2] : ' ',
-				iface_supports_freq(ifaces[3],f) ? iface_chars[3] : ' ') == OK);
+		char str[COLSPERFREQ + 1],*s;
+		unsigned d;
+
+		s = str;
+		for(d = 0 ; d < sizeof(str) / sizeof(*str) - 1 ; ++d){
+			if(iface_supports_freq(ifaces[d],f)){
+				*s++ = iface_chars[d];
+			}
+		}
+		*s = '\0';
+		assert(wprintw(w,"%*.*s",COLSPERFREQ,COLSPERFREQ,str) == OK);
 	}
 	return 0;
 }
