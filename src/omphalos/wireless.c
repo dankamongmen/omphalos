@@ -179,7 +179,7 @@ static const struct freq {
 	{ MHZ(2462),		11,	FREQ_24,	},
 	{ MHZ(2467),		12,	FREQ_24,	},
 	{ MHZ(2472),		13,	FREQ_24,	},
-	{ MHZ(2482),		14,	FREQ_24,	},
+	{ MHZ(2484),		14,	FREQ_24,	},
 	{ HMHZ(36575),		131,	FREQ_36,	},
 	{ HMHZ(36625),		132,	FREQ_36,	},
 	{ HMHZ(36600),		132,	FREQ_36,	},
@@ -274,11 +274,11 @@ int wireless_idx_byfreq(unsigned freq){
 		if(freqtable[idx].hz == freq){
 			return idx;
 		}else if(freqtable[idx].hz < freq){
-			lb = idx;
+			lb = idx + 1;
 		}else{
-			ub = idx;
+			ub = idx - 1;
 		}
-	}while(lb != ub);
+	}while(lb < ub);
 	return -1;	// invalid frequency!
 }
 
