@@ -159,18 +159,14 @@ send_to_self(interface *i,void *frame){
 			udp = (const struct udphdr *)((const char *)ip + ip->ihl * 4u);
 			sina.sin_port = udp->dest;
 			plen = ntohs(ip->tot_len);
-			payload = ip;
 		}else if(ip->protocol == IPPROTO_ICMP){
-			const struct icmphdr *icmp;
-
 			sina.sin_addr.s_addr = ip->daddr;
-			icmp = (const struct icmphdr *)((const char *)ip + ip->ihl * 4u);
 			sina.sin_port = 0;
 			plen = ntohs(ip->tot_len);
-			payload = icmp;
 		}else{
 			assert(0);
 		}
+		payload = ip;
 	}else if(l2proto == ntohs(ETH_P_IPV6)){
 		const struct ip6_hdr *ip;
 
