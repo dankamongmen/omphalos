@@ -435,28 +435,25 @@ phy_handler(struct nl_msg *msg,void *arg){
 #endif
 		*/
 
-		diagnostic("\t\tFrequencies:");
-
 		nla_for_each_nested(nl_freq, tb_band[NL80211_BAND_ATTR_FREQS], rem_freq) {
-			uint32_t freq;
-			int chan,idx;
+			uintmax_t freq;
+			int idx;
 
 			nla_parse(tb_freq, NL80211_FREQUENCY_ATTR_MAX, nla_data(nl_freq),
 				  nla_len(nl_freq), freq_policy);
 			if (!tb_freq[NL80211_FREQUENCY_ATTR_FREQ])
 				continue;
-			freq = nla_get_u32(tb_freq[NL80211_FREQUENCY_ATTR_FREQ]);
-			chan = ieee80211_frequency_to_channel(freq);
-			if(chan > MAX_WIRELESS_CHANNEL){
-				goto err;
-			}
+			// Frequency is expressed in MHz in nl80211
+			freq = 1000000ull * nla_get_u32(tb_freq[NL80211_FREQUENCY_ATTR_FREQ]);
 			if((idx = wireless_idx_byfreq(freq)) >= 0){
 				if (tb_freq[NL80211_FREQUENCY_ATTR_MAX_TX_POWER] &&
 						!tb_freq[NL80211_FREQUENCY_ATTR_DISABLED]){
 					nli->dBm[idx] = 0.01 * nla_get_u32(tb_freq[NL80211_FREQUENCY_ATTR_MAX_TX_POWER]);
 				}
+			}else{
+				diagnostic("Unknown frequency %ju",freq);
+				goto err;
 			}
-			diagnostic("Chan %d freq %u (%.1f dBm)",chan,freq,nli->dBm[chan]);
 
 			/*
 			if (tb_freq[NL80211_FREQUENCY_ATTR_PASSIVE_SCAN])
