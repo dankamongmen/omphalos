@@ -269,42 +269,43 @@ int handle_ring_packet(interface *iface,int fd,void *frame){
 		l3_dstpkt(packet.l3d);
 	}
 	if(packet.malformed || packet.noproto){
-		struct pcap_pkthdr pcap;
-		size_t scribble = 0;
-		struct pcap_ll pll;
-
-		if(frame != iface->truncbuf){
-			scribble = thdr->tp_mac;
-			frame -= thdr->tp_mac;
-		}else{
-			scribble = 0;
-		}
 		if(packet.malformed){
 			++iface->malformed;
 		}
 		if(packet.noproto){
 			++iface->noprotocol;
 		}
-		pcap.caplen = pcap.len = len + scribble;
-		pcap.ts = packet.tv;
-		memset(&pll,0,sizeof(pll));
-		pll.arphrd = htons(packet.i->arptype);
-		pll.llen = ntohs(packet.i->addrlen);
-		if(packet.l2s){
-			hwaddrint hw = get_hwaddr(packet.l2s);
-			memcpy(&pll.haddr,&hw,packet.i->addrlen > sizeof(pll.haddr) ?
-					sizeof(pll.haddr) : packet.i->addrlen);
-			// FIXME handle other pkttypes
-			if(memcmp(&hw,packet.i->addr,packet.i->addrlen) == 0){
-				pll.pkttype = htons(4);
+		if(packet.pcap_ethproto){
+			struct pcap_pkthdr pcap;
+			size_t scribble = 0;
+			struct pcap_ll pll;
+
+			if(frame != iface->truncbuf){
+				scribble = thdr->tp_mac;
+				frame -= thdr->tp_mac;
+			}else{
+				scribble = 0;
 			}
-		}
-		assert(packet.pcap_ethproto);
-		pll.ethproto = htons(packet.pcap_ethproto);
-		// 'frame' starts at the L2 header, *not* the tpacket_thdr
-		log_pcap_packet(&pcap,frame,packet.i->l2hlen + scribble,&pll);
-		if(scribble){
-			frame += thdr->tp_mac;
+			pcap.caplen = pcap.len = len + scribble;
+			pcap.ts = packet.tv;
+			memset(&pll,0,sizeof(pll));
+			pll.arphrd = htons(packet.i->arptype);
+			pll.llen = ntohs(packet.i->addrlen);
+			if(packet.l2s){
+				hwaddrint hw = get_hwaddr(packet.l2s);
+				memcpy(&pll.haddr,&hw,packet.i->addrlen > sizeof(pll.haddr) ?
+						sizeof(pll.haddr) : packet.i->addrlen);
+				// FIXME handle other pkttypes
+				if(memcmp(&hw,packet.i->addr,packet.i->addrlen) == 0){
+					pll.pkttype = htons(4);
+				}
+			}
+			pll.ethproto = htons(packet.pcap_ethproto);
+			// 'frame' starts at the L2 header, *not* the tpacket_thdr
+			log_pcap_packet(&pcap,frame,packet.i->l2hlen + scribble,&pll);
+			if(scribble){
+				frame += thdr->tp_mac;
+			}
 		}
 	}
 	if(octx->packet_read){
