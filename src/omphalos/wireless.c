@@ -90,10 +90,16 @@ wireless_freq_info(const char *name,wless_info *wi){
 
 int handle_wireless_event(const omphalos_iface *octx,interface *i,
 				const struct iw_event *iw,size_t len){
+	const union iwreq_data *u;
+
+	assert(i->settings_valid == SETTINGS_VALID_NL80211 ||
+			i->settings_valid == SETTINGS_VALID_WEXT);
 	if(len < IW_EV_LCP_LEN){
 		diagnostic("Wireless msg too short on %s (%zu)",i->name,len);
 		return -1;
 	}
+	// IW_EV_*_LEN have IW_EV_LCP_LEN built in, so don't subtract it
+	u = &iw->u;
 	switch(iw->cmd){
 	case SIOCGIWSCAN:{
 		// FIXME handle scan results
@@ -104,7 +110,17 @@ int handle_wireless_event(const omphalos_iface *octx,interface *i,
 	break;}case SIOCSIWMODE:{
 		// FIXME handle wireless mode change
 	break;}case SIOCSIWFREQ:{
-		// FIXME handle frequency/channel change
+		if(len != IW_EV_FREQ_LEN){
+			diagnostic("Malformed freq msg for %s (%zu)",i->name,len);
+		}else{
+			const struct iw_freq *iwf = &u->freq;
+
+			if(i->settings_valid == SETTINGS_VALID_NL80211){
+				i->settings.nl80211.freq = iwfreq_defreak(iwf);
+			}else{
+				i->settings.wext.freq = iwfreq_defreak(iwf);
+			}
+		}
 	break;}case IWEVASSOCRESPIE:{
 		// FIXME handle IE reassociation results
 	break;}case SIOCSIWESSID:{
