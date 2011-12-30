@@ -230,8 +230,7 @@ int handle_ring_packet(interface *iface,int fd,void *frame){
 			diagnostic("Error reading stats on %s (%s?)",iface->name,strerror(errno));
 		}else if(tstats.tp_drops){
 			iface->drops += tstats.tp_drops;
-			diagnostic("[%s] FUCK ME; THE RINGBUFFER'S FULL (%u/%ju drops)!",
-				iface->name,tstats.tp_drops,iface->drops);
+			diagnostic("[%s] %u/%ju drops",iface->name,tstats.tp_drops,iface->drops);
 		}
 	}
 	if((thdr->tp_status & TP_STATUS_COPY) || thdr->tp_snaplen != thdr->tp_len){
