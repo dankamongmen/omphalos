@@ -96,3 +96,25 @@ err:
 	memset(ps,0,sizeof(*ps));
 	return ERR;
 }
+
+#define BRIDGEROWS 1
+
+int display_bridging_locked(WINDOW *mainw,struct panel_state *ps){
+	memset(ps,0,sizeof(*ps));
+	if(new_display_panel(mainw,ps,BRIDGEROWS,0,L"press 'b' to dismiss display")){
+		goto err;
+	}
+	//update_bridge_details(panel_window(ps->p));
+	return OK;
+
+err:
+	if(ps->p){
+		WINDOW *psw = panel_window(ps->p);
+
+		hide_panel(ps->p);
+		del_panel(ps->p);
+		delwin(psw);
+	}
+	memset(ps,0,sizeof(*ps));
+	return ERR;
+}

@@ -50,6 +50,7 @@ static struct panel_state help = PANEL_STATE_INITIALIZER;
 static struct panel_state diags = PANEL_STATE_INITIALIZER;
 static struct panel_state details = PANEL_STATE_INITIALIZER;
 static struct panel_state network = PANEL_STATE_INITIALIZER;
+static struct panel_state bridging = PANEL_STATE_INITIALIZER;
 static struct panel_state channels = PANEL_STATE_INITIALIZER;
 static struct panel_state environment = PANEL_STATE_INITIALIZER;
 
@@ -114,21 +115,6 @@ wstatus(WINDOW *w,const char *fmt,...){
 	ret = wvstatus(w,fmt,va); // calls screen_update()
 	va_end(va);
 	return ret;
-}
-
-static void
-configure_prefs(WINDOW *w){
-	unimplemented(w);
-}
-
-static void
-change_mac(WINDOW *w){
-	unimplemented(w);
-}
-
-static void
-change_mtu(WINDOW *w){
-	unimplemented(w);
 }
 
 static void
@@ -241,11 +227,6 @@ ncurses_input_thread(void *unsafe_marsh){
 				selection_active = 0;
 			}unlock_ncurses();
 			break;
-		case 'C':
-			lock_ncurses();
-				configure_prefs(w);
-			unlock_ncurses();
-			break;
 		case 'l':
 			lock_ncurses();
 				toggle_panel(w,&diags,display_diags_locked);
@@ -276,11 +257,6 @@ ncurses_input_thread(void *unsafe_marsh){
 				sniff_interface_locked(w);
 			unlock_ncurses();
 			break;
-		case 'u':
-			lock_ncurses();
-				change_mtu(w);
-			unlock_ncurses();
-			break;
 		case '+':
 		case KEY_RIGHT:
 			lock_ncurses();
@@ -291,11 +267,6 @@ ncurses_input_thread(void *unsafe_marsh){
 		case KEY_LEFT:
 			lock_ncurses();
 				collapse_iface_locked();
-			unlock_ncurses();
-			break;
-		case 'm':
-			lock_ncurses();
-				change_mac(w);
 			unlock_ncurses();
 			break;
 		case 'v':{
@@ -316,6 +287,11 @@ ncurses_input_thread(void *unsafe_marsh){
 		}case 'w':{
 			lock_ncurses();
 				toggle_panel(w,&channels,display_channels_locked);
+			unlock_ncurses();
+			break;
+		}case 'b':{
+			lock_ncurses();
+				toggle_panel(w,&bridging,display_bridging_locked);
 			unlock_ncurses();
 			break;
 		}case 'h':{
