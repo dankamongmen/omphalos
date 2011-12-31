@@ -143,152 +143,112 @@ setup_service_probe(char *frame,size_t len,const char *name){
 
 static int
 tx_sd4(interface *i,const char *name,const uint32_t *saddr){
-	const struct ip4route *i4;
-	int ret = 0;
+	const unsigned char hw[ETH_ALEN] = { 0x01, 0x00, 0x5e, 0x00, 0x00, 0xfb };
+	uint32_t net = MDNS_NET4;
+	struct tpacket_hdr *thdr;
+	struct udphdr *udp;
+	struct iphdr *ip;
+	size_t flen,tlen;
+	void *frame;
+	int r;
 
-	for(i4 = i->ip4r ; i4 ; i4 = i4->next){
-		const unsigned char hw[ETH_ALEN] = { 0x01, 0x00, 0x5e, 0x00, 0x00, 0xfb };
-                uint32_t net = MDNS_NET4;
-                struct tpacket_hdr *thdr;
-                struct udphdr *udp;
-                struct iphdr *ip;
-                size_t flen,tlen;
-                void *frame;
-                int r;
-
-                if(!(i4->addrs & ROUTE_HAS_SRC)){
-                        continue; // not cause for an error
-                }
-		if(saddr && i4->src != *saddr){
-			continue;
-		}
-                if((frame = get_tx_frame(i,&flen)) == NULL){
-                        ret = -1;
-                        continue;
-                }
-                thdr = frame;
-                tlen = thdr->tp_mac;
-                if((r = prep_eth_header((char *)frame + tlen,flen - tlen,i,
-                                                hw,ETH_P_IP)) < 0){
-                        abort_tx_frame(i,frame);
-                        ret = -1;
-                        continue;
-                }
-                tlen += r;
-                ip = (struct iphdr *)((char *)frame + tlen);
-                if((r = prep_ipv4_header(ip,flen - tlen,i4->src,net,IPPROTO_UDP)) < 0){
-                        abort_tx_frame(i,frame);
-                        ret = -1;
-                        continue;
-                }
-                tlen += r;
-                if(flen - tlen < sizeof(*udp)){
-                        abort_tx_frame(i,frame);
-                        ret = -1;
-                        continue;
-                }
-                udp = (struct udphdr *)((char *)frame + tlen);
-                udp->source = htons(MDNS_UDP_PORT);
-                udp->dest = htons(MDNS_UDP_PORT);
-                tlen += sizeof(*udp);
-		if(name == NULL){
-			r = setup_service_enum((char *)frame + tlen,flen - tlen);
-		}else{
-			r = setup_service_probe((char *)frame + tlen,flen - tlen,name);
-		}
-		if(r < 0){
-			abort_tx_frame(i,frame);
-			ret = -1;
-			continue;
-		}
-		tlen += r;
-                ip->tot_len = htons(tlen - ((const char *)ip - (const char *)frame));
-		ip->check = ipv4_csum(ip);
-		udp->len = htons(ntohs(ip->tot_len) - ip->ihl * 4u);
-                udp->check = udp4_csum(ip);
-                thdr->tp_len = tlen - thdr->tp_mac;
-                ret |= send_tx_frame(i,frame);
-		if(saddr){
-			break; // we're done
-		}
+	if((frame = get_tx_frame(i,&flen)) == NULL){
+		return -1;
 	}
-	return ret;
+	thdr = frame;
+	tlen = thdr->tp_mac;
+	if((r = prep_eth_header((char *)frame + tlen,flen - tlen,i,
+					hw,ETH_P_IP)) < 0){
+		abort_tx_frame(i,frame);
+		return -1;
+	}
+	tlen += r;
+	ip = (struct iphdr *)((char *)frame + tlen);
+	if((r = prep_ipv4_header(ip,flen - tlen,*saddr,net,IPPROTO_UDP)) < 0){
+		abort_tx_frame(i,frame);
+		return -1;
+	}
+	tlen += r;
+	if(flen - tlen < sizeof(*udp)){
+		abort_tx_frame(i,frame);
+		return -1;
+	}
+	udp = (struct udphdr *)((char *)frame + tlen);
+	udp->source = htons(MDNS_UDP_PORT);
+	udp->dest = htons(MDNS_UDP_PORT);
+	tlen += sizeof(*udp);
+	if(name == NULL){
+		r = setup_service_enum((char *)frame + tlen,flen - tlen);
+	}else{
+		r = setup_service_probe((char *)frame + tlen,flen - tlen,name);
+	}
+	if(r < 0){
+		abort_tx_frame(i,frame);
+		return -1;
+	}
+	tlen += r;
+	ip->tot_len = htons(tlen - ((const char *)ip - (const char *)frame));
+	ip->check = ipv4_csum(ip);
+	udp->len = htons(ntohs(ip->tot_len) - ip->ihl * 4u);
+	udp->check = udp4_csum(ip);
+	thdr->tp_len = tlen - thdr->tp_mac;
+	return send_tx_frame(i,frame);
 }
 
 static int
 tx_sd6(interface *i,const char *name,const uint128_t saddr){
-	const struct ip6route *i6;
-	int ret = 0;
+	const unsigned char hw[ETH_ALEN] = { 0x33, 0x33, 0x00, 0x00, 0x00, 0xfb };
+	uint128_t net = { htonl(0xff020000ul), htonl(0x0ul),
+				htonl(0x0ul), htonl(0xfbul) };
+	struct tpacket_hdr *thdr;
+	struct udphdr *udp;
+	struct ip6_hdr *ip;
+	size_t flen,tlen;
+	void *frame;
+	int r;
 
-	for(i6 = i->ip6r ; i6 ; i6 = i6->next){
-		const unsigned char hw[ETH_ALEN] = { 0x33, 0x33, 0x00, 0x00, 0x00, 0xfb };
-                uint128_t net = { htonl(0xff020000ul), htonl(0x0ul),
-                                        htonl(0x0ul), htonl(0xfbul) };
-                struct tpacket_hdr *thdr;
-                struct udphdr *udp;
-                struct ip6_hdr *ip;
-                size_t flen,tlen;
-                void *frame;
-                int r;
-
-                if(!(i6->addrs & ROUTE_HAS_SRC)){
-                        continue; // not cause for an error
-                }
-		if(saddr && !equal128(i6->src,saddr)){
-			continue;
-		}
-                if((frame = get_tx_frame(i,&flen)) == NULL){
-                        ret = -1;
-                        continue;
-                }
-                thdr = frame;
-                tlen = thdr->tp_mac;
-                if((r = prep_eth_header((char *)frame + tlen,flen - tlen,i,
-                                                hw,ETH_P_IPV6)) < 0){
-                        abort_tx_frame(i,frame);
-                        ret = -1;
-                        continue;
-                }
-                tlen += r;
-                ip = (struct ip6_hdr *)((char *)frame + tlen);
-                if((r = prep_ipv6_header(ip,flen - tlen,i6->src,net,IPPROTO_UDP)) < 0){
-                        abort_tx_frame(i,frame);
-                        ret = -1;
-                        continue;
-                }
-                tlen += r;
-                if(flen - tlen < sizeof(*udp)){
-                        abort_tx_frame(i,frame);
-                        ret = -1;
-                        continue;
-                }
-                udp = (struct udphdr *)((char *)frame + tlen);
-                udp->source = htons(MDNS_UDP_PORT);
-                udp->dest = htons(MDNS_UDP_PORT);
-                tlen += sizeof(*udp);
-		if(name == NULL){
-			r = setup_service_enum((char *)frame + tlen,flen - tlen);
-		}else{
-			r = setup_service_probe((char *)frame + tlen,flen - tlen,name);
-		}
-		if(r < 0){
-			abort_tx_frame(i,frame);
-			ret = -1;
-			continue;
-		}
-		tlen += r;
-                thdr->tp_len = tlen;
-                ip->ip6_ctlun.ip6_un1.ip6_un1_plen = htons(thdr->tp_len -
-                        ((const char *)udp - (const char *)frame));
-		udp->len = ip->ip6_ctlun.ip6_un1.ip6_un1_plen;
-                udp->check = udp6_csum(ip);
-                thdr->tp_len -= thdr->tp_mac;
-                ret |= send_tx_frame(i,frame);
-		if(saddr){
-			break; // we're done
-		}
+	if((frame = get_tx_frame(i,&flen)) == NULL){
+		return -1;
 	}
-	return ret;
+	thdr = frame;
+	tlen = thdr->tp_mac;
+	if((r = prep_eth_header((char *)frame + tlen,flen - tlen,i,
+					hw,ETH_P_IPV6)) < 0){
+		abort_tx_frame(i,frame);
+		return -1;
+	}
+	tlen += r;
+	ip = (struct ip6_hdr *)((char *)frame + tlen);
+	if((r = prep_ipv6_header(ip,flen - tlen,saddr,net,IPPROTO_UDP)) < 0){
+		abort_tx_frame(i,frame);
+		return -1;
+	}
+	tlen += r;
+	if(flen - tlen < sizeof(*udp)){
+		abort_tx_frame(i,frame);
+		return -1;
+	}
+	udp = (struct udphdr *)((char *)frame + tlen);
+	udp->source = htons(MDNS_UDP_PORT);
+	udp->dest = htons(MDNS_UDP_PORT);
+	tlen += sizeof(*udp);
+	if(name == NULL){
+		r = setup_service_enum((char *)frame + tlen,flen - tlen);
+	}else{
+		r = setup_service_probe((char *)frame + tlen,flen - tlen,name);
+	}
+	if(r < 0){
+		abort_tx_frame(i,frame);
+		return -1;
+	}
+	tlen += r;
+	thdr->tp_len = tlen;
+	ip->ip6_ctlun.ip6_un1.ip6_un1_plen = htons(thdr->tp_len -
+		((const char *)udp - (const char *)frame));
+	udp->len = ip->ip6_ctlun.ip6_un1.ip6_un1_plen;
+	udp->check = udp6_csum(ip);
+	thdr->tp_len -= thdr->tp_mac;
+	return send_tx_frame(i,frame);
 }
 
 int mdns_sd_enumerate(int fam,interface *i,const void *saddr){

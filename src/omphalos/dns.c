@@ -520,8 +520,8 @@ int handle_dns_packet(omphalos_packet *op,const void *frame,size_t len){
 					// host! FIXME
 					if(add){
 						observe_service(op->i,op->l2s,op->l3s,proto,port,srv,NULL);
-					}else{
-						mdns_sd_probe(nsfam,op->i,data,NULL);
+					/*}else{
+						mdns_sd_probe(nsfam,op->i,data,NULL);*/
 					}
 					free(srv);
 				}else{
