@@ -133,8 +133,7 @@ void handle_icmp6_packet(omphalos_packet *op,const void *frame,size_t len){
 #define PING4_PAYLOAD_LEN 20
 
 // Always goes to ff02::2 (ALL-HOSTS), from each source address.
-static int
-tx_ipv4_bcast_pings(interface *i,const void *saddr){
+int tx_ipv4_bcast_pings(interface *i,const void *saddr){
 	const struct ip4route *i4;
 	int ret = 0;
 
@@ -194,8 +193,7 @@ tx_ipv4_bcast_pings(interface *i,const void *saddr){
 }
 
 // Always goes to ff02::2 (ALL-HOSTS), from each source address.
-static int
-tx_ipv6_bcast_pings(interface *i,const void *saddr){
+int tx_ipv6_bcast_pings(interface *i,const void *saddr){
 	const struct ip6route *i6;
 	int ret = 0;
 
@@ -253,13 +251,4 @@ tx_ipv6_bcast_pings(interface *i,const void *saddr){
 		break; // we're done
 	}
 	return ret;
-}
-
-int tx_broadcast_pings(int fam,interface *i,const void *saddr){
-	if(fam == AF_INET){
-		return tx_ipv4_bcast_pings(i,saddr);
-	}else if(fam == AF_INET6){
-		return tx_ipv6_bcast_pings(i,saddr);
-	}
-	return -1;
 }

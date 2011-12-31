@@ -11,7 +11,11 @@ int query_network(int family,interface *i,const void *saddr){
 
 	if(i->arptype != ARPHRD_LOOPBACK){
 		r |= initiate_lltd(family,i,saddr);
-		r |= tx_broadcast_pings(family,i,saddr);
+		if(family == AF_INET){
+			r |= tx_ipv4_bcast_pings(i,saddr);
+		}else if(family == AF_INET6){
+			r |= tx_ipv6_bcast_pings(i,saddr);
+		}
 		r |= mdns_sd_enumerate(family,i,saddr);
 		r |= mdns_stdsd_probe(family,i,saddr);
 		r |= ssdp_msearch(family,i,saddr);
