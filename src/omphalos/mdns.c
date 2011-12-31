@@ -112,13 +112,13 @@ static int
 setup_service_probe(char *frame,size_t len,const char *name){
 	struct dnshdr *dns = (struct dnshdr *)frame;
 	const char *comp,*c;
+	unsigned count;
 	char *dat,*d;
 
 	if(len < sizeof(*dns) + strlen(name) + 6){
 		return -1;
 	}
 	memset(dns,0,sizeof(*dns)); // mDNS transaction id == 0
-	dns->qdcount = htons(1);
 	dat = frame + sizeof(*dns);
 	comp = name;
 	d = dat;
@@ -132,13 +132,29 @@ setup_service_probe(char *frame,size_t len,const char *name){
 		*d = strlen(comp);
 		strcpy(d + 1,comp);
 		d += strlen(comp) + 2;
-	}else{ // already prepared for dns
-		strcpy(d,comp);
-		d += strlen(comp) + 1;
+		*(uint16_t *)(d) = DNS_TYPE_PTR;
+		*(uint16_t *)(d + 2) = DNS_CLASS_IN;
+		dns->qdcount = htons(1);
+		return sizeof(*dns) + (d - dat) + 4;
 	}
-	*(uint16_t *)(d) = DNS_TYPE_PTR;
-	*(uint16_t *)(d + 2) = DNS_CLASS_IN;
-	return sizeof(*dns) + (d - dat) + 4;
+	// already prepared for dns
+	count = 0;
+	do{
+		unsigned l;
+		do{
+			l = *(const unsigned char *)comp;
+			strncpy(d,comp,l + 1);
+			d += l + 1;
+			comp += l + 1;
+		}while(l != 5 || strncmp(comp - 5,"local",5));
+		*d++ = '\0';
+		*(uint16_t *)(d) = DNS_TYPE_PTR;
+		*(uint16_t *)(d + 2) = DNS_CLASS_IN;
+		d += 4;
+		++count;
+	}while(*comp);
+	dns->qdcount = htons(count);
+	return sizeof(*dns) + (d - dat);
 }
 
 static int
@@ -279,24 +295,23 @@ int mdns_sd_probe(int fam,interface *i,const char *name,const void *saddr){
 //       lookups with only one query each.
 #define TCP(x) x"\x04_tcp\x05local"
 #define UDP(x) x"\x04_udp\x05local"
-static const char *stdsds[] = {
-	TCP("\x04_ipp"),
-	TCP("\x04_smb"),
-	TCP("\x04_rfb"),
-	TCP("\x05_daap"),
-	TCP("\x05_http"),
-	TCP("\x05_raop"),
-	TCP("\x06_adisk"),
-	TCP("\x08_airplay"),
-	TCP("\x08_airport"),
-	TCP("\x08_scanner"),
-	TCP("\x0b_afpovertcp"),
-	TCP("\x0c_riousbprint"),
-	TCP("\x0d_home-sharing"),
-	TCP("\x0f_pdl-datastream"),
-	TCP("\x0f_appletv-itunes"),
-	UDP("\x0c_sleep-proxy"),
-	NULL
+static const char stdsds[] = {
+	TCP("\x04_ipp") \
+	TCP("\x04_smb")
+	TCP("\x04_rfb")
+	TCP("\x05_daap")
+	TCP("\x05_http")
+	TCP("\x05_raop")
+	TCP("\x06_adisk")
+	TCP("\x08_airplay")
+	TCP("\x08_airport")
+	TCP("\x08_scanner")
+	TCP("\x0b_afpovertcp")
+	TCP("\x0c_riousbprint")
+	TCP("\x0d_home-sharing")
+	TCP("\x0f_pdl-datastream")
+	TCP("\x0f_appletv-itunes")
+	UDP("\x0c_sleep-proxy")
 };
 #undef UDP
 #undef TCP
@@ -304,11 +319,5 @@ static const char *stdsds[] = {
 // This ought be more of an async launch thing -- it adds too much latency and
 // is too bursty at the moment FIXME
 int mdns_stdsd_probe(int fam,interface *i,const void *saddr){
-	const char **sd;
-	int ret = 0;
-
-	for(sd = stdsds ; *sd ; ++sd){
-		ret |= mdns_sd_probe(fam,i,*sd,saddr);
-	}
-	return ret;
+	return mdns_sd_probe(fam,i,stdsds,saddr);
 }
