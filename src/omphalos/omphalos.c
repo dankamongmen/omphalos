@@ -20,6 +20,7 @@
 #include <omphalos/route.h>
 #include <omphalos/resolv.h>
 #include <omphalos/procfs.h>
+#include <omphalos/signals.h>
 #include <omphalos/hwaddrs.h>
 #include <omphalos/netlink.h>
 #include <omphalos/omphalos.h>
@@ -103,23 +104,6 @@ static inline void
 default_vdiagnostic(const char *fmt,va_list v){
 	assert(vfprintf(stderr,fmt,v) >= 0);
 	assert(fputc(L'\n',stderr) != EOF);
-}
-
-// If we add any other signals to this list, be sure to update the signal
-// unmasking that goes on in the handling thread!
-static int
-mask_cancel_sigs(sigset_t *oldsigs){
-	sigset_t cancelsigs;
-
-	if(sigemptyset(&cancelsigs) || sigaddset(&cancelsigs,SIGINT)){
-		fprintf(stderr,"Couldn't prep signals (%s?)\n",strerror(errno));
-		return -1;
-	}
-	if(sigprocmask(SIG_BLOCK,&cancelsigs,oldsigs)){
-		fprintf(stderr,"Couldn't mask signals (%s?)\n",strerror(errno));
-		return -1;
-	}
-	return 0;
 }
 
 enum {

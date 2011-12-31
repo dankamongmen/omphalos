@@ -1,7 +1,24 @@
 #include <errno.h>
+#include <stdio.h>
 #include <signal.h>
 #include <string.h>
 #include <omphalos/diag.h>
+
+// If we add any other signals to this list, be sure to update the signal
+// unmasking that goes on in the handling thread!
+int mask_cancel_sigs(sigset_t *oldsigs){
+	sigset_t cancelsigs;
+
+	if(sigemptyset(&cancelsigs) || sigaddset(&cancelsigs,SIGINT)){
+		fprintf(stderr,"Couldn't prep signals (%s?)\n",strerror(errno));
+		return -1;
+	}
+	if(sigprocmask(SIG_BLOCK,&cancelsigs,oldsigs)){
+		fprintf(stderr,"Couldn't mask signals (%s?)\n",strerror(errno));
+		return -1;
+	}
+	return 0;
+}
 
 int restore_sigmask(void){
 	sigset_t csigs;
