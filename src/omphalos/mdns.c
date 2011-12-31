@@ -98,7 +98,7 @@ setup_service_enum(char *frame,size_t len){
 		return -1;
 	}
 	memset(dns,0,sizeof(*dns)); // mDNS transaction id == 0
-	dns->qdcount = ntohs(1);
+	dns->qdcount = htons(1);
 	dat = frame + sizeof(*dns);
 	strcpy(dat,ENUMSTR);
 	*(uint16_t *)(dat + strlen(ENUMSTR) + 1) = DNS_TYPE_PTR;
@@ -118,7 +118,7 @@ setup_service_probe(char *frame,size_t len,const char *name){
 		return -1;
 	}
 	memset(dns,0,sizeof(*dns)); // mDNS transaction id == 0
-	dns->qdcount = ntohs(1);
+	dns->qdcount = htons(1);
 	dat = frame + sizeof(*dns);
 	comp = name;
 	d = dat;
