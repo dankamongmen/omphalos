@@ -16,6 +16,7 @@
 #include <omphalos/vrrp.h>
 #include <omphalos/util.h>
 #include <omphalos/cisco.h>
+#include <omphalos/ipsec.h>
 #include <omphalos/hwaddrs.h>
 #include <omphalos/netaddrs.h>
 #include <omphalos/ethernet.h>
@@ -133,6 +134,12 @@ void handle_ipv6_packet(omphalos_packet *op,const void *frame,size_t len){
 		break; }case IPPROTO_EIGRP:{
 			handle_eigrp_packet(op,nhdr,plen);
 			nhdr = NULL;
+		break; }case IPPROTO_ESP:{
+			handle_esp_packet(op,nhdr,plen);
+			nhdr = NULL;
+		break; }case IPPROTO_AH:{
+			handle_ah_packet(op,nhdr,plen);
+			nhdr = NULL;
 		break; }case IPPROTO_HOPOPTS:{
 			const struct ip6_ext *opt = nhdr;
 
@@ -243,6 +250,10 @@ void handle_ipv4_packet(omphalos_packet *op,const void *frame,size_t len){
 		handle_vrrp_packet(op,nhdr,nlen);
 	break; }case IPPROTO_EIGRP:{
 		handle_eigrp_packet(op,nhdr,nlen);
+	break; }case IPPROTO_ESP:{
+		handle_esp_packet(op,nhdr,nlen);
+	break; }case IPPROTO_AH:{
+		handle_ah_packet(op,nhdr,nlen);
 	break; }default:{
 		op->noproto = 1;
 		diagnostic("%s %s noproto for %u",__func__,op->i->name,ip->protocol);
