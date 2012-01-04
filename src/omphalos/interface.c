@@ -142,44 +142,59 @@ int idx_of_iface(const interface *i){
 void free_iface(interface *i){
 	const struct omphalos_ctx *ctx = get_octx();
 	const omphalos_iface *octx = &ctx->iface;
+	int idx;
 
+	if(!i){
+		return;
+	}
+	idx = idx_of_iface(i);
+	pthread_mutex_lock(&iface_lock);
+	if(!ifaces[idx]){
+		pthread_mutex_unlock(&iface_lock);
+		return;
+	}
 	// Must reap thread prior to closing the fd's, lest some other thread
 	// be allocated that fd, and have the packet socket thread use it.
-	if(i->pmarsh){
-		reap_thread(i);
-		i->pmarsh = NULL;
-	}
 	pthread_mutex_lock(&i->lock);
+	diagnostic("Shutting down %s",i->name);
+	if(i->pmarsh){
+		pthread_mutex_unlock(&i->lock);
+		reap_thread(i);
+		pthread_mutex_lock(&i->lock);
+	}
 	if(i->opaque && octx->iface_removed){
 		octx->iface_removed(i,i->opaque);
 		i->opaque = NULL;
 	}
 	if(i->rfd >= 0){
 		if(close(i->rfd)){
-			diagnostic("Error closing %d: %s",i->rfd,strerror(errno));
+			diagnostic("[%s] Error closing %d: %s",i->name,i->rfd,strerror(errno));
 		}
 		i->rfd = -1;
 	}
 	if(i->fd >= 0){
 		if(close(i->fd)){
-			diagnostic("Error closing %d: %s",i->fd,strerror(errno));
+			diagnostic("[%s] Error closing %d: %s",i->name,i->fd,strerror(errno));
 		}
 		i->fd = -1;
 	}
 	if(i->fd4 >= 0){
 		if(close(i->fd4)){
-			diagnostic("Error closing %d: %s",i->fd4,strerror(errno));
+			diagnostic("[%s] Error closing %d: %s",i->name,i->fd4,strerror(errno));
 		}
+		i->fd4 = -1;
 	}
 	if(i->fd6udp >= 0){
 		if(close(i->fd6udp)){
-			diagnostic("Error closing %d: %s",i->fd6udp,strerror(errno));
+			diagnostic("[%s] Error closing %d: %s",i->name,i->fd6udp,strerror(errno));
 		}
+		i->fd6udp = -1;
 	}
 	if(i->fd6icmp >= 0){
 		if(close(i->fd6icmp)){
-			diagnostic("Error closing %d: %s",i->fd6icmp,strerror(errno));
+			diagnostic("[%s] Error closing %d: %s",i->name,i->fd6icmp,strerror(errno));
 		}
+		i->fd6icmp = -1;
 	}
 	while(i->ip6r){
 		struct ip6route *r6 = i->ip6r->next;
@@ -210,28 +225,23 @@ void free_iface(interface *i){
 	cleanup_l3hosts(&i->ip4hosts);
 	cleanup_l2hosts(&i->l2hosts);
 	pthread_mutex_unlock(&i->lock);
+
+	// Mark it unused
+	ifaces[idx] = 0;
+	pthread_mutex_unlock(&iface_lock);
 }
 
 void cleanup_interfaces(void){
 	unsigned i;
 
-	pthread_mutex_lock(&iface_lock);
 	for(i = 0 ; i < sizeof(interfaces) / sizeof(*interfaces) ; ++i){
 		int r;
 
-		if(!ifaces[i]){
-			continue;
-		}
-		if(interfaces[i].name){
-			diagnostic("Shutting down %s",interfaces[i].name);
-		}
 		free_iface(&interfaces[i]);
 		if( (r = pthread_mutex_destroy(&interfaces[i].lock)) ){
 			diagnostic("Couldn't destroy lock on %d (%s?)",r,strerror(r));
 		}
-		ifaces[i] = 0;
 	}
-	pthread_mutex_unlock(&iface_lock);
 }
 
 int print_all_iface_stats(FILE *fp,interface *agg){

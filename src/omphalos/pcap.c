@@ -258,7 +258,7 @@ int init_pcap(const omphalos_ctx *pctx){
 }
 
 void cleanup_pcap(const omphalos_ctx *pctx){
-	free_iface(&pcap_file_interface);
+	// FIXME free_iface(&pcap_file_interface);
 	pthread_mutex_lock(&dumplock);
 	if(dumper){
 		pcap_dump_flush(dumper);
