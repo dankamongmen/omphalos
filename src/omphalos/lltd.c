@@ -304,10 +304,12 @@ handle_lltd_tlvs(omphalos_packet *op,const void *frame,size_t len){
 		if(ip){
 			l3 = lookup_local_l3host(NULL,op->i,op->l2s,AF_INET,ip);
 			name_l3host_absolute(op->i,op->l2s,l3,name,NAMING_LEVEL_MDNS);
+			observe_service(op->i,op->l2s,l3,0,0,L"LLTD",NULL);
 		}
 		if(ip6){
 			l3 = lookup_local_l3host(NULL,op->i,op->l2s,AF_INET6,ip6);
 			name_l3host_absolute(op->i,op->l2s,l3,name,NAMING_LEVEL_MDNS);
+			observe_service(op->i,op->l2s,l3,0,0,L"LLTD",NULL);
 		}
 		free(name);
 	}
