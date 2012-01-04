@@ -238,10 +238,12 @@ categorize_tx(const interface *i,const void *frame,int *self,int *out){
 int send_tx_frame(interface *i,void *frame){
 	const omphalos_ctx *octx = get_octx();
 	struct tpacket_hdr *thdr = frame;
-	int self,out,ret = 0;
+	int ret = 0;
 
 	assert(thdr->tp_status == TP_STATUS_PREPARING);
 	if(octx->mode != OMPHALOS_MODE_SILENT){
+		int self,out;
+
 		categorize_tx(i,frame,&self,&out);
 		if(self){
 			int r;
