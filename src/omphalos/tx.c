@@ -244,7 +244,7 @@ int send_tx_frame(interface *i,void *frame){
 	if(octx->mode != OMPHALOS_MODE_SILENT){
 		int self,out;
 
-		categorize_tx(i,frame,&self,&out);
+		categorize_tx(i,(const char *)frame + thdr->tp_mac,&self,&out);
 		if(self){
 			int r;
 
