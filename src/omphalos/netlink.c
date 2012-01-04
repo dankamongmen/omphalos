@@ -841,7 +841,9 @@ handle_newlink_locked(interface *iface,const struct ifinfomsg *ii,const struct n
 
 		iface->opaque = octx->iface_event(iface,iface->opaque);
 		if(!ctx->nopromiscuous){
-			enable_promiscuity(iface);
+			if(iface->arptype != ARPHRD_LOOPBACK){
+				enable_promiscuity(iface);
+			}
 		}
 		if(iface->addr){
 			lookup_l2host(iface,iface->addr);
