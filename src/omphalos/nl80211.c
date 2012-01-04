@@ -405,12 +405,12 @@ phy_handler(struct nl_msg *msg,void *arg){
 	if (!tb_msg[NL80211_ATTR_WIPHY_BANDS])
 		return NL_SKIP;
 
-	if (tb_msg[NL80211_ATTR_WIPHY_NAME])
-		diagnostic("Wiphy %s", nla_get_string(tb_msg[NL80211_ATTR_WIPHY_NAME]));
+	//if (tb_msg[NL80211_ATTR_WIPHY_NAME])
+	//	diagnostic("Wiphy %s", nla_get_string(tb_msg[NL80211_ATTR_WIPHY_NAME]));
 	
 	nla_for_each_nested(nl_band, tb_msg[NL80211_ATTR_WIPHY_BANDS], rem_band) {
-		diagnostic("\tBand %d:", bandidx);
-		bandidx++;
+		//diagnostic("\tBand %d:", bandidx);
+		++bandidx;
 
 		nla_parse(tb_band, NL80211_BAND_ATTR_MAX, nla_data(nl_band),
 			  nla_len(nl_band), NULL);
