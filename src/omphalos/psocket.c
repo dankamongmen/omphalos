@@ -104,7 +104,7 @@ mmap_psocket(int op,int idx,int fd,unsigned maxframe,void **map,
 			diagnostic("Couldn't bind idx %d (%s?)",idx,strerror(errno));
 			return 0;
 		}
-	}else if(op == PACKET_TX_RING){
+	}else if(op != PACKET_RX_RING){
 		diagnostic("Invalid idx with op %d: %d",op,idx);
 		return -1;
 	}
@@ -131,7 +131,7 @@ mmap_psocket(int op,int idx,int fd,unsigned maxframe,void **map,
 
 size_t mmap_tx_psocket(int fd,int idx,unsigned maxframe,void **map,
 					struct tpacket_req *treq){
-	return mmap_psocket(PACKET_TX_RING,idx,fd,maxframe,map,treq);
+	return mmap_psocket(0/*PACKET_TX_RING*/,idx,fd,maxframe,map,treq);
 }
 
 int unmap_psocket(void *map,size_t size){
