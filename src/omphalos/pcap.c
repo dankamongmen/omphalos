@@ -5,6 +5,7 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <omphalos/ip.h>
+#include <omphalos/ppp.h>
 #include <omphalos/util.h>
 #include <omphalos/hdlc.h>
 #include <asm/byteorder.h>
@@ -219,6 +220,12 @@ int handle_pcap_file(const omphalos_ctx *pctx){
 			pmarsh.i->l2hlen = 4;
 			memset(pmarsh.i->addr,0,pmarsh.i->addrlen);
 			memset(pmarsh.i->bcast,0x8f,pmarsh.i->addrlen);
+			break;
+		}case DLT_PPP:
+		case DLT_PPP_SERIAL:{
+			pmarsh.handler = handle_ppp_packet;
+			fxn = handle_pcap_direct;
+			// FIXME set up addr, bcast, l2hlen, etc
 			break;
 		}default:{
 			diagnostic("Unhandled datalink type: %d",pcap_datalink(pcap));
