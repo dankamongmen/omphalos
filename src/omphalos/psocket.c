@@ -287,7 +287,7 @@ int handle_ring_packet(interface *iface,int fd,void *frame){
 			pcap.ts = packet.tv;
 			memset(&pll,0,sizeof(pll));
 			pll.arphrd = htons(packet.i->arptype);
-			pll.llen = ntohs(packet.i->addrlen);
+			pll.llen = htons(packet.i->addrlen);
 			if(packet.l2s){
 				hwaddrint hw = get_hwaddr(packet.l2s);
 				memcpy(&pll.haddr,&hw,packet.i->addrlen > sizeof(pll.haddr) ?
