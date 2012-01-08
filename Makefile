@@ -14,7 +14,7 @@ OMPHALOS:=$(OUT)/$(PROJ)/$(PROJ)
 ADDCAPS:=tools/addcaps
 SETUPCORE:=tools/setupcores
 
-UI:=ncurses tty# x
+UI:=coretest ncurses tty# x
 BIN:=$(addprefix $(OMPHALOS)-,$(UI))
 
 DFLAGS:=-D_FILE_OFFSET_BITS=64 -D_XOPEN_SOURCE_EXTENDED -D_GNU_SOURCE
