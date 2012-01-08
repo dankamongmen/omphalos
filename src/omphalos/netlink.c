@@ -839,7 +839,9 @@ handle_newlink_locked(interface *iface,const struct ifinfomsg *ii,const struct n
 	if(iface->fd < 0 && (iface->flags & IFF_UP)){
 		int r = -1;
 
-		iface->opaque = octx->iface_event(iface,iface->opaque);
+		if(octx->iface_event){
+			iface->opaque = octx->iface_event(iface,iface->opaque);
+		}
 		if(!ctx->nopromiscuous){
 			if(iface->arptype != ARPHRD_LOOPBACK){
 				enable_promiscuity(iface);
@@ -873,7 +875,9 @@ handle_newlink_locked(interface *iface,const struct ifinfomsg *ii,const struct n
 			iface->rfd = iface->fd = -1;
 			iface->rs = iface->ts = 0;
 		}
-		iface->opaque = octx->iface_event(iface,iface->opaque);
+		if(octx->iface_event){
+			iface->opaque = octx->iface_event(iface,iface->opaque);
+		}
 	}
 	return 0;
 }
