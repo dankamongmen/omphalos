@@ -67,6 +67,7 @@ COBJS:=$(addprefix $(OUT)/,$(CSRCS:%.c=%.o))
 
 # Various UI's plus the core make the binaries
 COREOBJS:=$(filter $(OUT)/$(SRC)/$(PROJ)/%.o,$(COBJS))
+CORETESTOBJS:=$(filter $(OUT)/$(SRC)/ui/coretest/%.o,$(COBJS))
 NCURSESOBJS:=$(filter $(OUT)/$(SRC)/ui/ncurses/%.o,$(COBJS))
 TTYOBJS:=$(filter $(OUT)/$(SRC)/ui/tty/%.o,$(COBJS))
 XOBJS:=$(filter $(OUT)/$(SRC)/ui/x/%.o,$(COBJS))
@@ -98,13 +99,17 @@ $(IANAOUI): $(IANAOUI).raw
 $(IANAOUI).raw:
 	get-oui -v -f $@
 
+$(OMPHALOS)-coretest: $(COREOBJS) $(CORETESTOBJS)
+	@mkdir -p $(@D)
+	$(CC) $(CFLAGS) -o $@ $^ $(LFLAGS)
+
 $(OMPHALOS)-ncurses: $(COREOBJS) $(NCURSESOBJS)
 	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -o $@ $^ $(LFLAGS) -lpanel -lncursesw
 
 $(OMPHALOS)-tty: $(COREOBJS) $(TTYOBJS)
 	@mkdir -p $(@D)
-	$(CC) $(CFLAGS) -o $@ $^ $(LFLAGS) -lreadline -lncursesw
+	$(CC) $(CFLAGS) -o $@ $^ $(LFLAGS) -lreadline
 
 $(OMPHALOS)-x: $(COREOBJS) $(XOBJS)
 	@mkdir -p $(@D)
