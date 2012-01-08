@@ -1,6 +1,6 @@
 .DELTE_ON_ERROR:
 .DEFAULT_GOAL:=test
-.PHONY: all bin doc livetest silenttest test valgrind clean clobber install uninstall
+.PHONY: all bin doc livetest coretest silenttest test valgrind clean clobber install uninstall
 .PHONY:	bless sudobless
 
 VERSION=0.0.1
@@ -82,6 +82,9 @@ livetest: sudobless $(SUPPORT)
 
 silenttest: sudobless $(SUPPORT)
 	$(OMPHALOS)-ncurses -u '' --mode=silent --plog=$(OUTCAP)
+
+coretest: sudobless $(SUPPORT)
+	$(OMPHALOS)-coretest -u '' --plog=$(OUTCAP)
 
 test: all $(TESTPCAPS) $(SUPPORT)
 	for i in $(TESTPCAPS) ; do $(OMPHALOS)-tty --plog=$(OUTCAP) -f $$i -u "" || exit 1 ; done

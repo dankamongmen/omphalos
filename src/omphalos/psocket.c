@@ -330,7 +330,7 @@ size_t mmap_rx_psocket(int fd,int idx,unsigned maxframe,void **map,
 	size_t ret;
 	int thresh;
 
-	ret = mmap_psocket(PACKET_RX_RING,idx,fd,maxframe,map,treq,1024);
+	ret = mmap_psocket(PACKET_RX_RING,idx,fd,maxframe,map,treq,8192 * 4);
 	if(ret == 0){
 		return 0;
 	}
