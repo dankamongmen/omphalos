@@ -61,9 +61,9 @@ get_block_size(unsigned fsize,unsigned *bsize){
 }
 
 // Returns 0 on failure, otherwise size of the ringbuffer. On a failure,
-// contents of treq are unspecified.
+// contents of treq are unspecified. blknum == 1024 for 4MiB rings.
 static size_t
-size_mmap_psocket(struct tpacket_req *treq,unsigned maxframe){
+size_mmap_psocket(struct tpacket_req *treq,unsigned maxframe,unsigned blknum){
 	unsigned fperblk;
 
 	// Must be a multiple of TPACKET_ALIGNMENT, and the following must
@@ -78,7 +78,7 @@ size_mmap_psocket(struct tpacket_req *treq,unsigned maxframe){
 	treq->tp_frame_size = treq->tp_block_size / fperblk;
 	// Array of pointers to blocks, allocated via slab -- cannot be
 	// larger than largest slabbable allocation. FIXME do better
-	treq->tp_block_nr = 1024 / (treq->tp_block_size / getpagesize());
+	treq->tp_block_nr = blknum / (treq->tp_block_size / getpagesize());
 	// tp_frame_nr is derived from the other three parameters.
 	treq->tp_frame_nr = (treq->tp_block_size / treq->tp_frame_size)
 		* treq->tp_block_nr;
@@ -87,11 +87,11 @@ size_mmap_psocket(struct tpacket_req *treq,unsigned maxframe){
 
 static size_t
 mmap_psocket(int op,int idx,int fd,unsigned maxframe,void **map,
-				struct tpacket_req *treq){
+			struct tpacket_req *treq,unsigned blknum){
 	size_t size;
 
 	*map = MAP_FAILED;
-	if((size = size_mmap_psocket(treq,maxframe)) == 0){
+	if((size = size_mmap_psocket(treq,maxframe,blknum)) == 0){
 		return 0;
 	}
 	if(idx >= 0){
@@ -131,7 +131,7 @@ mmap_psocket(int op,int idx,int fd,unsigned maxframe,void **map,
 
 size_t mmap_tx_psocket(int fd,int idx,unsigned maxframe,void **map,
 					struct tpacket_req *treq){
-	return mmap_psocket(0/*PACKET_TX_RING*/,idx,fd,maxframe,map,treq);
+	return mmap_psocket(0/*PACKET_TX_RING*/,idx,fd,maxframe,map,treq,256);
 }
 
 int unmap_psocket(void *map,size_t size){
@@ -330,7 +330,7 @@ size_t mmap_rx_psocket(int fd,int idx,unsigned maxframe,void **map,
 	size_t ret;
 	int thresh;
 
-	ret = mmap_psocket(PACKET_RX_RING,idx,fd,maxframe,map,treq);
+	ret = mmap_psocket(PACKET_RX_RING,idx,fd,maxframe,map,treq,1024);
 	if(ret == 0){
 		return 0;
 	}
