@@ -110,11 +110,10 @@ match_srv_proto(const char *buf,unsigned *prot,int *add){
 // If *add is set to non-zero on success, go ahead and add it as a service.
 // Otherwise, it's a service enumeration response, and the service needs be
 // queried as a PTR afresh.
-#define LOCAL_DOMAIN "local"
 static wchar_t *
 process_srv_lookup(const char *buf,unsigned *prot,unsigned *port,int *add){
 	size_t nlen,pconv,tlen = 64;
-	const char *srv,*domain;
+	const char *srv;
 	wchar_t *name;
 	int conv;
 
@@ -151,18 +150,12 @@ process_srv_lookup(const char *buf,unsigned *prot,unsigned *port,int *add){
 		return NULL;
 	}
 	name[nlen - 1] = L'\0'; // always space; write over last '.'
+	// We can have domains other than just "local" here, so don't force it
 	buf += pconv;
 	// FIXME sometimes we have four-part names, and not just SD*_SRV
-	domain = buf;
-	if(strcmp(domain,LOCAL_DOMAIN)){
-		free(name);
-		assert(0);
-		return NULL;
-	}
 	*port = 0; // FIXME
 	return name;
 }
-#undef LOCAL_DOMAIN
 
 // FIXME is it safe to be using (possibly signed) naked chars?
 static int
