@@ -190,7 +190,6 @@ int handle_ring_packet(interface *iface,int fd,void *frame){
 		msec = IFACE_TIMESTAT_USECS / 1000;
 		pthread_mutex_unlock(&iface->lock);
 		events = poll(pfd,sizeof(pfd) / sizeof(*pfd),msec);
-		// FIXME need check for cancellation here, yes?
 		pthread_mutex_lock(&iface->lock);
 		if(events == 0){
 			gettimeofday(&packet.tv,NULL);

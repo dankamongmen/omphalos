@@ -505,12 +505,14 @@ void reap_thread(interface *i){
 		}
 	pthread_cond_signal(&i->pmarsh->cond);
 	pthread_mutex_unlock(&i->pmarsh->lock);
+	pthread_mutex_unlock(&i->lock);
 	if( (errno = pthread_join(i->pmarsh->tid,&ret)) ){
 		diagnostic("Couldn't join thread (%s?)",strerror(errno));
 	/*}else if(ret != PTHREAD_CANCELED){
 		diagnostic("%s thread returned error on exit (%s)",
 				i->name,(char *)ret);*/
 	}
+	pthread_mutex_lock(&i->lock);
 	pmarsh_destroy(i->pmarsh);
 	i->pmarsh = NULL;
 }
