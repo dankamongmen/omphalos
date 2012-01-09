@@ -120,7 +120,7 @@ interface *iface_by_idx(int idx){
 	if(idx < 0 || (unsigned)idx >= sizeof(interfaces) / sizeof(*interfaces)){
 		return NULL;
 	}
-	pthread_mutex_lock(&iface_lock);
+	Pthread_mutex_lock(&iface_lock);
 	i = &interfaces[idx];
 	if(!ifaces[idx]){
 		if(init_iface(i)){
@@ -129,7 +129,7 @@ interface *iface_by_idx(int idx){
 			ifaces[idx] = 1;
 		}
 	}
-	pthread_mutex_unlock(&iface_lock);
+	Pthread_mutex_unlock(&iface_lock);
 	return i;
 }
 
@@ -148,19 +148,19 @@ void free_iface(interface *i){
 		return;
 	}
 	idx = idx_of_iface(i);
-	pthread_mutex_lock(&iface_lock);
+	Pthread_mutex_lock(&iface_lock);
 	if(!ifaces[idx]){
-		pthread_mutex_unlock(&iface_lock);
+		Pthread_mutex_unlock(&iface_lock);
 		return;
 	}
 	// Must reap thread prior to closing the fd's, lest some other thread
 	// be allocated that fd, and have the packet socket thread use it.
-	pthread_mutex_lock(&i->lock);
+	Pthread_mutex_lock(&i->lock);
 	diagnostic("Shutting down %s",i->name);
 	if(i->pmarsh){
-		pthread_mutex_unlock(&i->lock);
+		Pthread_mutex_unlock(&i->lock);
 		reap_thread(i);
-		pthread_mutex_lock(&i->lock);
+		Pthread_mutex_lock(&i->lock);
 	}
 	if(i->opaque && octx->iface_removed){
 		octx->iface_removed(i,i->opaque);
@@ -224,11 +224,11 @@ void free_iface(interface *i){
 	cleanup_l3hosts(&i->ip6hosts);
 	cleanup_l3hosts(&i->ip4hosts);
 	cleanup_l2hosts(&i->l2hosts);
-	pthread_mutex_unlock(&i->lock);
+	Pthread_mutex_unlock(&i->lock);
 
 	// Mark it unused
 	ifaces[idx] = 0;
-	pthread_mutex_unlock(&iface_lock);
+	Pthread_mutex_unlock(&iface_lock);
 }
 
 void cleanup_interfaces(void){

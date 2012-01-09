@@ -1074,7 +1074,6 @@ int handle_netlink_socket(void){
 	}
 	ret = netlink_thread();
 	ret |= restore_sighandler();
-	ret |= restore_sigmask();
 	ret |= close_nl80211();
 	return ret;
 }

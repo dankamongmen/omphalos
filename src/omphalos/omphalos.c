@@ -308,10 +308,6 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 	if(init_interfaces()){
 		return -1;
 	}
-	// We unmask the cancellation signals in the packet socket thread
-	if(mask_cancel_sigs()){
-		return -1;
-	}
 	pctx->iface.vdiagnostic = default_vdiagnostic;
 	if(pthread_key_create(&omphalos_ctx_key,NULL)){
 		return -1;

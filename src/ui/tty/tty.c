@@ -328,8 +328,9 @@ tty_handler(void *v){
 		{ .cmd = "log",		.fxn = handle_log,	.help = "see logged diagnostics",	},
 		{ .cmd = NULL,		.fxn = NULL,		.help = NULL, }
 	};
+	pthread_t *maintid = v;
 
-	while(!v && !cancelled){
+	while(!cancelled){
 		char *l;
 
 		l = readline(promptbuf);
@@ -364,17 +365,18 @@ tty_handler(void *v){
 		free(l);
 	}
 	printf("Shutting down...\n");
-	/*kill(getpid(),SIGINT);
-	pthread_exit(NULL);*/
-	exit(0); // FIXME
+	pthread_kill(*maintid,SIGINT);
+	pthread_exit(NULL);
 }
 
 static int
 init_tty_ui(pthread_t *tid){
+	static pthread_t maintid;
 	int err;
 
+	maintid = pthread_self(); // FIXME ugh
 	rl_prep_terminal(1); // 1 == read eight-bit input
-	if( (err = pthread_create(tid,NULL,tty_handler,NULL)) ){
+	if( (err = pthread_create(tid,NULL,tty_handler,&maintid)) ){
 		fprintf(stderr,"Couldn't launch input thread (%s?)\n",strerror(err));
 		return -1;
 	}
@@ -411,7 +413,7 @@ int main(int argc,char * const *argv){
 	pctx.iface.srv_event = service_event;
 	pctx.iface.wireless_event = wireless_event;
 	pctx.iface.packet_read = packet_cb;
-	if(!pctx.pcapfn){ // FIXME, ought be able to use UI with pcaps
+	if(!pctx.pcapfn){ // FIXME, ought be able to use UI with pcaps?
 		input_tid = &tid;
 		if(init_tty_ui(input_tid)){
 			omphalos_cleanup(&pctx);
