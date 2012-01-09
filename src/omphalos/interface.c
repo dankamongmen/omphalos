@@ -239,7 +239,7 @@ void cleanup_interfaces(void){
 
 		free_iface(&interfaces[i]);
 		if( (r = pthread_mutex_destroy(&interfaces[i].lock)) ){
-			diagnostic("Couldn't destroy lock on %d (%s?)",r,strerror(r));
+			diagnostic("Couldn't destroy lock on %d (%s?)",i,strerror(r));
 		}
 	}
 }
