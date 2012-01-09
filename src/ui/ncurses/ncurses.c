@@ -135,6 +135,7 @@ redraw_screen_locked(void){
 
 struct ncurses_input_marshal {
 	WINDOW *w;
+	pthread_t maintid;
 };
 
 
@@ -314,7 +315,7 @@ ncurses_input_thread(void *unsafe_marsh){
 	wstatus(w,"%s","shutting down");
 	// we can't use raise() here, as that sends the signal only
 	// to ourselves, and we have it masked.
-	kill(getpid(),SIGINT);
+	pthread_kill(nim->maintid,SIGINT);
 	pthread_exit(NULL);
 }
 
@@ -502,6 +503,7 @@ ncurses_setup(void){
 		goto err;
 	}
 	nim->w = w;
+	nim->maintid = pthread_self();
 	// Panels aren't yet being used, so we need call refresh() to
 	// paint the main window.
 	refresh();
