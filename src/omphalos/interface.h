@@ -69,8 +69,8 @@ typedef struct topdev_info {
 
 typedef void (*analyzefxn)(struct omphalos_packet *,const void *,size_t);
 
-#define IFACE_TIMESTAT_USECS 40000	// 25Hz sampling
-#define IFACE_TIMESTAT_SLOTS 75		// x75 samples == 3s history
+#define IFACE_TIMESTAT_USECS 250000	// 10Hz sampling
+#define IFACE_TIMESTAT_SLOTS 12		// x12 samples == 3s history
 
 typedef struct interface {
 	// Packet analysis entry point
