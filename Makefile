@@ -87,7 +87,7 @@ coretest: sudobless $(SUPPORT)
 	$(OMPHALOS)-coretest -u '' --plog=$(OUTCAP)
 
 test: all $(TESTPCAPS) $(SUPPORT)
-	for i in $(TESTPCAPS) ; do $(OMPHALOS)-tty --plog=$(OUTCAP) -f $$i -u "" || exit 1 ; done
+	for i in $(TESTPCAPS) ; do $(OMPHALOS)-tty --mode=silent --plog=$(OUTCAP) -f $$i -u "" || exit 1 ; done
 
 valgrind: all $(TESTPCAPS) $(SUPPORT)
 	for i in $(TESTPCAPS) ; do valgrind --tool=memcheck --leak-check=full $(OMPHALOS)-tty -f $$i -u "" || exit 1 ; done
