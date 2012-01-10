@@ -884,7 +884,15 @@ struct l4obj *service_callback_locked(const struct interface *i,struct l2host *l
 		return NULL;
 	}
 	if((ret = l4host_get_opaque(l4)) == NULL){
-		if((ret = add_service_to_iface(is,l2o,l3o,l4)) == NULL){
+		unsigned emph = 0;
+
+		// Want to emphasize "Router"
+		if(l4_getproto(l4) == IPPROTO_IP){
+			if(wcscmp(l4srvstr(l4),L"LLTD")){
+				emph = 1;
+			}
+		}
+		if((ret = add_service_to_iface(is,l2o,l3o,l4,emph)) == NULL){
 			return NULL;
 		}
 	}

@@ -20,6 +20,7 @@
 typedef struct l4obj {
 	struct l4obj *next;
 	struct l4srv *l4;
+	unsigned emph;			// Emphasize the service in display?
 } l4obj;
 
 typedef struct l3obj {
@@ -111,11 +112,12 @@ free_l2obj(l2obj *l2){
 }
 
 static l4obj *
-get_l4obj(struct l4srv *srv){
+get_l4obj(struct l4srv *srv,unsigned emph){
 	l4obj *l;
 
 	if( (l = malloc(sizeof(*l))) ){
 		l->l4 = srv;
+		l->emph = emph;
 	}
 	return l;
 }
@@ -223,7 +225,7 @@ l3obj *add_l3_to_iface(iface_state *is,l2obj *l2,struct l3host *l3h){
 }
 
 l4obj *add_service_to_iface(iface_state *is,struct l2obj *l2,struct l3obj *l3,
-						struct l4srv *srv){
+					struct l4srv *srv,unsigned emph){
 	l4obj *l4;
 
 	// FIXME we ought be able to use this assert (or preferably get rid of
@@ -233,7 +235,7 @@ l4obj *add_service_to_iface(iface_state *is,struct l2obj *l2,struct l3obj *l3,
 	if(l3->l2 != l2){
 		return NULL;
 	}
-	if( (l4 = get_l4obj(srv)) ){
+	if( (l4 = get_l4obj(srv,emph)) ){
 		l4obj **prev = &l3->l4objs;
 
 		if(*prev == NULL){
@@ -280,7 +282,7 @@ print_host_services(WINDOW *w,const l3obj *l,int *line,int rows,int cols,
 	}
 	n = 0;
 	for(l4 = l->l4objs ; l4 ; l4 = l4->next){
-		if(l4_getproto(l4->l4) == IPPROTO_IP){
+		if(l4->emph){
 			assert(wattrset(w,attrs | A_BOLD) == OK);
 		}else{
 			assert(wattrset(w,attrs) == OK);
