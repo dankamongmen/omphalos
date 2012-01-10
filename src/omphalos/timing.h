@@ -38,6 +38,26 @@ timerusec(const struct timeval *tv){
 	return tv->tv_sec * 1000000 + tv->tv_usec;
 }
 
+// We don't expect to have very many timers active for an interface (certainly
+// not as many as 10), so we use a trivial linked list implementation of our
+// timing wheel. Should this ever get serious (eg, TCP implementation), use the
+// methods of Varghese and Lauck.
+//
+// Functions will be invoked from the interface thread's context. They block
+// progress of the interface thread. They are handed arbitrary opaque state and
+// the most recently-sampled timestamp. If a non-zero value is returned, the
+// value-result timestamp is taken to be a rescheduling time.
+
+typedef int (*timerfxn)(const struct timeval *,struct timeval *,void *);
+
+typedef struct twheel {
+	struct timeval sched;	// earliest (absolute) time it can fire
+	timerfxn fxn;
+	struct twheel *next;
+} twheel;
+
+int schedule_timer(twheel **,const struct timeval *,timerfxn,void *);
+
 #ifdef __cplusplus
 }
 #endif

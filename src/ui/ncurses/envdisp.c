@@ -5,6 +5,7 @@
 #include <ui/ncurses/envdisp.h>
 
 #define ENVROWS 10
+#define COLORSPERROW 32
 
 static int
 env_details(WINDOW *hw,int rows){
@@ -22,8 +23,8 @@ env_details(WINDOW *hw,int rows){
 		while(z > 1){
 			int c0,c1;
 
-			c0 = (z - 2) * 8;
-			c1 = c0 + 7;
+			c0 = (z - 2) * COLORSPERROW;
+			c1 = c0 + (COLORSPERROW - 1);
 			assert(mvwprintw(hw,row + z,col,"0x%02x--0x%02x: ",c0,c1) == OK);
 			while(c0 <= c1){
 				if(c0 < COLORS){
