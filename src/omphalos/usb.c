@@ -137,7 +137,7 @@ parse_usbids_file(const char *fn){
 		diagnostic("Couldn't open USB ID db at %s (%s?)",fn,strerror(errno));
 		return -1;
 	}
-	while(fgetws(buf,sizeof(buf),fp)){
+	while(fgetws(buf,sizeof(buf) / sizeof(*buf),fp)){
 		wchar_t *c,*e,*nl,*tok;
 		uintmax_t val;
 
