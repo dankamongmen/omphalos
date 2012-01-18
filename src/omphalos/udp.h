@@ -17,6 +17,8 @@ struct omphalos_packet;
 #define BOOTP_UDP_PORT 68
 #define SSDP_UDP_PORT 1900
 #define MDNS_UDP_PORT 5353
+#define MDNS_NATPMP1_UDP_PORT 5350
+#define MDNS_NATPMP2_UDP_PORT 5351
 #define DHCP6SRV_UDP_PORT 547
 #define DHCP6CLI_UDP_PORT 546
 

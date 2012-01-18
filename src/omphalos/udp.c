@@ -44,9 +44,17 @@ void handle_udp_packet(omphalos_packet *op,const void *frame,size_t len){
 			}
 		}break;
 		case __constant_htons(MDNS_UDP_PORT):{
-			handle_mdns_packet(op,ubdy,ulen);
+			if(udp->dest == __constant_htons(MDNS_NATPMP1_UDP_PORT) ||
+			   udp->dest == __constant_htons(MDNS_NATPMP2_UDP_PORT)){
+				handle_natpmp_packet(op,ubdy,ulen);
+			}else{
+				handle_mdns_packet(op,ubdy,ulen);
+			}
 		}break;
-		case __constant_htons(NETBIOS_NS_UDP_PORT):{
+		case __constant_htons(MDNS_NATPMP1_UDP_PORT):
+		case __constant_htons(MDNS_NATPMP2_UDP_PORT):{
+			handle_natpmp_packet(op,ubdy,ulen);
+		}case __constant_htons(NETBIOS_NS_UDP_PORT):{
 			if(udp->dest == __constant_htons(NETBIOS_NS_UDP_PORT)){
 				handle_netbios_ns_packet(op,ubdy,ulen);
 			}

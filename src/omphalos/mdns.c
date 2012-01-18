@@ -22,6 +22,10 @@
 
 #define MDNS_NET4 __constant_htonl(0xe00000fbul)
 
+void handle_natpmp_packet(omphalos_packet *op,const void *frame,size_t len){
+	assert(op && frame && len);
+}
+
 void handle_mdns_packet(omphalos_packet *op,const void *frame,size_t len){
 	if(handle_dns_packet(op,frame,len) == 1){
 		observe_service(op->i,op->l2s,op->l3s,op->l3proto,

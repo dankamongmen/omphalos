@@ -15,6 +15,9 @@ struct omphalos_packet;
 void handle_mdns_packet(struct omphalos_packet *,const void *,size_t)
 			__attribute__ ((nonnull (1,2)));
 
+void handle_natpmp_packet(struct omphalos_packet *,const void *,size_t)
+			__attribute__ ((nonnull (1,2)));
+
 int tx_mdns_ptr(struct interface *,const char *,int,const void *)
 			__attribute__ ((nonnull (1,2,4)));
 
