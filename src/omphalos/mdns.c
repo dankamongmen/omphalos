@@ -22,8 +22,59 @@
 
 #define MDNS_NET4 __constant_htonl(0xe00000fbul)
 
+struct natpmphdr {
+	uint8_t ver;
+	uint8_t op;
+};
+
 void handle_natpmp_packet(omphalos_packet *op,const void *frame,size_t len){
-	assert(op && frame && len);
+	const struct natpmphdr *nat = frame;
+	size_t plen;
+
+	if(len < sizeof(*nat)){
+		diagnostic("[%s] malformed NAT-PMP (%zub)",op->i->name,len);
+		goto malformed;
+	}
+	plen = len - sizeof(*nat);
+	if(nat->ver){
+		diagnostic("[%s] bad NAT-PMP version (%u)",op->i->name,nat->ver);
+		op->noproto = 1;
+		return;
+	}
+	// We probably ought enforce the address/port/state
+	switch(nat->op){
+	case 0: // public address request
+		if(plen){
+			diagnostic("[%s] bad NAT-PMP PAR len (%zub)",op->i->name,plen);
+			goto malformed;
+		}
+		break;
+	case 1: case 2: // port mapping request
+		if(plen != 10){
+			diagnostic("[%s] bad NAT-PMP PMR len (%zub)",op->i->name,plen);
+			goto malformed;
+		}
+		break;
+	case 128: // public address response
+		if(plen != 10){
+			diagnostic("[%s] bad NAT-PMP PA len (%zub)",op->i->name,plen);
+			goto malformed;
+		}
+		break;
+	case 129: case 130: // port mapping response
+		if(plen != 14){
+			diagnostic("[%s] bad NAT-PMP PM len (%zub)",op->i->name,plen);
+			goto malformed;
+		}
+		break;
+	default:
+		diagnostic("[%s] bad NAT-PMP op (%u)",op->i->name,nat->op);
+		break;
+	}
+	return;
+
+malformed:
+	op->malformed = 1;
 }
 
 void handle_mdns_packet(omphalos_packet *op,const void *frame,size_t len){
