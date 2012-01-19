@@ -254,6 +254,8 @@ void handle_ipv4_packet(omphalos_packet *op,const void *frame,size_t len){
 		handle_esp_packet(op,nhdr,nlen);
 	break; }case IPPROTO_AH:{
 		handle_ah_packet(op,nhdr,nlen);
+	break; }case IPPROTO_IPV6:{
+		handle_ipv6_packet(op,nhdr,nlen);
 	break; }default:{
 		op->noproto = 1;
 		diagnostic("%s %s noproto for %u",__func__,op->i->name,ip->protocol);
