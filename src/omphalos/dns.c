@@ -461,7 +461,7 @@ int handle_dns_packet(omphalos_packet *op,const void *frame,size_t len){
 			if(class == DNS_CLASS_IN){
 				server = 1;
 				if(type == DNS_TYPE_PTR){
-					char ss[16]; // FIXME
+					uint128_t ss;
 					int fam;
 
 					if(process_reverse_lookup(buf,&fam,ss) == 0){
@@ -502,7 +502,7 @@ int handle_dns_packet(omphalos_packet *op,const void *frame,size_t len){
 			if(type == DNS_TYPE_PTR){
 				unsigned proto,port;
 				wchar_t *srv;
-				char ss[16]; // FIXME
+				uint128_t ss;
 				int add;
 
 				// A failure here doesn't mean the response is
@@ -536,7 +536,17 @@ int handle_dns_packet(omphalos_packet *op,const void *frame,size_t len){
 				offer_resolution(AF_INET6,data,buf,
 						NAMING_LEVEL_DNS,nsfam,nsaddr);
 			}else if(type == DNS_TYPE_CNAME){
-				// FIXME do what (nothing probably)?
+			// In the case of the "CNAME hack" for reverse DNS
+			// delegation, we'll get an in-addr.arpa NAME with a
+			// CNAME RR, whose RDATA will be equivalent to the NAME
+			// of a later PTR RR, whose RDATA will contain the true
+			// (presumably A-resolvable) hostname. See bug #502.
+				uint128_t ss;
+				int fam;
+
+				if(process_reverse_lookup(buf,&fam,ss) == 0){
+					assert(0);
+				}
 			}else if(type == DNS_TYPE_TXT){
 				// FIXME do what?
 			}else if(type == DNS_TYPE_SRV){
