@@ -157,45 +157,19 @@ process_srv_lookup(const char *buf,unsigned *prot,unsigned *port,int *add){
 	return name;
 }
 
-// FIXME is it safe to be using (possibly signed) naked chars?
 static int
-process_reverse_lookup(const char *buf,int *fam,void *addr){
-	const size_t len = strlen(buf);
-	char obuf[INET6_ADDRSTRLEN];
-	const char *chunk,*c;
+process_reverse4_lookup(const char *buf,int *fam,uint32_t *addr){
+	char obuf[INET_ADDRSTRLEN];
+	const char *chunk;
 	unsigned quad;
 	char q[4][5];
 
-	// First, check for mDNS
-	if(len < __builtin_strlen(MDNS_REVSTR_DECODED)){
-		return -1;
-	}
-	const size_t xmlen = len - __builtin_strlen(MDNS_REVSTR_DECODED);
-	if(strcmp(buf + xmlen,MDNS_REVSTR_DECODED) == 0){
-		// FIXME for now, do nothing with mDNS PTR records
-		return -1;
-	}
-	// Check the IPv6 string first (it's shorter)
-	if(len < __builtin_strlen(IP6_REVSTR_DECODED)){
-		return -1;
-	}
-	const size_t x6len = len - __builtin_strlen(IP6_REVSTR_DECODED);
-	if(strcmp(buf + x6len,IP6_REVSTR_DECODED) == 0){
-		return process_reverse6_lookup(buf,fam,addr,x6len);
-	}
-	// Look for the IPv4 string
-	if(len < __builtin_strlen(IP4_REVSTR_DECODED)){
-		return -1;
-	}
-	const size_t xlen = len - __builtin_strlen(IP4_REVSTR_DECODED);
-	if(strcmp(buf + xlen,IP4_REVSTR_DECODED)){
-		return -1;
-	}
 	// Don't need to worry about checks against len, since we'll hit 'i'
 	// from 'in-addr.arpa' and exit.
 	chunk = buf;
 	for(quad = 0 ; quad < 4 ; ++quad){
 		int classless = 0;
+		const char *c;
 
 		for(c = chunk ; c - chunk < 4 ; ++c){
 			if(isdigit(*c)){
@@ -237,6 +211,39 @@ process_reverse_lookup(const char *buf,int *fam,void *addr){
 	}
 	*fam = AF_INET;
 	return 0;
+}
+
+// FIXME is it safe to be using (possibly signed) naked chars?
+static int
+process_reverse_lookup(const char *buf,int *fam,void *addr){
+	const size_t len = strlen(buf);
+
+	// First, check for mDNS
+	if(len < __builtin_strlen(MDNS_REVSTR_DECODED)){
+		return -1;
+	}
+	const size_t xmlen = len - __builtin_strlen(MDNS_REVSTR_DECODED);
+	if(strcmp(buf + xmlen,MDNS_REVSTR_DECODED) == 0){
+		// FIXME for now, do nothing with mDNS PTR records
+		return -1;
+	}
+	// Check the IPv6 string first (it's shorter)
+	if(len < __builtin_strlen(IP6_REVSTR_DECODED)){
+		return -1;
+	}
+	const size_t x6len = len - __builtin_strlen(IP6_REVSTR_DECODED);
+	if(strcmp(buf + x6len,IP6_REVSTR_DECODED) == 0){
+		return process_reverse6_lookup(buf,fam,addr,x6len);
+	}
+	// Look for the IPv4 string
+	if(len < __builtin_strlen(IP4_REVSTR_DECODED)){
+		return -1;
+	}
+	const size_t xlen = len - __builtin_strlen(IP4_REVSTR_DECODED);
+	if(strcmp(buf + xlen,IP4_REVSTR_DECODED) == 0){
+		return process_reverse4_lookup(buf,fam,addr);
+	}
+	return -1;
 }
 
 static inline size_t
