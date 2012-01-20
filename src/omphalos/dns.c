@@ -383,8 +383,7 @@ extract_dns_record(size_t len,const unsigned char *sec,unsigned *class,
 
 static void *
 extract_dns_extra(size_t len,const unsigned char *sec,unsigned *ttl,
-				unsigned *idx,const unsigned char *orig,
-				unsigned type){
+				unsigned *idx,const unsigned char *orig){
 	unsigned newidx;
 	uint16_t rdlen;
 	char *buf;
@@ -401,11 +400,8 @@ extract_dns_extra(size_t len,const unsigned char *sec,unsigned *ttl,
 	}
 	*idx += 6;
 	sec += 6;
-	if(type == DNS_TYPE_PTR){
-		buf = extract_dns_record(len,sec,NULL,NULL,&newidx,orig);
-	}else{
-		buf = memdup(sec,rdlen);
-	}
+	// Need this (as opposed to memdup()) for at least _PTR and _CNAME...
+	buf = extract_dns_record(len,sec,NULL,NULL,&newidx,orig);
 	sec += rdlen;
 	*idx += rdlen;
 	return buf;
@@ -479,6 +475,9 @@ int handle_dns_packet(omphalos_packet *op,const void *frame,size_t len){
 		len -= bsize;
 		--qd;
 	}
+	char *cname = NULL;
+	uint128_t cnamess;
+	int cnamefam;
 	while(an && len){
 		unsigned ttl;
 		char *data;
@@ -490,7 +489,7 @@ int handle_dns_packet(omphalos_packet *op,const void *frame,size_t len){
 		//diagnostic("lookup [%s]",buf);
 		sec += bsize;
 		len -= bsize;
-		data = extract_dns_extra(len,sec,&ttl,&bsize,frame,type);
+		data = extract_dns_extra(len,sec,&ttl,&bsize,frame);
 		if(data == NULL){
 			free(buf);
 			goto malformed;
@@ -505,13 +504,19 @@ int handle_dns_packet(omphalos_packet *op,const void *frame,size_t len){
 				uint128_t ss;
 				int add;
 
+				// Check to see if it was defined via CNAME
+				if(cname && strcmp(cname,buf) == 0){
+					free(cname);
+					cname = NULL;
+					offer_resolution(cnamefam,cnamess,data,
+						NAMING_LEVEL_REVDNS,nsfam,nsaddr);
+				}else if(process_reverse_lookup(buf,&fam,ss) == 0){
 				// A failure here doesn't mean the response is
 				// malformed, necessarily, but simply that it
 				// wasn't for an address (mDNS SD does this).
-				if(process_reverse_lookup(buf,&fam,ss) == 0){
-					// FIXME perform routing lookup on ss to get
-					// the desired interface and see whether we care
-					// about this address
+				// FIXME perform routing lookup on ss to get
+				// the desired interface and see whether we care
+				// about this address
 					offer_resolution(fam,ss,data,
 						NAMING_LEVEL_REVDNS,nsfam,nsaddr);
 				}else if( (srv = process_srv_lookup(buf,&proto,&port,&add)) ){;
@@ -527,6 +532,7 @@ int handle_dns_packet(omphalos_packet *op,const void *frame,size_t len){
 				}else{
 					free(buf);
 					free(data);
+					free(cname);
 					goto malformed;
 				}
 			}else if(type == DNS_TYPE_A){
@@ -541,11 +547,16 @@ int handle_dns_packet(omphalos_packet *op,const void *frame,size_t len){
 			// CNAME RR, whose RDATA will be equivalent to the NAME
 			// of a later PTR RR, whose RDATA will contain the true
 			// (presumably A-resolvable) hostname. See bug #502.
-				uint128_t ss;
-				int fam;
-
-				if(process_reverse_lookup(buf,&fam,ss) == 0){
-					assert(0);
+				if(cname){
+					diagnostic("[%s] two cnames: %s, %s",op->i->name,cname,data);
+					free(buf);
+					free(data);
+					free(cname);
+					goto malformed;
+				}
+				if(process_reverse_lookup(buf,&cnamefam,cnamess) == 0){
+					cname = data;
+					data = NULL;
 				}
 			}else if(type == DNS_TYPE_TXT){
 				// FIXME do what?
@@ -562,6 +573,7 @@ int handle_dns_packet(omphalos_packet *op,const void *frame,size_t len){
 				}else{
 					free(buf);
 					free(data);
+					free(cname);
 					goto malformed;
 				}
 			}else if(type == DNS_TYPE_HINFO){
@@ -571,10 +583,15 @@ int handle_dns_packet(omphalos_packet *op,const void *frame,size_t len){
 			//		,ntohs(*((uint16_t *)sec + 1)));
 		}
 		free(buf);
-		free(data);
+		free(data); // might be NULL if preserved as cname
 		sec += bsize;
 		len -= bsize;
 		--an;
+	}
+	if(cname){
+		diagnostic("[%s] Unmatched reverse CNAME %s",op->i->name,cname);
+		free(cname);
+		goto malformed;
 	}
 	len = ns = ar = 0; // FIXME learn how to parse ns/ar
 	/* FIXME while(ns && len){
