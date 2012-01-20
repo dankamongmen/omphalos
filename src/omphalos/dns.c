@@ -383,7 +383,8 @@ extract_dns_record(size_t len,const unsigned char *sec,unsigned *class,
 
 static void *
 extract_dns_extra(size_t len,const unsigned char *sec,unsigned *ttl,
-				unsigned *idx,const unsigned char *orig){
+				unsigned *idx,const unsigned char *orig,
+				unsigned type){
 	unsigned newidx;
 	uint16_t rdlen;
 	char *buf;
@@ -401,7 +402,11 @@ extract_dns_extra(size_t len,const unsigned char *sec,unsigned *ttl,
 	*idx += 6;
 	sec += 6;
 	// Need this (as opposed to memdup()) for at least _PTR and _CNAME...
-	buf = extract_dns_record(len,sec,NULL,NULL,&newidx,orig);
+	if(type == DNS_TYPE_A || type == DNS_TYPE_AAAA || type == DNS_TYPE_TXT){
+		buf = memdup(sec,rdlen);
+	}else{
+		buf = extract_dns_record(rdlen,sec,NULL,NULL,&newidx,orig);
+	}
 	sec += rdlen;
 	*idx += rdlen;
 	return buf;
@@ -489,7 +494,7 @@ int handle_dns_packet(omphalos_packet *op,const void *frame,size_t len){
 		//diagnostic("lookup [%s]",buf);
 		sec += bsize;
 		len -= bsize;
-		data = extract_dns_extra(len,sec,&ttl,&bsize,frame);
+		data = extract_dns_extra(len,sec,&ttl,&bsize,frame,type);
 		if(data == NULL){
 			free(buf);
 			goto malformed;
