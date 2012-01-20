@@ -519,6 +519,7 @@ int handle_dns_packet(omphalos_packet *op,const void *frame,size_t len){
 					free(srv);
 				}else{
 					free(buf);
+					free(data);
 					goto malformed;
 				}
 			}else if(type == DNS_TYPE_A){
@@ -543,6 +544,7 @@ int handle_dns_packet(omphalos_packet *op,const void *frame,size_t len){
 					free(srv);
 				}else{
 					free(buf);
+					free(data);
 					goto malformed;
 				}
 			}else if(type == DNS_TYPE_HINFO){
