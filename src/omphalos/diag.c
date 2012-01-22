@@ -7,7 +7,10 @@
 #define LOG_RINGBUF_SIZE 1024
 
 static unsigned rblast;
-static char *logs[LOG_RINGBUF_SIZE];
+static struct log {
+	char *msg;
+	time_t when;
+} logs[LOG_RINGBUF_SIZE];
 static pthread_mutex_t loglock = PTHREAD_MUTEX_INITIALIZER;
 
 static void
@@ -24,10 +27,11 @@ add_log(const char *fmt,va_list vac){
 	// FIXME reuse the entry!
 	len = vsnprintf(NULL,0,fmt,vac);
 	if( (b = malloc(len + 1)) ){
-		if(logs[rblast]){
-			free(logs[rblast]);
+		logs[rblast].when = time(NULL);
+		if(logs[rblast].msg){
+			free(logs[rblast].msg);
 		}
-		logs[rblast] = b;
+		logs[rblast].msg = b;
 		vsnprintf(b,len + 1,fmt,vacc);
 	}
 	Pthread_mutex_unlock(&loglock);
@@ -54,7 +58,7 @@ char *get_logs(unsigned n,int sep){
 	left = n;
 	Pthread_mutex_lock(&loglock);
 	rb = rblast;
-	while(logs[rb]){
+	while(logs[rb].msg){
 		size_t nlen;
 		char *tmp;
 
@@ -62,7 +66,7 @@ char *get_logs(unsigned n,int sep){
 			break; // got all requested
 		}
 		// FIXME concatenate
-		nlen = len + strlen(logs[rb]) + 1;
+		nlen = len + strlen(logs[rb].msg) + 1;
 		if((tmp = realloc(l,nlen + 1)) == NULL){
 			free(l);
 			Pthread_mutex_unlock(&loglock);
@@ -70,7 +74,7 @@ char *get_logs(unsigned n,int sep){
 			return NULL;
 		}
 		l = tmp;
-		strcpy(l + len,logs[rb]);
+		strcpy(l + len,logs[rb].msg);
 		len = nlen;
 		l[len - 1] = sep;
 		if(rb-- == 0){
