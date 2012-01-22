@@ -1434,30 +1434,30 @@ helpstrs(WINDOW *hw,int row,int rows){
 	return OK;
 }
 
+static const int DIAGROWS = 8; // FIXME
+
 int update_diags_locked(struct panel_state *ps){
 	WINDOW *w = panel_window(ps->p);
-	char *l,*ol;
+	logent l[DIAGROWS];
 	int y,x,r;
 
 	assert(wattrset(w,SUBDISPLAY_ATTR) == OK);
 	getmaxyx(w,y,x);
-	assert(x); // FIXME
-	assert(y > 2); // FIXME
-	if((l = get_logs(y - 1,'\0')) == NULL){
+	if(get_logs(y - 1,l)){
 		return -1;
 	}
-	ol = l;
 	for(r = 1 ; r < y - 1 ; ++r){
+		if(l[r - 1].msg == NULL){
+			break;
+		}
 		assert(mvwprintw(w,y - r - 1,START_COL,"%-*.*s",
-				x - START_COL * 2,x - START_COL * 2,l) != ERR);
-		l += strlen(l) + 1;
+			x - START_COL * 2,x - START_COL * 2,l[r - 1].msg) != ERR);
+		free(l[r - 1].msg);
 	}
-	free(ol);
 	return 0;
 }
 
 int display_diags_locked(WINDOW *mainw,struct panel_state *ps){
-	static const int DIAGROWS = 8; // FIXME
 	int x,y;
 
 	getmaxyx(mainw,y,x);

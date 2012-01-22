@@ -4,13 +4,8 @@
 #include <omphalos/util.h>
 #include <omphalos/omphalos.h>
 
-#define LOG_RINGBUF_SIZE 1024
-
 static unsigned rblast;
-static struct log {
-	char *msg;
-	time_t when;
-} logs[LOG_RINGBUF_SIZE];
+static logent logs[MAXIMUM_LOG_ENTRIES];
 static pthread_mutex_t loglock = PTHREAD_MUTEX_INITIALIZER;
 
 static void
@@ -50,40 +45,33 @@ void diagnostic(const char *fmt,...){
 	va_end(va);
 }
 
-char *get_logs(unsigned n,int sep){
-	unsigned rb,left;
-	size_t len = 0;
-	char *l = NULL;
+int get_logs(unsigned n,logent *cplogs){
+	unsigned idx = 0;
+	unsigned rb;
 
-	left = n;
+	if(n == 0 || n > MAXIMUM_LOG_ENTRIES){
+		return -1;
+	}
 	Pthread_mutex_lock(&loglock);
 	rb = rblast;
 	while(logs[rb].msg){
-		size_t nlen;
-		char *tmp;
-
-		if(n && !left--){
-			break; // got all requested
+		if((cplogs[idx].msg = strdup(logs[rb].msg)) == NULL){
+			while(idx){
+				free(cplogs[--idx].msg);
+			}
+			return -1;
 		}
-		// FIXME concatenate
-		nlen = len + strlen(logs[rb].msg) + 1;
-		if((tmp = realloc(l,nlen + 1)) == NULL){
-			free(l);
-			Pthread_mutex_unlock(&loglock);
-			diagnostic("%s couldn't allocate %zu bytes",__func__,nlen);
-			return NULL;
-		}
-		l = tmp;
-		strcpy(l + len,logs[rb].msg);
-		len = nlen;
-		l[len - 1] = sep;
+		cplogs[idx].when = logs[rb].when;
 		if(rb-- == 0){
 			rb = sizeof(logs) / sizeof(*logs) - 1;
 		}
+		if(++idx == n){
+			break; // got all requested
+		}
 	}
 	Pthread_mutex_unlock(&loglock);
-	if(l){
-		l[len] = '\0'; // safe; we allocated len + 1
+	if(idx < n){
+		cplogs[idx].msg = NULL;
 	}
-	return l;
+	return 0;
 }

@@ -307,12 +307,19 @@ handle_dev(void){
 
 static void
 handle_log(void){
-	char *logs;
+	logent logs[MAXIMUM_LOG_ENTRIES];
+	unsigned idx;
 
-	if((logs = get_logs(0,'\n')) == NULL){
+	if(get_logs(sizeof(logs) / sizeof(*logs),logs)){
 		return;
 	}
-	printf("%s",logs);
+	for(idx = 0 ; idx < sizeof(logs) / sizeof(*logs) ; ++idx){
+		if(logs[idx].msg == NULL){
+			break;
+		}
+		printf("%s\n",logs[idx].msg);
+		free(logs[idx].msg);
+	}
 }
 
 // FIXME need be able to pass the handlers arguments!
