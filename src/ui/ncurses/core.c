@@ -1443,15 +1443,20 @@ int update_diags_locked(struct panel_state *ps){
 
 	assert(wattrset(w,SUBDISPLAY_ATTR) == OK);
 	getmaxyx(w,y,x);
+	assert(x > 26 + START_COL * 2);
 	if(get_logs(y - 1,l)){
 		return -1;
 	}
 	for(r = 1 ; r < y - 1 ; ++r){
+		char tbuf[26]; // see ctime_r(3)
+
 		if(l[r - 1].msg == NULL){
 			break;
 		}
-		assert(mvwprintw(w,y - r - 1,START_COL,"%-*.*s",
-			x - START_COL * 2,x - START_COL * 2,l[r - 1].msg) != ERR);
+		assert(ctime_r(&l[r - 1].when,tbuf));
+		tbuf[strlen(tbuf) - 1] = ' '; // kill newline
+		assert(mvwprintw(w,y - r - 1,START_COL,"%-*.*s%-*.*s",25,25,tbuf,
+			x - 25 - START_COL * 2,x - 25 - START_COL * 2,l[r - 1].msg) != ERR);
 		free(l[r - 1].msg);
 	}
 	return 0;
