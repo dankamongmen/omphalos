@@ -314,10 +314,17 @@ handle_log(void){
 		return;
 	}
 	for(idx = 0 ; idx < sizeof(logs) / sizeof(*logs) ; ++idx){
+		char tbuf[26]; // see ctime_r(3)
+
 		if(logs[idx].msg == NULL){
 			break;
 		}
-		printf("%s\n",logs[idx].msg);
+		if(ctime_r(&logs[idx].when,tbuf) == NULL){
+			printf("Bad timestamp at index %d! %s\n",idx,logs[idx].msg);
+		}else{
+			tbuf[strlen(tbuf) - 1] = ' '; // kill newline
+			printf("%s%s\n",tbuf,logs[idx].msg);
+		}
 		free(logs[idx].msg);
 	}
 }
