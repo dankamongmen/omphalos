@@ -120,7 +120,7 @@ handle_8021q(omphalos_packet *op,const void *frame,size_t len,int allowllc){
 			handle_8022(op,dgram,dlen);
 		}else{
 			op->noproto = 1;
-			diagnostic("%s %s noproto for 0x%x",__func__,
+			diagnostic("%s %s noproto for 0x04%x",__func__,
 					op->i->name,op->l3proto);
 		}
 	break;} }
@@ -247,7 +247,7 @@ handle_8022(omphalos_packet *op,const void *frame,size_t len){
 				break;
 			}default:{ // IPv6 always uses SNAP per RFC2019
 				op->noproto = 1;
-				diagnostic("%s %s noproto for 0x%x",__func__,
+				diagnostic("%s %s noproto for 0x02%x",__func__,
 						op->i->name,sap);
 				break;
 			}
@@ -356,7 +356,7 @@ void handle_ethernet_packet(omphalos_packet *op,const void *frame,size_t len){
 				op->pcap_ethproto = 4;
 			}else{
 				op->noproto = 1;
-				diagnostic("%s %s noproto for 0x%x",__func__,
+				diagnostic("%s %s noproto for 0x04%x",__func__,
 						op->i->name,proto);
 			}
 			break;
