@@ -8,14 +8,32 @@
 
 // Followed by optional checksum, offset, key, seqnum, and source route entries
 typedef struct grehdr {
-	unsigned csumpres: 1;
+// Big-endian
+	/*unsigned csumpres: 1;
 	unsigned routingpres: 1;
 	unsigned keypres: 1;
 	unsigned seqpres: 1;
 	unsigned ssrcpres: 1;
+	unsigned recursectl: 3;*/
+// Little-endian
 	unsigned recursectl: 3;
-	unsigned flags: 5;
+	unsigned ssrcpres: 1;
+	unsigned seqpres: 1;
+	unsigned keypres: 1;
+	unsigned routingpres: 1;
+	unsigned csumpres: 1;
+
+// Big-endian
+	/*unsigned ack: 1;
+	unsigned flag1: 3;
+	unsigned flag2: 1;
+	unsigned version: 3;*/
+// Little-endian
 	unsigned version: 3;
+	unsigned flags2: 1;
+	unsigned flags1: 3;
+	unsigned ack: 1;
+
 	uint16_t protocol;
 } __attribute__ ((packed)) grehdr;
 
