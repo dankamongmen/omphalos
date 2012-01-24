@@ -24,8 +24,18 @@
 #define ETH_P_ECTP	0x9000	// Ethernet Configuration Test Protocol
 #define ETH_P_UDLD	0x0111	// Unidirectional Link Detection Protocol
 #define ETH_P_CLD	0x2000  // Cisco Discovery Protocol
+#define ETH_P_WOL	0x0842  // Wake-on-Lan (can be sent on any transport)
 
 #define LLC_MAX_LEN	1536 // one more than maximum length of 802.2 LLC
+
+// Wake-on-Lan
+static void
+handle_wol_frame(omphalos_packet *op __attribute__ ((unused)),
+			const void *frame __attribute__ ((unused)),
+			size_t len __attribute__ ((unused))){
+	// FIXME
+}
+
 
 // IEEE 802.3 31B Pause frames
 static void
@@ -338,6 +348,9 @@ void handle_ethernet_packet(omphalos_packet *op,const void *frame,size_t len){
 			break;
 		}case ETH_P_PAUSE:{
 			handle_mac_frame(op,dgram,dlen);
+			break;
+		}case ETH_P_WOL:{
+			handle_wol_frame(op,dgram,dlen);
 			break;
 		}case ETH_P_DEC: // 0x6000..0x6007 are all DEC jankware
 		case ETH_P_DNA_DL:
