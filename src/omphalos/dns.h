@@ -17,6 +17,7 @@ struct omphalos_packet;
 #define DNS_TYPE_CNAME	__constant_htons(5u)
 #define DNS_TYPE_PTR	__constant_htons(12u)
 #define DNS_TYPE_HINFO	__constant_htons(13u)
+#define DNS_TYPE_MX	__constant_htons(15u)
 #define DNS_TYPE_TXT	__constant_htons(16u)
 #define DNS_TYPE_AAAA	__constant_htons(28u)
 #define DNS_TYPE_SRV	__constant_htons(33u)
