@@ -312,10 +312,12 @@ extract_dns_record(size_t len,const unsigned char *sec,unsigned *class,
 	unsigned bsize = 0;
 	char *buf = NULL;
 
+	//diagnostic("now: [%s] (%u) (%zu left)",sec,*sec,len);
 	*idx = 0;
 	while(len > ++*idx && (rlen = *sec++)){
 		char *tmp;
 
+		//diagnostic("rlen: 0x%x",rlen);
 		if((rlen & 0xc0) == 0xc0){
 			ptrdiff_t offset;
 
@@ -385,7 +387,7 @@ static void *
 extract_dns_extra(size_t len,const unsigned char *sec,unsigned *ttl,
 				unsigned *idx,const unsigned char *orig,
 				unsigned type){
-	unsigned newidx;
+	unsigned newidx,extra;
 	uint16_t rdlen;
 	char *buf;
 
@@ -395,13 +397,18 @@ extract_dns_extra(size_t len,const unsigned char *sec,unsigned *ttl,
 	}
 	*ttl = ntohl(*(const uint32_t *)sec);
 	rdlen = ntohs(*((const uint16_t *)sec + 2));
+	if(type == DNS_TYPE_MX){
+		extra = 2; // preference value
+	}else{
+		extra = 0;
+	}
 	// FIXME incorrect given possibility of compression!
-	if(len < rdlen + 6u + *idx){
+	if(len < rdlen + 6u + extra + *idx){
 		return NULL;
 	}
 	*idx += 6;
-	sec += 6;
-	// Need this (as opposed to memdup()) for at least _PTR and _CNAME...
+	sec += 6 + extra;
+	// Need expansion (as opposed to memdup()) for at least _PTR and _CNAME...
 	if(type == DNS_TYPE_A || type == DNS_TYPE_AAAA || type == DNS_TYPE_TXT){
 		buf = memdup(sec,rdlen);
 	}else{
