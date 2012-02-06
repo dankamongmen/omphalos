@@ -1,5 +1,5 @@
 AC_INIT(src/omphalos/omphalos.c)
-AC_INIT_AUTOMAKE(omphalos,0.99.1-pre)
+AM_INIT_AUTOMAKE(omphalos,0.99.1-pre)
 AM_CONFIG_HEADER(config.h:config.in)
 AC_PROG_CC
 AC_DEFINE(_GNU_SOURCE)
