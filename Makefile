@@ -136,6 +136,7 @@ $(TAGS): $(CINCS) $(CSRCS) $(wildcard $(SRC)/ui/*/*.c)
 
 clean:
 	rm -rf $(OUT) $(wildcard core*) $(wildcard vgcore*)
+	rm -rf aclocal.m4 configure autom4te.cache
 
 clobber: clean
 	rm -rf $(IANAOUI) $(IANAOUI).raw $(USBIDS)
