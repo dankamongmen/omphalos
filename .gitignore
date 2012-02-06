@@ -1,5 +1,6 @@
 aclocal.m4
 autom4te.cache/
+config.log
 configure
 core
 debian/files
@@ -8,6 +9,8 @@ debian/omphalos.substvars
 debian/omphalos/
 ieee-oui.txt
 ieee-oui.txt.raw
+install-sh
+missing
 out
 tags
 tools/csumtest
