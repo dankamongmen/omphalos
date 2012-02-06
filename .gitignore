@@ -1,3 +1,6 @@
+aclocal.m4
+autom4te.cache/
+configure
 core
 debian/files
 debian/omphalos.debhelper.log
