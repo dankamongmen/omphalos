@@ -408,8 +408,10 @@ extract_dns_extra(size_t len,const unsigned char *sec,unsigned *ttl,
 	}
 	*idx += 6;
 	sec += 6 + extra;
-	// Need expansion (as opposed to memdup()) for at least _PTR and _CNAME...
-	if(type == DNS_TYPE_A || type == DNS_TYPE_AAAA || type == DNS_TYPE_TXT){
+	// Need expansion (as opposed to memdup()) for at least
+	// _PTR, _MX and _CNAME...
+	if(type == DNS_TYPE_A || type == DNS_TYPE_AAAA ||
+			type == DNS_TYPE_TXT || type == DNS_TYPE_HINFO){
 		buf = memdup(sec,rdlen);
 	}else{
 		buf = extract_dns_record(rdlen,sec,NULL,NULL,&newidx,orig);
