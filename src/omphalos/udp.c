@@ -30,6 +30,15 @@ void handle_udp_packet(omphalos_packet *op,const void *frame,size_t len){
 	ulen = len - sizeof(*udp);
 	op->l4src = udp->source;
 	op->l4dst = udp->dest;
+	if(udp->source == __constant_htons(MDNS_NATPMP1_UDP_PORT) &&
+			udp->dest == __constant_htons(MDNS_NATPMP1_UDP_PORT)){
+		handle_natpmp_packet(op,ubdy,ulen);
+		return;
+	}else if(udp->source == __constant_htons(MDNS_NATPMP2_UDP_PORT) &&
+			udp->dest == __constant_htons(MDNS_NATPMP2_UDP_PORT)){
+		handle_natpmp_packet(op,ubdy,ulen);
+		return;
+	}
 	switch(udp->source){
 		case __constant_htons(DNS_UDP_PORT):{
 			if(handle_dns_packet(op,ubdy,ulen) == 1){
@@ -51,10 +60,7 @@ void handle_udp_packet(omphalos_packet *op,const void *frame,size_t len){
 				handle_mdns_packet(op,ubdy,ulen);
 			}
 		}break;
-		case __constant_htons(MDNS_NATPMP1_UDP_PORT):
-		case __constant_htons(MDNS_NATPMP2_UDP_PORT):{
-			handle_natpmp_packet(op,ubdy,ulen);
-		}case __constant_htons(NETBIOS_NS_UDP_PORT):{
+		case __constant_htons(NETBIOS_NS_UDP_PORT):{
 			if(udp->dest == __constant_htons(NETBIOS_NS_UDP_PORT)){
 				handle_netbios_ns_packet(op,ubdy,ulen);
 			}
