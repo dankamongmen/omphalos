@@ -114,6 +114,7 @@ handle_pcap_cooked(u_char *gi,const struct pcap_pkthdr *h,const u_char *bytes){
 	omphalos_packet packet;
 
 	++iface->frames;
+	// diagnostic("Frame %ju",iface->frames);
 	if(h->caplen != h->len || h->caplen < sizeof(*sll)){
 		diagnostic("Partial capture (%u/%ub)",h->caplen,h->len);
 		++iface->truncated;
