@@ -19,6 +19,8 @@ VI. Thanks
 I. Requirements
 ===================================================================
 
+autoconf, automake, and a C compiler are used at buildtime.
+
 libsysfs, libnl3, libpcap, libpciaccess, libz, libiw and libcap are used at
 both build and runtime.
 
@@ -29,6 +31,8 @@ The ncurses UI requires libncursesw (ncurses with wide character support),
 and libpanel (distributed with SVR4 curses and ncurses).
 
 arp-scan's 'get-oui' program is currently used to build the IANA OUI file.
+
+wget is used to download the USB ID file.
 
 GnuPG is used to verify signed tarballs.
 
