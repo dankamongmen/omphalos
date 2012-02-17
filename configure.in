@@ -43,5 +43,6 @@ AC_CHECK_HEADERS([sys/time.h])
 AC_CHECK_HEADERS([wchar.h])
 AC_CHECK_HEADERS([wctype.h])
 AC_CHECK_TYPES([ptrdiff_t])
+AC_CHECK_PROG(XSLTPROC,xsltproc,xsltproc,)
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
