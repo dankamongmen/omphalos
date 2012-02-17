@@ -1,7 +1,10 @@
 aclocal.m4
+autoscan.log
 autom4te.cache/
+config.in
 config.log
 configure
+configure.scan
 core
 debian/files
 debian/omphalos.debhelper.log

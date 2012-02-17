@@ -136,8 +136,8 @@ $(TAGS): $(CINCS) $(CSRCS) $(wildcard $(SRC)/ui/*/*.c)
 
 clean:
 	rm -rf $(OUT) $(wildcard core*) $(wildcard vgcore*)
-	rm -rf aclocal.m4 autom4te.cache config.in config.log
-	rm -rf configure install-sh missing
+	rm -rf aclocal.m4 autom4te.cache autoscan.log config.in config.log
+	rm -rf configure configure.scan install-sh missing
 
 clobber: clean
 	rm -rf $(IANAOUI) $(IANAOUI).raw $(USBIDS)
