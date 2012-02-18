@@ -127,8 +127,8 @@ $(OUT)/%.xhtml: %.xml
 clean:
 	rm -rf $(OUT) $(wildcard core*) $(wildcard vgcore*)
 	rm -rf aclocal.m4 autom4te.cache autoscan.log config.in config.in~
+	rm -rf config.h config.log config.status Makefile.in
 	rm -rf configure configure.scan install-sh missing
-	rm -rf config.h config.log Makefile.in
 	rm -rf COPYING INSTALL stamp-h1
 
 clobber: clean
