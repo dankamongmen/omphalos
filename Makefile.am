@@ -23,7 +23,6 @@ AM_CFLAGS:=$(DBCFLAGS)
 # FIXME can't use --default-symver with GNU gold
 LFLAGS:=-Wl,-O2,--enable-new-dtags,--as-needed,--warn-common
 LFLAGS+=-liw -lpcap -lcap -lpciaccess $(shell  pkg-config --libs libnl-3.0) $(shell pkg-config --libs libsysfs) $(shell pkg-config --libs zlib)
-#XSLTPROC?=$(shell (which xsltproc || echo xsltproc) 2> /dev/null)
 #INSTALL?=install -v
 #DESTDIR?=/usr/local
 #ifeq ($(UNAME),FreeBSD)
@@ -42,8 +41,6 @@ MAN1OBJ:=$(addprefix $(OUT)/,$(MAN1SRC:%.xml=%.1))
 XHTML:=$(addprefix $(OUT)/$(XHTMLDIR)/,$(notdir $(MAN1SRC:%.xml=%.xhtml)))
 DOCS:=$(MAN1OBJ) $(XHTML)
 
-# Any old XSLT processor ought do, but you might need change the invocation.
-#XSLTPROC?=$(shell (which xsltproc || echo xsltproc) 2> /dev/null)
 # This can be a URL; it's the docbook-to-manpage XSL
 # Should the network be inaccessible, and local copies are installed, try:
 #DOC2MANXSL?=--nonet /usr/share/xml/docbook/stylesheet/docbook-xsl/manpages/docb
