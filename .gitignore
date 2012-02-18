@@ -1,8 +1,12 @@
+Makefile.in
 aclocal.m4
 autoscan.log
 autom4te.cache/
+config.h
 config.in
+config.in~
 config.log
+config.status
 configure
 configure.scan
 core
@@ -15,6 +19,7 @@ ieee-oui.txt.raw
 install-sh
 missing
 out
+stamp-h1
 tags
 tools/csumtest
 tools/nl80211
