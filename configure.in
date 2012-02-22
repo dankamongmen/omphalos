@@ -40,14 +40,13 @@ AC_CHECK_HEADERS([wctype.h])
 AC_CHECK_TYPES([ptrdiff_t])
 AC_CHECK_PROG(XSLTPROC,xsltproc,xsltproc,)
 PKG_CHECK_MODULES(LIBNL3, libnl-3.0 = 3.0, [have_libnl3=yes])
-if (test "${have_libnl3}" = "yes"); then
-        CFLAGS+="$LIBNL3_CFLAGS"
-        LIBS+="$LIBNL3_LIBS"
-fi
+	CFLAGS+="$LIBNL3_CFLAGS"
+	LIBS+="$LIBNL3_LIBS"
 PKG_CHECK_MODULES(LIBSYSFS, libsysfs, [have_libsysfs=yes])
-if (test "${have_libsysfs}" = "yes"); then
-        CFLAGS+="$LIBSYSFS_CFLAGS"
-        LIBS+="$LIBSYSFS_LIBS"
-fi
+	CFLAGS+="$LIBSYSFS_CFLAGS"
+	LIBS+="$LIBSYSFS_LIBS"
+PKG_CHECK_MODULES(LIBZ, zlib, [have_zlib=yes])
+	CFLAGS+="$LIBZ_CFLAGS"
+	LIBS+="$LIBZ_LIBS"
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
