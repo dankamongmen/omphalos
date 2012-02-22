@@ -44,5 +44,10 @@ if (test "${have_libnl3}" = "yes"); then
         CFLAGS+="$LIBNL3_CFLAGS"
         LIBS+="$LIBNL3_LIBS"
 fi
+PKG_CHECK_MODULES(LIBSYSFS, libsysfs, [have_libsysfs=yes])
+if (test "${have_libsysfs}" = "yes"); then
+        CFLAGS+="$LIBSYSFS_CFLAGS"
+        LIBS+="$LIBSYSFS_LIBS"
+fi
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT

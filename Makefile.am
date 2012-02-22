@@ -21,7 +21,7 @@ CFLAGS=$(DFLAGS) -O2 -march=native -pthread -I$(SRC) -fpic -fstrict-aliasing -fv
 DBCFLAGS:=$(DFLAGS) -O2 -march=native -pthread -I$(SRC) -fpic -fstrict-aliasing -fvisibility=hidden -Wall -W -Wextra -Werror -Wno-format-zero-length -g -ggdb
 AM_CFLAGS:=$(DBCFLAGS)
 # FIXME can't use --default-symver with GNU gold
-LIBS+=-liw -lpcap -lcap -lpciaccess $(shell pkg-config --libs libsysfs) $(shell pkg-config --libs zlib)
+LIBS+=-liw -lpcap -lcap -lpciaccess $(shell pkg-config --libs zlib)
 LFLAGS:=-Wl,-O2,--enable-new-dtags,--as-needed,--warn-common $(LIBS)
 #ifeq ($(UNAME),FreeBSD)
 #MANBIN?=makewhatis
