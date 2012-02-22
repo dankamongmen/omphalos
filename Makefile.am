@@ -22,11 +22,6 @@ DBCFLAGS:=$(DFLAGS) -O2 -march=native -pthread -I$(SRC) -fpic -fstrict-aliasing 
 AM_CFLAGS:=$(DBCFLAGS)
 # FIXME can't use --default-symver with GNU gold
 LFLAGS:=-Wl,-O2,--enable-new-dtags,--as-needed,--warn-common $(LIBS)
-#ifeq ($(UNAME),FreeBSD)
-#MANBIN?=makewhatis
-#else
-#MANBIN?=mandb
-#endif
 
 MANDIR:=doc/man
 XHTMLDIR:=doc/xhtml
