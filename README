@@ -179,3 +179,4 @@ VI. Thanks
 
 * Jeremy Stretch of PacketLife.net, for supplying PCAP-format unit tests.
 * Peter Jensen <peter@diff.net>, patch [master f9fee3b]
+* Robert Edmonds <edmonds@debian.org>, for Autotools advice.
