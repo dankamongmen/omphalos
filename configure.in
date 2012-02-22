@@ -39,6 +39,10 @@ AC_CHECK_HEADERS([wchar.h])
 AC_CHECK_HEADERS([wctype.h])
 AC_CHECK_TYPES([ptrdiff_t])
 AC_CHECK_PROG(XSLTPROC,xsltproc,xsltproc,)
+AC_CHECK_LIB(iw,iw_get_kernel_we_version)
+AC_CHECK_LIB(cap,cap_get_proc)
+AC_CHECK_LIB(pcap,pcap_create)
+AC_CHECK_LIB(pciaccess,pci_system_init)
 PKG_CHECK_MODULES(LIBNL3, libnl-3.0 = 3.0, [have_libnl3=yes])
 	CFLAGS+="$LIBNL3_CFLAGS"
 	LIBS+="$LIBNL3_LIBS"
