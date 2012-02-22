@@ -3,8 +3,6 @@
 .PHONY: all bin doc livetest coretest silenttest test valgrind clean clobber install uninstall
 .PHONY:	bless sudobless
 
-VERSION=0.0.1
-
 OUT:=out
 SRC=src
 DOC:=doc
