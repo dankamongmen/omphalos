@@ -23,7 +23,6 @@ AM_CFLAGS:=$(DBCFLAGS)
 # FIXME can't use --default-symver with GNU gold
 LFLAGS:=-Wl,-O2,--enable-new-dtags,--as-needed,--warn-common
 LFLAGS+=-liw -lpcap -lcap -lpciaccess $(shell pkg-config --libs libnl-3.0) $(shell pkg-config --libs libsysfs) $(shell pkg-config --libs zlib)
-#DESTDIR?=/usr/local
 #ifeq ($(UNAME),FreeBSD)
 #DOCPREFIX?=$(DESTDIR)/man
 #MANBIN?=makewhatis
@@ -124,12 +123,12 @@ $(OUT)/%.xhtml: %.xml
 	@mkdir -p $(@D)
 	$(XSLTPROC) --writesubtree $(@D) -o $@ $(DOC2XHTMLXSL) $<
 
-clean:
+clean-local:
 	rm -rf $(OUT) $(wildcard core*) $(wildcard vgcore*)
-	rm -rf aclocal.m4 autom4te.cache autoscan.log config.in config.in~
-	rm -rf config.h config.log config.status Makefile.in
-	rm -rf configure configure.scan install-sh missing
-	rm -rf INSTALL stamp-h1
+#rm -rf aclocal.m4 autom4te.cache autoscan.log config.in config.in~
+#rm -rf config.h config.log config.status Makefile.in
+#rm -rf configure configure.scan install-sh missing
+#rm -rf INSTALL stamp-h1
 
 clobber: clean
 	rm -rf $(IANAOUI) $(IANAOUI).raw $(USBIDS)
@@ -141,14 +140,16 @@ sudobless: all $(ADDCAPS) $(SETUPCORE)
 	sudo $(ADDCAPS) $(BIN)
 	$(SETUPCORE)
 
-install: all doc
+install-exec-local: all doc
 	@mkdir -p $(DESTDIR)/bin
 	@$(INSTALL) -m 0755 $(BIN) $(DESTDIR)/bin
+
+install-data-local: all doc
 	@mkdir -p $(DOCPREFIX)/man1
 	@$(INSTALL) -m 0644 $(MAN1OBJ) $(DOCPREFIX)/man1
 	@echo "Running $(MANBIN) $(DOCPREFIX)..." && $(MANBIN) $(DOCPREFIX)
 
-uninstall:
+uninstall-local:
 	rm -f $(addprefix $(DESTDIR)/bin/,$(notdir $(BIN)))
 	rm -f $(addprefix $(DOCPREFIX)/man1/,$(notdir $(MAN1OBJ)))
 	@echo "Running $(MANBIN) $(DOCPREFIX)..." && $(MANBIN) $(DOCPREFIX)
