@@ -24,10 +24,8 @@ AM_CFLAGS:=$(DBCFLAGS)
 LFLAGS:=-Wl,-O2,--enable-new-dtags,--as-needed,--warn-common
 LFLAGS+=-liw -lpcap -lcap -lpciaccess $(shell pkg-config --libs libnl-3.0) $(shell pkg-config --libs libsysfs) $(shell pkg-config --libs zlib)
 #ifeq ($(UNAME),FreeBSD)
-#DOCPREFIX?=$(DESTDIR)/man
 #MANBIN?=makewhatis
 #else
-#DOCPREFIX?=$(DESTDIR)/share/man
 #MANBIN?=mandb
 #endif
 
@@ -141,15 +139,15 @@ sudobless: all $(ADDCAPS) $(SETUPCORE)
 	$(SETUPCORE)
 
 install-exec-local: all doc
-	@mkdir -p $(DESTDIR)/bin
-	@$(INSTALL) -m 0755 $(BIN) $(DESTDIR)/bin
+	@mkdir -p ${bindir}
+	@$(INSTALL) -m 0755 $(BIN) ${bindir}
 
 install-data-local: all doc
-	@mkdir -p $(DOCPREFIX)/man1
-	@$(INSTALL) -m 0644 $(MAN1OBJ) $(DOCPREFIX)/man1
-	@echo "Running $(MANBIN) $(DOCPREFIX)..." && $(MANBIN) $(DOCPREFIX)
+	@mkdir -p ${mandir}/man1
+	@$(INSTALL) -m 0644 $(MAN1OBJ) ${mandir}/man1
+	@echo "Running $(MANBIN) ${mandir}..." && $(MANBIN) ${mandir}
 
 uninstall-local:
-	rm -f $(addprefix $(DESTDIR)/bin/,$(notdir $(BIN)))
-	rm -f $(addprefix $(DOCPREFIX)/man1/,$(notdir $(MAN1OBJ)))
-	@echo "Running $(MANBIN) $(DOCPREFIX)..." && $(MANBIN) $(DOCPREFIX)
+	rm -f $(addprefix ${bindir}/,$(notdir $(BIN)))
+	rm -f $(addprefix ${mandir}/man1/,$(notdir $(MAN1OBJ)))
+	@echo "Running $(MANBIN) ${mandir}..." && $(MANBIN) ${mandir}
