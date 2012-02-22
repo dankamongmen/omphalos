@@ -95,7 +95,7 @@ lex_omphalos_mode(const char *str){
 
 static void
 version(const char *arg0){
-	fprintf(stdout,"%s %s\n",PROGNAME,VERSION);
+	fprintf(stdout,"%s %s\n",PACKAGE,VERSION);
 	fprintf(stdout,"invoked as %s\n",arg0);
 	exit(EXIT_SUCCESS);
 }

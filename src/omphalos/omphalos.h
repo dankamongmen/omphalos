@@ -12,9 +12,6 @@ extern "C" {
 #include <pcap/pcap.h>
 #include <omphalos/128.h>
 
-#define PROGNAME "omphalos"	// FIXME
-#define VERSION  "0.99.1-pre"	// FIXME
-
 struct l4srv;
 struct l2host;
 struct l3host;

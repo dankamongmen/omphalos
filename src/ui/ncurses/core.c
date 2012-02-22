@@ -949,12 +949,12 @@ int draw_main_window(WINDOW *w){
 	// FIXME move this over! it is ugly on the left, clashing with ifaces
 	// 5 for 0-offset, '[', ']', and 2 spaces on right side.
 	// 5 for '|', space before and after, and %2d-formatted integer
-	scol = cols - 5 - __builtin_strlen(PROGNAME) - 1 - __builtin_strlen(VERSION)
+	scol = cols - 5 - __builtin_strlen(PACKAGE) - 1 - __builtin_strlen(VERSION)
 		- 1 - __builtin_strlen("on") - 1 - strlen(hostname)
 		- 5 - __builtin_strlen("iface" - (count_interface != 1));
 	assert(mvwprintw(w,0,scol,"[") != ERR);
 	assert(wattron(w,A_BOLD | COLOR_PAIR(HEADER_COLOR)) != ERR);
-	assert(wprintw(w,"%s %s on %s | %d iface%s",PROGNAME,VERSION,
+	assert(wprintw(w,"%s %s on %s | %d iface%s",PACKAGE,VERSION,
 			hostname,count_interface,count_interface == 1 ? "" : "s") != ERR);
 	assert(wattrset(w,COLOR_PAIR(BORDER_COLOR)) != ERR);
 	assert(wprintw(w,"]") != ERR);
