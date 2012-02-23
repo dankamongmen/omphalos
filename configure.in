@@ -69,7 +69,7 @@ fi
 PKG_CHECK_MODULES(LIBNL3, libnl-3.0 >= 3.0, [have_libnl3=yes])
 	CFLAGS+=" $LIBNL3_CFLAGS"
 	LIBS+=" $LIBNL3_LIBS"
-PKG_CHECK_MODULES(LIBNL3GEN, libnl-genl-3.0 >= 3.0, [have_libnl3gen=yes])
+PKG_CHECK_MODULES(LIBNL3GEN, libnl-genl-3.0 >= 3.0, [have_libnl3gen=yes], [havelibnl3gen=no])
 	CFLAGS+=" $LIBNL3GEN_CFLAGS"
 	LIBS+=" $LIBNL3GEN_LIBS"
 PKG_CHECK_MODULES(LIBSYSFS, libsysfs, [have_libsysfs=yes])
