@@ -39,10 +39,18 @@ AC_CHECK_HEADERS([sys/time.h])
 AC_CHECK_HEADERS([wchar.h])
 AC_CHECK_HEADERS([wctype.h])
 AC_CHECK_TYPES([ptrdiff_t])
+AX_LIB_READLINE
+if test "$have_readline" = no ; then
+	AC_MSG_WARN([Cannot find readline headers. Will not build TTY client.])
+else
+	UI+="tty"
+fi
 AX_WITH_CURSES
 AX_WITH_CURSES_PANEL
 if test "x$ax_cv_panel" != xyes; then
-	AC_MSG_ERROR([Cannot find the Curses Panel library])
+	AC_MSG_WARN([Cannot find the Curses Panel library])
+else
+	UI+="curses"
 fi
 AX_PROG_XSLTPROC
 if test "$XSLTPROC" = no ; then
@@ -56,9 +64,14 @@ AC_CHECK_LIB(iw,iw_get_kernel_we_version)
 AC_CHECK_LIB(cap,cap_get_proc)
 AC_CHECK_LIB(pcap,pcap_create)
 AC_CHECK_LIB(pciaccess,pci_system_init)
-PKG_CHECK_MODULES(X11, x11, [have_x11=yes])
+PKG_CHECK_MODULES(X11, x11, [have_x11=yes], [have_x11=no])
+if test "$have_x11" = no ; then
+	AC_MSG_WARN([Cannot find X11 headers. Will not build X11 client.])
+else
+	UI+="x"
 	X_CFLAGS+="$LIBX11_CFLAGS"
 	X_LIBS+="$LIBX11_LIBS"
+fi
 PKG_CHECK_MODULES(LIBNL3, libnl-3.0 = 3.0, [have_libnl3=yes])
 	CFLAGS+="$LIBNL3_CFLAGS"
 	LIBS+="$LIBNL3_LIBS"

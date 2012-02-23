@@ -11,7 +11,7 @@ OMPHALOS:=$(OUT)/$(PROJ)/$(PROJ)
 ADDCAPS:=tools/addcaps
 SETUPCORE:=tools/setupcores
 
-UI:=coretest ncurses tty x
+UI:=coretest
 BIN:=$(addprefix $(OMPHALOS)-,$(UI))
 
 DFLAGS=-D_FILE_OFFSET_BITS=64 -D_XOPEN_SOURCE_EXTENDED --include config.h
