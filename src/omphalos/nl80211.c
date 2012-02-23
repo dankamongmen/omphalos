@@ -9,13 +9,13 @@
 #include <linux/nl80211.h>
 #include <linux/netlink.h>
 #include <omphalos/util.h>
-#include <netlink/socket.h>
-#include <netlink/netlink.h>
 #include <linux/rtnetlink.h>
 #include <omphalos/nl80211.h>
+#include <omphalos/interface.h>
+#include <netlink/socket.h>
+#include <netlink/netlink.h>
 #include <netlink/genl/genl.h>
 #include <netlink/genl/ctrl.h>
-#include <omphalos/interface.h>
 #include <netlink/genl/family.h>
 
 // Marshal for command-specific structs

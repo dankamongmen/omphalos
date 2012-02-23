@@ -64,23 +64,24 @@ if test "$have_x11" = no ; then
 else
 	CONFIGURED_UIS+=" x"
 	X_CFLAGS+="$LIBX11_CFLAGS"
-	X_LIBS+="$LIBX11_LIBS"
+	X_LIBS+=" $LIBX11_LIBS"
 fi
-PKG_CHECK_MODULES(LIBNL3, libnl-3.0 = 3.0, [have_libnl3=yes])
-	CFLAGS+="$LIBNL3_CFLAGS"
-	LIBS+="$LIBNL3_LIBS"
+PKG_CHECK_MODULES(LIBNL3, libnl-3.0 >= 3.0, [have_libnl3=yes])
+	CFLAGS+=" $LIBNL3_CFLAGS"
+	LIBS+=" $LIBNL3_LIBS"
 PKG_CHECK_MODULES(LIBSYSFS, libsysfs, [have_libsysfs=yes])
-	CFLAGS+="$LIBSYSFS_CFLAGS"
-	LIBS+="$LIBSYSFS_LIBS"
+	CFLAGS+=" $LIBSYSFS_CFLAGS"
+	LIBS+=" $LIBSYSFS_LIBS"
 PKG_CHECK_MODULES(LIBZ, zlib, [have_zlib=yes])
-	CFLAGS+="$LIBZ_CFLAGS"
-	LIBS+="$LIBZ_LIBS"
+	CFLAGS+=" $LIBZ_CFLAGS"
+	LIBS+=" $LIBZ_LIBS"
 AX_LIB_READLINE
 if test "$have_readline" = no ; then
 	AC_MSG_WARN([Cannot find readline headers. Will not build TTY client.])
 else
 	CONFIGURED_UIS+=" tty"
 fi
+AC_SUBST([CFLAGS])
 AC_SUBST([CONFIGURED_UIS])
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT

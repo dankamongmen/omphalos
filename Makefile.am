@@ -15,8 +15,8 @@ UI:=coretest @CONFIGURED_UIS@
 BIN:=$(addprefix $(OMPHALOS)-,$(UI))
 
 DFLAGS=-D_FILE_OFFSET_BITS=64 -D_XOPEN_SOURCE_EXTENDED --include config.h
-CFLAGS=$(DFLAGS) -O2 -march=native -pthread -I$(SRC) -fpic -fstrict-aliasing -fvisibility=hidden -Wall -W -Wextra -Werror -Wno-format-zero-length
-DBCFLAGS:=$(DFLAGS) -O2 -march=native -pthread -I$(SRC) -fpic -fstrict-aliasing -fvisibility=hidden -Wall -W -Wextra -Werror -Wno-format-zero-length -g -ggdb
+CFLAGS=$(DFLAGS) -O2 -march=native -pthread -I$(SRC) -fpic -fstrict-aliasing -fvisibility=hidden -Wall -W -Wextra -Werror -Wno-format-zero-length @CFLAGS@
+DBCFLAGS:=$(DFLAGS) -O2 -march=native -pthread -I$(SRC) -fpic -fstrict-aliasing -fvisibility=hidden -Wall -W -Wextra -Werror -Wno-format-zero-length -g -ggdb @CFLAGS@
 AM_CFLAGS:=$(DBCFLAGS)
 # FIXME can't use --default-symver with GNU gold
 LFLAGS:=-Wl,-O2,--enable-new-dtags,--as-needed,--warn-common $(LIBS)
