@@ -11,7 +11,7 @@ OMPHALOS:=$(OUT)/$(PROJ)/$(PROJ)
 ADDCAPS:=tools/addcaps
 SETUPCORE:=tools/setupcores
 
-UI:=coretest
+UI:=coretest @CONFIGURED_UIS@
 BIN:=$(addprefix $(OMPHALOS)-,$(UI))
 
 DFLAGS=-D_FILE_OFFSET_BITS=64 -D_XOPEN_SOURCE_EXTENDED --include config.h
@@ -95,7 +95,7 @@ $(OMPHALOS)-ncurses: $(COREOBJS) $(NCURSESOBJS)
 
 $(OMPHALOS)-tty: $(COREOBJS) $(TTYOBJS)
 	@mkdir -p $(@D)
-	$(CC) $(CFLAGS) -o $@ $^ $(LFLAGS) -lreadline
+	$(CC) $(CFLAGS) -o $@ $^ $(LFLAGS)
 
 $(OMPHALOS)-x: $(COREOBJS) $(XOBJS)
 	@mkdir -p $(@D)
