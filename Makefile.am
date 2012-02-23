@@ -91,7 +91,7 @@ $(OMPHALOS)-coretest: $(COREOBJS) $(CORETESTOBJS)
 
 $(OMPHALOS)-ncurses: $(COREOBJS) $(NCURSESOBJS)
 	@mkdir -p $(@D)
-	$(CC) $(CFLAGS) -o $@ $^ $(LFLAGS) -lpanel -lncursesw
+	$(CC) $(CFLAGS) -o $@ $^ $(LFLAGS) $(PANEL_LIB) $(CURSES_LIB)
 
 $(OMPHALOS)-tty: $(COREOBJS) $(TTYOBJS)
 	@mkdir -p $(@D)
@@ -99,7 +99,7 @@ $(OMPHALOS)-tty: $(COREOBJS) $(TTYOBJS)
 
 $(OMPHALOS)-x: $(COREOBJS) $(XOBJS)
 	@mkdir -p $(@D)
-	$(CC) $(CFLAGS) $(X_CFLAGS) -o $@ $^ $(LFLAGS) $(X_LIBS)
+	$(CC) $(CFLAGS) $(X11_CFLAGS) -o $@ $^ $(LFLAGS) $(X11_LIBS)
 
 $(OUT)/%.o: %.c $(CINCS) $(MAKEFILE)
 	@mkdir -p $(@D)
