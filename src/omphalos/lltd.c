@@ -344,12 +344,16 @@ handle_lltd_discovery(omphalos_packet *op,unsigned function,const void *frame,
 		case TOPDISC_DISCOVER:{
 			const struct lltddischdr *disc;
 
+			if(dlen < sizeof(*disc)){
+				diagnostic("%s malformed LLTD Discover (%zu) on %s",__func__,dlen,op->i->name);
+				return;
+			}
 			// FIXME check for source
 			disc = dframe;
 			dframe = (const char *)dframe + sizeof(*disc);
 			dlen -= sizeof(*disc);
 			if(dlen % ETH_ALEN){ // station list
-				diagnostic("%s malformed LLTD Hello (%zu) on %s",__func__,dlen,op->i->name);
+				diagnostic("%s malformed LLTD Discover (%zu) on %s",__func__,dlen,op->i->name);
 				return;
 			}
 			break;
