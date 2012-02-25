@@ -36,6 +36,9 @@ DOCS:=$(MAN1OBJ) $(XHTML)
 
 all: tags bin doc
 
+tags:
+	ctags -R .
+
 bin: $(BIN)
 
 doc: $(DOCS)

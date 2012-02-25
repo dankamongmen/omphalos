@@ -346,6 +346,7 @@ handle_lltd_discovery(omphalos_packet *op,unsigned function,const void *frame,
 
 			if(dlen < sizeof(*disc)){
 				diagnostic("%s malformed LLTD Discover (%zu) on %s",__func__,dlen,op->i->name);
+				op->malformed = 1;
 				return;
 			}
 			// FIXME check for source
@@ -354,6 +355,7 @@ handle_lltd_discovery(omphalos_packet *op,unsigned function,const void *frame,
 			dlen -= sizeof(*disc);
 			if(dlen % ETH_ALEN){ // station list
 				diagnostic("%s malformed LLTD Discover (%zu) on %s",__func__,dlen,op->i->name);
+				op->malformed = 1;
 				return;
 			}
 			break;
@@ -459,6 +461,7 @@ int initiate_lltd(int fam,interface *i,const void *addr){
 	base->seq = 0; // always 0 for discovery
 	tlen += sizeof(*base);
 	thdr->tp_len = tlen - sizeof(*thdr);
+	// diagnostic("%s] LLTD xmit %u",i->name,thdr->tp_len);
 	return send_tx_frame(i,frame);
 
 err:
