@@ -720,7 +720,7 @@ int setup_dns_ptr(const struct routepath *rp,int fam,const void *ns,unsigned por
 	tptr = DNS_CLASS_IN;
 	memcpy((char *)frame + tlen + 2,&tptr,2);
 	tlen += 4;
-	thdr->tp_len = tlen - sizeof(*thdr);
+	thdr->tp_len = tlen - thdr->tp_mac;
 	udp->len += strlen(question) + 1 + 4;
 	udp->len = htons(udp->len);
 	*totlen = htons(tlen - *totlen);
