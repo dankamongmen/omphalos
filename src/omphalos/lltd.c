@@ -465,8 +465,6 @@ int initiate_lltd(int fam,interface *i,const void *addr){
 	memset(disc,0,sizeof(*disc));
 	tlen += sizeof(*disc);
 	thdr->tp_len = tlen - thdr->tp_mac;
-	        diagnostic(" %u = %zu - %zu",thdr->tp_len,tlen,(size_t)thdr->tp_mac);
-
 	return send_tx_frame(i,frame);
 
 err:
