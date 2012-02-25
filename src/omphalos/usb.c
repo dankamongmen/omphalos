@@ -258,7 +258,7 @@ int stop_usb_support(void){
 }
 
 // libsysfs implementation
-#include <sysfs/libsysfs.h>
+#include <libsysfs.h>
 
 int find_usb_device(const char *busid __attribute__ ((unused)),
 		struct sysfs_device *sd,topdev_info *tinf){

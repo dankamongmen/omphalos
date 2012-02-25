@@ -1,8 +1,8 @@
 #include <stdlib.h>
+#include <libsysfs.h>
 #include <omphalos/usb.h>
 #include <omphalos/pci.h>
 #include <omphalos/sysfs.h>
-#include <sysfs/libsysfs.h>
 #include <omphalos/interface.h>
 
 // PCIe devices show up as PCI devices; the /bus/pci_express entries in sysfs
