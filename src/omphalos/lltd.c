@@ -421,6 +421,7 @@ void handle_lltd_packet(omphalos_packet *op,const void *frame,size_t len){
 int initiate_lltd(int fam,interface *i,const void *addr){
 	struct tpacket_hdr *thdr;
 	struct lltdbasehdr *base;
+	struct lltddischdr *disc;
 	size_t flen,tlen;
 	lltdhdr *lltd;
 	void *frame;
@@ -460,8 +461,10 @@ int initiate_lltd(int fam,interface *i,const void *addr){
 	memcpy(base->src,i->addr,ETH_ALEN);
 	base->seq = 0; // always 0 for discovery
 	tlen += sizeof(*base);
+	disc = (struct lltddischdr *)((const char *)base + sizeof(*base));
+	memset(disc,0,sizeof(*disc));
+	tlen += sizeof(*disc);
 	thdr->tp_len = tlen - sizeof(*thdr);
-	// diagnostic("%s] LLTD xmit %u",i->name,thdr->tp_len);
 	return send_tx_frame(i,frame);
 
 err:
