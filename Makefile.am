@@ -135,7 +135,7 @@ install-exec-local: all doc
 
 install-data-local: all doc
 	@mkdir -p ${mandir}/man1
-	@$(INSTALL) -m 0644 $(MAN1OBJ) ${mandir}/man1
+	@$(INSTALL_DATA) -m 0644 $(MAN1OBJ) ${mandir}/man1
 	@echo "Running $(MANBIN) ${mandir}..." && $(MANBIN) ${mandir}
 
 uninstall-local:
