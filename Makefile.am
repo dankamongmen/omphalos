@@ -14,7 +14,7 @@ SETUPCORE:=tools/setupcores
 UI:=coretest @CONFIGURED_UIS@
 BIN:=$(addprefix $(OMPHALOS)-,$(UI))
 
-DFLAGS=-D_FILE_OFFSET_BITS=64 -D_XOPEN_SOURCE_EXTENDED --include config.h
+DFLAGS=-D_XOPEN_SOURCE_EXTENDED --include config.h
 CFLAGS=$(DFLAGS) -O2 -march=native -pthread -I$(SRC) -fpic -fstrict-aliasing -fvisibility=hidden -Wall -W -Wextra -Werror -Wno-format-zero-length @CFLAGS@
 DBCFLAGS:=$(DFLAGS) -O2 -march=native -pthread -I$(SRC) -fpic -fstrict-aliasing -fvisibility=hidden -Wall -W -Wextra -Werror -Wno-format-zero-length -g -ggdb @CFLAGS@
 AM_CFLAGS:=$(DBCFLAGS)

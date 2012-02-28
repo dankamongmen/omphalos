@@ -39,6 +39,7 @@ AC_CHECK_HEADERS([sys/time.h])
 AC_CHECK_HEADERS([wchar.h])
 AC_CHECK_HEADERS([wctype.h])
 AC_CHECK_TYPES([ptrdiff_t])
+AC_SYS_LARGEFILE
 AX_WITH_CURSES
 AX_WITH_CURSES_PANEL
 if test "x$ax_cv_panel" != xyes; then
