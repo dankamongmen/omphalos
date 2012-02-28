@@ -18,9 +18,10 @@ struct omphalos_packet;
 #define DNS_TYPE_PTR	__constant_htons(12u)
 #define DNS_TYPE_HINFO	__constant_htons(13u)
 #define DNS_TYPE_MX	__constant_htons(15u)
-#define DNS_TYPE_TXT	__constant_htons(16u)
-#define DNS_TYPE_AAAA	__constant_htons(28u)
-#define DNS_TYPE_SRV	__constant_htons(33u)
+#define DNS_TYPE_TXT	__constant_htons(0x10u)
+#define DNS_TYPE_AAAA	__constant_htons(0x1cu)
+#define DNS_TYPE_SRV	__constant_htons(0x21u)
+#define DNS_TYPE_SPF	__constant_htons(0x63u)
 
 struct dnshdr {
 	uint16_t id;
