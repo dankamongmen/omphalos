@@ -1,6 +1,7 @@
 .DELETE_ON_ERROR:
 #.DEFAULT_GOAL:=test
-.PHONY: all bin doc livetest coretest silenttest test valgrind clean clobber install uninstall
+# all, [un]install, and *clean-local are autotoolizd
+.PHONY: bin doc livetest coretest silenttest test valgrind
 .PHONY:	bless sudobless
 
 OUT:=out
@@ -119,8 +120,9 @@ $(OUT)/%.xhtml: %.xml
 clean-local:
 	rm -rf $(OUT) $(wildcard core*) $(wildcard vgcore*)
 
-clobber: clean
+maintainer-clean-local:
 	rm -rf $(IANAOUI) $(IANAOUI).raw $(USBIDS)
+	rm -rf configure config config.in install-sh missing Makefile.in
 
 bless: all
 	$(ADDCAPS) $(BIN)
