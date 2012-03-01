@@ -1380,6 +1380,13 @@ err:
 	return ERR;
 }
 
+// When this text is being displayed, the help window is the active subwindow.
+// Thus we refer to other subwindow commands as "viewing", while 'h' here is
+// described as "toggling". When other subwindows come up, they list their
+// own command as "toggling." We want to avoid having to scroll the help
+// synopsis, so keep it under 22 lines (25 lines on an ANSI standard terminal,
+// minus two for the top/bottom screen border, minus one for mandatory
+// subwindow top padding).
 static const wchar_t *helps[] = {
 	/*L"'n': network configuration",
 	L"       configure addresses, routes, bridges, and wireless",
@@ -1393,6 +1400,7 @@ static const wchar_t *helps[] = {
 	L"       configure algorithm stepdown, WEP/WPA cracking, SSL MitM", */
 	//L"'m': change device MAC        'u': change device MTU",
 	L"'q': quit                     ctrl+'L': redraw the screen",
+	L"'⇆Tab' move between windows   'p': toggle subwindow pinning",
 	L"'e': view environment details 'h': toggle this help display",
 	L"'v': view interface details   'n': view network stack details",
 	L"'w': view wireless info       'b': view bridging info",
