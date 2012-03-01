@@ -150,6 +150,16 @@ toggle_panel(WINDOW *w,struct panel_state *ps,int (*psfxn)(WINDOW *,struct panel
 	}
 }
 
+// Only meaningful if there are both interfaces and a subdisplay
+static void
+toggle_focus(void){
+}
+
+// Only meaningful if there are both interfaces and a subdisplay
+static void
+toggle_subwindow_pinning(void){
+}
+
 static void *
 ncurses_input_thread(void *unsafe_marsh){
 	struct ncurses_input_marshal *nim = unsafe_marsh;
@@ -210,6 +220,11 @@ ncurses_input_thread(void *unsafe_marsh){
 				resize_screen_locked(w);
 			}unlock_ncurses();
 			break;
+		case 9: // Tab FIXME
+			lock_ncurses();
+				toggle_focus();
+			unlock_ncurses();
+			break;
 		case 12: // Ctrl-L FIXME
 			lock_ncurses();{
 				redraw_screen_locked();
@@ -241,6 +256,11 @@ ncurses_input_thread(void *unsafe_marsh){
 		case 'r':
 			lock_ncurses();
 				reset_current_interface_stats(w);
+			unlock_ncurses();
+			break;
+		case 'P':
+			lock_ncurses();
+				toggle_subwindow_pinning();
 			unlock_ncurses();
 			break;
 		case 'p':
