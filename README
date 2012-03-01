@@ -19,7 +19,10 @@ VI. Thanks
 I. Requirements
 ===================================================================
 
-autoconf, automake, and a C compiler are used at buildtime.
+GNU Autotools are used to build the configure script. They are not necessary
+when building from a release tarball.
+
+A C compiler is used at buildtime.
 
 libsysfs, libnl3, libpcap, libpciaccess, libz, libiw and libcap are used at
 both build and runtime.
@@ -27,10 +30,14 @@ both build and runtime.
 Omphalos currently only builds or runs on a Linux kernel with PACKET_MMAP
 sockets. Packet transmission requires at least a 2.6.29 kernel.
 
+The TTY UI requires GNU Readline.
+
 The ncurses UI requires libncursesw (ncurses with wide character support),
 and libpanel (distributed with SVR4 curses and ncurses).
 
-arp-scan's 'get-oui' program is currently used to build the IANA OUI file.
+The X UI requires libX11 and friends.
+
+arp-scan's 'get-oui' program is used to build the IANA OUI file.
 
 wget is used to download the USB ID file.
 
@@ -40,23 +47,26 @@ GnuPG is used to verify signed tarballs.
 II. Building and installation
 ===================================================================
 
-If compiling from checked-out source, run "autoreconf -fi" to build the
-initial configure script (a configure script will be present in release
-tarballs). "./configure && make && sudo make install" ought be
-sufficient to build and install Omphalos. Run "./configure --help" to
-see supported build parameters.
+If compiling from checked-out source, run "autoreconf -fi" to build the initial
+configure script (a configure script will be present in release tarballs).
 
-If filesystem-based capabilities are supported, it might be desirable to
-bestow CAP_SETUID privileges (this is *not* equivalent to a setuid binary).
-See "Usage" regarding switch to the "nobody" user when CAP_SETUID is
-possessed: this can help defend users from malicious files, even if they're
-not allowed to open packet sockets. If non-root users should be able to use
-network capabilities, add CAP_NET_ADMIN and CAP_NET_RAW to the binary. This
-can be accomplished by running "make sudobless" or running tools/addcaps.
+"./configure && make && sudo make install" ought be sufficient to build and
+install Omphalos. Run "./configure --help" to see supported build parameters.
 
-If MADV_HUGEPAGE is available at compilation time, madvise() will be used
-to advise hugepage backing for important, large data structures including
-the ringbuffers. This could improve performance.
+If filesystem-based capabilities are supported, it might be desirable to bestow
+CAP_SETUID privileges (this is *not* equivalent to a setuid binary). See
+"Usage" regarding switch to the "nobody" user when CAP_SETUID is possessed:
+this can help defend users from malicious files, even if they're not allowed to
+open packet sockets. If non-root users should be able to use network
+capabilities, add CAP_NET_ADMIN and CAP_NET_RAW to the binary. This can be
+accomplished by running "make sudobless" or running tools/addcaps.
+
+If MADV_HUGEPAGE is available at compilation time, madvise() will be used to
+advise hugepage backing for important, large data structures including the
+ringbuffers. This could improve performance.
+
+To restore an omphalos directory to its pristine form, ensure a Makefile has
+been generated via ./configure, and run "make maintainer-clean".
 
 ===================================================================
 III. Usage
