@@ -1400,7 +1400,7 @@ static const wchar_t *helps[] = {
 	L"       configure algorithm stepdown, WEP/WPA cracking, SSL MitM", */
 	//L"'m': change device MAC        'u': change device MTU",
 	L"'q': quit                     ctrl+'L': redraw the screen",
-	L"'⇆Tab' move between windows   'P': toggle subwindow pinning",
+	L"'⇆Tab' move between displays  'P': toggle subdisplay pinning",
 	L"'e': view environment details 'h': toggle this help display",
 	L"'v': view interface details   'n': view network stack details",
 	L"'w': view wireless info       'b': view bridging info",
