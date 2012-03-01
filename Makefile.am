@@ -35,7 +35,11 @@ DOCS:=$(MAN1OBJ) $(XHTML)
 #DOC2MANXSL?=--nonet /usr/share/xml/docbook/stylesheet/docbook-xsl/manpages/docb
 #DOC2XHTMLXSL?=http://docbook.sourceforge.net/release/xsl/current/xhtml/docbook.xsl
 
-all: tags bin doc
+USBIDS:=usb.ids
+IANAOUI:=ieee-oui.txt
+SUPPORT:=$(USBIDS) $(IANAOUI)
+
+all: tags bin doc $(SUPPORT)
 
 tags:
 	ctags -R .
@@ -58,10 +62,6 @@ CORETESTOBJS:=$(filter $(OUT)/$(SRC)/ui/coretest/%.o,$(COBJS))
 NCURSESOBJS:=$(filter $(OUT)/$(SRC)/ui/ncurses/%.o,$(COBJS))
 TTYOBJS:=$(filter $(OUT)/$(SRC)/ui/tty/%.o,$(COBJS))
 XOBJS:=$(filter $(OUT)/$(SRC)/ui/x/%.o,$(COBJS))
-
-USBIDS:=usb.ids
-IANAOUI:=ieee-oui.txt
-SUPPORT:=$(USBIDS) $(IANAOUI)
 
 # Requires CAP_NET_ADMIN privileges bestowed upon the binary
 livetest: sudobless $(SUPPORT)
