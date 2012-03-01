@@ -33,7 +33,7 @@ sockets. Packet transmission requires at least a 2.6.29 kernel.
 The TTY UI requires GNU Readline.
 
 The ncurses UI requires libncursesw (ncurses with wide character support),
-and libpanel (distributed with SVR4 curses and ncurses).
+and libpanelw (distributed with SVR4 curses and ncurses).
 
 The X UI requires libX11 and friends.
 
@@ -42,6 +42,10 @@ arp-scan's 'get-oui' program is used to build the IANA OUI file.
 wget is used to download the USB ID file.
 
 GnuPG is used to verify signed tarballs.
+
+Your TERM and LOCALE/LANG environment variables need be correctly set to make
+full use of omphalos-ncurses. Ensure that a UTF-8 locale is being used, and
+that your terminal definition supports 256 colors.
 
 ===================================================================
 II. Building and installation
