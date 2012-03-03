@@ -7,6 +7,7 @@
 #include <omphalos/udp.h>
 #include <omphalos/csum.h>
 #include <omphalos/dhcp.h>
+#include <omphalos/diag.h>
 #include <omphalos/omphalos.h>
 #include <omphalos/ethernet.h>
 #include <omphalos/interface.h>
@@ -23,14 +24,42 @@ int handle_dhcp6_packet(omphalos_packet *op,const void *frame,size_t fsize){
 
 #define DHCP4_REQ_LEN 44
 
+struct dhcphdr {
+	uint8_t mtype;
+	uint8_t htype;
+	uint8_t halen;
+	uint8_t hops;
+	uint32_t xid;
+	uint16_t seconds;
+	uint16_t bootpflags;
+	uint32_t caddr;
+	uint32_t yaddr;
+	uint32_t saddr;
+	uint32_t raddr;
+	unsigned char haddr[16];
+} __attribute__ ((packed));
+
+enum {
+	DHCP_MTYPE_REQUEST = 1,
+};
+
+enum {
+	DHCP_HTYPE_ETHERNET = 1,
+};
+
 int dhcp4_probe(interface *i,const uint32_t *saddr){
 	struct tpacket_hdr *hdr;
+	struct dhcphdr *dhcp;
 	struct udphdr *udp;
 	struct iphdr *ip;
 	size_t fsize,off;
 	void *frame;
 	int r;
 
+	if(i->addrlen > sizeof(dhcp->haddr)){
+		diagnostic("Interface hardware addrlen too large (%zu)",i->addrlen);
+		return -1;
+	}
 	if((frame = get_tx_frame(i,&fsize)) == NULL){
 		return -1;
 	}
@@ -53,7 +82,19 @@ int dhcp4_probe(interface *i,const uint32_t *saddr){
 	}
 	fsize -= r;
 	off += r;
-	// FIXME
+	dhcp = (struct dhcphdr *)((char *)frame + off);
+	dhcp->mtype = DHCP_MTYPE_REQUEST;
+	dhcp->htype = DHCP_HTYPE_ETHERNET;
+	dhcp->halen = i->addrlen;
+	dhcp->hops = 0;
+	dhcp->xid = random(); // FIXME?
+	dhcp->seconds = 0;
+	dhcp->bootpflags = 0;
+	memset(&dhcp->caddr,0,sizeof(dhcp->caddr));
+	dhcp->yaddr = *saddr;
+	memset(&dhcp->saddr,0,sizeof(dhcp->saddr));
+	memset(&dhcp->raddr,0,sizeof(dhcp->raddr));
+	memcpy(dhcp->haddr,i->addr,i->addrlen);
 	ip->tot_len = htons(off - hdr->tp_mac - sizeof(struct ethhdr));
 	ip->check = ipv4_csum(ip);
 	udp->check = udp4_csum(udp);
