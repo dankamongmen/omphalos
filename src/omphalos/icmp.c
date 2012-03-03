@@ -153,8 +153,8 @@ int tx_ipv4_bcast_pings(interface *i,const uint32_t *saddr){
 	}
 	tlen += r;
 	ip = (struct iphdr *)((char *)frame + tlen);
-	net = htonl(0xfffffffful); // FIXME get bcast for route
-	if((r = prep_ipv4_header(ip,flen - tlen,*saddr,net,IPPROTO_ICMP)) < 0){
+	// FIXME get bcast address appropriate for route
+	if((r = prep_ipv4_cast(ip,flen - tlen,*saddr,IPPROTO_ICMP)) < 0){
 		abort_tx_frame(i,frame);
 		return -1;
 	}
