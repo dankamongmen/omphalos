@@ -91,7 +91,7 @@ void handle_udp_packet(omphalos_packet *op,const void *frame,size_t len){
 int prep_udp4(void *frame,size_t flen,unsigned src,unsigned dst,size_t dlen){
 	struct udphdr *udp = frame;
 
-	if(flen < sizeof(*udp) + dlen){
+	if(flen < sizeof(*udp) + ntohs(dlen)){
 		return -1;
 	}
 	udp->source = src;
@@ -104,7 +104,7 @@ int prep_udp4(void *frame,size_t flen,unsigned src,unsigned dst,size_t dlen){
 int prep_udp6(void *frame,size_t flen,unsigned src,unsigned dst,size_t dlen){
 	struct udphdr *udp = frame;
 
-	if(flen < sizeof(*udp) + dlen){
+	if(flen < sizeof(*udp) + ntohs(dlen)){
 		return -1;
 	}
 	udp->source = src;
