@@ -176,7 +176,7 @@ int tx_ipv4_bcast_pings(interface *i,const uint32_t *saddr){
 }
 
 // Always goes to ff02::2 (ALL-HOSTS), from each source address.
-int tx_ipv6_bcast_pings(interface *i,const void *saddr){
+int tx_ipv6_bcast_pings(interface *i,const uint128_t saddr){
 	const unsigned char hw[ETH_ALEN] = { 0x33, 0x33, 0x00, 0x00, 0x00, 0x01 };
 	uint128_t net = { htonl(0xff020000ul), htonl(0x0ul),
 				htonl(0x0ul), htonl(0x1ul) };
