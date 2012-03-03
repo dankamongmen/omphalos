@@ -24,8 +24,8 @@ int dhcp4_probe(interface *i,const uint32_t *saddr){
 	if((frame = get_tx_frame(i,&fsize)) == NULL){
 		return -1;
 	}
-	off = 0;
-	if((r = prep_eth_bcast(frame,fsize,i,ETH_P_IP)) < 0){
+	off = ((struct tpacket_hdr *)frame)->tp_mac;
+	if((r = prep_eth_bcast((char *)frame + off,fsize,i,ETH_P_IP)) < 0){
 		goto err;
 	}
 	fsize -= r;
@@ -53,8 +53,8 @@ int dhcp6_probe(interface *i,const uint128_t saddr){
 	if((frame = get_tx_frame(i,&fsize)) == NULL){
 		return -1;
 	}
-	off = 0;
-	if((r = prep_eth_bcast(frame,fsize,i,ETH_P_IP)) < 0){
+	off = ((struct tpacket_hdr *)frame)->tp_mac;
+	if((r = prep_eth_bcast((char *)frame + off,fsize,i,ETH_P_IP)) < 0){
 		goto err;
 	}
 	fsize -= r;
