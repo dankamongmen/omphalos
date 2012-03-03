@@ -22,6 +22,8 @@ int handle_dhcp6_packet(omphalos_packet *op,const void *frame,size_t fsize){
 	return 1; // FIXME
 }
 
+#define DHCP_MAGIC_COOKIE __constant_htonl(0x63825363lu)
+
 struct dhcphdr {
 	uint8_t mtype;
 	uint8_t htype;
@@ -35,6 +37,8 @@ struct dhcphdr {
 	uint32_t saddr;
 	uint32_t raddr;
 	unsigned char haddr[16];
+	unsigned char padding[192];
+	uint32_t cookie;
 } __attribute__ ((packed));
 
 struct dhcp6hdr {
@@ -59,8 +63,29 @@ enum {
 	DHCP6_MTYPE_SOLICIT = 1,
 };
 
-#define DHCP4_REQ_LEN sizeof(struct dhcphdr)
+// Minimum dhcp option. Usually a value will follow, described by "len".
+struct dhcpop {
+	uint8_t op;
+	uint8_t len;
+} __attribute__ ((packed));
+
+struct dhcpopstruct {
+	struct dhcpop mtypeop;
+	uint8_t mtype;
+	struct dhcpop cliidop;
+	uint8_t htype;
+	unsigned char haddr[ETH_ALEN];
+	struct dhcpop ipreqop;
+	uint32_t ipreq;
+	struct dhcpop paramop;
+	uint32_t params;
+	uint8_t endop;
+	uint8_t padding[7];
+} __attribute__ ((packed));
+
+#define DHCP4_REQ_LEN (sizeof(struct dhcphdr) + sizeof(struct dhcpopstruct))
 int dhcp4_probe(interface *i,const uint32_t *saddr){
+	struct dhcpopstruct *dhcpop;
 	struct tpacket_hdr *hdr;
 	struct dhcphdr *dhcp;
 	struct udphdr *udp;
@@ -96,19 +121,20 @@ int dhcp4_probe(interface *i,const uint32_t *saddr){
 	fsize -= r;
 	off += r;
 	dhcp = (struct dhcphdr *)((char *)frame + off);
+	memset(dhcp,0,sizeof(*dhcp));
 	dhcp->mtype = DHCP_MTYPE_REQUEST;
 	dhcp->htype = DHCP_HTYPE_ETHERNET;
 	dhcp->halen = i->addrlen;
-	dhcp->hops = 0;
 	dhcp->xid = random(); // FIXME?
-	dhcp->seconds = 0;
-	dhcp->bootpflags = 0;
-	memset(&dhcp->caddr,0,sizeof(dhcp->caddr));
+	dhcp->cookie = DHCP_MAGIC_COOKIE;
 	dhcp->yaddr = *saddr;
-	memset(&dhcp->saddr,0,sizeof(dhcp->saddr));
-	memset(&dhcp->raddr,0,sizeof(dhcp->raddr));
 	memcpy(dhcp->haddr,i->addr,i->addrlen);
-	off += DHCP4_REQ_LEN;
+	off += sizeof(struct dhcphdr);
+	fsize -= sizeof(struct dhcphdr);
+	dhcpop = (struct dhcpopstruct *)((char *)frame + off);
+	memset(dhcpop,0,sizeof(*dhcpop)); // FIXME
+	off += sizeof(struct dhcpopstruct);
+	fsize -= sizeof(struct dhcpopstruct);
 	ip->tot_len = htons(off - hdr->tp_mac - sizeof(struct ethhdr));
 	ip->check = ipv4_csum(ip);
 	udp->check = udp4_csum(udp);
