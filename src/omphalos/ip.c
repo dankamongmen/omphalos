@@ -88,7 +88,7 @@ void handle_ipv6_packet(omphalos_packet *op,const void *frame,size_t len){
 	plen = ntohs(ip->ip6_ctlun.ip6_un1.ip6_un1_plen);
 	if(len < plen + sizeof(*ip)){
 		op->malformed = 1;
-		diagnostic("%s malformed with %zu != %u on %s",__func__,len,plen,op->i->name);
+		diagnostic("%s malformed with %zu < %u on %s",__func__,len,plen + sizeof(*ip),op->i->name);
 		return;
 	}
 	memcpy(op->l3saddr,&ip->ip6_src,16);
