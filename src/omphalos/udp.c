@@ -86,8 +86,8 @@ void handle_udp_packet(omphalos_packet *op,const void *frame,size_t len){
 	}
 }
 
-// Source and destination ports are in network byte order, and in the lowest
-// 16 bits of the unsigned word
+// Data length and both ports are in network byte order, and in the lowest
+// 16 bits of the unsigned word.
 int prep_udp4(void *frame,size_t flen,unsigned src,unsigned dst,size_t dlen){
 	struct udphdr *udp = frame;
 
@@ -96,7 +96,7 @@ int prep_udp4(void *frame,size_t flen,unsigned src,unsigned dst,size_t dlen){
 	}
 	udp->source = src;
 	udp->dest = dst;
-	udp->len = dlen;
+	udp->len = htons(sizeof(*udp) + ntohs(dlen));
 	udp->check = 0;
 	return sizeof(*udp);
 }
@@ -109,7 +109,7 @@ int prep_udp6(void *frame,size_t flen,unsigned src,unsigned dst,size_t dlen){
 	}
 	udp->source = src;
 	udp->dest = dst;
-	udp->len = dlen;
+	udp->len = htons(sizeof(*udp) + ntohs(dlen));
 	udp->check = 0;
 	return sizeof(*udp);
 }
