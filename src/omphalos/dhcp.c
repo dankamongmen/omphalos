@@ -39,12 +39,26 @@ struct dhcphdr {
 	unsigned char haddr[16];
 } __attribute__ ((packed));
 
+struct dhcp6hdr {
+	uint8_t mtype;
+	union {
+		unsigned c: 1;
+		unsigned reserved: 15;
+	} c;
+	uint128_t lladdr;
+	uint128_t relayaddr;
+} __attribute__ ((packed));
+
 enum {
 	DHCP_MTYPE_REQUEST = 1,
 };
 
 enum {
 	DHCP_HTYPE_ETHERNET = 1,
+};
+
+enum {
+	DHCP6_MTYPE_SOLICIT = 1,
 };
 
 int dhcp4_probe(interface *i,const uint32_t *saddr){
@@ -95,6 +109,7 @@ int dhcp4_probe(interface *i,const uint32_t *saddr){
 	memset(&dhcp->saddr,0,sizeof(dhcp->saddr));
 	memset(&dhcp->raddr,0,sizeof(dhcp->raddr));
 	memcpy(dhcp->haddr,i->addr,i->addrlen);
+	off += DHCP4_REQ_LEN;
 	ip->tot_len = htons(off - hdr->tp_mac - sizeof(struct ethhdr));
 	ip->check = ipv4_csum(ip);
 	udp->check = udp4_csum(udp);
@@ -111,6 +126,7 @@ err:
 int dhcp6_probe(interface *i,const uint128_t saddr){
 	uint128_t daddr = DHCPV6_RELAYSSERVERS;
 	struct tpacket_hdr *hdr;
+	struct dhcp6hdr *dhcp;
 	struct ip6_hdr *ip;
 	struct udphdr *udp;
 	size_t fsize,off;
@@ -139,8 +155,11 @@ int dhcp6_probe(interface *i,const uint128_t saddr){
 	}
 	fsize -= r;
 	off += r;
-	// FIXME
-	ip->ip6_ctlun.ip6_un1.ip6_un1_plen = htons(off - hdr->tp_mac - sizeof(struct ethhdr));
+	dhcp = (struct dhcp6hdr *)((char *)frame + off);
+	dhcp->mtype = DHCP6_MTYPE_SOLICIT;
+	dhcp->c.c = 1u;
+	off += DHCP6_REQ_LEN;
+	ip->ip6_ctlun.ip6_un1.ip6_un1_plen = htons(off - hdr->tp_mac - sizeof(struct ethhdr) - sizeof(*ip));
 	udp->check = udp6_csum(udp);
 	hdr->tp_len = off - hdr->tp_mac;
 	send_tx_frame(i,frame);
