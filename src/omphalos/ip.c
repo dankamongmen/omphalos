@@ -261,6 +261,28 @@ void handle_ipv4_packet(omphalos_packet *op,const void *frame,size_t len){
 // Doesn't set ->tot_len; that must be done by the caller. Prepare ->check for
 // checksum evaluation, but we cannot yet actually evaluate it (FIXME though we
 // could calculate differential).
+int prep_ipv4_bcast(void *frame,size_t flen,uint32_t src,unsigned proto){
+	struct iphdr *ip;
+
+	if(flen < sizeof(*ip)){
+		return -1;
+	}
+	ip = frame;
+	memset(ip,0,sizeof(*ip));
+	ip->version = 4;
+	ip->ihl = sizeof(*ip) >> 2u;
+	ip->ttl = DEFAULT_IP4_TTL;
+	ip->id = random();
+	ip->saddr = src;
+	ip->ttl = 1;
+	ip->protocol = proto;
+	ip->daddr = htonl(INADDR_BROADCAST);
+	return ip->ihl << 2u;
+}
+
+// Doesn't set ->tot_len; that must be done by the caller. Prepare ->check for
+// checksum evaluation, but we cannot yet actually evaluate it (FIXME though we
+// could calculate differential). src and dst are in network byte order.
 int prep_ipv4_header(void *frame,size_t flen,uint32_t src,uint32_t dst,unsigned proto){
 	struct iphdr *ip;
 
