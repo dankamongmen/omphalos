@@ -31,6 +31,11 @@ random_udp_port(void){
 }
 #undef MINPORT
 
+// Source and destination ports are in network byte order, and in the lowest
+// 16 bits of the unsigned word
+int prep_udp4(void *,size_t,unsigned,unsigned,size_t);
+int prep_udp6(void *,size_t,unsigned,unsigned,size_t);
+
 #ifdef __cplusplus
 }
 #endif
