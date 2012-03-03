@@ -143,7 +143,6 @@ int setup_extended_colors(void){
 	if(can_change_color() != TRUE){
 		return ERR;
 	}
-	return ERR; /* until various palette issues are resolved... :/ */
 	// rgb of 0->0, 85->333, 128->500, 170->666, 192->750, 255->999
 	// Gnome-terminal palette:
 	// #2E3436:#CC0000:#4E9A06:#C4A000:
