@@ -52,11 +52,11 @@ struct dhcp6hdr {
 } __attribute__ ((packed));
 
 enum {
-	DHCP_MTYPE_REQUEST = 1,
+	BOOTP_MTYPE_REQUEST = 1,
 };
 
 enum {
-	DHCP_HTYPE_ETHERNET = 1,
+	BOOTP_HTYPE_ETHERNET = 1,
 };
 
 enum {
@@ -83,18 +83,34 @@ struct dhcpopstruct {
 	uint8_t padding[7];
 } __attribute__ ((packed));
 
+enum {
+	DHCP_OP_ADDRESS_REQ = 0x32u,
+	DHCP_OP_MESSAGE_TYPE = 0x35u,
+	DHCP_OP_PARAM_LIST = 0x37u,
+	DHCP_OP_CLIENT_ID = 0x3du,
+};
+
+enum {
+	DHCP_MESSAGE_SOLICIT = 1u,
+};
+
+enum {
+	DHCP_HTYPE_ETHERNET = 1u,
+};
+
 #define DHCP4_REQ_LEN (sizeof(struct dhcphdr) + sizeof(struct dhcpopstruct))
 int dhcp4_probe(interface *i,const uint32_t *saddr){
 	struct dhcpopstruct *dhcpop;
 	struct tpacket_hdr *hdr;
 	struct dhcphdr *dhcp;
 	struct udphdr *udp;
+	struct dhcpop *op;
 	struct iphdr *ip;
 	size_t fsize,off;
 	void *frame;
 	int r;
 
-	if(i->addrlen > sizeof(dhcp->haddr)){
+	if(i->addrlen > sizeof(dhcp->haddr) || i->addrlen != sizeof(dhcpop->haddr)){
 		diagnostic("Interface hardware addrlen too large (%zu)",i->addrlen);
 		return -1;
 	}
@@ -122,8 +138,8 @@ int dhcp4_probe(interface *i,const uint32_t *saddr){
 	off += r;
 	dhcp = (struct dhcphdr *)((char *)frame + off);
 	memset(dhcp,0,sizeof(*dhcp));
-	dhcp->mtype = DHCP_MTYPE_REQUEST;
-	dhcp->htype = DHCP_HTYPE_ETHERNET;
+	dhcp->mtype = BOOTP_MTYPE_REQUEST;
+	dhcp->htype = BOOTP_HTYPE_ETHERNET;
 	dhcp->halen = i->addrlen;
 	dhcp->xid = random(); // FIXME?
 	dhcp->cookie = DHCP_MAGIC_COOKIE;
@@ -133,6 +149,23 @@ int dhcp4_probe(interface *i,const uint32_t *saddr){
 	fsize -= sizeof(struct dhcphdr);
 	dhcpop = (struct dhcpopstruct *)((char *)frame + off);
 	memset(dhcpop,0,sizeof(*dhcpop)); // FIXME
+	op = (struct dhcpop *)dhcpop;
+	op->op = DHCP_OP_MESSAGE_TYPE;
+	op->len = 1u;
+	dhcpop->mtype = DHCP_MESSAGE_SOLICIT;
+	op = (struct dhcpop *)((char *)op + op->len + sizeof(*op));
+	op->op = DHCP_OP_CLIENT_ID;
+	op->len = 7u;
+	dhcpop->htype = DHCP_HTYPE_ETHERNET;
+	memcpy(dhcpop->haddr,i->addr,sizeof(dhcpop->haddr));
+	op = (struct dhcpop *)((char *)op + op->len + sizeof(*op));
+	op->op = DHCP_OP_ADDRESS_REQ;
+	op->len = 4u;
+	dhcpop->endop = 0xffu;
+	op = (struct dhcpop *)((char *)op + op->len + sizeof(*op));
+	op->op = DHCP_OP_PARAM_LIST;
+	op->len = 4u;
+	dhcpop->params = __constant_htonl(0x0103062a);
 	off += sizeof(struct dhcpopstruct);
 	fsize -= sizeof(struct dhcpopstruct);
 	ip->tot_len = htons(off - hdr->tp_mac - sizeof(struct ethhdr));
