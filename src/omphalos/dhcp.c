@@ -22,8 +22,6 @@ int handle_dhcp6_packet(omphalos_packet *op,const void *frame,size_t fsize){
 	return 1; // FIXME
 }
 
-#define DHCP4_REQ_LEN 44
-
 struct dhcphdr {
 	uint8_t mtype;
 	uint8_t htype;
@@ -61,6 +59,7 @@ enum {
 	DHCP6_MTYPE_SOLICIT = 1,
 };
 
+#define DHCP4_REQ_LEN sizeof(struct dhcphdr)
 int dhcp4_probe(interface *i,const uint32_t *saddr){
 	struct tpacket_hdr *hdr;
 	struct dhcphdr *dhcp;
@@ -91,7 +90,7 @@ int dhcp4_probe(interface *i,const uint32_t *saddr){
 	fsize -= r;
 	off += r;
 	udp = (struct udphdr *)((char *)frame + off);
-	if((r = prep_udp4(udp,fsize,DHCP_UDP_PORT,BOOTP_UDP_PORT,DHCP4_REQ_LEN)) < 0){
+	if((r = prep_udp4(udp,fsize,__constant_htons(BOOTP_UDP_PORT),__constant_htons(DHCP_UDP_PORT),__constant_htons(DHCP4_REQ_LEN))) < 0){
 		goto err;
 	}
 	fsize -= r;
@@ -122,7 +121,7 @@ err:
 	return -1;
 }
 
-#define DHCP6_REQ_LEN 8
+#define DHCP6_REQ_LEN sizeof(struct dhcp6hdr)
 int dhcp6_probe(interface *i,const uint128_t saddr){
 	uint128_t daddr = DHCPV6_RELAYSSERVERS;
 	struct tpacket_hdr *hdr;
@@ -150,7 +149,7 @@ int dhcp6_probe(interface *i,const uint128_t saddr){
 	fsize -= r;
 	off += r;
 	udp = (struct udphdr *)((char *)frame + off);
-	if((r = prep_udp6(udp,fsize,DHCP6CLI_UDP_PORT,DHCP6SRV_UDP_PORT,DHCP6_REQ_LEN)) < 0){
+	if((r = prep_udp6(udp,fsize,__constant_htons(DHCP6CLI_UDP_PORT),__constant_htons(DHCP6SRV_UDP_PORT),__constant_htons(DHCP6_REQ_LEN))) < 0){
 		goto err;
 	}
 	fsize -= r;
