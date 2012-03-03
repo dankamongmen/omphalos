@@ -6,7 +6,13 @@ extern "C" {
 #endif
 
 #include <stddef.h>
+#include <arpa/inet.h>
 #include <omphalos/128.h>
+#include <asm/byteorder.h>
+
+#define DHCPV6_RELAYSSERVERS \
+	{ __constant_htonl(0xff020000), __constant_htonl(0x00000000), \
+	  __constant_htonl(0x00000000), __constant_htonl(0x00010002), }
 
 struct interface;
 struct omphalos_packet;

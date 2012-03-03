@@ -4,6 +4,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <omphalos/128.h>
+#include <omphalos/dhcp.h>
 #include <asm/byteorder.h>
 #include <omphalos/ietf.h>
 
@@ -155,9 +156,7 @@ static const struct {
 		.octets = 16,
 	},
 	{ // ff02::1:2
-		.ip = { __constant_htonl(0xff020000), __constant_htonl(0x00000000),
-			__constant_htonl(0x00000000), __constant_htonl(0x00010002), },
-		.name = L"DHCPv6 servers/relays (RFC 3315)",
+		.ip = DHCPV6_RELAYSSERVERS,
 		.octets = 16,
 	},
 	{ // ff02::1:3
