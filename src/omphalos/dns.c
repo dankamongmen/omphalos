@@ -308,7 +308,7 @@ dns_inflate(char *buf,unsigned *bsize,const unsigned char *orig,unsigned offset,
 static char *
 extract_dns_record(size_t len,const unsigned char *sec,unsigned *class,
 			unsigned *type,unsigned *idx,const unsigned char *orig){
-	unsigned char rlen;
+	unsigned char rlen = 0;
 	unsigned bsize = 0;
 	char *buf = NULL;
 
