@@ -205,7 +205,7 @@ void handle_ipv4_packet(omphalos_packet *op,const void *frame,size_t len){
 	// len can be greater than tot_len due to layer 2 padding requirements
 	if(len < ntohs(ip->tot_len)){
 		op->malformed = 1;
-		diagnostic("[%s] malformed with %zu vs %hu",op->i->name,len,ntohs(ip->tot_len));
+		diagnostic("[%s] IPv4 tot_len malformed with %zu vs %hu",op->i->name,len,ntohs(ip->tot_len));
 		return;
 	}
 	memcpy(op->l3saddr,&ip->saddr,4);
