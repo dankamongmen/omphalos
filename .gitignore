@@ -4,6 +4,7 @@ Makefile.in
 aclocal.m4
 autoscan.log
 autom4te.cache/
+bz2/
 config.h
 config.in
 config.in~
