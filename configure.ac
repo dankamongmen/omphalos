@@ -41,13 +41,6 @@ AC_CHECK_HEADERS([wchar.h])
 AC_CHECK_HEADERS([wctype.h])
 AC_CHECK_TYPES([ptrdiff_t])
 AC_SYS_LARGEFILE
-AX_WITH_CURSES
-AX_WITH_CURSES_PANEL
-if test "x$ax_cv_panel" != xyes; then
-	AC_MSG_WARN([Cannot find the Curses Panel library. Will not build the Ncurses client.])
-else
-	CONFIGURED_UIS+=" ncurses"
-fi
 AX_PROG_XSLTPROC
 if test "$XSLTPROC" = no ; then
 	AC_MSG_ERROR([Cannot find xsltproc.])
@@ -68,14 +61,6 @@ AC_CHECK_LIB(pcap,pcap_create, [have_pcap=yes],
 AC_CHECK_LIB(pciaccess,pci_system_init, [have_pciaccess=yes],
 	     [AC_MSG_ERROR([Cannot find libpciaccess.])])
 	LIBS+=" -lpciaccess"
-PKG_CHECK_MODULES(X11, x11, [have_x11=yes], [have_x11=no])
-if test "$have_x11" = "yes" ; then
-	CONFIGURED_UIS+=" x"
-	X_CFLAGS+="$LIBX11_CFLAGS"
-	X_LIBS+=" $LIBX11_LIBS"
-else
-	AC_MSG_WARN([Cannot find X11 headers. Will not build X11 client.])
-fi
 PKG_CHECK_MODULES(LIBNL3, libnl-3.0 >= 3.0, [have_libnl3=yes])
 	CFLAGS+=" $LIBNL3_CFLAGS"
 	LIBS+=" $LIBNL3_LIBS"
@@ -92,6 +77,21 @@ AX_LIB_READLINE
 AC_CHECK_LIB([readline], [main],
 	      [CONFIGURED_UIS+=" tty"],
 	      [AC_MSG_WARN([Cannot find readline headers. Will not build TTY client.])])
+PKG_CHECK_MODULES(X11, x11, [have_x11=yes], [have_x11=no])
+if test "$have_x11" = "yes" ; then
+	CONFIGURED_UIS+=" x"
+	X_CFLAGS+="$LIBX11_CFLAGS"
+	X_LIBS+=" $LIBX11_LIBS"
+else
+	AC_MSG_WARN([Cannot find X11 headers. Will not build X11 client.])
+fi
+AX_WITH_CURSES
+AX_WITH_CURSES_PANEL
+if test "x$ax_cv_panel" != xyes; then
+	AC_MSG_WARN([Cannot find the Curses Panel library. Will not build the Ncurses client.])
+else
+	CONFIGURED_UIS+=" ncurses"
+fi
 AC_SUBST([CFLAGS])
 AC_SUBST([CONFIGURED_UIS])
 AC_CONFIG_FILES([Makefile])
