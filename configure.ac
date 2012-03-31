@@ -45,7 +45,7 @@ AX_WITH_CURSES_PANEL
 if test "x$ax_cv_panel" != xyes; then
 	AC_MSG_WARN([Cannot find the Curses Panel library])
 else
-	CONFIGURED_UIS+=" ncurses"
+	bin_PROGRAMS+=" $$(OMPHALOS)-ncurses"
 fi
 AX_PROG_XSLTPROC
 if test "$XSLTPROC" = no ; then
@@ -63,7 +63,7 @@ PKG_CHECK_MODULES(X11, x11, [have_x11=yes], [have_x11=no])
 if test "$have_x11" = no ; then
 	AC_MSG_WARN([Cannot find X11 headers. Will not build X11 client.])
 else
-	CONFIGURED_UIS+=" x"
+	bin_PROGRAMS+=" $(OMPHALOS)-x"
 	X_CFLAGS+="$LIBX11_CFLAGS"
 	X_LIBS+=" $LIBX11_LIBS"
 fi
@@ -83,7 +83,7 @@ AX_LIB_READLINE
 if test "$have_readline" = no ; then
 	AC_MSG_WARN([Cannot find readline headers. Will not build TTY client.])
 else
-	CONFIGURED_UIS+=" tty"
+	bin_PROGRAMS+=" $(OMPHALOS)-tty"
 fi
 AC_SUBST([CFLAGS])
 AC_SUBST([CONFIGURED_UIS])
