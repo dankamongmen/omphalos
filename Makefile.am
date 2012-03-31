@@ -13,7 +13,7 @@ ADDCAPS:=tools/addcaps
 SETUPCORE:=tools/setupcores
 
 UI:=coretest @CONFIGURED_UIS@
-BIN:=$(addprefix $(OMPHALOS)-,$(UI))
+BIN:=$(addsuffix $(EXEEXT),$(addprefix $(OMPHALOS)-,$(UI)))
 
 DFLAGS=-D_XOPEN_SOURCE_EXTENDED --include config.h
 CFLAGS=$(DFLAGS) -O2 -march=native -pthread -I$(SRC) -fpic -fstrict-aliasing -fvisibility=hidden -Wall -W -Wextra -Werror -Wno-format-zero-length @CFLAGS@
