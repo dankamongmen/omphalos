@@ -12,6 +12,9 @@ OMPHALOS:=$(OUT)/$(PROJ)/$(PROJ)
 ADDCAPS:=tools/addcaps
 SETUPCORE:=tools/setupcores
 
+UI:=coretest @CONFIGURED_UIS@
+BIN:=$(addsuffix $(EXEEXT),$(addprefix $(OMPHALOS)-,$(UI)))
+
 DFLAGS=-D_XOPEN_SOURCE_EXTENDED --include config.h
 CFLAGS=$(DFLAGS) -O2 -march=native -pthread -I$(SRC) -fpic -fstrict-aliasing -fvisibility=hidden -Wall -W -Wextra -Werror -Wno-format-zero-length @CFLAGS@
 DBCFLAGS:=$(DFLAGS) -O2 -march=native -pthread -I$(SRC) -fpic -fstrict-aliasing -fvisibility=hidden -Wall -W -Wextra -Werror -Wno-format-zero-length -g -ggdb @CFLAGS@
@@ -38,10 +41,10 @@ SUPPORT:=$(USBIDS) $(IANAOUI)
 
 all: tags bin doc $(SUPPORT)
 
-tags-local:
+tags:
 	ctags -R .
 
-bin: $(bin_PROGRAMS)
+bin: $(BIN)
 
 doc: $(DOCS)
 
@@ -86,15 +89,19 @@ $(IANAOUI): $(IANAOUI).raw
 $(IANAOUI).raw:
 	get-oui -v -f $@
 
-$(OMPHALOS)-ncurses$(EXEEXT): $(COREOBJS) $(NCURSESOBJS)
-	@mkdir -p $(@D)
-	$(CC) $(CFLAGS) -o $@ $^ $(LFLAGS) $(PANEL_LIB) $(CURSES_LIB)
-
-$(OMPHALOS)-tty$(EXEEXT): $(COREOBJS) $(TTYOBJS)
+$(OMPHALOS)-coretest: $(COREOBJS) $(CORETESTOBJS)
 	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -o $@ $^ $(LFLAGS)
 
-$(OMPHALOS)-x$(EXEEXT): $(COREOBJS) $(XOBJS)
+$(OMPHALOS)-ncurses: $(COREOBJS) $(NCURSESOBJS)
+	@mkdir -p $(@D)
+	$(CC) $(CFLAGS) -o $@ $^ $(LFLAGS) $(PANEL_LIB) $(CURSES_LIB)
+
+$(OMPHALOS)-tty: $(COREOBJS) $(TTYOBJS)
+	@mkdir -p $(@D)
+	$(CC) $(CFLAGS) -o $@ $^ $(LFLAGS)
+
+$(OMPHALOS)-x: $(COREOBJS) $(XOBJS)
 	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) $(X11_CFLAGS) -o $@ $^ $(LFLAGS) $(X11_LIBS)
 
@@ -118,15 +125,15 @@ maintainer-clean-local:
 	rm -rf aclocal.m4 configure config config.in config.in~ install-sh missing Makefile.in
 
 bless: all
-	$(ADDCAPS) $(bin_PROGRAMS)
+	$(ADDCAPS) $(BIN)
 
 sudobless: all $(ADDCAPS) $(SETUPCORE)
-	sudo $(ADDCAPS) $(bin_PROGRAMS)
+	sudo $(ADDCAPS) $(BIN)
 	$(SETUPCORE)
 
 install-exec-local: all doc
 	@mkdir -p ${bindir}
-	@$(INSTALL) -m 0755 $(bin_PROGRAMS) ${bindir}
+	@$(INSTALL) -m 0755 $(BIN) ${bindir}
 
 install-data-local: all doc
 	@mkdir -p ${mandir}/man1
@@ -134,6 +141,6 @@ install-data-local: all doc
 	@echo "Running $(MANBIN) ${mandir}..." && $(MANBIN) ${mandir}
 
 uninstall-local:
-	rm -f $(addprefix ${bindir}/,$(notdir $(bin_PROGRAMS)))
+	rm -f $(addprefix ${bindir}/,$(notdir $(BIN)))
 	rm -f $(addprefix ${mandir}/man1/,$(notdir $(MAN1OBJ)))
 	@echo "Running $(MANBIN) ${mandir}..." && $(MANBIN) ${mandir}
