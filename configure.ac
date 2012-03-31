@@ -43,7 +43,7 @@ AC_SYS_LARGEFILE
 AX_WITH_CURSES
 AX_WITH_CURSES_PANEL
 if test "x$ax_cv_panel" != xyes; then
-	AC_MSG_WARN([Cannot find the Curses Panel library])
+	AC_MSG_WARN([Cannot find the Curses Panel library. Will not build the Ncurses client.])
 else
 	CONFIGURED_UIS+=" ncurses"
 fi
@@ -60,12 +60,12 @@ AC_CHECK_LIB(cap,cap_get_proc)
 AC_CHECK_LIB(pcap,pcap_create)
 AC_CHECK_LIB(pciaccess,pci_system_init)
 PKG_CHECK_MODULES(X11, x11, [have_x11=yes], [have_x11=no])
-if test "$have_x11" = no ; then
-	AC_MSG_WARN([Cannot find X11 headers. Will not build X11 client.])
-else
+if test "$have_x11" = "yes" ; then
 	CONFIGURED_UIS+=" x"
 	X_CFLAGS+="$LIBX11_CFLAGS"
 	X_LIBS+=" $LIBX11_LIBS"
+else
+	AC_MSG_WARN([Cannot find X11 headers. Will not build X11 client.])
 fi
 PKG_CHECK_MODULES(LIBNL3, libnl-3.0 >= 3.0, [have_libnl3=yes])
 	CFLAGS+=" $LIBNL3_CFLAGS"
@@ -80,11 +80,9 @@ PKG_CHECK_MODULES(LIBZ, zlib, [have_zlib=yes])
 	CFLAGS+=" $LIBZ_CFLAGS"
 	LIBS+=" $LIBZ_LIBS"
 AX_LIB_READLINE
-if test "$have_readline" = no ; then
-	AC_MSG_WARN([Cannot find readline headers. Will not build TTY client.])
-else
-	CONFIGURED_UIS+=" tty"
-fi
+AC_CHECK_LIB([readline], [main],
+	      [CONFIGURED_UIS+=" tty"],
+	      [AC_MSG_WARN([Cannot find readline headers. Will not build TTY client.])])
 AC_SUBST([CFLAGS])
 AC_SUBST([CONFIGURED_UIS])
 AC_CONFIG_FILES([Makefile])
