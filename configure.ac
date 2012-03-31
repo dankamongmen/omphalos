@@ -28,6 +28,7 @@ AC_CHECK_FUNCS([socket])
 AC_CHECK_FUNCS([strerror])
 AC_CHECK_FUNCS([uname])
 AC_CHECK_HEADERS([arpa/inet.h])
+AC_CHECK_HEADERS([bluetooth/bluetooth.h])
 AC_CHECK_HEADERS([langinfo.h])
 AC_CHECK_HEADERS([limits.h])
 AC_CHECK_HEADERS([locale.h])
@@ -55,10 +56,18 @@ AC_CHECK_PROGS(MANBIN,makewhatis mandb,no)
 if test "$MANBIN" = no ; then
 	AC_MSG_ERROR([Cannot find manpage indexer.])
 fi
-AC_CHECK_LIB(iw,iw_get_kernel_we_version)
-AC_CHECK_LIB(cap,cap_get_proc)
-AC_CHECK_LIB(pcap,pcap_create)
-AC_CHECK_LIB(pciaccess,pci_system_init)
+AC_CHECK_LIB(iw,iw_get_kernel_we_version, [have_libiw=yes],
+	     [AC_MSG_ERROR([Cannot find libiw.])])
+	LIBS+=" -liw"
+AC_CHECK_LIB(cap,cap_get_proc, [have_libcap=yes],
+	     [AC_MSG_ERROR([Cannot find libcap.])])
+	LIBS+=" -lcap"
+AC_CHECK_LIB(pcap,pcap_create, [have_pcap=yes],
+	     [AC_MSG_ERROR([Cannot find libpcap.])])
+	LIBS+=" -lpcap"
+AC_CHECK_LIB(pciaccess,pci_system_init, [have_pciaccess=yes],
+	     [AC_MSG_ERROR([Cannot find libpciaccess.])])
+	LIBS+=" -lpciaccess"
 PKG_CHECK_MODULES(X11, x11, [have_x11=yes], [have_x11=no])
 if test "$have_x11" = "yes" ; then
 	CONFIGURED_UIS+=" x"
@@ -70,7 +79,7 @@ fi
 PKG_CHECK_MODULES(LIBNL3, libnl-3.0 >= 3.0, [have_libnl3=yes])
 	CFLAGS+=" $LIBNL3_CFLAGS"
 	LIBS+=" $LIBNL3_LIBS"
-PKG_CHECK_MODULES(LIBNL3GEN, libnl-genl-3.0 >= 3.0, [have_libnl3gen=yes], [havelibnl3gen=no])
+PKG_CHECK_MODULES(LIBNL3GEN, libnl-genl-3.0 >= 3.0, [have_libnl3gen=yes] )
 	CFLAGS+=" $LIBNL3GEN_CFLAGS"
 	LIBS+=" $LIBNL3GEN_LIBS"
 PKG_CHECK_MODULES(LIBSYSFS, libsysfs, [have_libsysfs=yes])

@@ -8,6 +8,9 @@
 #include <omphalos/omphalos.h>
 #include <omphalos/bluetooth.h>
 
+// Conflicts with our uint128 :(
+//#include <bluetooth/bluetooth.h>
+
 typedef struct {
 	uint8_t b[6];
 } __attribute__((packed)) bdaddr_t;
