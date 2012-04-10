@@ -103,7 +103,7 @@ version(const char *arg0){
 static inline void
 default_vdiagnostic(const char *fmt,va_list v){
 	assert(vfprintf(stderr,fmt,v) >= 0);
-	assert(fputc(L'\n',stderr) != EOF);
+	assert(fputc('\n',stderr) != EOF);
 }
 
 enum {

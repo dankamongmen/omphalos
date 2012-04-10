@@ -228,7 +228,7 @@ packet_cb(omphalos_packet *op){
 
 static inline void
 clear_for_output(FILE *fp){
-	assert(fputc(L'\r',fp) != EOF);
+	assert(fputc('\r',fp) != EOF);
 }
 
 #define PROMPTDELIM "> "
