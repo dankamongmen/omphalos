@@ -61,6 +61,7 @@ AC_CHECK_LIB(pcap,pcap_create, [have_pcap=yes],
 AC_CHECK_LIB(pciaccess,pci_system_init, [have_pciaccess=yes],
 	     [AC_MSG_ERROR([Cannot find libpciaccess.])])
 	LIBS+=" -lpciaccess"
+PKG_PROG_PKG_CONFIG
 PKG_CHECK_MODULES(LIBNL3, libnl-3.0 >= 3.0, [have_libnl3=yes])
 	CFLAGS+=" $LIBNL3_CFLAGS"
 	LIBS+=" $LIBNL3_LIBS"
