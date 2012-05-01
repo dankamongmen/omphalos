@@ -6,7 +6,7 @@ Build-Depends: debhelper (>= 8.0.0), docbook-xml, pkg-config, libcap-dev, libsys
 Standards-Version: 3.9.2
 Homepage: http://dank.qemfd.net/dankwiki/index.php/Omphalos
 Vcs-Git: git://github.com/dankamongmen/omphalos.git
-#Vcs-Browser: http://git.debian.org/?p=collab-maint/omphalos.git;a=summary
+Vcs-Browser: https://github.com/dankamongmen/omphalos/tree
 
 Package: omphalos
 Architecture: any
