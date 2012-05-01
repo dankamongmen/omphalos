@@ -132,13 +132,13 @@ sudobless: all $(ADDCAPS) $(SETUPCORE)
 	$(SETUPCORE)
 
 install-exec-local: all doc
-	@mkdir -p ${bindir}
-	@$(INSTALL) -m 0755 $(BIN) ${bindir}
+	@mkdir -p $(DESTDIR)/${bindir}
+	@$(INSTALL) -m 0755 $(BIN) $(DESTDIR)${bindir}
 
 install-data-local: all doc
-	@mkdir -p ${mandir}/man1
-	@$(INSTALL_DATA) -m 0644 $(MAN1OBJ) ${mandir}/man1
-	@echo "Running $(MANBIN) ${mandir}..." && $(MANBIN) ${mandir}
+	@mkdir -p $(DESTDIR)/${mandir}/man1
+	@$(INSTALL_DATA) -m 0644 $(MAN1OBJ) $(DESTDIR)${mandir}/man1
+	@echo "Running $(MANBIN) ${mandir}..." && $(MANBIN) $(DESTDIR)${mandir}
 
 uninstall-local:
 	rm -f $(addprefix ${bindir}/,$(notdir $(BIN)))
