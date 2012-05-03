@@ -1,5 +1,11 @@
+omphalos (0.99.1-1) unstable; urgency=low
+
+  * Fix up Debian-style packaging for public staging.
+
+ -- nick black <nick.black@sprezzatech.com>  Thu, 03 May 2012 14:58:18 -0400
+
 omphalos (0.99.0-1) unstable; urgency=low
 
-  * Initial release (Closes: #nnnn)  <nnnn is the bug number of your ITP>
+  * Public beta.
 
  -- nick black <dankamongmen@gmail.com>  Wed, 30 Nov 2011 22:13:09 -0500
