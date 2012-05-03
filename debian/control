@@ -10,7 +10,7 @@ Vcs-Browser: https://github.com/dankamongmen/omphalos/tree
 
 Package: omphalos
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}, wget, arp-scan
 Description: Network enumeration and domination
  Omphalos is a tool for visualizing and controlling a local network (though it
  will also process pcap savefiles). Captured packets are analyzed to build a
