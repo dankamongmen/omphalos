@@ -38,6 +38,7 @@ trap exithandle EXIT SIGINT SIGHUP
 
 case "$1" in
     configure)
+	mkdir -p /usr/share/omphalos
 	if [ -n "$WGET" ] ; then
 		echo "Couldn't find wget; not updating USB IDs." >&2
 	elif [ -n "$ICONV" ] ; then
