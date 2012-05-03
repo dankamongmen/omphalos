@@ -27,11 +27,14 @@
 #include <omphalos/ethernet.h>
 #include <omphalos/interface.h>
 
+#define DEFAULT_INSTALL "/usr/share/omphalos/"
 #define DEFAULT_USERNAME "nobody"
 #define DEFAULT_PROCROOT "/proc/"
 #define DEFAULT_MODESTRING "active"
-#define DEFAULT_IANA_FILENAME "ieee-oui.txt"	// arp-scan's 'get-oui'
-#define DEFAULT_USBIDS_FILENAME "usb.ids"	// usbutils' 'update-usbids'
+// arp-scan's 'get-oui'
+#define DEFAULT_IANA_FILENAME DEFAULT_INSTALL "ieee-oui.txt"
+// usbutils' 'update-usbids'
+#define DEFAULT_USBIDS_FILENAME DEFAULT_INSTALL "usb.ids"
 #define DEFAULT_RESOLVCONF_FILENAME "/etc/resolv.conf"
 
 pthread_key_t omphalos_ctx_key;
