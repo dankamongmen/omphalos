@@ -118,7 +118,7 @@ $(OUT)/%.xhtml: %.xml
 	$(XSLTPROC) --writesubtree $(@D) -o $@ $(DOC2XHTMLXSL) $<
 
 clean-local:
-	rm -rf $(OUT) $(wildcard core*) $(wildcard vgcore*)
+	rm -rf $(OUT) $(wildcard core*) $(wildcard vgcore*) tags
 
 maintainer-clean-local:
 	rm -rf $(IANAOUI) $(IANAOUI).raw $(USBIDS)
