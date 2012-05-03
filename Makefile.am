@@ -65,19 +65,19 @@ XOBJS:=$(filter $(OUT)/$(SRC)/ui/x/%.o,$(COBJS))
 
 # Requires CAP_NET_ADMIN privileges bestowed upon the binary
 livetest: sudobless $(SUPPORT)
-	$(OMPHALOS)-ncurses -u '' --plog=$(OUTCAP)
+	$(OMPHALOS)-ncurses -u '' --plog=$(OUTCAP) --usbids=$(USBIDS) --ouis=$(IANAOUI)
 
 silenttest: sudobless $(SUPPORT)
-	$(OMPHALOS)-ncurses -u '' --mode=silent --plog=$(OUTCAP)
+	$(OMPHALOS)-ncurses -u '' --mode=silent --plog=$(OUTCAP) --usbids=$(USBIDS) --ouis=$(IANAOUI)
 
 coretest: sudobless $(SUPPORT)
-	$(OMPHALOS)-coretest -u '' --plog=$(OUTCAP)
+	$(OMPHALOS)-coretest -u '' --plog=$(OUTCAP) --usbids=$(USBIDS) --ouis=$(IANAOUI)
 
 test: all $(TESTPCAPS) $(SUPPORT)
-	for i in $(TESTPCAPS) ; do $(OMPHALOS)-tty --mode=silent --plog=$(OUTCAP) -f $$i -u "" || exit 1 ; done
+	for i in $(TESTPCAPS) ; do $(OMPHALOS)-tty --mode=silent --plog=$(OUTCAP) -f $$i -u "" --usbids=$(USBIDS) --ouis=$(IANAOUI) || exit 1 ; done
 
 valgrind: all $(TESTPCAPS) $(SUPPORT)
-	for i in $(TESTPCAPS) ; do valgrind --tool=memcheck --leak-check=full $(OMPHALOS)-tty -f $$i -u "" || exit 1 ; done
+	for i in $(TESTPCAPS) ; do valgrind --tool=memcheck --leak-check=full $(OMPHALOS)-tty -f $$i -u "" --usbids=$(USBIDS) --ouis=$(IANAOUI) || exit 1 ; done
 
 # Even with --header='Accept-Charset: utf-8', we get served up ISO-8859-1, yuck
 $(USBIDS):
