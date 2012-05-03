@@ -1,3 +1,9 @@
+omphalos (0.99.1-1.2) unstable; urgency=low
+
+  * Add postinstall and postrm scripts to pull USB/OUI IDs.
+
+ -- nick black <nick.black@sprezzatech.com>  Thu, 03 May 2012 17:15:11 -0400
+
 omphalos (0.99.1-1.1) unstable; urgency=low
 
   * Add Depends on wget and arp-scan
