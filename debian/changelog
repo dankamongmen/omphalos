@@ -1,3 +1,9 @@
+omphalos (0.99.2-4) unstable; urgency=low
+
+  * Get doc-base support working.
+
+ -- nick black <nick.black@sprezzatech.com>  Thu, 03 May 2012 23:49:11 -0400
+
 omphalos (0.99.2-3) unstable; urgency=low
 
   * Add link forest for manpages.
