@@ -2,7 +2,7 @@ Source: omphalos
 Section: net
 Priority: optional
 Maintainer: nick black <nick.black@sprezzatech.com>
-Build-Depends: debhelper (>= 8.0.0), docbook-xml, pkg-config, libcap-dev, libsysfs-dev, autoconf-archive, docbook-xsl
+Build-Depends: debhelper (>= 8.1.3), docbook-xml, pkg-config, libcap-dev, libsysfs-dev, autoconf-archive, docbook-xsl
 Standards-Version: 3.9.2
 Homepage: http://dank.qemfd.net/dankwiki/index.php/Omphalos
 Vcs-Git: git://github.com/dankamongmen/omphalos.git

@@ -1,3 +1,9 @@
+omphalos (0.99.3-1) unstable; urgency=low
+
+  * Fix up postinstall script.
+
+ -- nick black <nick.black@sprezzatech.com>  Thu, 03 May 2012 23:58:17 -0400
+
 omphalos (0.99.2-4) unstable; urgency=low
 
   * Get doc-base support working.
