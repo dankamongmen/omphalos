@@ -1,3 +1,9 @@
+omphalos (0.99.2-3) unstable; urgency=low
+
+  * Add link forest for manpages.
+
+ -- nick black <nick.black@sprezzatech.com>  Thu, 03 May 2012 22:53:55 -0400
+
 omphalos (0.99.2-2) unstable; urgency=low
 
   * Cleaned up Debian contents; removed example files.
