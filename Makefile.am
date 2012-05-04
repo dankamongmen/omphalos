@@ -122,8 +122,10 @@ clean-local:
 	rm -rf $(OUT) $(wildcard core*) $(wildcard vgcore*) tags
 
 maintainer-clean-local:
-	rm -rf $(IANAOUI) $(IANAOUI).raw $(USBIDS)
 	rm -rf aclocal.m4 configure config config.in config.in~ install-sh missing Makefile.in
+
+dist-clean-local:
+	rm -rf $(IANAOUI) $(IANAOUI).raw $(USBIDS)
 
 bless: all
 	$(ADDCAPS) $(BIN)
