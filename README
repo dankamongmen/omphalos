@@ -54,7 +54,7 @@ II. Building and installation
 If compiling from checked-out source, run "autoreconf -fi" to build the initial
 configure script (a configure script will be present in release tarballs).
 
-"./configure && make && sudo make install" ought be sufficient to build and
+"./configure && make && sudo make postinstall" ought be sufficient to build and
 install Omphalos. Run "./configure --help" to see supported build parameters.
 
 If filesystem-based capabilities are supported, it might be desirable to bestow

@@ -2,7 +2,7 @@
 #.DEFAULT_GOAL:=test
 # all, [un]install, and *clean-local are autotoolizd
 .PHONY: bin doc livetest coretest silenttest test valgrind
-.PHONY:	bless sudobless
+.PHONY:	bless sudobless postinstall postuninstall
 
 OUT:=out
 SRC=src
@@ -141,9 +141,13 @@ install-exec-local: all doc
 install-data-local: all doc
 	@mkdir -p $(DESTDIR)${mandir}/man1
 	@$(INSTALL_DATA) -m 0644 $(MAN1OBJ) $(DESTDIR)${mandir}/man1
+
+postinstall: install
 	@echo "Running $(MANBIN) ${mandir}..." && $(MANBIN) $(DESTDIR)${mandir}
+
+postuninstall:
+	@echo "Running $(MANBIN) ${mandir}..." && $(MANBIN) ${mandir}
 
 uninstall-local:
 	rm -f $(addprefix ${bindir}/,$(notdir $(BIN)))
 	rm -f $(addprefix ${mandir}/man1/,$(notdir $(MAN1OBJ)))
-	@echo "Running $(MANBIN) ${mandir}..." && $(MANBIN) ${mandir}
