@@ -1,10 +1,10 @@
-Format: http://dep.debian.net/deps/dep5
+Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: omphalos
 Upstream-Contact: nick black <dankamongmen@gmail.com>
 Source: https://github.com/dankamongmen/omphalos
 
 Files: *
-Copyright: 2011 nick black
+Copyright: 2012 nick black
 License: GPL-2+
  This program is free software; you can redistribute it
  and/or modify it under the terms of the GNU General Public
