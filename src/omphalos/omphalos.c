@@ -31,9 +31,9 @@
 #define DEFAULT_PROCROOT "/proc/"
 #define DEFAULT_MODESTRING "active"
 // arp-scan's 'get-oui'
-#define DEFAULT_IANA_FILENAME OMPHALOS_DATADIR"ieee-oui.txt"
+#define DEFAULT_IANA_FILENAME OMPHALOS_DATADIR "/" PACKAGE_NAME "/" "ieee-oui.txt"
 // usbutils' 'update-usbids'
-#define DEFAULT_USBIDS_FILENAME OMPHALOS_DATADIR"usb.ids"
+#define DEFAULT_USBIDS_FILENAME OMPHALOS_DATADIR "/" PACKAGE_NAME "/" "usb.ids"
 #define DEFAULT_RESOLVCONF_FILENAME "/etc/resolv.conf"
 
 pthread_key_t omphalos_ctx_key;
