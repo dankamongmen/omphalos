@@ -32,8 +32,8 @@ DOCS:=$(MAN1OBJ) $(XHTML)
 
 # This can be a URL; it's the docbook-to-manpage XSL
 # Should the network be inaccessible, and local copies are installed, try:
-#DOC2MANXSL?=--nonet /usr/share/xml/docbook/stylesheet/docbook-xsl/manpages/docb
-#DOC2XHTMLXSL?=http://docbook.sourceforge.net/release/xsl/current/xhtml/docbook.xsl
+DOCMANXSL:=--nonet /usr/share/xml/docbook/stylesheet/docbook-xsl/manpages/docb
+DOCXHTMLXSL:=http://docbook.sourceforge.net/release/xsl/current/xhtml/docbook.xsl
 
 USBIDS:=usb.ids
 IANAOUI:=ieee-oui.txt
@@ -42,7 +42,7 @@ SUPPORT:=$(USBIDS) $(IANAOUI)
 all: tags bin doc $(SUPPORT)
 
 tags:
-	ctags -R .
+	ctags --languages=C,Sh,Make -R .
 
 bin: $(BIN)
 
@@ -119,11 +119,11 @@ $(OUT)/%.1: $(OUT)/$(MANDIR)/man1/$(PROJ).1
 
 $(OUT)/$(MANDIR)/man1/$(PROJ).1: $(MANDIR)/man1/$(PROJ).xml
 	@mkdir -p $(@D)
-	$(XSLTPROC) --writesubtree $(@D) -o $@ $(DOC2MANXSL) $<
+	$(XSLTPROC) --writesubtree $(@D) -o $@ $(DOCMANXSL) $<
 
 $(OUT)/$(XHTMLDIR)/$(PROJ).xhtml: $(MANDIR)/man1/$(PROJ).xml
 	@mkdir -p $(@D)
-	$(XSLTPROC) --writesubtree $(@D) -o $@ $(DOC2XHTMLXSL) $<
+	$(XSLTPROC) --writesubtree $(@D) -o $@ $(DOCXHTMLXSL) $<
 
 clean-local:
 	rm -rf $(OUT) $(wildcard core*) $(wildcard vgcore*) tags
@@ -146,8 +146,9 @@ install-exec-local: all doc
 	@$(INSTALL) -m 0755 $(BIN) $(DESTDIR)${bindir}
 
 install-data-local: all doc
-	@mkdir -p $(DESTDIR)${mandir}/man1
+	@mkdir -p $(DESTDIR)${mandir}/man1 $(DESTDIR)${docdir}
 	@$(INSTALL_DATA) -m 0644 $(MAN1OBJ) $(DESTDIR)${mandir}/man1
+	@$(INSTALL_DATA) -m 0644 $(XHTML) $(DESTDIR)${docdir}/
 
 postinstall: install
 	@echo "Running $(MANBIN) ${mandir}..." && $(MANBIN) $(DESTDIR)${mandir}
