@@ -127,12 +127,10 @@ $(OUT)/$(XHTMLDIR)/$(PROJ).xhtml: $(MANDIR)/man1/$(PROJ).xml
 
 clean-local:
 	rm -rf $(OUT) $(wildcard core*) $(wildcard vgcore*) tags
+	rm -rf $(IANAOUI) $(IANAOUI).raw $(USBIDS)
 
 maintainer-clean-local:
 	rm -rf aclocal.m4 configure config config.in config.in~ install-sh missing Makefile.in
-
-dist-clean-local:
-	rm -rf $(IANAOUI) $(IANAOUI).raw $(USBIDS)
 
 bless: all
 	$(ADDCAPS) $(BIN)
