@@ -3,16 +3,3 @@ Title: Debian omphalos Manual
 Author: Nick Black
 Abstract: Omphalos operation manual
 Section: net
-
-Format: debiandoc-sgml
-Files: /usr/share/doc/omphalos/omphalos.sgml.gz
-
-Format: postscript
-Files: /usr/share/doc/omphalos/omphalos.ps.gz
-
-Format: text
-Files: /usr/share/doc/omphalos/omphalos.text.gz
-
-Format: HTML
-Index: /usr/share/doc/omphalos/html/index.html
-Files: /usr/share/doc/omphalos/html/*.html
