@@ -3,3 +3,5 @@ Title: Debian omphalos Manual
 Author: Nick Black
 Abstract: Omphalos operation manual
 Section: net
+Format: HTML
+Files: /usr/share/doc/omphalos/*.xhtml
