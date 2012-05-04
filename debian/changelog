@@ -1,3 +1,9 @@
+omphalos (0.99.3-2) unstable; urgency=low
+
+  * Fix up postinstall script for real.
+
+ -- nick black <nick.black@sprezzatech.com>  Fri, 04 May 2012 00:07:29 -0400
+
 omphalos (0.99.3-1) unstable; urgency=low
 
   * Fix up postinstall script.
