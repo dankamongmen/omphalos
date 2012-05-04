@@ -1,10 +1,8 @@
 Document: omphalos
 Title: Debian omphalos Manual
-Author: <insert document author here>
-Abstract: This manual describes what omphalos is
- and how it can be used to
- manage online manuals on Debian systems.
-Section: unknown
+Author: Nick Black
+Abstract: Omphalos operation manual
+Section: net
 
 Format: debiandoc-sgml
 Files: /usr/share/doc/omphalos/omphalos.sgml.gz

@@ -20,6 +20,8 @@ set -e
 USBIDS=/usr/share/omphalos/usb.ids
 OUIIDS=/usr/share/omphalos/ieee-oui.txt
 
+PATH=$PATH:/usr/bin
+
 OUT="`which get-oui 2> /dev/null`" || true
 WGET="`which wget 2> /dev/null`" || true
 ICONV="`which iconv 2> /dev/null`" || true

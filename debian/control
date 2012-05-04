@@ -1,8 +1,8 @@
 Source: omphalos
 Section: net
 Priority: optional
-Maintainer: nick black <dankamongmen@gmail.com>
-Build-Depends: debhelper (>= 8.0.0), docbook-xml, pkg-config, libcap-dev, libsysfs-dev
+Maintainer: nick black <nick.black@sprezzatech.com>
+Build-Depends: debhelper (>= 8.0.0), docbook-xml, pkg-config, libcap-dev, libsysfs-dev, autoconf-archive
 Standards-Version: 3.9.2
 Homepage: http://dank.qemfd.net/dankwiki/index.php/Omphalos
 Vcs-Git: git://github.com/dankamongmen/omphalos.git
@@ -11,7 +11,6 @@ Vcs-Browser: https://github.com/dankamongmen/omphalos/tree
 Package: omphalos
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, wget, arp-scan
-Build-Depends: autoconf-archive
 Description: Network enumeration and domination
  Omphalos is a tool for visualizing and controlling a local network (though it
  will also process pcap savefiles). Captured packets are analyzed to build a

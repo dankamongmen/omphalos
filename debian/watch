@@ -11,7 +11,7 @@ version=3
 #http://www.example.com/downloads.php omphalos-(.*)\.tar\.gz
 
 # Uncomment to examine a Webserver directory
-#http://www.example.com/pub/omphalos-(.*)\.tar\.gz
+http://dank.qemfd.net/pub/omphalos-(.*)\.tar\.gz
 
 # Uncommment to examine a FTP server
 #ftp://ftp.example.com/pub/omphalos-(.*)\.tar\.gz debian uupdate
