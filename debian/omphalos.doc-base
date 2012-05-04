@@ -2,6 +2,8 @@ Document: omphalos
 Title: Debian omphalos Manual
 Author: Nick Black
 Abstract: Omphalos operation manual
-Section: net
+Section: Network
+
 Format: HTML
-Files: /usr/share/doc/omphalos/*.xhtml
+Index: /usr/share/doc/omphalos/omphalos-ncurses.xhtml.gz
+Files: /usr/share/doc/omphalos/*.xhtml.gz
