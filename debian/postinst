@@ -41,17 +41,17 @@ trap exithandle EXIT SIGINT SIGHUP
 case "$1" in
     configure)
 	mkdir -p /usr/share/omphalos
-	if [ -n "$WGET" ] ; then
+	if [ -z "$WGET" ] ; then
 		echo "Couldn't find wget; not updating USB IDs." >&2
-	elif [ -n "$ICONV" ] ; then
+	elif [ -z "$ICONV" ] ; then
 		echo "Couldn't find iconv; not updating USB IDs." >&2
 	else
 		"$WGET" http://www.linux-usb.org/usb.ids -O "$tmp"
 		"$ICONV" -f iso-8859-1 -t utf-8 -o $USBIDS "$tmp"
 	fi
-	if [ -n "$OUI" ] ; then
+	if [ -z "$OUI" ] ; then
 		echo "Couldn't find get-out; not updating OUI IDs." >&2
-	elif [ -n "$ICONV" ] ; then
+	elif [ -z "$ICONV" ] ; then
 		echo "Couldn't find iconv; not updating OUI IDs." >&2
 	else
 		"$OUI" -v -f "$tmp"
