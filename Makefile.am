@@ -117,13 +117,11 @@ $(OUT)/%.1: $(OUT)/$(MANDIR)/man1/$(PROJ).1
 	@mkdir -p $(@D)
 	ln -fs $(<F) $@
 
-#$(MAN1OBJ)/$(PROJ).1: $(MAN1SRC)/$(PROJ).xml
-#out/doc/man/man1/omphalos.1: $(MAN1SRC)/$(PROJ).xml
-out/doc/man/man1/omphalos.1: doc/man/man1/$(PROJ).xml
+$(OUT)/$(MANDIR)/man1/$(PROJ).1: $(MANDIR)/man1/$(PROJ).xml
 	@mkdir -p $(@D)
 	$(XSLTPROC) --writesubtree $(@D) -o $@ $(DOC2MANXSL) $<
 
-$(OUT)/$(XHTMLDIR)/$(PROJ).xhtml: doc/man/man1/$(PROJ).xml
+$(OUT)/$(XHTMLDIR)/$(PROJ).xhtml: $(MANDIR)/man1/$(PROJ).xml
 	@mkdir -p $(@D)
 	$(XSLTPROC) --writesubtree $(@D) -o $@ $(DOC2XHTMLXSL) $<
 
