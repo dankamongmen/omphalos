@@ -2,7 +2,7 @@ Document: omphalos
 Title: Debian omphalos Manual
 Author: Nick Black
 Abstract: Omphalos operation manual
-Section: Network
+Section: Network/Monitoring
 
 Format: HTML
 Index: /usr/share/doc/omphalos/omphalos-ncurses.xhtml.gz
