@@ -1,3 +1,10 @@
+omphalos (0.99.2-1) unstable; urgency=low
+
+  * Various packaging fixes.
+  * Look for USB/IEEE data files in path specified via autoconf.
+
+ -- nick black <nick.black@sprezzatech.com>  Thu, 03 May 2012 21:52:45 -0400
+
 omphalos (0.99.1-1.2) unstable; urgency=low
 
   * Add postinstall and postrm scripts to pull USB/OUI IDs.

@@ -1,9 +1,5 @@
 omphalos for Debian
 -------------------
 
-<this file describes information about the source package, see Debian policy
-manual section 4.14. You WILL either need to modify or delete this file>
-
-
-
-
+Omphalos is primarily developed on Debian, and no patches are currently
+necessary for it to compile there.
