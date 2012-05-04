@@ -111,11 +111,11 @@ $(OUT)/%.o: %.c $(CINCS) $(MAKEFILE)
 
 $(OUT)/%.xhtml: $(OUT)/$(XHTMLDIR)/$(PROJ).xhtml
 	@mkdir -p $(@D)
-	ln -s $(<F) $@
+	ln -fs $(<F) $@
 
 $(OUT)/%.1: $(OUT)/$(MANDIR)/man1/$(PROJ).1
 	@mkdir -p $(@D)
-	ln -s $(<F) $@
+	ln -fs $(<F) $@
 
 #$(MAN1OBJ)/$(PROJ).1: $(MAN1SRC)/$(PROJ).xml
 #out/doc/man/man1/omphalos.1: $(MAN1SRC)/$(PROJ).xml
