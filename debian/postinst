@@ -20,7 +20,7 @@ set -e
 USBIDS=/usr/share/omphalos/usb.ids
 OUIIDS=/usr/share/omphalos/ieee-oui.txt
 
-OUT="`which get-oui 2> /dev/null`" || true
+OUI="`which get-oui 2> /dev/null`" || true
 WGET="`which wget 2> /dev/null`" || true
 ICONV="`which iconv 2> /dev/null`" || true
 
@@ -48,7 +48,7 @@ case "$1" in
 		"$ICONV" -f iso-8859-1 -t utf-8 -o $USBIDS "$tmp"
 	fi
 	if [ -z "$OUI" ] ; then
-		echo "Couldn't find get-out; not updating OUI IDs." >&2
+		echo "Couldn't find get-oui; not updating OUI IDs." >&2
 	elif [ -z "$ICONV" ] ; then
 		echo "Couldn't find iconv; not updating OUI IDs." >&2
 	else
