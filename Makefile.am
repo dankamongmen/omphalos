@@ -23,12 +23,11 @@ AM_CFLAGS:=$(DBCFLAGS)
 # FIXME can't use --default-symver with GNU gold
 LFLAGS:=-Wl,-O2,--enable-new-dtags,--as-needed,--warn-common $(LIBS)
 
-MANDIR:=doc/man
-XHTMLDIR:=doc/xhtml
+MANDIR:=$(DOC)/man
+XHTMLDIR:=$(DOC)/xhtml
 MAN1SRC:=$(wildcard $(MANDIR)/man1/*)
-MAN1:=$(addprefix $(OUT)/,$(MAN1SRC:%.xml=%.1$(PROJ)))
-MAN1OBJ:=$(addprefix $(OUT)/,$(MAN1SRC:%.xml=%.1))
-XHTML:=$(addprefix $(OUT)/$(XHTMLDIR)/,$(notdir $(MAN1SRC:%.xml=%.xhtml)))
+MAN1OBJ:=$(addsuffix .1,$(addprefix $(OUT)/$(MANDIR)/man1/$(PROJ)-,$(UI)))
+XHTML:=$(addsuffix .xhtml,$(addprefix $(OUT)/$(XHTMLDIR)/$(PROJ)-,$(UI)))
 DOCS:=$(MAN1OBJ) $(XHTML)
 
 # This can be a URL; it's the docbook-to-manpage XSL
@@ -110,11 +109,21 @@ $(OUT)/%.o: %.c $(CINCS) $(MAKEFILE)
 	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-$(OUT)/%.1: %.xml
+$(OUT)/%.xhtml: $(OUT)/$(XHTMLDIR)/$(PROJ).xhtml
+	@mkdir -p $(@D)
+	ln -s $(<F) $@
+
+$(OUT)/%.1: $(OUT)/$(MANDIR)/man1/$(PROJ).1
+	@mkdir -p $(@D)
+	ln -s $(<F) $@
+
+#$(MAN1OBJ)/$(PROJ).1: $(MAN1SRC)/$(PROJ).xml
+#out/doc/man/man1/omphalos.1: $(MAN1SRC)/$(PROJ).xml
+out/doc/man/man1/omphalos.1: doc/man/man1/$(PROJ).xml
 	@mkdir -p $(@D)
 	$(XSLTPROC) --writesubtree $(@D) -o $@ $(DOC2MANXSL) $<
 
-$(OUT)/%.xhtml: %.xml
+$(OUT)/$(XHTMLDIR)/$(PROJ).xhtml: doc/man/man1/$(PROJ).xml
 	@mkdir -p $(@D)
 	$(XSLTPROC) --writesubtree $(@D) -o $@ $(DOC2XHTMLXSL) $<
 
