@@ -143,12 +143,12 @@ sudobless: all $(ADDCAPS) $(SETUPCORE)
 
 install-exec-local: all doc
 	@mkdir -p $(DESTDIR)${bindir}
-	@$(INSTALL) -m 0755 $(BIN) $(DESTDIR)${bindir}
+	$(INSTALL) -m 0755 $(BIN) $(DESTDIR)${bindir}
 
 install-data-local: all doc
 	@mkdir -p $(DESTDIR)${mandir}/man1 $(DESTDIR)${docdir}
-	@$(INSTALL_DATA) -m 0644 $(MAN1OBJ) $(DESTDIR)${mandir}/man1
-	@$(INSTALL_DATA) -m 0644 $(XHTML) $(DESTDIR)${docdir}/
+	$(INSTALL_DATA) -m 0644 $(MAN1OBJ) $(DESTDIR)${mandir}/man1
+	$(INSTALL_DATA) -m 0644 $(XHTML) $(DESTDIR)${docdir}/
 
 postinstall: install
 	@echo "Running $(MANBIN) ${mandir}..." && $(MANBIN) $(DESTDIR)${mandir}
