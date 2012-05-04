@@ -159,3 +159,4 @@ postuninstall:
 uninstall-local:
 	rm -f $(addprefix ${bindir}/,$(notdir $(BIN)))
 	rm -f $(addprefix ${mandir}/man1/,$(notdir $(MAN1OBJ)))
+	rm -f $(addprefix $(DESTDIR)${docdir}/,$(XHTML))
