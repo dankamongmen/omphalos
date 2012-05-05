@@ -90,6 +90,26 @@ Some fonts do not support the full range of Unicode glyphs used by omphalos, or
 render them in an unexpected way. Fonts known to cause problems include:
 
  - Terminus (vertical lines don't match up with rounded corners)
+ - Computer Modern (lmodern) (numerous problems)
+ - Cortoba (numerous problems)
+ - Courier (spacing issues)
+ - Electron (numerous problems)
+ - FreeMono (spacing issues)
+ - Nimbus (spacing issues)
+
+Fonts known to work include:
+
+ - Arial
+ - Bitstream Vera Sans
+ - Comfortaa
+ - Consolas
+ - DejaVu Sans Mono
+ - Droid Sans Mono
+ - Inconsolata
+ - Junicode
+ - Liberation
+ - PragmataPro
+ - Sansation
 
 ===================================================================
 IV. Hacking
