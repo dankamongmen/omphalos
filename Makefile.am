@@ -141,6 +141,7 @@ sudobless: all $(ADDCAPS) $(SETUPCORE)
 
 install-exec-local: all doc
 	@mkdir -p $(DESTDIR)${bindir}
+	$(ADDCAPS) $(BIN)
 	$(INSTALL) -m 0755 $(BIN) $(DESTDIR)${bindir}
 
 install-data-local: all doc
