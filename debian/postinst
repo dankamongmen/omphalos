@@ -24,6 +24,9 @@ OUI="`which get-oui 2> /dev/null`" || true
 WGET="`which wget 2> /dev/null`" || true
 ICONV="`which iconv 2> /dev/null`" || true
 
+# We have a hard Depends on libcap2-bin; don't accept a lookup failure
+SETCAP="`which setcap 2> /dev/null`"
+
 tmp="`mktemp`"
 
 exithandle () {
@@ -35,6 +38,12 @@ exithandle () {
 
 trap exithandle EXIT SIGINT SIGHUP
 
+bless () {
+	for i in "$@" ; do
+		# don't fall back to generic root setuid
+		"$SETCAP" "= cap_net_admin,cap_net_raw=ep" "$i"
+	done
+}
 
 case "$1" in
     configure)
@@ -55,6 +64,7 @@ case "$1" in
 		"$OUI" -v -f "$tmp"
 		"$ICONV" -f iso-8859-1 -t utf-8 -o "$OUIIDS" "$tmp"
 	fi
+	bless /usr/bin/omphalos-*
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)
