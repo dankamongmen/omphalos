@@ -86,6 +86,11 @@ as root), it will by default attempt to become the "nobody" user. This can
 be suppressed via an empty argument to the -u option (-u ""), but helps
 defend against malicious input.
 
+Some fonts do not support the full range of Unicode glyphs used by omphalos, or
+render them in an unexpected way. Fonts known to cause problems include:
+
+ - Terminus (vertical lines don't match up with rounded corners)
+
 ===================================================================
 IV. Hacking
 ===================================================================
