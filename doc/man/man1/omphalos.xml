@@ -5,10 +5,10 @@
 
 <!ENTITY dhfirstname "Nick">
 <!ENTITY dhsurname "Black">
-<!ENTITY dhemail "dank@qemfd.net">
+<!ENTITY dhemail "nick.black@sprezzatech.com">
 <!ENTITY dhusername "&dhfirstname; &dhsurname;">
 
-<!ENTITY dhrelease "0.99.1-pre">
+<!ENTITY dhrelease "0.99.4">
 
 <!-- TITLE should be something like "User commands",		-->
 <!-- "&dhpackage; command-line reference" or similar (see e.g.	-->
@@ -183,12 +183,12 @@
 	</refsect1>
 	<refsect1 id="modes">
 		<title>OPERATING MODES</title>
-		<simplelist>
-			<member>silent -- Omphalos will generate no packets.
-			</member>
-			<member>active -- Standard operation. Omphalos will freely transmit packets as necessary to discover the network (this includes ARP, Neighbor Discovery, SSDP, DNS, mDNS and others).
-			</member>
-		</simplelist>
+		<varlistentry><para>
+		<parameter>silent</parameter>: Omphalos will generate no packets.
+		</para></varlistentry>
+		<varlistentry><para>
+		<parameter>active</parameter>: Standard operation. Omphalos will freely transmit packets as necessary to discover the network (this includes ARP, Neighbor Discovery, SSDP, DNS, mDNS and others).
+		</para></varlistentry>
 	</refsect1>
 	<refsect1 id="bugs">
 		<title>BUGS</title>
