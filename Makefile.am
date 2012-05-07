@@ -130,7 +130,8 @@ clean-local:
 	rm -rf $(IANAOUI) $(IANAOUI).raw $(USBIDS)
 
 maintainer-clean-local:
-	rm -rf aclocal.m4 configure config config.in config.in~ install-sh missing Makefile.in
+	rm -rf aclocal.m4 configure config config.in config.in~ \
+		install-sh missing Makefile.in
 
 bless: all
 	$(ADDCAPS) $(BIN)
