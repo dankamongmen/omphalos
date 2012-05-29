@@ -92,8 +92,11 @@ int handle_wireless_event(const omphalos_iface *octx,interface *i,
 				const struct iw_event *iw,size_t len){
 	const union iwreq_data *u;
 
-	assert(i->settings_valid == SETTINGS_VALID_NL80211 ||
-			i->settings_valid == SETTINGS_VALID_WEXT);
+	if(i->settings_valid != SETTINGS_VALID_NL80211 &&
+			i->settings_valid != SETTINGS_VALID_WEXT){
+		diagnostic("No wireless info for %s (%d)",i->name,i->settings_valid);
+		return -1;
+	}
 	if(len < IW_EV_LCP_LEN){
 		diagnostic("Wireless msg too short on %s (%zu)",i->name,len);
 		return -1;
