@@ -24,6 +24,7 @@ AM_CFLAGS:=$(DBCFLAGS)
 LFLAGS:=-Wl,-O2,--enable-new-dtags,--as-needed,--warn-common $(LIBS)
 
 MANDIR:=$(DOC)/man
+XMLDIR:=$(DOC)/xml
 XHTMLDIR:=$(DOC)/xhtml
 MAN1SRC:=$(wildcard $(MANDIR)/man1/*)
 MAN1OBJ:=$(addsuffix .1,$(addprefix $(OUT)/$(MANDIR)/man1/$(PROJ)-,$(UI)))
@@ -117,13 +118,17 @@ $(OUT)/%.1: $(OUT)/$(MANDIR)/man1/$(PROJ).1
 	@mkdir -p $(@D)
 	ln -fs $(<F) $@
 
-$(OUT)/$(MANDIR)/man1/$(PROJ).1: $(MANDIR)/man1/$(PROJ).xml
+$(OUT)/$(MANDIR)/man1/$(PROJ).1: $(MANDIR)/man1/$(PROJ).xml $(OUT)/$(XMLDIR)/$(PROJ).ent
 	@mkdir -p $(@D)
-	$(XSLTPROC) --writesubtree $(@D) -o $@ $(DOCMANXSL) $<
+	$(XSLTPROC) --path $(OUT)/$(XMLDIR) --writesubtree $(@D) -o $@ $(DOCMANXSL) $<
 
-$(OUT)/$(XHTMLDIR)/$(PROJ).xhtml: $(MANDIR)/man1/$(PROJ).xml
+$(OUT)/$(XHTMLDIR)/$(PROJ).xhtml: $(MANDIR)/man1/$(PROJ).xml $(OUT)/$(XMLDIR)/$(PROJ).ent
 	@mkdir -p $(@D)
-	$(XSLTPROC) --writesubtree $(@D) -o $@ $(DOCXHTMLXSL) $<
+	$(XSLTPROC) --path $(OUT)/$(XMLDIR) --writesubtree $(@D) -o $@ $(DOCXHTMLXSL) $<
+
+$(OUT)/$(XMLDIR)/$(PROJ).ent:
+	@mkdir -p $(@D)
+	echo -e '<!ENTITY dhfirstname "Nick">\n<!ENTITY dhsurname "Black">\n<!ENTITY dhemail "nick.black@sprezzatech.com">\n<!ENTITY dhusername "&dhfirstname; &dhsurname;">\n<!ENTITY dhrelease "$(VERSION)">' > "$@"
 
 clean-local:
 	rm -rf $(OUT) $(wildcard core*) $(wildcard vgcore*) tags
