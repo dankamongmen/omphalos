@@ -163,7 +163,7 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 	int opt,longidx;
 	
 	memset(pctx,0,sizeof(*pctx));
-	opterr = 1; // allow getopt() diagnostic to stderr
+	opterr = 0; // disallow getopt() diagnostic to stderr
 	while((opt = getopt_long(argc,argv,":hf:u:p",ops,&longidx)) >= 0){
 		switch(opt){
 		case 'h':{
@@ -254,10 +254,12 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 			user = optarg;
 			break;
 		}case ':':{
+			// FIXME deal with long options
 			fprintf(stderr,"Option requires argument: '%c'\n",optopt);
 			usage(argv[0],EXIT_FAILURE);
 			break;
 		}case '?':{
+			// FIXME deal with long options
 			fprintf(stderr,"Unknown option: '%c'\n",optopt);
 			usage(argv[0],EXIT_FAILURE);
 			break;
