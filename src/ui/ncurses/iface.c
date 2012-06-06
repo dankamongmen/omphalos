@@ -636,7 +636,7 @@ iface_box(const interface *i,const iface_state *is,WINDOW *w,int active,
 				if(!interface_carrier_p(i)){
 					assert(waddstr(w," (no carrier)") != ERR);
 				}else{
-					assert(wprintw(w," (%sb %s)",prefix(i->settings.ethtool.speed * 1000000u,1,buf,sizeof(buf),1),
+					assert(wprintw(w," (%sb %s)",prefix(i->settings.ethtool.speed * (uint64_t)1000000lu,1,buf,sizeof(buf),1),
 								duplexstr(i->settings.ethtool.duplex)) != ERR);
 				}
 			}else if(i->settings_valid == SETTINGS_VALID_WEXT){
