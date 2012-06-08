@@ -51,8 +51,9 @@ that your terminal definition supports 256 colors.
 II. Building and installation
 ===================================================================
 
-If compiling from checked-out source, run "autoreconf -fi" to build the initial
-configure script (a configure script will be present in release tarballs).
+If compiling from checked-out source, run "autoreconf -fi -Wall,error" to build
+the initial configure script (a configure script will be present in release
+tarballs).
 
 "./configure && make && sudo make postinstall" ought be sufficient to build and
 install Omphalos. Run "./configure --help" to see supported build parameters.
