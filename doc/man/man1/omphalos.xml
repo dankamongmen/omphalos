@@ -65,11 +65,11 @@
 			<arg>-u username</arg>
 			<arg>-f filename</arg>
 			<arg>-p</arg>
-			<arg>--ouis filename</arg>
-			<arg>--usbids filename </arg>
-			<arg>--resolv filename</arg>
-			<arg>--plog filename</arg>
-			<arg>--mode silent|active</arg>
+			<arg>--ouis=filename</arg>
+			<arg>--usbids=filename </arg>
+			<arg>--resolv=filename</arg>
+			<arg>--plog=filename</arg>
+			<arg>--mode=silent|active</arg>
 		</cmdsynopsis>
 	</refsynopsisdiv>
 	<refsect1 id="description">
