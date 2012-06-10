@@ -84,7 +84,7 @@ int bevel(WINDOW *w){
 // separator, and one for the NUL byte). If omitdec is non-zero, and the
 // decimal portion is all 0's, the decimal portion will not be printed. decimal
 // indicates scaling, and should be '1' if no scaling has taken place.
-char *genprefix(uintmax_t val,unsigned decimal,char *buf,size_t bsize,
+const char *genprefix(uintmax_t val,unsigned decimal,char *buf,size_t bsize,
 			int omitdec,unsigned mult,int uprefix){
 	const char prefixes[] = "KMGTPEY";
 	unsigned consumed = 0;
