@@ -384,6 +384,9 @@ int prep_eth_header(void *frame,size_t len,const interface *i,const void *dst,
 	if(len < ETH_HLEN){
 		return -1;
 	}
+	if(i->addrlen != ETH_ALEN){
+		return 0;
+	}
 	memcpy(&e->h_dest,dst,ETH_ALEN);
 	memcpy(&e->h_source,i->addr,ETH_ALEN);
 	e->h_proto = htons(proto);
