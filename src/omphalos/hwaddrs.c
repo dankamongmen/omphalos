@@ -94,10 +94,14 @@ void hwntop(const void *hwaddr,size_t len,char *buf){
 	unsigned idx;
 	size_t s;
 
-	s = HWADDRSTRLEN(len);
-	for(idx = 0 ; idx < len ; ++idx){
-		snprintf(buf + idx * 3,s - idx * 3,"%02x:",
-				((const unsigned char *)hwaddr)[idx]);
+	if(len){
+		s = HWADDRSTRLEN(len);
+		for(idx = 0 ; idx < len ; ++idx){
+			snprintf(buf + idx * 3,s - idx * 3,"%02x:",
+					((const unsigned char *)hwaddr)[idx]);
+		}
+	}else{
+		buf[0] = '\0';
 	}
 }
 
