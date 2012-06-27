@@ -963,7 +963,6 @@ int draw_main_window(WINDOW *w){
 	// fail, however, if the string can't fit on the window, which will for
 	// instance happen if there's an embedded newline.
 	mvwaddstr(w,rows - 1,START_COL * 2,statusmsg); // FIXME
-	//assert(mvwaddwstr(w,rows - 1,START_COL * 2,statusmsg) != ERR);
 	assert(wattroff(w,A_BOLD | COLOR_PAIR(FOOTER_COLOR)) != ERR);
 	return OK;
 
