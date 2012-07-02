@@ -22,7 +22,7 @@ ethtool_docmd(const char *name,void *unsafe){
 		diagnostic("Bad name: %s",name);
 		return -1;
 	}
-	memset(&ifr,0,sizeof(&ifr));
+	memset(&ifr,0,sizeof(ifr));
 	strcpy(ifr.ifr_name,name);
 	ifr.ifr_data = (caddr_t)unsafe;
 	if((fd = socket(AF_INET,SOCK_DGRAM,0)) < 0){
