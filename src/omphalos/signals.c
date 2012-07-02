@@ -17,6 +17,7 @@ int restore_sighandler(void){
 	return 0;
 }
 
+// Initialization phase -- send it all to stderr (see bug 291)
 int setup_sighandler(void (*handler)(int)){
 	struct sigaction sa = {
 		.sa_handler = handler,
@@ -27,15 +28,15 @@ int setup_sighandler(void (*handler)(int)){
 	sigset_t csigs;
 
 	if(sigemptyset(&csigs) || sigaddset(&csigs,SIGINT)){
-		diagnostic("Couldn't prepare sigset (%s?)",strerror(errno));
+		fprintf(stderr,"Couldn't prepare sigset (%s?)",strerror(errno));
 		return -1;
 	}
 	if(sigaction(SIGINT,&sa,NULL)){
-		diagnostic("Couldn't install sighandler (%s?)",strerror(errno));
+		fprintf(stderr,"Couldn't install sighandler (%s?)",strerror(errno));
 		return -1;
 	}
 	if(pthread_sigmask(SIG_UNBLOCK,&csigs,NULL)){
-		diagnostic("Couldn't unmask signals (%s?)",strerror(errno));
+		fprintf(stderr,"Couldn't unmask signals (%s?)",strerror(errno));
 		restore_sighandler();
 		return -1;
 	}

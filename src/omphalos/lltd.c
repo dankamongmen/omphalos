@@ -101,7 +101,8 @@ static pthread_mutex_t iconvlock = PTHREAD_MUTEX_INITIALIZER;
 
 int init_lltd_service(void){
 	if((ucs2le = iconv_open("UTF-8","UCS-2LE")) == NULL){
-		diagnostic("%s can't convert UCS-2LE to UTF-8 (%s)",__func__,strerror(errno));
+		// Initialization phase goes to stderr (bug 291)
+		fprintf(stderr,"%s can't convert UCS-2LE to UTF-8 (%s)",__func__,strerror(errno));
 		return -1;
 	}
 	return 0;

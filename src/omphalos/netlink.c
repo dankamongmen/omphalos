@@ -1072,7 +1072,9 @@ int handle_netlink_socket(void){
 	if(setup_sighandler(cancellation_signal_handler)){
 		return -1;
 	}
-	ret = netlink_thread();
+	if( (ret = netlink_thread()) ){ // see bug 291 for stderr justification
+		fprintf(stderr,"Error setting up netlink thread, aborting\n");
+	}
 	ret |= restore_sighandler();
 	ret |= close_nl80211();
 	return ret;
