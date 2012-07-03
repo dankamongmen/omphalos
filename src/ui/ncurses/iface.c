@@ -74,7 +74,7 @@ get_l2obj(const interface *i,const iface_state *is,struct l2host *l2){
 	l2obj *l;
 
 	if( (l = malloc(sizeof(*l))) ){
-		l->lines = is->expansion > EXPANSION_NONE ? 1 : 0;
+		l->lines = is->expansion > EXPANSION_NONE;
 		l->cat = l2categorize(i,l2);
 		l->l3objs = NULL;
 		l->l2 = l2;
