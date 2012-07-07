@@ -111,7 +111,7 @@ int dhcp4_probe(interface *i,const uint32_t *saddr){
 	int r;
 
 	if(i->addrlen > sizeof(dhcp->haddr) || i->addrlen != sizeof(dhcpop->haddr)){
-		diagnostic("Interface hardware addrlen too large (%zu)",i->addrlen);
+		diagnostic("[%s] hardware addrlen too large (%zu)",i->name,i->addrlen);
 		return -1;
 	}
 	if((frame = get_tx_frame(i,&fsize)) == NULL){
