@@ -63,9 +63,9 @@ int preserve_colors(void){
 	for(q = 0 ; q < colors_allowed ; ++q){
 		ret |= color_content(q,oor + q,oog + q,oob + q);
 	}
-	//wstatus_locked(stdscr,"Got palette from Ncurses configuration");
-	if(popen_drain("gconftool-d /apps/gnome-terminal/profiles/Default/palette") == 0){
-		//wstatus_locked(stdscr,"Got palette from GNOME configuration");
+	wstatus_locked(stdscr,"Got palette from Ncurses configuration");
+	if(popen_drain("gconftool-2 -g /apps/gnome-terminal/profiles/Default/palette") == 0){
+		wstatus_locked(stdscr,"Got palette from GNOME configuration");
 		return ret;
 	}
 	return ret;
