@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <ctype.h>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -45,6 +46,61 @@ int restore_colors(void){
 	return ret;
 }
 
+static unsigned
+tox(char s){
+	if(isdigit(s)){
+		return s - '0';
+	}
+	return toupper(s) - 'A';
+}
+
+static int
+get_3x32(const char *s,uint32_t *val){
+	if(!isxdigit(*s) || !isxdigit(*(s + 1)) || !isxdigit(*(s + 2))
+			|| !isxdigit(*(s + 3))){
+		return -1;
+	}
+	*val = (tox(*s) * (1u << 24u)) +
+		(tox(*(s + 1)) * (1u << 16u)) +
+		(tox(*(s + 2)) * (1u << 8u)) +
+		(tox(*(s + 3)) * 1u);
+	return 0;
+}
+
+static int
+parse_gconf_palette(const char *gpal){
+	uint32_t r,g,b;
+	int c = 0;
+
+	while(c < colors_allowed){
+		if(*gpal != '#'){
+			break;
+		}
+		if(get_3x32(gpal + 1,&r) || get_3x32(gpal + 5,&g) || get_3x32(gpal + 9,&b)){
+			break;
+		}
+		if(gpal[13] != '\n' && gpal[13] != ':'){
+			break;
+		}
+		oor[c] = r >> 16u;
+		oog[c] = g >> 16u;
+		oob[c] = b >> 16u;
+		if(gpal[13] == '\n'){
+			return 0;
+		}
+		gpal += 14;
+		++c;
+	}
+	if(c >= colors_allowed){
+	fprintf(stderr,"%c\n",*gpal);
+	assert(0);
+		wstatus_locked(stdscr,"More GNOME colors (%u) than allowed (%u)",c,colors_allowed);
+		return -1;
+	}
+	wstatus_locked(stdscr,"Malformed GNOME palette");
+	return -1;
+}
+
 // color_content() seems to give you the default ncurses value (one of 0, 680
 // or 1000), *not* the actual value being used by the terminal... :/ This
 // function is not likely useful until we can get the latter (we don't want
@@ -70,8 +126,10 @@ int preserve_colors(void){
 	wstatus_locked(stdscr,"Got palette from Ncurses configuration");
 	palsource = "Ncurses";
 	if( (gpal = spopen_drain("gconftool-2 -g /apps/gnome-terminal/profiles/Default/palette")) ){
-		wstatus_locked(stdscr,"Got palette from GNOME configuration");
-		palsource = "GConf";
+		if(parse_gconf_palette(gpal) == 0){
+			wstatus_locked(stdscr,"Got palette from GNOME configuration");
+			palsource = "GConf";
+		}
 		free(gpal);
 		return ret;
 	}
