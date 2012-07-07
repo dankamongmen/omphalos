@@ -51,6 +51,7 @@ int restore_colors(void){
 // generally to restore the (hideous) ncurses defaults).
 int preserve_colors(void){
 	int ret = OK,q;
+	char *gpal;
 
 	if(colorpairs_allowed >= 0 || colors_allowed >= 0){
 		return ERR;
@@ -68,9 +69,10 @@ int preserve_colors(void){
 	}
 	wstatus_locked(stdscr,"Got palette from Ncurses configuration");
 	palsource = "Ncurses";
-	if(popen_drain("gconftool-2 -g /apps/gnome-terminal/profiles/Default/palette") == 0){
+	if( (gpal = spopen_drain("gconftool-2 -g /apps/gnome-terminal/profiles/Default/palette")) ){
 		wstatus_locked(stdscr,"Got palette from GNOME configuration");
 		palsource = "GConf";
+		free(gpal);
 		return ret;
 	}
 	return ret;
