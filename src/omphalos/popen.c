@@ -82,7 +82,47 @@ int popen_drain(const char *cmd){
 	return 0;
 }
 
-int vspopen_drain(const char *fmt,...){
+char *spopen_drain(const char *cmd){
+	char *buf = NULL,*tmp,*safecmd;
+	size_t s = BUFSIZ,o = 0;
+	FILE *fd;
+
+	if((safecmd = sanitize_cmd(cmd)) == NULL){
+		return NULL;
+	}
+	if((fd = popen(safecmd,"re")) == NULL){
+		diagnostic("Couldn't run %s (%s?)",safecmd,strerror(errno));
+		free(safecmd);
+		return NULL;
+	}
+	while( (tmp = realloc(buf,s)) ){
+		buf = tmp;
+		while(fgets(buf + o,s - o,fd)){
+			o += strlen(buf + o);
+			if(o >= s){
+				break;
+			}
+		}
+		if(!feof(fd)){
+		       if(o < s){
+				diagnostic("Error reading from '%s' (%s?)",cmd,strerror(errno));
+				fclose(fd);
+				return NULL;
+		       }
+		}else if(fclose(fd)){
+			diagnostic("Error running '%s'",cmd);
+			return NULL;
+		}else{
+			return buf;
+		}
+		s += BUFSIZ;
+	}
+	free(buf);
+	fprintf(stderr,"Error allocating %zu\n",s);
+	return NULL;
+}
+
+int vpopen_drain(const char *fmt,...){
 	char buf[BUFSIZ];
 	va_list va;
 
@@ -94,4 +134,18 @@ int vspopen_drain(const char *fmt,...){
 	}
 	va_end(va);
 	return popen_drain(buf);
+}
+
+char *vspopen_drain(const char *fmt,...){
+	char buf[BUFSIZ];
+	va_list va;
+
+	va_start(va,fmt);
+	if(vsnprintf(buf,sizeof(buf),fmt,va) >= (int)sizeof(buf)){
+		va_end(va);
+		diagnostic("Bad command: %s ...",fmt);
+		return NULL;
+	}
+	va_end(va);
+	return spopen_drain(buf);
 }
