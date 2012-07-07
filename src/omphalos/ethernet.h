@@ -21,6 +21,7 @@ struct omphalos_packet;
 #define ETH_P_OSI	ETH_P_802_3
 
 void handle_ethernet_packet(struct omphalos_packet *,const void *,size_t);
+void handle_l2tun_packet(struct omphalos_packet *,const void *,size_t);
 
 int prep_eth_header(void *,size_t,const struct interface *,const void *,
 			uint16_t) __attribute__ ((nonnull (1,3,4)));

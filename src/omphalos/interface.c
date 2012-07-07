@@ -531,8 +531,8 @@ static arptype arptypes[] = {
 	},{
 		.ifi_type = ARPHRD_NONE,
 		.name = "VArpless",
-		.analyze = handle_ethernet_packet, // FIXME no l2 header at all
-		.l2hlen = ETH_HLEN, // FIXME???
+		.analyze = handle_l2tun_packet,
+		.l2hlen = 0,
 	},{
 		.ifi_type = ARPHRD_VOID,
 		.name = "Voiddev",

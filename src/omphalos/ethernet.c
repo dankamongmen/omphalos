@@ -285,6 +285,12 @@ handle_pppoe_packet(omphalos_packet *op,const void *frame,size_t len){
 	// FIXME
 }
 
+void handle_l2tun_packet(omphalos_packet *op,const void *frame,size_t len){
+	assert(op && frame && len);
+	// FIXME not safe to hand this down without setting up op->l2s etc...
+	//handle_ipv4_packet(op,frame,len);
+}
+
 void handle_ethernet_packet(omphalos_packet *op,const void *frame,size_t len){
 	const struct ethhdr *hdr = frame;
 	const void *dgram;
