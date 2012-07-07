@@ -94,6 +94,12 @@ enum {
 };
 
 int restore_colors(void);
+
+// Try to get the terminal's palette via all manner of foul hackery:
+//
+//  - run gconftool-2 -g /apps/gnome-terminal/profiles/Default/palette
+//  - look at Xresources / terminfo (neither are yet implemented)
+//  - use whatever ncurses returns (typically compiled-in bogon values)
 int preserve_colors(void);
 
 int setup_extended_colors(void);

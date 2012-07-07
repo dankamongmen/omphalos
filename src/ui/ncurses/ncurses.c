@@ -417,6 +417,14 @@ ncurses_setup(void){
 		errstr = "Couldn't set blocking input\n";
 		goto err;
 	}
+	if(curs_set(0) == ERR){
+		errstr = "Couldn't disable cursor\n";
+		goto err;
+	}
+	if(setup_statusbar(COLS)){
+		errstr = "Couldn't setup status bar\n";
+		goto err;
+	}
 	if(preserve_colors() != OK){
 		errstr = "Couldn't preserve initial colors\n";
 		goto err;
@@ -506,14 +514,6 @@ ncurses_setup(void){
 		assert(init_pair(MCAST_ALTROW_RES_COLOR,COLOR_SKYBLUE_50,COLOR_PALECYAN) == OK);
 		assert(init_pair(BCAST_ALTROW_RES_COLOR,COLOR_VIOLET_50,COLOR_PALECYAN) == OK);
 		assert(init_pair(SUBDISPLAY_COLOR,COLOR_BRIGHTWHITE,-1) == OK);
-	}
-	if(curs_set(0) == ERR){
-		errstr = "Couldn't disable cursor\n";
-		goto err;
-	}
-	if(setup_statusbar(COLS)){
-		errstr = "Couldn't setup status bar\n";
-		goto err;
 	}
 	if(draw_main_window(w)){
 		errstr = "Couldn't use ncurses\n";
