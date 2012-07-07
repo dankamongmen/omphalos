@@ -40,8 +40,8 @@ env_details(WINDOW *hw,int rows){
 			assert(wattrset(hw,SUBDISPLAY_ATTR) == OK);
 		}
 	}case 1:{
-		assert(mvwprintw(hw,row + z,col,"Colors (pairs): %u (%u) Geom: %dx%d Palette: %s",
-				COLORS,COLOR_PAIRS,srows,scols,
+		assert(mvwprintw(hw,row + z,col,"Colors (pairs): %u (%u) Geom: %dx%d Palette: %s-%s",
+				COLORS,COLOR_PAIRS,srows,scols,palsource,
 				modified_colors ? "dynamic" : "fixed") != ERR);
 		--z;
 	}case 0:{

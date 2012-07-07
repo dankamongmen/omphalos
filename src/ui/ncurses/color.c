@@ -15,6 +15,9 @@
 // any actual attempt to change the colors via init_color() will return ERR :/.
 int modified_colors = 0;
 
+// Source of whatever palette we're restoring at the end
+const char *palsource = "undef";
+
 static int colors_allowed = -1,colorpairs_allowed = -1;
 // Original color pairs. We don't change these in a fade.
 static short ofg[COLORPAIR_CEILING],obg[COLORPAIR_CEILING];
@@ -64,8 +67,10 @@ int preserve_colors(void){
 		ret |= color_content(q,oor + q,oog + q,oob + q);
 	}
 	wstatus_locked(stdscr,"Got palette from Ncurses configuration");
+	palsource = "Ncurses";
 	if(popen_drain("gconftool-2 -g /apps/gnome-terminal/profiles/Default/palette") == 0){
 		wstatus_locked(stdscr,"Got palette from GNOME configuration");
+		palsource = "GConf";
 		return ret;
 	}
 	return ret;

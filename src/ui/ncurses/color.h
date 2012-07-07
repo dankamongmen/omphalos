@@ -7,6 +7,8 @@ extern "C" {
 
 #include <pthread.h>
 
+extern const char *palsource;
+
 // Our additional colors
 enum {
 	COLOR_BRGREEN = 10,
