@@ -139,6 +139,10 @@ send_to_self(interface *i,void *frame){
 			l2len = sizeof(struct ethhdr);
 			l2proto = ((const struct ethhdr *)l2)->h_proto;
 			break;
+		case ARPHRD_NONE:
+			l2len = 0;
+			l2proto = ntohs(ETH_P_IP);
+			break;
 		default:
 			assert(0);
 			break;
@@ -223,6 +227,10 @@ categorize_tx(const interface *i,const void *frame,int *self,int *out){
 		}case ARPHRD_LOOPBACK:{
 			*self = 1;
 			*out = 0;
+			break;
+		}case ARPHRD_NONE:{
+			*self = 1;
+			*out = 1;
 			break;
 		}default:
 			diagnostic("Need implement %s for %u",__func__,i->arptype);
