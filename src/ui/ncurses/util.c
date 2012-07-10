@@ -71,8 +71,10 @@ int bevel(WINDOW *w){
 	assert(mvwadd_wch(w,0,0,&bchr[0]) != ERR);
 	assert(whline(w,ACS_HLINE,cols - 2) != ERR);
 	assert(mvwins_wch(w,0,cols - 1,&bchr[1]) != ERR);
-	assert(mvwvline(w,1,cols - 1,ACS_VLINE,rows - 1) != ERR);
-	assert(mvwvline(w,1,0,ACS_VLINE,rows - 1) != ERR);
+	if(rows > 1){
+		assert(mvwvline(w,1,cols - 1,ACS_VLINE,rows - 1) != ERR);
+		assert(mvwvline(w,1,0,ACS_VLINE,rows - 1) != ERR);
+	}
 	assert(mvwadd_wch(w,rows - 1,0,&bchr[2]) != ERR);
 	assert(whline(w,ACS_HLINE,cols - 2) != ERR);
 	assert(mvwins_wch(w,rows - 1,cols - 1,&bchr[3]) != ERR);
