@@ -18,7 +18,7 @@ typedef struct logent {
 
 #define MAXIMUM_LOG_ENTRIES 1024
 
-// Get up to the last n diagnostics. n should not be 0 mor greater than
+// Get up to the last n diagnostics. n should not be 0 nor greater than
 // MAXIMUM_LOG_ENTRIES. If there are less than n present, they'll be copied
 // into the first n logents; logent[n].msg will then be NULL.
 int get_logs(unsigned,logent *);
