@@ -230,7 +230,7 @@ ncurses_input_thread(void *unsafe_marsh){
 				redraw_screen_locked();
 			}unlock_ncurses();
 			break;
-		case 13: // Enter FIXME
+		case '\r': case '\n': case KEY_ENTER:
 			lock_ncurses();{
 				if(select_iface_locked() == 0){
 					selection_active = 1;
