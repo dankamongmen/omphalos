@@ -1650,3 +1650,14 @@ void use_last_node_locked(void){
 	}
 	select_interface_node(rb,l2,delta);
 }
+
+// Whether we've entered an interface, and are browsing selected nodes within.
+int selecting(void){
+	if(!current_iface){
+		return 0;
+	}
+	if(!current_iface->selected){
+		return 0;
+	}
+	return 1;
+}

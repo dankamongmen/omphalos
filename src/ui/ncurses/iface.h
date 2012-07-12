@@ -84,6 +84,8 @@ iface_lines_unbounded(const struct iface_state *is){
 	return iface_lines_bounded(is,INT_MAX);
 }
 
+int selecting(void);
+
 // Minimalist interface to data nodes from outside
 struct l2obj *l2obj_next(struct l2obj *);
 struct l2obj *l2obj_prev(struct l2obj *);
