@@ -9,11 +9,39 @@ extern "C" {
 
 extern const char *palsource;
 
-// Our additional colors
+// There are 16 colors in generic use, which we mustn't change across the life
+// of our program (we could if we could reliably acquire the active palette
+// upon startup, but this turns out to be impossible to do portably). We thus
+// don't modify those color registers, even if we can. If only 16 colors are
+// supported, we thus do not define any colors (and will not do any other
+// palette tricks, including fades).
+//
+// If we support more than 16 colors, we'll attempt to modify some higher ones.
+// If we can't modify them, we just use the 16 colors we came in with, as we
+// assume they form a reasonable palette (and not, for instance, 16 shades of
+// one color, as is common in 256-color shell palettes). These colors are only
+// to be used in that case, and *only* these colors ought be used (so that
+// our colors are deterministic, and so that we can fade them reliably).
+
+#define RESERVED_COLORS 16
+
 enum {
-	COLOR_BRGREEN = 10,
-	COLOR_LIGHTBLUE = 12,
-	COLOR_BRIGHTWHITE = 15,
+	COLOR_MODBLACK = 16,
+	COLOR_MODBLUE,
+	COLOR_MODBROWN,
+	COLOR_MODCYAN,
+	COLOR_MODGREY,
+	COLOR_MODGREEN,
+	COLOR_MODLIGHTGREY,
+	COLOR_MODLIGHTBLUE,
+	COLOR_MODLIGHTCYAN,
+	COLOR_MODLIGHTGREEN,
+	COLOR_MODLIGHTPURPLE,
+	COLOR_MODLIGHTRED,
+	COLOR_MODPURPLE,
+	COLOR_MODRED,
+	COLOR_MODWHITE,
+	COLOR_MODYELLOW,
 	COLOR_GREEN_75,
 	COLOR_GREEN_50,
 	COLOR_BLUE_75,
@@ -23,7 +51,7 @@ enum {
 	COLOR_BONE,
 	COLOR_BONE_75,
 	COLOR_BONE_50,
-	COLOR_VIOLET,
+	COLOR_MODVIOLET,
 	COLOR_VIOLET_75,
 	COLOR_VIOLET_50,
 	COLOR_ORANGE,
@@ -97,11 +125,6 @@ enum {
 
 int restore_colors(void);
 
-// Try to get the terminal's palette via all manner of foul hackery:
-//
-//  - run gconftool-2 -g /apps/gnome-terminal/profiles/Default/palette
-//  - look at Xresources / terminfo (neither are yet implemented)
-//  - use whatever ncurses returns (typically compiled-in bogon values)
 int preserve_colors(void);
 
 int setup_extended_colors(void);

@@ -20,8 +20,6 @@ int modified_colors = 0;
 const char *palsource = "undef";
 
 static int colors_allowed = -1,colorpairs_allowed = -1;
-// Original color pairs. We don't change these in a fade.
-static short ofg[COLORPAIR_CEILING],obg[COLORPAIR_CEILING];
 // Original palette (after we've initialized it, ie pre-fading)
 static short or[COLOR_CEILING],og[COLOR_CEILING],ob[COLOR_CEILING];
 // Truly original palette (that taken from the terminal on startup)
@@ -33,72 +31,11 @@ int restore_colors(void){
 	if(colorpairs_allowed < 0 || colors_allowed < 0){
 		return ERR;
 	}
-	// FIXME messes up gnome-terminal, whose palette we're hijacking by
-	// default. most likely messes up all other terminals by being
-	// commented out :/
-	/*for(q = 0 ; q < colors_allowed ; ++q){
+	for(q = RESERVED_COLORS ; q < colors_allowed ; ++q){
 		ret |= init_color(q,oor[q],oog[q],oob[q]);
-	}*/
-	for(q = 0 ; q < colorpairs_allowed ; ++q){
-		ret |= init_pair(q,ofg[q],obg[q]);
 	}
 	ret |= wrefresh(curscr);
 	return ret;
-}
-
-static unsigned
-tox(char s){
-	if(isdigit(s)){
-		return s - '0';
-	}
-	return toupper(s) - 'A';
-}
-
-static int
-get_3x32(const char *s,uint32_t *val){
-	if(!isxdigit(*s) || !isxdigit(*(s + 1)) || !isxdigit(*(s + 2))
-			|| !isxdigit(*(s + 3))){
-		return -1;
-	}
-	*val = (tox(*s) * (1u << 24u)) +
-		(tox(*(s + 1)) * (1u << 16u)) +
-		(tox(*(s + 2)) * (1u << 8u)) +
-		(tox(*(s + 3)) * 1u);
-	return 0;
-}
-
-static int
-parse_gconf_palette(const char *gpal){
-	uint32_t r,g,b;
-	int c = 0;
-
-	while(c < colors_allowed){
-		if(*gpal != '#'){
-			break;
-		}
-		if(get_3x32(gpal + 1,&r) || get_3x32(gpal + 5,&g) || get_3x32(gpal + 9,&b)){
-			break;
-		}
-		if(gpal[13] != '\n' && gpal[13] != ':'){
-			break;
-		}
-		oor[c] = r >> 16u;
-		oog[c] = g >> 16u;
-		oob[c] = b >> 16u;
-		if(gpal[13] == '\n'){
-			return 0;
-		}
-		gpal += 14;
-		++c;
-	}
-	if(c >= colors_allowed){
-	fprintf(stderr,"%c\n",*gpal);
-	assert(0);
-		wstatus_locked(stdscr,"More GNOME colors (%u) than allowed (%u)",c,colors_allowed);
-		return -1;
-	}
-	wstatus_locked(stdscr,"Malformed GNOME palette");
-	return -1;
 }
 
 // color_content() seems to give you the default ncurses value (one of 0, 680
@@ -107,7 +44,6 @@ parse_gconf_palette(const char *gpal){
 // generally to restore the (hideous) ncurses defaults).
 int preserve_colors(void){
 	int ret = OK,q;
-	char *gpal;
 
 	if(colorpairs_allowed >= 0 || colors_allowed >= 0){
 		return ERR;
@@ -117,22 +53,11 @@ int preserve_colors(void){
 	if(colors_allowed > COLOR_CEILING || colorpairs_allowed > COLORPAIR_CEILING){
 		return ERR;
 	}
-	for(q = 0 ; q < colorpairs_allowed ; ++q){
-		ret |= pair_content(q,ofg + q,obg + q);
-	}
 	for(q = 0 ; q < colors_allowed ; ++q){
 		ret |= color_content(q,oor + q,oog + q,oob + q);
 	}
 	wstatus_locked(stdscr,"Got palette from Ncurses configuration");
 	palsource = "Ncurses";
-	if( (gpal = spopen_drain("gconftool-2 -g /apps/gnome-terminal/profiles/Default/palette")) ){
-		if(parse_gconf_palette(gpal) == 0){
-			wstatus_locked(stdscr,"Got palette from GNOME configuration");
-			palsource = "GConf";
-		}
-		free(gpal);
-		return ret;
-	}
 	return ret;
 }
 
@@ -221,28 +146,28 @@ int setup_extended_colors(void){
 	// #3465A4:#75507B:#06989A:#D3D7CF:
 	// #555753:#EF2929:#8AE234:#FCE94F:
 	// #729FCF:#AD7FA8:#34E2E2:#EEEEEC
-	ret |= init_color(COLOR_BLACK,156,203,211);
-	ret |= init_color(COLOR_RED,CURSES_RGB(RRED),CURSES_RGB(GRED),CURSES_RGB(BRED));
-	ret |= init_color(COLOR_GREEN,CURSES_RGB(RGREEN),CURSES_RGB(GGREEN),CURSES_RGB(BGREEN));
-	ret |= init_color(COLOR_YELLOW,CURSES_RGB(RYELLOW),CURSES_RGB(GYELLOW),CURSES_RGB(BYELLOW));
-	ret |= init_color(COLOR_BLUE,CURSES_RGB(RBLUE),CURSES_RGB(GBLUE),CURSES_RGB(BBLUE));
-	ret |= init_color(COLOR_MAGENTA,CURSES_RGB(RMAGENTA),CURSES_RGB(GMAGENTA),CURSES_RGB(BMAGENTA));
-	ret |= init_color(COLOR_CYAN,CURSES_RGB(RCYAN),CURSES_RGB(GCYAN),CURSES_RGB(BCYAN));
-	ret |= init_color(COLOR_WHITE,CURSES_RGB(RWHITE),CURSES_RGB(GWHITE),CURSES_RGB(BWHITE));
-	ret |= init_color(8,332,340,324);
-	ret |= init_color(9,933,160,160);
-	ret |= init_color(COLOR_BRGREEN,539,882,203); // ncurses def
-	ret |= init_color(11,983,909,308);
-	ret |= init_color(COLOR_LIGHTBLUE,445,620,808); // ncurses def
-	ret |= init_color(13,675,496,656);
-	ret |= init_color(14,203,882,882);
-	ret |= init_color(COLOR_BRIGHTWHITE,CURSES_RGB(RBRWHITE),CURSES_RGB(GBRWHITE),CURSES_RGB(BBRWHITE));
+	ret |= init_color(COLOR_MODBLACK,156,203,211);
+	ret |= init_color(COLOR_MODBLUE,CURSES_RGB(RBLUE),CURSES_RGB(GBLUE),CURSES_RGB(BBLUE));
+	ret |= init_color(COLOR_MODBROWN,983,909,308);
+	ret |= init_color(COLOR_MODCYAN,CURSES_RGB(RCYAN),CURSES_RGB(GCYAN),CURSES_RGB(BCYAN));
+	ret |= init_color(COLOR_MODGREY,CURSES_RGB(RWHITE),CURSES_RGB(GWHITE),CURSES_RGB(BWHITE));
+	ret |= init_color(COLOR_MODGREEN,CURSES_RGB(RGREEN),CURSES_RGB(GGREEN),CURSES_RGB(BGREEN));
+	ret |= init_color(COLOR_MODLIGHTGREY,CURSES_RGB(RMAGENTA),CURSES_RGB(GMAGENTA),CURSES_RGB(BMAGENTA));
+	ret |= init_color(COLOR_MODLIGHTBLUE,332,340,324);
+	ret |= init_color(COLOR_MODLIGHTCYAN,445,620,808); // ncurses def
+	ret |= init_color(COLOR_MODLIGHTGREEN,539,882,203); // ncurses def
+	ret |= init_color(COLOR_MODLIGHTPURPLE,203,882,882);
+	ret |= init_color(COLOR_MODLIGHTRED,933,160,160);
+	ret |= init_color(COLOR_MODPURPLE,675,496,656);
+	ret |= init_color(COLOR_MODRED,CURSES_RGB(RRED),CURSES_RGB(GRED),CURSES_RGB(BRED));
+	ret |= init_color(COLOR_MODWHITE,CURSES_RGB(RBRWHITE),CURSES_RGB(GBRWHITE),CURSES_RGB(BBRWHITE));
+	ret |= init_color(COLOR_MODYELLOW,CURSES_RGB(RYELLOW),CURSES_RGB(GYELLOW),CURSES_RGB(BYELLOW));
 	ret |= init_color(COLOR_CYAN_75,CURSES75_RGB(RCYAN),CURSES75_RGB(GCYAN),CURSES75_RGB(BCYAN));
 	ret |= init_color(COLOR_BLUE_75,CURSES75_RGB(RBLUE),CURSES75_RGB(GBLUE),CURSES75_RGB(BBLUE));
 	ret |= init_color(COLOR_CYAN_50,CURSES50_RGB(RCYAN),CURSES50_RGB(GCYAN),CURSES50_RGB(BCYAN));
 	ret |= init_color(COLOR_BLUE_50,CURSES50_RGB(RBLUE),CURSES50_RGB(GBLUE),CURSES50_RGB(BBLUE));
 	ret |= init_color(COLOR_BONE,CURSES_RGB(_BONE_R),CURSES_RGB(_BONE_G),CURSES_RGB(_BONE_B));
-	ret |= init_color(COLOR_VIOLET,CURSES_RGB(RVIOLET),CURSES_RGB(GVIOLET),CURSES_RGB(BVIOLET));
+	ret |= init_color(COLOR_MODVIOLET,CURSES_RGB(RVIOLET),CURSES_RGB(GVIOLET),CURSES_RGB(BVIOLET));
 	ret |= init_color(COLOR_ORANGE,CURSES_RGB(RORANGE),CURSES_RGB(GORANGE),CURSES_RGB(BORANGE));
 	ret |= init_color(COLOR_BONE_75,CURSES75_RGB(_BONE_R),CURSES75_RGB(_BONE_G),CURSES75_RGB(_BONE_B));
 	ret |= init_color(COLOR_VIOLET_75,CURSES75_RGB(RVIOLET),CURSES75_RGB(GVIOLET),CURSES75_RGB(BVIOLET));
@@ -286,7 +211,7 @@ restore_our_colors(void){
 	if(colorpairs_allowed < 0 || colors_allowed < 0){
 		return ERR;
 	}
-	for(q = 0 ; q < colors_allowed ; ++q){
+	for(q = RESERVED_COLORS ; q < colors_allowed ; ++q){
 		ret |= init_color(q,or[q],og[q],ob[q]);
 	}
 	ret |= wrefresh(curscr);
@@ -309,7 +234,7 @@ fade_thread(void *unsafe_marsh){
 	struct timeval stime;
 	int p;
 
-	for(p = 0 ; p < colors_allowed ; ++p){
+	for(p = RESERVED_COLORS ; p < colors_allowed ; ++p){
 		r[p] = or[p];
 		g[p] = og[p];
 		b[p] = ob[p];
@@ -323,13 +248,13 @@ fade_thread(void *unsafe_marsh){
 		if((permille = (cus - sus) * 1000 / (marsh->sec * 1000000)) > 1000){
 			permille = 1000;
 		}
-		for(p = 0 ; p < colors_allowed ; ++p){
+		for(p = RESERVED_COLORS ; p < colors_allowed ; ++p){
 			r[p] = (or[p] * (1000 - permille)) / 1000;
 			g[p] = (og[p] * (1000 - permille)) / 1000;
 			b[p] = (ob[p] * (1000 - permille)) / 1000;
 		}
 		pthread_mutex_lock(marsh->lock);
-			for(p = 0 ; p < colors_allowed ; ++p){
+			for(p = RESERVED_COLORS ; p < colors_allowed ; ++p){
 				init_color(p,r[p],g[p],b[p]);
 			}
 			wrefresh(curscr);

@@ -468,25 +468,25 @@ ncurses_setup(void){
 		assert(init_pair(SUBDISPLAY_COLOR,COLOR_WHITE,-1) == OK);
 	}else{
 		assert(init_pair(BORDER_COLOR,COLOR_ALUMINIUM,-1) == OK);
-		assert(init_pair(HEADER_COLOR,COLOR_BLUE,-1) == OK);
-		assert(init_pair(FOOTER_COLOR,COLOR_YELLOW,-1) == OK);
+		assert(init_pair(HEADER_COLOR,COLOR_MODBLUE,-1) == OK);
+		assert(init_pair(FOOTER_COLOR,COLOR_MODYELLOW,-1) == OK);
 		assert(init_pair(DBORDER_COLOR,COLOR_ALUMINIUM,-1) == OK);
-		assert(init_pair(DHEADING_COLOR,COLOR_WHITE,-1) == OK);
-		assert(init_pair(UBORDER_COLOR,COLOR_CYAN,-1) == OK);
+		assert(init_pair(DHEADING_COLOR,COLOR_MODWHITE,-1) == OK);
+		assert(init_pair(UBORDER_COLOR,COLOR_MODCYAN,-1) == OK);
 		assert(init_pair(UHEADING_COLOR,COLOR_ORANGE,-1) == OK);
-		assert(init_pair(PBORDER_COLOR,COLOR_BLUE,-1) == OK);
-		assert(init_pair(PHEADING_COLOR,COLOR_RED,-1) == OK);
-		assert(init_pair(BULKTEXT_COLOR,COLOR_WHITE,-1) == OK);
-		assert(init_pair(BULKTEXT_ALTROW_COLOR,COLOR_WHITE,COLOR_PALEALUMINIUM) == OK);
-		assert(init_pair(IFACE_COLOR,COLOR_WHITE,-1) == OK);
+		assert(init_pair(PBORDER_COLOR,COLOR_MODBLUE,-1) == OK);
+		assert(init_pair(PHEADING_COLOR,COLOR_MODRED,-1) == OK);
+		assert(init_pair(BULKTEXT_COLOR,COLOR_MODWHITE,-1) == OK);
+		assert(init_pair(BULKTEXT_ALTROW_COLOR,COLOR_MODWHITE,COLOR_PALEALUMINIUM) == OK);
+		assert(init_pair(IFACE_COLOR,COLOR_MODWHITE,-1) == OK);
 		assert(init_pair(LCAST_COLOR,COLOR_CHAMELEON,-1) == OK);
-		assert(init_pair(UCAST_COLOR,COLOR_BLUE,-1) == OK);
+		assert(init_pair(UCAST_COLOR,COLOR_MODBLUE,-1) == OK);
 		assert(init_pair(MCAST_COLOR,COLOR_SKYBLUE,-1) == OK);
-		assert(init_pair(BCAST_COLOR,COLOR_VIOLET,-1) == OK);
-		assert(init_pair(LSELECTED_COLOR,-1,COLOR_CHAMELEON) == OK);
-		assert(init_pair(USELECTED_COLOR,-1,COLOR_BLUE) == OK);
-		assert(init_pair(MSELECTED_COLOR,-1,COLOR_SKYBLUE) == OK);
-		assert(init_pair(BSELECTED_COLOR,-1,COLOR_VIOLET) == OK);
+		assert(init_pair(BCAST_COLOR,COLOR_MODVIOLET,-1) == OK);
+		assert(init_pair(LSELECTED_COLOR,COLOR_MODWHITE,COLOR_CHAMELEON_50) == OK);
+		assert(init_pair(USELECTED_COLOR,COLOR_MODWHITE,COLOR_BLUE_50) == OK);
+		assert(init_pair(MSELECTED_COLOR,COLOR_MODWHITE,COLOR_SKYBLUE_50) == OK);
+		assert(init_pair(BSELECTED_COLOR,COLOR_MODWHITE,COLOR_VIOLET_50) == OK);
 		assert(init_pair(LCAST_L3_COLOR,COLOR_CHAMELEON_75,-1) == OK);
 		assert(init_pair(UCAST_L3_COLOR,COLOR_BLUE_75,-1) == OK);
 		assert(init_pair(MCAST_L3_COLOR,COLOR_SKYBLUE_75,-1) == OK);
@@ -496,9 +496,9 @@ ncurses_setup(void){
 		assert(init_pair(MCAST_RES_COLOR,COLOR_SKYBLUE_50,-1) == OK);
 		assert(init_pair(BCAST_RES_COLOR,COLOR_VIOLET_50,-1) == OK);
 		assert(init_pair(LCAST_ALTROW_COLOR,COLOR_CHAMELEON,COLOR_PALECYAN) == OK);
-		assert(init_pair(UCAST_ALTROW_COLOR,COLOR_BLUE,COLOR_PALECYAN) == OK);
+		assert(init_pair(UCAST_ALTROW_COLOR,COLOR_MODBLUE,COLOR_PALECYAN) == OK);
 		assert(init_pair(MCAST_ALTROW_COLOR,COLOR_SKYBLUE,COLOR_PALECYAN) == OK);
-		assert(init_pair(BCAST_ALTROW_COLOR,COLOR_VIOLET,COLOR_PALECYAN) == OK);
+		assert(init_pair(BCAST_ALTROW_COLOR,COLOR_MODVIOLET,COLOR_PALECYAN) == OK);
 		assert(init_pair(LCAST_ALTROW_L3_COLOR,COLOR_CHAMELEON_75,COLOR_PALECYAN) == OK);
 		assert(init_pair(UCAST_ALTROW_L3_COLOR,COLOR_BLUE_75,COLOR_PALECYAN) == OK);
 		assert(init_pair(MCAST_ALTROW_L3_COLOR,COLOR_SKYBLUE_75,COLOR_PALECYAN) == OK);
@@ -507,7 +507,7 @@ ncurses_setup(void){
 		assert(init_pair(UCAST_ALTROW_RES_COLOR,COLOR_BLUE_50,COLOR_PALECYAN) == OK);
 		assert(init_pair(MCAST_ALTROW_RES_COLOR,COLOR_SKYBLUE_50,COLOR_PALECYAN) == OK);
 		assert(init_pair(BCAST_ALTROW_RES_COLOR,COLOR_VIOLET_50,COLOR_PALECYAN) == OK);
-		assert(init_pair(SUBDISPLAY_COLOR,COLOR_BRIGHTWHITE,-1) == OK);
+		assert(init_pair(SUBDISPLAY_COLOR,COLOR_MODWHITE,-1) == OK);
 	}
 	if(draw_main_window(w)){
 		errstr = "Couldn't use ncurses\n";
