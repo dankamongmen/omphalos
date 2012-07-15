@@ -566,24 +566,11 @@ iface_box(const interface *i,const iface_state *is,WINDOW *w,int active,
 	getmaxyx(w,rows,cols);
 	bcolor = interface_up_p(i) ? UBORDER_COLOR : DBORDER_COLOR;
 	hcolor = interface_up_p(i) ? UHEADING_COLOR : DHEADING_COLOR;
-	attrs = active ? A_REVERSE : A_BOLD;
-	assert(wattrset(w,attrs | COLOR_PAIR(bcolor)) == OK);
 	if(abovetop == 0){
-		if(belowend == 0){
-			assert(bevel(w) == OK);
-		}else{
-			assert(bevel_nobottom(w) == OK);
-		}
-	}else{
-		if(belowend == 0){
-			assert(bevel_notop(w) == OK);
-		}else{
-			assert(bevel_noborder(w) == OK);
-		}
-	}
-	assert(wattroff(w,A_REVERSE) == OK);
-
-	if(abovetop == 0){
+		attrs = active ? A_REVERSE : A_BOLD;
+		assert(wattrset(w,attrs | COLOR_PAIR(bcolor)) == OK);
+		assert(bevel_top(w) == OK);
+		assert(wattroff(w,A_REVERSE) == OK);
 		if(active){
 			assert(wattron(w,A_BOLD) == OK);
 		}
@@ -620,6 +607,13 @@ iface_box(const interface *i,const iface_state *is,WINDOW *w,int active,
 		assert(wattroff(w,A_REVERSE) != ERR);
 	}
 	if(belowend == 0){
+		attrs = active ? A_REVERSE : A_BOLD;
+		assert(wattrset(w,attrs | COLOR_PAIR(bcolor)) == OK);
+		assert(bevel_bottom(w) == OK);
+		assert(wattroff(w,A_REVERSE) == OK);
+		if(active){
+			assert(wattron(w,A_BOLD) == OK);
+		}
 		assert(mvwprintw(w,rows - 1,2,"[") != ERR);
 		assert(wcolor_set(w,hcolor,NULL) != ERR);
 		if(active){

@@ -60,9 +60,8 @@ screen_update(void){
 }
 
 int bevel(WINDOW *);
-int bevel_notop(WINDOW *);
-int bevel_nobottom(WINDOW *);
-int bevel_noborder(WINDOW *);
+int bevel_top(WINDOW *);
+int bevel_bottom(WINDOW *);
 
 const char *genprefix(uintmax_t,unsigned,char *,size_t,int,unsigned,int);
 
