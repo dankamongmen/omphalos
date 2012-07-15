@@ -289,24 +289,24 @@ print_host_services(WINDOW *w,const l3obj *l,int *line,int rows,int cols,
 		}
 		srv = l4srvstr(l4->l4);
 		if(n){
-			if((unsigned)cols < 2 + wcslen(srv)){ // two for ", "
+			if((unsigned)cols < 1 + wcslen(srv)){ // one for space
 				break;
 			}
-			cols -= 2 + wcslen(srv);
-			n += 2 + wcslen(srv);
-			assert(wprintw(w,", %ls",srv) != ERR);
+			cols -= 1 + wcslen(srv);
+			n += 1 + wcslen(srv);
+			wprintw(w," %ls",srv);
 		}else{
 			if((unsigned)cols < 2 + 5 + wcslen(srv)){ // two for borders
 				break;
 			}
-			cols -= 2 + 5 + wcslen(srv);
-			n += 2 + 5 + wcslen(srv);
-			assert(mvwprintw(w,*line,1,"%lc    %ls",selectchar,srv) != ERR);
+			cols -= 5 + wcslen(srv);
+			n += 5 + wcslen(srv);
+			mvwprintw(w,*line,0,"%lc    %ls",selectchar,srv);
 			++*line;
 		}
 	}
 	if(n && cols > 0){
-		assert(wprintw(w,"%-*.*s",cols,cols,"") == OK);
+		wprintw(w,"%-*.*s",cols,cols,"");
 	}
 }
 
@@ -407,18 +407,18 @@ print_iface_host(const interface *i,const iface_state *is,WINDOW *w,
 
 		l2ntop(l->l2,i->addrlen,hw);
 		if(devname){
-			len = cols - PREFIXSTRLEN * 2 - 6 - HWADDRSTRLEN(i->addrlen);
+			len = cols - PREFIXSTRLEN * 2 - 4 - HWADDRSTRLEN(i->addrlen);
 			if(!interface_up_p(i)){
 				len += PREFIXSTRLEN * 2 + 1;
 			}
-			assert(mvwprintw(w,line,1,"%lc%c %s %-*.*ls",
+			assert(mvwprintw(w,line,0,"%lc%c %s %-*.*ls",
 				selectchar,legend,hw,len,len,devname) != ERR);
 		}else{
-			len = cols - PREFIXSTRLEN * 2 - 6;
+			len = cols - PREFIXSTRLEN * 2 - 4;
 			if(!interface_up_p(i)){
 				len += PREFIXSTRLEN * 2 + 1;
 			}
-			assert(mvwprintw(w,line,1,"%lc%c %-*.*s",
+			assert(mvwprintw(w,line,0,"%lc%c %-*.*s",
 				selectchar,legend,len,len,hw) != ERR);
 		}
 		if(interface_up_p(i)){
@@ -456,10 +456,10 @@ print_iface_host(const interface *i,const iface_state *is,WINDOW *w,
 				if((name = get_l3name(l3->l3)) == NULL){
 					name = L"";
 				}
-				assert(mvwprintw(w,line,1,"%lc   %s ",
+				assert(mvwprintw(w,line,0,"%lc   %s ",
 					selectchar,nw) != ERR);
 				assert(wattrset(w,!(line % 2) ? rattrs : arattrs) != ERR);
-				len = cols - PREFIXSTRLEN * 2 - 8 - strlen(nw);
+				len = cols - PREFIXSTRLEN * 2 - 6 - strlen(nw);
 				wlen = len - wcswidth(name,wcslen(name));
 				if(wlen < 0){
 					wlen = 0;
@@ -713,12 +713,12 @@ print_iface_state(const interface *i,const iface_state *is,WINDOW *w,
 	// into one FTD stat by letting it take an object...
 	// FIXME this leads to a "ramp-up" period where we approach steady state
 	usecdomain = i->bps.usec * i->bps.total;
-	assert(mvwprintw(w,!topp,1,"%u node%s. Last %lus: %7sb/s (%sp)",
+	assert(mvwprintw(w,!topp,0,"%u node%s. Last %lus: %7sb/s (%sp)",
 		is->nodes,is->nodes == 1 ? "" : "s",
 		usecdomain / 1000000,
 		prefix(timestat_val(&i->bps) * CHAR_BIT * 1000000 * 100 / usecdomain,100,buf,sizeof(buf),0),
 		prefix(timestat_val(&i->fps),1,buf2,sizeof(buf2),1)) != ERR);
-	assert(mvwprintw(w,1,cols - PREFIXSTRLEN * 2 - 5,"Total: Src     Dst") != ERR);
+	mvwaddstr(w,1,cols - PREFIXSTRLEN * 2 - 4,"Total: Src     Dst");
 }
 
 void free_iface_state(iface_state *is){
