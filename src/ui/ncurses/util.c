@@ -14,8 +14,8 @@ int bevel_bottom(WINDOW *w){
 
 	getmaxyx(w,rows,cols);
 	assert(rows && cols);
-	assert(mvwadd_wch(w,rows - 1,0,&bchr[0]) != ERR);
-	assert(mvwhline(w,rows - 1,1,ACS_HLINE,cols - 2) != ERR);
+	//assert(mvwadd_wch(w,rows - 1,0,&bchr[0]) != ERR);
+	assert(mvwhline(w,rows - 1,2,ACS_HLINE,cols - 2) != ERR);
 	assert(mvwins_wch(w,rows - 1,cols - 1,&bchr[1]) != ERR);
 	return OK;
 }
@@ -29,9 +29,9 @@ int bevel_top(WINDOW *w){
 
 	getmaxyx(w,rows,cols);
 	assert(rows && cols);
-	assert(mvwadd_wch(w,0,0,&bchr[0]) != ERR);
-	assert(mvwins_wch(w,0,cols - 1,&bchr[1]) != ERR);
+	//assert(mvwadd_wch(w,0,0,&bchr[0]) != ERR);
 	assert(mvwhline(w,0,1,ACS_HLINE,cols - 2) != ERR);
+	assert(mvwins_wch(w,0,cols - 1,&bchr[1]) != ERR);
 	return OK;
 }
 
