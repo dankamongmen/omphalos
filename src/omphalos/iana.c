@@ -61,7 +61,7 @@ parse_file(const char *fn){
 
 	gettimeofday(&t0,NULL);
 	if((fp = fopen(fn,"r")) == NULL){
-		diagnostic("Coudln't open %s (%s?)",fn,strerror(errno));
+		diagnostic("Couldn't open %s (%s?)",fn,strerror(errno));
 		return -1;
 	}
 	clearerr(fp);

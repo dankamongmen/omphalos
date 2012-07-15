@@ -651,7 +651,7 @@ int main(int argc,char * const *argv){
 		return EXIT_FAILURE;
 	}
 	if(uname(&sysuts)){
-		fprintf(stderr,"Coudln't get OS info (%s?)\n",strerror(errno));
+		fprintf(stderr,"Couldn't get OS info (%s?)\n",strerror(errno));
 		return EXIT_FAILURE;
 	}
 	glibc_version = gnu_get_libc_version();
