@@ -127,9 +127,13 @@ int find_pci_device(const char *busid,struct sysfs_device *sd __attribute__ ((un
 	if((pci = pci_device_find_by_slot(domain,bus,dev,func)) == NULL){
 		return -1;
 	}
-	vend = pci_device_get_vendor_name(pci);
-	devname = pci_device_get_device_name(pci);
+	if((vend = pci_device_get_vendor_name(pci)) == NULL){
+		vend = "Unknown vendor";
+	}
 	vendlen = strlen(vend);
+	if((devname = pci_device_get_device_name(pci)) == NULL){
+		devname = "Unknown device";
+	}
 	devlen = strlen(devname);
 	if((tinf->devname = malloc(sizeof(wchar_t) * (vendlen + devlen + 2))) == NULL){
 		return -1;
