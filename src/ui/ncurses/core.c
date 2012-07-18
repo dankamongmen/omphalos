@@ -1274,10 +1274,10 @@ int collapse_iface_locked(void){
 }
 
 void check_consistency(void){
+#if 0
 	const reelbox *rb,*prev = NULL;
 	int sawcur = 0,expect = 1;
 
-	//fprintf(stderr,"CHECKING CONSISTENCY\n");
 	if(top_reelbox){
 		assert(!top_reelbox->is->prev->rb || top_reelbox->is->prev->rb == last_reelbox);
 	}
@@ -1312,6 +1312,7 @@ void check_consistency(void){
 	assert((top_reelbox && last_reelbox && current_iface) ||
 			(!top_reelbox && !last_reelbox && !current_iface));
 	//fprintf(stderr,"CONSISTENT\n");
+#endif
 }
 
 // Positive delta moves down, negative delta moves up, except for l2 == NULL

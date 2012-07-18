@@ -713,7 +713,7 @@ print_iface_state(const interface *i,const iface_state *is,WINDOW *w,
 	// into one FTD stat by letting it take an object...
 	// FIXME this leads to a "ramp-up" period where we approach steady state
 	usecdomain = i->bps.usec * i->bps.total;
-	assert(mvwprintw(w,!topp,1,"%u node%s. Last %lus: %7sb/s (%sp)",
+	assert(mvwprintw(w,!topp,0,"%u node%s. Last %lus: %7sb/s (%sp)",
 		is->nodes,is->nodes == 1 ? "" : "s",
 		usecdomain / 1000000,
 		prefix(timestat_val(&i->bps) * CHAR_BIT * 1000000 * 100 / usecdomain,100,buf,sizeof(buf),0),
