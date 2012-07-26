@@ -38,6 +38,20 @@ typedef struct l2obj {
 	struct l3obj *l3objs;
 } l2obj;
 
+static void
+draw_right_vline(const interface *i,int active,WINDOW *w){
+	int co = interface_up_p(i) ? UBORDER_COLOR : DBORDER_COLOR;
+	cchar_t bchr[] = {
+		{
+		.attr = (active ? A_REVERSE : A_BOLD) | COLOR_PAIR(co),
+		.chars = L"│",
+		},
+	};
+
+	wattrset(w,0);
+	wins_wch(w,&bchr[0]);
+}
+
 l2obj *l2obj_next(l2obj *l2){
 	return l2->next;
 }
@@ -267,8 +281,9 @@ l4obj *add_service_to_iface(iface_state *is,struct l2obj *l2,struct l3obj *l3,
 }
 
 static void
-print_host_services(WINDOW *w,const l3obj *l,int *line,int rows,int cols,
-				wchar_t selectchar,int attrs,int minline){
+print_host_services(WINDOW *w,const interface *i,const l3obj *l,int *line,
+			int rows,int cols,wchar_t selectchar,int attrs,
+			int minline,int active){
 	const struct l4obj *l4;
 	const wchar_t *srv;
 	int n;
@@ -280,6 +295,7 @@ print_host_services(WINDOW *w,const l3obj *l,int *line,int rows,int cols,
 		*line += !!l->l4objs;
 		return;
 	}
+	--cols;
 	n = 0;
 	for(l4 = l->l4objs ; l4 ; l4 = l4->next){
 		if(l4->emph){
@@ -308,13 +324,14 @@ print_host_services(WINDOW *w,const l3obj *l,int *line,int rows,int cols,
 	if(n && cols > 0){
 		wprintw(w,"%-*.*s",cols,cols,"");
 	}
+	draw_right_vline(i,active,w);
 }
 
 // line: line on which this node starts, within the WINDOW w of {rows x cols}
 static void
 print_iface_host(const interface *i,const iface_state *is,WINDOW *w,
 		const l2obj *l,int line,int rows,int cols,int selected,
-		int minline,unsigned endp){
+		int minline,unsigned endp,int active){
 	int aattrs,al3attrs,arattrs,attrs,l3attrs,rattrs,sattrs;
 	char hw[HWADDRSTRLEN(i->addrlen)];
 	const wchar_t *devname;
@@ -407,14 +424,14 @@ print_iface_host(const interface *i,const iface_state *is,WINDOW *w,
 
 		l2ntop(l->l2,i->addrlen,hw);
 		if(devname){
-			len = cols - PREFIXSTRLEN * 2 - 4 - HWADDRSTRLEN(i->addrlen);
+			len = cols - PREFIXSTRLEN * 2 - 5 - HWADDRSTRLEN(i->addrlen);
 			if(!interface_up_p(i)){
 				len += PREFIXSTRLEN * 2 + 1;
 			}
 			assert(mvwprintw(w,line,0,"%lc%c %s %-*.*ls",
 				selectchar,legend,hw,len,len,devname) != ERR);
 		}else{
-			len = cols - PREFIXSTRLEN * 2 - 4;
+			len = cols - PREFIXSTRLEN * 2 - 5;
 			if(!interface_up_p(i)){
 				len += PREFIXSTRLEN * 2 + 1;
 			}
@@ -432,6 +449,7 @@ print_iface_host(const interface *i,const iface_state *is,WINDOW *w,
 			}
 		}
 	}
+	draw_right_vline(i,active,w);
 	++line;
 	if(is->expansion >= EXPANSION_HOSTS){
 		for(l3 = l->l3objs ; l3 ; l3 = l3->next){
@@ -459,7 +477,7 @@ print_iface_host(const interface *i,const iface_state *is,WINDOW *w,
 				assert(mvwprintw(w,line,0,"%lc   %s ",
 					selectchar,nw) != ERR);
 				assert(wattrset(w,!(line % 2) ? rattrs : arattrs) != ERR);
-				len = cols - PREFIXSTRLEN * 2 - 6 - strlen(nw);
+				len = cols - PREFIXSTRLEN * 2 - 7 - strlen(nw);
 				wlen = len - wcswidth(name,wcslen(name));
 				if(wlen < 0){
 					wlen = 0;
@@ -479,13 +497,16 @@ print_iface_host(const interface *i,const iface_state *is,WINDOW *w,
 					}
 				}
 			}
+			draw_right_vline(i,active,w);
 			++line;
 			if(is->expansion >= EXPANSION_SERVICES){
 				if(selectchar != L' ' && !l3->next){
 					selectchar = L'⎩';
 				}
-				print_host_services(w,l3,&line,rows - !endp,cols,selectchar,
-						!(line % 2) ? attrs : aattrs,minline);
+				print_host_services(w,i,l3,&line,rows - !endp,
+					cols,selectchar,
+					!(line % 2) ? attrs : aattrs,
+					minline,active);
 			}
 		}
 	}
@@ -494,8 +515,8 @@ print_iface_host(const interface *i,const iface_state *is,WINDOW *w,
 // FIXME all these casts! :/ appalling
 static void
 print_iface_hosts(const interface *i,const iface_state *is,const reelbox *rb,
-					WINDOW *w,int rows,int cols,
-					unsigned topp,unsigned endp){
+				WINDOW *w,int rows,int cols,
+				unsigned topp,unsigned endp,int active){
 	// If the interface is down, we don't lead with the summary line
 	const int sumline = !!interface_up_p(i);
 	const struct l2obj *cur;
@@ -509,7 +530,7 @@ print_iface_hosts(const interface *i,const iface_state *is,const reelbox *rb,
 	line = rb->selline + sumline;
 	while(cur && line + (long)cur->lines >= !!topp + sumline){
 		print_iface_host(i,is,w,cur,line,rows,cols,cur == rb->selected,
-					!!topp + sumline,endp);
+					!!topp + sumline,endp,active);
 		// here we traverse, then account...
 		if( (cur = cur->prev) ){
 			line -= cur->lines;
@@ -520,7 +541,7 @@ print_iface_hosts(const interface *i,const iface_state *is,const reelbox *rb,
 	line += sumline;
 	cur = (rb->selected ? rb->selected->next : is->l2objs);
 	while(cur && line < rows){
-		print_iface_host(i,is,w,cur,line,rows,cols,0,0,endp);
+		print_iface_host(i,is,w,cur,line,rows,cols,0,0,endp,active);
 		// here, we account before we traverse. this is correct.
 		line += cur->lines;
 		cur = cur->next;
@@ -701,7 +722,7 @@ iface_box(const interface *i,const iface_state *is,WINDOW *w,int active,
 
 static void
 print_iface_state(const interface *i,const iface_state *is,WINDOW *w,
-				int rows,int cols,unsigned topp){
+			int rows,int cols,unsigned topp,int active){
 	char buf[U64STRLEN + 1],buf2[U64STRLEN + 1];
 	unsigned long usecdomain;
 
@@ -718,7 +739,8 @@ print_iface_state(const interface *i,const iface_state *is,WINDOW *w,
 		usecdomain / 1000000,
 		prefix(timestat_val(&i->bps) * CHAR_BIT * 1000000 * 100 / usecdomain,100,buf,sizeof(buf),0),
 		prefix(timestat_val(&i->fps),1,buf2,sizeof(buf2),1)) != ERR);
-	mvwaddstr(w,1,cols - PREFIXSTRLEN * 2 - 4,"Total: Src     Dst");
+	mvwaddstr(w,1,cols - PREFIXSTRLEN * 2 - 5,"Total: Src     Dst");
+	draw_right_vline(i,active,w);
 }
 
 void free_iface_state(iface_state *is){
@@ -754,9 +776,9 @@ int redraw_iface(const reelbox *rb,int active){
 	assert(cols < scrcols); // FIXME
 	assert(werase(rb->subwin) != ERR);
 	iface_box(i,is,rb->subwin,active,topp,endp);
-	print_iface_hosts(i,is,rb,rb->subwin,rows,cols,topp,endp);
+	print_iface_hosts(i,is,rb,rb->subwin,rows,cols,topp,endp,active);
 	if(interface_up_p(i)){
-		print_iface_state(i,is,rb->subwin,rows,cols,topp);
+		print_iface_state(i,is,rb->subwin,rows,cols,topp,active);
 	}
 	return OK;
 }

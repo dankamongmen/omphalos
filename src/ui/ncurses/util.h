@@ -14,7 +14,7 @@ extern "C" {
 
 #define PAD_LINES 3
 #define START_COL 1
-#define PAD_COLS(cols) ((cols) - START_COL * 2)
+#define PAD_COLS(cols) ((cols) - START_COL)
 #define START_LINE 1
 
 #define U64STRLEN 20	// Does not include a '\0' (18,446,744,073,709,551,616)
