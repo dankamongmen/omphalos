@@ -130,7 +130,7 @@ channel_details(WINDOW *w){
 
 int display_channels_locked(WINDOW *w,struct panel_state *ps){
 	memset(ps,0,sizeof(*ps));
-	if(new_display_panel(w,ps,WIRELESSROWS,0,L"press 'w' to dismiss display")){
+	if(new_display_panel(w,ps,WIRELESSROWS,76,L"press 'w' to dismiss display")){
 		goto err;
 	}
 	if(channel_details(panel_window(ps->p))){

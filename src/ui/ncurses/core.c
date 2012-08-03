@@ -1358,7 +1358,7 @@ int deselect_iface_locked(void){
 
 int display_details_locked(WINDOW *mainw,struct panel_state *ps){
 	memset(ps,0,sizeof(*ps));
-	if(new_display_panel(mainw,ps,DETAILROWS,0,L"press 'v' to dismiss details")){
+	if(new_display_panel(mainw,ps,DETAILROWS,76,L"press 'v' to dismiss details")){
 		goto err;
 	}
 	if(current_iface){

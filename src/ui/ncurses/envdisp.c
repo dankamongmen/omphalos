@@ -61,7 +61,7 @@ env_details(WINDOW *hw,int rows){
 
 int display_env_locked(WINDOW *mainw,struct panel_state *ps){
 	memset(ps,0,sizeof(*ps));
-	if(new_display_panel(mainw,ps,ENVROWS,0,L"press 'e' to dismiss display")){
+	if(new_display_panel(mainw,ps,ENVROWS,76,L"press 'e' to dismiss display")){
 		goto err;
 	}
 	if(env_details(panel_window(ps->p),ps->ysize)){

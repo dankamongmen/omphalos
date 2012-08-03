@@ -756,13 +756,13 @@ void free_iface_state(iface_state *is){
 int redraw_iface(const reelbox *rb,int active){
 	const iface_state *is = rb->is;
 	const interface *i = is->iface;
-	int rows,cols,scrrows,scrcols;
+	int rows,cols,scrrows;
 	unsigned topp,endp;
 
 	if(panel_hidden(rb->panel)){
 		return OK;
 	}
-	getmaxyx(stdscr,scrrows,scrcols);
+	scrrows = getmaxy(stdscr);
 	if(iface_wholly_visible_p(scrrows,rb) || active){ // completely visible
 		topp = endp = 0;
 	}else if(getbegy(rb->subwin) == 1){ // no top
@@ -773,7 +773,6 @@ int redraw_iface(const reelbox *rb,int active){
 		endp = 1; // no bottom FIXME
 	}
 	getmaxyx(rb->subwin,rows,cols);
-	assert(cols < scrcols); // FIXME
 	assert(werase(rb->subwin) != ERR);
 	iface_box(i,is,rb->subwin,active,topp,endp);
 	print_iface_hosts(i,is,rb,rb->subwin,rows,cols,topp,endp,active);
