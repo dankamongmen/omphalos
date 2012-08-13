@@ -495,18 +495,20 @@ ncurses_setup(void){
 		assert(init_pair(UCAST_RES_COLOR,COLOR_BLUE_50,-1) == OK);
 		assert(init_pair(MCAST_RES_COLOR,COLOR_SKYBLUE_50,-1) == OK);
 		assert(init_pair(BCAST_RES_COLOR,COLOR_VIOLET_50,-1) == OK);
-		assert(init_pair(LCAST_ALTROW_COLOR,COLOR_CHAMELEON,COLOR_PALECYAN) == OK);
-		assert(init_pair(UCAST_ALTROW_COLOR,COLOR_MODBLUE,COLOR_PALECYAN) == OK);
-		assert(init_pair(MCAST_ALTROW_COLOR,COLOR_SKYBLUE,COLOR_PALECYAN) == OK);
-		assert(init_pair(BCAST_ALTROW_COLOR,COLOR_MODVIOLET,COLOR_PALECYAN) == OK);
-		assert(init_pair(LCAST_ALTROW_L3_COLOR,COLOR_CHAMELEON_75,COLOR_PALECYAN) == OK);
-		assert(init_pair(UCAST_ALTROW_L3_COLOR,COLOR_BLUE_75,COLOR_PALECYAN) == OK);
-		assert(init_pair(MCAST_ALTROW_L3_COLOR,COLOR_SKYBLUE_75,COLOR_PALECYAN) == OK);
-		assert(init_pair(BCAST_ALTROW_L3_COLOR,COLOR_VIOLET_75,COLOR_PALECYAN) == OK);
-		assert(init_pair(LCAST_ALTROW_RES_COLOR,COLOR_CHAMELEON_50,COLOR_PALECYAN) == OK);
-		assert(init_pair(UCAST_ALTROW_RES_COLOR,COLOR_BLUE_50,COLOR_PALECYAN) == OK);
-		assert(init_pair(MCAST_ALTROW_RES_COLOR,COLOR_SKYBLUE_50,COLOR_PALECYAN) == OK);
-		assert(init_pair(BCAST_ALTROW_RES_COLOR,COLOR_VIOLET_50,COLOR_PALECYAN) == OK);
+
+		// Disable altrow stuff for now. It's hard to read and ugly.
+		assert(init_pair(LCAST_ALTROW_COLOR,COLOR_CHAMELEON,-1) == OK);
+		assert(init_pair(UCAST_ALTROW_COLOR,COLOR_MODBLUE,-1) == OK);
+		assert(init_pair(MCAST_ALTROW_COLOR,COLOR_SKYBLUE,-1) == OK);
+		assert(init_pair(BCAST_ALTROW_COLOR,COLOR_MODVIOLET,-1) == OK);
+		assert(init_pair(LCAST_ALTROW_L3_COLOR,COLOR_CHAMELEON_75,-1) == OK);
+		assert(init_pair(UCAST_ALTROW_L3_COLOR,COLOR_BLUE_75,-1) == OK);
+		assert(init_pair(MCAST_ALTROW_L3_COLOR,COLOR_SKYBLUE_75,-1) == OK);
+		assert(init_pair(BCAST_ALTROW_L3_COLOR,COLOR_VIOLET_75,-1) == OK);
+		assert(init_pair(LCAST_ALTROW_RES_COLOR,COLOR_CHAMELEON_50,-1) == OK);
+		assert(init_pair(UCAST_ALTROW_RES_COLOR,COLOR_BLUE_50,-1) == OK);
+		assert(init_pair(MCAST_ALTROW_RES_COLOR,COLOR_SKYBLUE_50,-1) == OK);
+		assert(init_pair(BCAST_ALTROW_RES_COLOR,COLOR_VIOLET_50,-1) == OK);
 		assert(init_pair(SUBDISPLAY_COLOR,COLOR_MODWHITE,-1) == OK);
 	}
 	if(draw_main_window(w)){
