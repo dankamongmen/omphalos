@@ -448,8 +448,8 @@ print_iface_host(const interface *i,const iface_state *is,WINDOW *w,
 						prefix(get_dstpkts(l->l2),1,dbuf,sizeof(dbuf),1));
 			}
 		}
+		draw_right_vline(i,active,w);
 	}
-	draw_right_vline(i,active,w);
 	++line;
 	if(is->expansion >= EXPANSION_HOSTS){
 		for(l3 = l->l3objs ; l3 ; l3 = l3->next){
@@ -496,8 +496,8 @@ print_iface_host(const interface *i,const iface_state *is,WINDOW *w,
 								prefix(l3_get_dstpkt(l3->l3),1,dbuf,sizeof(dbuf),1));
 					}
 				}
+				draw_right_vline(i,active,w);
 			}
-			draw_right_vline(i,active,w);
 			++line;
 			if(is->expansion >= EXPANSION_SERVICES){
 				if(selectchar != L' ' && !l3->next){
