@@ -787,6 +787,15 @@ handle_newlink_locked(interface *iface,const struct ifinfomsg *ii,const struct n
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,38)
 			break;}case IFLA_GROUP:{
 #endif
+#ifdef IFLA_NET_NS_FD
+			break;}case IFLA_NET_NS_FD:{
+#endif
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,3,0)
+			break;}case IFLA_EXT_MASK:{/* Extended info mask, VFs, etc */
+#endif
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,5,0)
+			break;}case IFLA_PROMISCUITY:{/* Promiscuity count: > 0 means acts PROMISC */
+#endif
 			break;}default:{
 				diagnostic("Unknown iflatype %u on %s",
 						ra->rta_type,iface->name);
