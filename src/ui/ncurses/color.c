@@ -16,9 +16,6 @@
 // any actual attempt to change the colors via init_color() will return ERR :/.
 int modified_colors = 0;
 
-// Source of whatever palette we're restoring at the end
-const char *palsource = "undef";
-
 static int colors_allowed = -1,colorpairs_allowed = -1;
 // Original palette (after we've initialized it, ie pre-fading)
 static short or[COLOR_CEILING],og[COLOR_CEILING],ob[COLOR_CEILING];
@@ -56,8 +53,9 @@ int preserve_colors(void){
 	for(q = 0 ; q < colors_allowed ; ++q){
 		ret |= color_content(q,oor + q,oog + q,oob + q);
 	}
-	wstatus_locked(stdscr,"Got palette from Ncurses configuration");
-	palsource = "Ncurses";
+	if(ret){
+		wstatus_locked(stdscr,"Couldn't get palette from Ncurses configuration");
+	}
 	return ret;
 }
 

@@ -7,8 +7,6 @@ extern "C" {
 
 #include <pthread.h>
 
-extern const char *palsource;
-
 // There are 16 colors in generic use, which we mustn't change across the life
 // of our program (we could if we could reliably acquire the active palette
 // upon startup, but this turns out to be impossible to do portably). We thus
