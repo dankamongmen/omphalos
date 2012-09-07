@@ -467,6 +467,8 @@ ncurses_setup(void){
 		assert(init_pair(BCAST_ALTROW_RES_COLOR,COLOR_MAGENTA,-1) == OK);
 		assert(init_pair(SUBDISPLAY_COLOR,COLOR_WHITE,-1) == OK);
 	}else{
+		int z;
+
 		assert(init_pair(BORDER_COLOR,COLOR_ALUMINIUM,-1) == OK);
 		assert(init_pair(HEADER_COLOR,COLOR_MODBLUE,-1) == OK);
 		assert(init_pair(FOOTER_COLOR,COLOR_MODYELLOW,-1) == OK);
@@ -510,6 +512,10 @@ ncurses_setup(void){
 		assert(init_pair(MCAST_ALTROW_RES_COLOR,COLOR_SKYBLUE_50,-1) == OK);
 		assert(init_pair(BCAST_ALTROW_RES_COLOR,COLOR_VIOLET_50,-1) == OK);
 		assert(init_pair(SUBDISPLAY_COLOR,COLOR_MODWHITE,-1) == OK);
+
+		for(z = FIRST_FREE_COLOR ; z < COLORS && z < COLOR_PAIRS ; ++z){
+			assert(init_pair(z,z,-1) == OK);
+		}
 	}
 	if(draw_main_window(w)){
 		errstr = "Couldn't use ncurses\n";
