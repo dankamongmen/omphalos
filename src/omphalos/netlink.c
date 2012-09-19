@@ -688,6 +688,8 @@ name_virtual_device(const struct ifinfomsg *ii,struct ethtool_drvinfo *ed){
 		}else if(strcmp(ed->driver,"vif") == 0){
 			return L"Xen virtual Ethernet interface";
 		}
+	}else if(ii->ifi_type == ARPHRD_ETHER){
+		return L"Linux Ethernet device";
 	}
 	return L"Unknown Linux network device";
 }
