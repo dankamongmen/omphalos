@@ -779,6 +779,7 @@ handle_newlink_locked(interface *iface,const struct ifinfomsg *ii,const struct n
 			break;}case IFLA_IFALIAS:{
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,34)
 			break;}case IFLA_NUM_VF:{
+			break;}case IFLA_VFINFO_LIST:{
 			break;}case IFLA_STATS64:{
 				// see http://git390.marist.edu/cgi-bin/gitweb.cgi?p=linux-2.6.git;a=commitdiff_plain;h=10708f37ae729baba9b67bd134c3720709d4ae62
 				// added in 2.6.35-rc1
@@ -786,18 +787,20 @@ handle_newlink_locked(interface *iface,const struct ifinfomsg *ii,const struct n
 			break;}case IFLA_PORT_SELF:{
 			break;}case IFLA_AF_SPEC:{
 #endif
-#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,38)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,38)
+#define IFLA_GROUP 27
+#define IFLA_NET_NS_FD 28
+#endif
 			break;}case IFLA_GROUP:{
-#endif
-#ifdef IFLA_NET_NS_FD
 			break;}case IFLA_NET_NS_FD:{
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,3,0)
+#define IFLA_EXT_MASK 29
 #endif
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,3,0)
 			break;}case IFLA_EXT_MASK:{/* Extended info mask, VFs, etc */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,5,0)
+#define IFLA_PROMISCUITY 30
 #endif
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,5,0)
 			break;}case IFLA_PROMISCUITY:{/* Promiscuity count: > 0 means acts PROMISC */
-#endif
 			break;}default:{
 				diagnostic("Unknown iflatype %u on %s",
 						ra->rta_type,iface->name);
