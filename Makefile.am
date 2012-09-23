@@ -15,10 +15,10 @@ SETUPCORE:=tools/setupcores
 UI:=coretest @CONFIGURED_UIS@
 BIN:=$(addsuffix $(EXEEXT),$(addprefix $(OMPHALOS)-,$(UI)))
 
-DFLAGS=-D_XOPEN_SOURCE_EXTENDED --include config.h
+DFLAGS=-D_XOPEN_SOURCE_EXTENDED --include config.h #-finput-charset=UTF-8
 AM_CPPFLAGS:=-DOMPHALOS_DATADIR=\"$(datadir)\"
-CFLAGS=$(DFLAGS) -O2 -march=native -pthread -I$(SRC) -fpic -fstrict-aliasing -fvisibility=hidden -Wall -W -Wextra -Werror -Wno-format-zero-length -finput-charset=UTF-8 @CFLAGS@ $(AM_CPPFLAGS)
-DBCFLAGS:=$(DFLAGS) -march=native -pthread -I$(SRC) -fpic -fstrict-aliasing -fvisibility=hidden -Wall -W -Wextra -Werror -Wno-format-zero-length -finput-charset=UTF-8 -g -ggdb @CFLAGS@ $(AM_CPPFLAGS)
+CFLAGS=$(DFLAGS) -O2 -march=native -pthread -I$(SRC) -fpic -fstrict-aliasing -fvisibility=hidden -Wall -W -Wextra -Werror -Wno-format-zero-length @CFLAGS@ $(AM_CPPFLAGS)
+DBCFLAGS:=$(DFLAGS) -march=native -pthread -I$(SRC) -fpic -fstrict-aliasing -fvisibility=hidden -Wall -W -Wextra -Werror -Wno-format-zero-length -g -ggdb @CFLAGS@ $(AM_CPPFLAGS)
 AM_CFLAGS:=$(CFLAGS)
 # FIXME can't use --default-symver with GNU gold
 LFLAGS:=-Wl,-O2,--enable-new-dtags,--as-needed,--warn-common $(LIBS)
