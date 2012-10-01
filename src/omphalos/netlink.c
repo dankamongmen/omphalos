@@ -801,6 +801,12 @@ handle_newlink_locked(interface *iface,const struct ifinfomsg *ii,const struct n
 #define IFLA_PROMISCUITY 30
 #endif
 			break;}case IFLA_PROMISCUITY:{/* Promiscuity count: > 0 means acts PROMISC */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,6,0)
+#define IFLA_NUM_TX_QUEUES 31
+#define IFLA_NUM_RX_QUEUES 32
+#endif
+			break;}case IFLA_NUM_TX_QUEUES:{
+			break;}case IFLA_NUM_RX_QUEUES:{
 			break;}default:{
 				diagnostic("Unknown iflatype %u on %s",
 						ra->rta_type,iface->name);
