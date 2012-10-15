@@ -105,18 +105,7 @@ enum {
 	FIRST_FREE_COLOR
 };
 
-int restore_colors(void);
-
-int preserve_colors(void);
-
-int setup_extended_colors(void);
-
-int fade(unsigned,pthread_mutex_t *,pthread_t *);
-
-extern int modified_colors;
-// We only want to use bold when we couldn't define our own colors (otherwise,
-// bold messes them up, and besides we can set colors as bold as we like).
-#define OUR_BOLD (modified_colors ? 0 : A_BOLD)
+#define OUR_BOLD (A_BOLD)
 
 #ifdef __cplusplus
 }

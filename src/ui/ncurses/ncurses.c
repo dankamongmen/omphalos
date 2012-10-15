@@ -419,12 +419,7 @@ ncurses_setup(void){
 		errstr = "Couldn't setup status bar\n";
 		goto err;
 	}
-	if(preserve_colors() != OK){
-		errstr = "Couldn't preserve initial colors\n";
-		goto err;
-	}
-	if(setup_extended_colors() != OK){
-		errstr = "Couldn't initialize extended colors\n";
+	if(COLORS < 16){
 		assert(init_pair(BORDER_COLOR,COLOR_GREEN,-1) == OK);
 		assert(init_pair(HEADER_COLOR,COLOR_BLUE,-1) == OK);
 		assert(init_pair(FOOTER_COLOR,COLOR_YELLOW,-1) == OK);
@@ -645,8 +640,6 @@ network_callback(void){
 int main(int argc,char * const *argv){
 	const char *codeset;
 	omphalos_ctx pctx;
-	pthread_t fadetid;
-	int jointid;
 
 	assert(fwide(stdout,-1) < 0);
 	assert(fwide(stderr,-1) < 0);
@@ -686,12 +679,7 @@ int main(int argc,char * const *argv){
 		fprintf(stderr,"Error in omphalos_init() (%s?)\n",strerror(err));
 		return EXIT_FAILURE;
 	}
-	jointid = !fade(1,&bfl,&fadetid);
 	omphalos_cleanup(&pctx);
-	if(jointid){
-		pthread_join(fadetid,NULL);
-		restore_colors();
-	}
 	if(mandatory_cleanup(&stdscr)){
 		return EXIT_FAILURE;
 	}
