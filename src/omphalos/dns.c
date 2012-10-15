@@ -545,10 +545,7 @@ int handle_dns_packet(omphalos_packet *op,const void *frame,size_t len){
 					}
 					free(srv);
 				}else{
-					free(buf);
-					free(data);
-					free(cname);
-					goto malformed;
+					// Probably name-as-PTR (see bug #542)
 				}
 			}else if(type == DNS_TYPE_A){
 				offer_resolution(AF_INET,data,buf,
@@ -593,9 +590,11 @@ int handle_dns_packet(omphalos_packet *op,const void *frame,size_t len){
 				}
 			}else if(type == DNS_TYPE_HINFO){
 				// FIXME do what?
-			}
-			//diagnostic("TYPE: %hu CLASS: %hu",
-			//		,ntohs(*((uint16_t *)sec + 1)));
+			}/*else{
+				diagnostic("TYPE: %hu CLASS: %hu",
+					ntohs(*((uint16_t *)sec)),
+					ntohs(*((uint16_t *)sec + 1)));
+			}*/
 		}
 		free(buf);
 		free(data); // might be NULL if preserved as cname
