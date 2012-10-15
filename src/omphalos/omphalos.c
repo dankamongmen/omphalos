@@ -226,8 +226,7 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 				usage(argv[0],EXIT_FAILURE);
 			}
 			if((pctx->plog = init_pcap_write(&pctx->plogp,optarg)) == NULL){
-				// pcap_geterr() sticks a friendly ": " in front of itself argh
-				fprintf(stderr,"Couldn't write to %s%s?\n",optarg,pcap_geterr(pctx->plogp));
+				fprintf(stderr,"Couldn't write to %s\n",optarg);
 				usage(argv[0],EXIT_FAILURE);
 			}
 			fprintf(stdout,"Logging malformed packets to %s\n",optarg);
