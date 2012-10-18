@@ -165,3 +165,12 @@ uninstall-local:
 	rm -f $(addprefix ${bindir}/,$(notdir $(BIN)))
 	rm -f $(addprefix ${mandir}/man1/,$(notdir $(MAN1OBJ)))
 	rm -f $(addprefix $(DESTDIR)${docdir}/,$(notdir $(XHTML)))
+
+# must be in a directory of the form omphalos-$(VERSION) FIXME gross
+#tar czvf ../omphalos-$(VERSION).tar.gz -C .. --exclude-vcs \
+#	--exclude=$(OUT) --exclude=$(TAGS) --exclude-backups \
+#	--exclude=config.h --exclude=config.log omphalos-$(VERSION)
+dist:
+	tar cJvf ../omphalos-$(VERSION).tar.xz -C.. --exclude-vcs \
+		--exclude=$(OUT) --exclude=$(TAGS) --exclude-backups \
+		--exclude=omphalos-$(VERSION) --exclude=config.h --exclude=config.log *
