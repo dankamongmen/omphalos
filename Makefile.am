@@ -170,7 +170,9 @@ uninstall-local:
 dist:
 	tar czvf ../omphalos-$(VERSION).tar.gz -C.. --exclude-vcs \
 		--exclude=$(OUT) --exclude=$(TAGS) --exclude-backups \
-		--exclude=omphalos-$(VERSION) --exclude=config.h --exclude=config.log *
+		--exclude=omphalos-$(VERSION)/omphalos-$(VERSION) --exclude=config.h --exclude=config.log \
+		omphalos-$(VERSION)
 	tar cJvf ../omphalos-$(VERSION).tar.xz -C.. --exclude-vcs \
 		--exclude=$(OUT) --exclude=$(TAGS) --exclude-backups \
-		--exclude=omphalos-$(VERSION) --exclude=config.h --exclude=config.log *
+		--exclude=omphalos-$(VERSION)/omphalos-$(VERSION) --exclude=config.h --exclude=config.log \
+		omphalos-$(VERSION)
