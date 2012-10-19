@@ -173,6 +173,6 @@ dist:
 		--exclude=omphalos-$(VERSION)/omphalos-$(VERSION) --exclude=config.h --exclude=config.log \
 		omphalos-$(VERSION)
 	tar cJvf ../omphalos-$(VERSION).tar.xz -C.. --exclude-vcs \
-		--exclude=$(OUT) --exclude=$(TAGS) --exclude-backups \
+		--exclude=$(OUT) --exclude=$(TAGS) --exclude-backups --exclude=config.status \
 		--exclude=omphalos-$(VERSION)/omphalos-$(VERSION) --exclude=config.h --exclude=config.log \
 		omphalos-$(VERSION)
