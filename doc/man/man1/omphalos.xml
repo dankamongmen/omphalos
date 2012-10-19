@@ -119,8 +119,8 @@
 				<para>Omphalos will by default place all newly-detected
 					Ethernet devices into promiscuous mode.
 					If -p is provided, omphalos will leave
-					such devices in whatever mode they were
-					discovered.</para>
+					such devices in whatever mode in which
+					they were discovered.</para>
 			</listitem>
 		</varlistentry>
 		<varlistentry>
