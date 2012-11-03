@@ -42,6 +42,8 @@
 #include <omphalos/interface.h>
 #include <ui/ncurses/channels.h>
 
+#define KEY_ESC 27
+
 #define ERREXIT endwin() ; fprintf(stderr,"ncurses failure|%s|%d\n",__func__,__LINE__); abort() ; goto err
 
 #define PANEL_STATE_INITIALIZER { .p = NULL, .ysize = -1, }
@@ -232,7 +234,7 @@ ncurses_input_thread(void *unsafe_marsh){
 				select_iface_locked();
 			}unlock_ncurses();
 			break;
-		case KEY_BACKSPACE:
+		case KEY_ESC: case KEY_BACKSPACE:
 			lock_ncurses();{
 				deselect_iface_locked();
 			}unlock_ncurses();
@@ -406,6 +408,7 @@ ncurses_setup(void){
 		goto err;
 	}
 	w = stdscr;
+	ESCDELAY = 100;
 	keypad(stdscr,TRUE);
 	if(nodelay(stdscr,FALSE) != OK){
 		errstr = "Couldn't set blocking input\n";
