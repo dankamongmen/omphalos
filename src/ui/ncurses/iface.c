@@ -595,7 +595,7 @@ iface_box(const interface *i,const iface_state *is,WINDOW *w,int active,
 		if(active){
 			assert(wattron(w,A_BOLD) == OK);
 		}
-		assert(mvwprintw(w,0,1,"[") != ERR);
+		assert(mvwprintw(w,0,0,"[") != ERR);
 		assert(wcolor_set(w,hcolor,NULL) == OK);
 		if(active){
 			assert(wattron(w,A_BOLD) == OK);
