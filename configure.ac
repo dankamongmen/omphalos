@@ -20,8 +20,6 @@ AC_FUNC_REALLOC
 AC_HEADER_STDBOOL
 AC_CHECK_HEADERS([bluetooth/bluetooth.h], ,
 	[AC_MSG_ERROR([Couldn't find libbluetooth.])])
-AC_CHECK_HEADERS([bluetooth/hci.h], ,
-	[AC_MSG_ERROR([Couldn't find libbluetooth.])])
 AC_SYS_LARGEFILE
 AX_PROG_XSLTPROC
 if test "$XSLTPROC" = no ; then
