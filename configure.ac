@@ -18,28 +18,10 @@ AC_FUNC_MALLOC
 AC_FUNC_MMAP
 AC_FUNC_REALLOC
 AC_HEADER_STDBOOL
-AC_CHECK_FUNCS([btowc])
-AC_CHECK_FUNCS([gethostname])
-AC_CHECK_FUNCS([getpagesize])
-AC_CHECK_FUNCS([gettimeofday])
-AC_CHECK_FUNCS([nl_langinfo])
-AC_CHECK_FUNCS([setlocale])
-AC_CHECK_FUNCS([socket])
-AC_CHECK_FUNCS([strerror])
-AC_CHECK_FUNCS([uname])
-AC_CHECK_HEADERS([arpa/inet.h])
-AC_CHECK_HEADERS([bluetooth/bluetooth.h])
-AC_CHECK_HEADERS([langinfo.h])
-AC_CHECK_HEADERS([limits.h])
-AC_CHECK_HEADERS([locale.h])
-AC_CHECK_HEADERS([netinet/in.h])
-AC_CHECK_HEADERS([stddef.h])
-AC_CHECK_HEADERS([sys/ioctl.h])
-AC_CHECK_HEADERS([sys/socket.h])
-AC_CHECK_HEADERS([sys/time.h])
-AC_CHECK_HEADERS([wchar.h])
-AC_CHECK_HEADERS([wctype.h])
-AC_CHECK_TYPES([ptrdiff_t])
+AC_CHECK_HEADERS([bluetooth/bluetooth.h], ,
+	[AC_MSG_ERROR([Couldn't find libbluetooth.])])
+AC_CHECK_HEADERS([bluetooth/hci.h], ,
+	[AC_MSG_ERROR([Couldn't find libbluetooth.])])
 AC_SYS_LARGEFILE
 AX_PROG_XSLTPROC
 if test "$XSLTPROC" = no ; then
