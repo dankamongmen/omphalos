@@ -940,9 +940,6 @@ int draw_main_window(WINDOW *w){
 	// POSIX.1-2001 doesn't guarantee a terminating null on truncation
 	hostname[sizeof(hostname) - 1] = '\0';
 	assert(wattrset(w,A_DIM | COLOR_PAIR(BORDER_COLOR)) != ERR);
-	if(bevel(w) != OK){
-		goto err;
-	}
 	if(setup_statusbar(cols)){
 		goto err;
 	}
