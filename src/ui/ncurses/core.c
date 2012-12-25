@@ -77,9 +77,14 @@ bottom_space_p(int rows){
 int wvstatus_locked(WINDOW *w,const char *fmt,va_list va){
 	assert(statuschars > 0);
 	if(fmt == NULL){
-		statusmsg[0] = '\0';
+		memset(statusmsg,' ',statuschars - 1);
+		statusmsg[statuschars - 1] = '\0';
 	}else{
-		vsnprintf(statusmsg,statuschars,fmt,va);
+		int n = vsnprintf(statusmsg,statuschars,fmt,va);
+		if(n < statuschars){
+			memset(statusmsg + n,' ',statuschars - n - 1);
+			statusmsg[statuschars - 1] = '\0';
+		}
 	}
 	return draw_main_window(w);
 }
@@ -604,7 +609,7 @@ int setup_statusbar(int cols){
 		if((sm = realloc(statusmsg,s * sizeof(*sm))) == NULL){
 			return -1;
 		}
-		statuschars = s * sizeof(*sm);
+		statuschars = s;
 		if(statusmsg == NULL){
 			/*time_t t = time(NULL);
 			struct tm tm;*/
@@ -933,7 +938,6 @@ int draw_main_window(WINDOW *w){
 	int rows,cols;
 
 	getmaxyx(w,rows,cols);
-	assert(wattrset(w,A_DIM | COLOR_PAIR(BORDER_COLOR)) != ERR);
 	if(setup_statusbar(cols)){
 		goto err;
 	}
@@ -941,7 +945,7 @@ int draw_main_window(WINDOW *w){
 	// addstr() doesn't interpret format strings, so this is safe. It will
 	// fail, however, if the string can't fit on the window, which will for
 	// instance happen if there's an embedded newline.
-	mvwaddstr(w,rows - 1,START_COL * 2,statusmsg); // FIXME
+	mvwaddstr(w,rows - 1,0,statusmsg);
 	assert(wattroff(w,A_BOLD | COLOR_PAIR(FOOTER_COLOR)) != ERR);
 	return OK;
 
