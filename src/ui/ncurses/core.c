@@ -66,9 +66,9 @@ top_space_p(int rows){
 static inline int
 bottom_space_p(int rows){
 	if(!last_reelbox){
-		return rows - 1;
+		return rows;
 	}
-	if(getmaxy(last_reelbox->subwin) + getbegy(last_reelbox->subwin) >= rows - 2){
+	if(getmaxy(last_reelbox->subwin) + getbegy(last_reelbox->subwin) >= rows - 1){
 		return 0;
 	}
 	return (rows - 1) - (getmaxy(last_reelbox->subwin) + getbegy(last_reelbox->subwin));
