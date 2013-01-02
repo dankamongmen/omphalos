@@ -73,8 +73,8 @@ static inline int
 iface_lines_bounded(const iface_state *is,int rows){
 	int lines = lines_for_interface(is);
 
-	if(lines > rows - 2){ // top and bottom border
-		lines = rows - 2;
+	if(lines > rows - 1){ // bottom border
+		lines = rows - 1;
 	}
 	return lines;
 }

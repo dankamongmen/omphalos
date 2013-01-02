@@ -59,7 +59,7 @@ top_space_p(int rows){
 	if(!top_reelbox){
 		return rows - 2;
 	}
-	return getbegy(top_reelbox->subwin) - 1;
+	return getbegy(top_reelbox->subwin);
 }
 
 // Returns the amount of space available at the bottom.
@@ -564,7 +564,7 @@ resize_iface(reelbox *rb){
 					push_interfaces_below(rb,rows,cols,delta);
 				}
 			}else{ // only up
-				delta = rb->scrline - 1;
+				delta = rb->scrline;
 				if(delta > nlines - subrows){
 					delta = nlines - subrows;
 				}
@@ -1061,7 +1061,7 @@ void use_next_iface_locked(WINDOW *w,struct panel_state *ps){
 			if(last_reelbox){
 				rb->scrline = last_reelbox->scrline + getmaxy(last_reelbox->subwin) + 1;
 			}else{
-				rb->scrline = 1;
+				rb->scrline = 0;
 			}
 			rb->prev = last_reelbox;
 			last_reelbox->next = rb;
@@ -1135,7 +1135,7 @@ void use_prev_iface_locked(WINDOW *w,struct panel_state *ps){
 		if(is->rb){
 			current_iface = is->rb;
 		}else{
-			if((is->rb = create_reelbox(is,rows,1,cols)) == NULL){
+			if((is->rb = create_reelbox(is,rows,0,cols)) == NULL){
 				return; // FIXME
 			}
 			current_iface = is->rb;
@@ -1173,7 +1173,7 @@ void use_prev_iface_locked(WINDOW *w,struct panel_state *ps){
 				last_reelbox = top_reelbox;
 			}
 			pull_interfaces_down(rb,rows,cols,getmaxy(rb->subwin) + 1);
-			rb->scrline = 1;
+			rb->scrline = 0;
 			rb->next = top_reelbox;
 			top_reelbox->prev = rb;
 			rb->prev = NULL;
@@ -1184,7 +1184,7 @@ void use_prev_iface_locked(WINDOW *w,struct panel_state *ps){
 		iface_state *is = current_iface->is;
 
 		if(rb->scrline < oldrb->scrline){ // ... at the top
-			rb->scrline = 1;
+			rb->scrline = 0;
 			push_interfaces_below(rb,rows,cols,-(getmaxy(rb->subwin) - iface_lines_bounded(is,rows)));
 			assert(wresize(rb->subwin,iface_lines_bounded(rb->is,rows),PAD_COLS(cols)) == OK);
 			assert(replace_panel(rb->panel,rb->subwin) != ERR);
@@ -1197,7 +1197,7 @@ void use_prev_iface_locked(WINDOW *w,struct panel_state *ps){
 				last_reelbox = top_reelbox;
 			}
 			push_interfaces_below(NULL,rows,cols,iface_lines_bounded(is,rows) + 1);
-			rb->scrline = 1;
+			rb->scrline = 0;
 			if( (rb->next = top_reelbox) ){
 				top_reelbox->prev = rb;
 			}else{
@@ -1516,7 +1516,7 @@ void use_next_node_locked(void){
 	}
 	delta = l2obj_lines(rb->selected);
 	if(rb->selline + delta + l2obj_lines(l2obj_next(rb->selected)) >= getmaxy(rb->subwin) - 1){
-		delta = (getmaxy(rb->subwin) - 2 - l2obj_lines(l2obj_next(rb->selected)))
+		delta = (getmaxy(rb->subwin) - 1 - l2obj_lines(l2obj_next(rb->selected)))
 			 - rb->selline;
 	}
 	select_interface_node(rb,l2obj_next(rb->selected),delta);

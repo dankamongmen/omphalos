@@ -765,7 +765,7 @@ int redraw_iface(const reelbox *rb,int active){
 	scrrows = getmaxy(stdscr);
 	if(iface_wholly_visible_p(scrrows,rb) || active){ // completely visible
 		topp = endp = 0;
-	}else if(getbegy(rb->subwin) == 1){ // no top
+	}else if(getbegy(rb->subwin) == 0){ // no top
 		topp = iface_lines_unbounded(is) - getmaxy(rb->subwin);
 		endp = 0;
 	}else{
@@ -818,9 +818,9 @@ void move_interface(reelbox *rb,int targ,int rows,int cols,int delta,int active)
 			assert(hide_panel(rb->panel) != ERR);
 			return;
 		}
-		if(targ < 1){
-			nlines = rr + (targ - 1);
-			targ = 1;
+		if(targ < 0){
+			nlines = rr + targ;
+			targ = 0;
 		}else{
 			nlines = iface_lines_bounded(is,rows - targ + 1);
 		}
@@ -870,9 +870,9 @@ int iface_wholly_visible_p(int rows,const reelbox *rb){
 	// return iface_lines_bounded(is,rows) <= getmaxy(rb->subwin);
 	if(rb->scrline + iface_lines_bounded(is,rows) >= rows){
 		return 0;
-	}else if(rb->scrline < 1){
+	}else if(rb->scrline < 0){
 		return 0;
-	}else if(rb->scrline == 1 && iface_lines_bounded(is,rows) != getmaxy(rb->subwin)){
+	}else if(rb->scrline == 0 && iface_lines_bounded(is,rows) != getmaxy(rb->subwin)){
 		return 0;
 	}
 	return 1;
