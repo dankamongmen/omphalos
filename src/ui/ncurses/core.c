@@ -135,9 +135,19 @@ int new_display_panel(WINDOW *w,struct panel_state *ps,int rows,int cols,const w
 	if(cols == 0){
 		cols = x - START_COL * 2; // indent 2 on the left, 0 on the right
 	}else{
-		assert(x >= cols + START_COL * 2);
+		if(x < cols + START_COL * 2){
+			wstatus_locked(w,"Screen too small for subdisplay");
+			return ERR;
+		}
 	}
-	assert(y >= rows + 3);
+	if(y < rows + 3){
+		wstatus_locked(w,"Screen too small for subdisplay");
+		return ERR;
+	}
+	if(x < crightlen + START_COL * 2){
+		wstatus_locked(w,"Screen too small for subdisplay");
+		return ERR;
+	}
 	assert((x >= crightlen + START_COL * 2));
 	// Keep it one line up from the last display line, so that you get
 	// iface summaries (unless you've got a bottom-partial).
