@@ -2,7 +2,7 @@
 #.DEFAULT_GOAL:=test
 # all, [un]install, and *clean-local are autotoolizd
 .PHONY: bin doc livetest coretest silenttest test valgrind
-.PHONY:	bless sudobless postinstall postuninstall
+.PHONY:	bless sudobless postinstall postuninstall check
 
 OUT:=out
 SRC=src
@@ -41,6 +41,8 @@ IANAOUI:=ieee-oui.txt
 SUPPORT:=$(USBIDS) $(IANAOUI)
 
 all: tags bin doc $(SUPPORT)
+
+check: test
 
 tags:
 	ctags --languages=C,Sh,Make -R .
@@ -165,3 +167,6 @@ uninstall-local:
 	rm -f $(addprefix ${bindir}/,$(notdir $(BIN)))
 	rm -f $(addprefix ${mandir}/man1/,$(notdir $(MAN1OBJ)))
 	rm -f $(addprefix $(DESTDIR)${docdir}/,$(notdir $(XHTML)))
+
+EXTRA_DIST=$(CSRCS) $(CINCS) usb.ids ieee-oui.txt $(MAN1SRC) $(ADDCAPS) \
+	   $(SETUPCORE) $(TESTPCAPS)
