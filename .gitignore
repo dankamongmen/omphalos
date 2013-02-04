@@ -18,7 +18,6 @@ debian/omphalos.debhelper.log
 debian/omphalos.substvars
 debian/omphalos/
 depcomp
-ieee-oui.txt
 ieee-oui.txt.raw
 install-sh
 missing
@@ -27,4 +26,3 @@ stamp-h1
 tags
 tools/csumtest
 tools/nl80211
-usb.ids

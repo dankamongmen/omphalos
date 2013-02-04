@@ -84,7 +84,7 @@ valgrind: all $(TESTPCAPS) $(SUPPORT)
 
 # Even with --header='Accept-Charset: utf-8', we get served up ISO-8859-1, yuck
 $(USBIDS):
-	wget http://www.linux-usb.org/usb.ids -O - | iconv -f iso-8859-1 -t utf-8 -o $@
+	wget http://www.linux-usb.org/usb.ids -O - | iconv -f iso-8859-1 -t utf-8 -o $@ || true
 
 $(IANAOUI): $(IANAOUI).raw
 	iconv -f iso-8859-1 -t utf-8 -o $@ $<
