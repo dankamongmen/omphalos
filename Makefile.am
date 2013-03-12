@@ -86,11 +86,14 @@ valgrind: all $(TESTPCAPS) $(SUPPORT)
 $(USBIDS):
 	wget http://www.linux-usb.org/usb.ids -O - | iconv -f iso-8859-1 -t utf-8 -o $@ || true
 
-$(IANAOUI): $(IANAOUI).raw
-	iconv -f iso-8859-1 -t utf-8 -o $@ $<
+$(IANAOUI):
+	wget http://standards.ieee.org/develop/regauth/oui/oui.txt -O$@
 
-$(IANAOUI).raw:
-	get-oui -v -f $@
+#	$(IANAOUI).raw
+#	iconv -f iso-8859-1 -t utf-8 -o $@ $<
+#
+#$(IANAOUI).raw:
+#	get-oui -v -f $@
 
 $(OMPHALOS)-coretest: $(COREOBJS) $(CORETESTOBJS)
 	@mkdir -p $(@D)
