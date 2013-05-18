@@ -1,5 +1,5 @@
 AC_INIT([omphalos],[0.99.7-rc1],[omphalos-dev@googlegroups.com],[omphalos],[http://nick-black.com/dankwiki/index.php/Omphalos])
-AM_INIT_AUTOMAKE([-Wall -Werror foreign dist-xz])
+AM_INIT_AUTOMAKE([-Wall foreign dist-xz])
 AC_CONFIG_HEADERS([config.h:config.in])
 AC_USE_SYSTEM_EXTENSIONS
 AC_PROG_CC
