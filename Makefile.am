@@ -84,16 +84,12 @@ valgrind: all $(TESTPCAPS) $(SUPPORT)
 
 # Even with --header='Accept-Charset: utf-8', we get served up ISO-8859-1, yuck
 $(USBIDS):
-	wget http://www.linux-usb.org/usb.ids -O - | iconv -f iso-8859-1 -t utf-8 -o $@ || true
+	wget http://www.linux-usb.org/usb.ids -O - | iconv -f iso-8859-1 -t utf-8 -o $@
 
+# IEEE recently added a wholly useless second column consisting of a string in
+# parens. Filter this column out, but don't touch further parens (no /g). 
 $(IANAOUI):
-	wget http://standards.ieee.org/develop/regauth/oui/oui.txt -O$@
-
-#	$(IANAOUI).raw
-#	iconv -f iso-8859-1 -t utf-8 -o $@ $<
-#
-#$(IANAOUI).raw:
-#	get-oui -v -f $@
+	wget http://standards.ieee.org/develop/regauth/oui/oui.txt -O - | sed -e 's/(.*)//' > $@
 
 $(OMPHALOS)-coretest: $(COREOBJS) $(CORETESTOBJS)
 	@mkdir -p $(@D)
@@ -137,7 +133,7 @@ $(OUT)/$(XMLDIR)/$(PROJ).ent:
 
 clean-local:
 	rm -rf $(OUT) $(wildcard core*) $(wildcard vgcore*) tags
-	rm -rf $(IANAOUI) $(IANAOUI).raw $(USBIDS)
+	rm -rf $(IANAOUI) $(USBIDS)
 
 maintainer-clean-local:
 	rm -rf aclocal.m4 configure config config.in config.in~ \
