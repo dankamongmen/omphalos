@@ -40,6 +40,7 @@ typedef struct l2obj {
 
 static void
 draw_right_vline(const interface *i,int active,WINDOW *w){
+	//assert(i && w && (active || !active));
 	int co = interface_up_p(i) ? UBORDER_COLOR : DBORDER_COLOR;
 	cchar_t bchr[] = {
 		{
@@ -48,7 +49,7 @@ draw_right_vline(const interface *i,int active,WINDOW *w){
 		},
 	};
 
-	wattrset(w,0);
+	//wattrset(w,0);
 	wins_wch(w,&bchr[0]);
 }
 
@@ -333,7 +334,6 @@ print_iface_host(const interface *i,const iface_state *is,WINDOW *w,
 		const l2obj *l,int line,int rows,int cols,int selected,
 		int minline,unsigned endp,int active){
 	int aattrs,al3attrs,arattrs,attrs,l3attrs,rattrs,sattrs;
-	char hw[HWADDRSTRLEN(i->addrlen)];
 	const wchar_t *devname;
 	wchar_t selectchar;
 	char legend;
@@ -420,10 +420,13 @@ print_iface_host(const interface *i,const iface_state *is,WINDOW *w,
 	}
 	assert(wattrset(w,!(line % 2) ? attrs : aattrs) != ERR);
 	if(line >= minline){
+		char hw[HWADDRSTRLEN(i->addrlen)];
 		int len;
 
 		l2ntop(l->l2,i->addrlen,hw);
 		if(devname){
+			// FIXME this doesn't properly account for multicolumn
+			// characters in the devname, including tabs
 			len = cols - PREFIXSTRLEN * 2 - 5 - HWADDRSTRLEN(i->addrlen);
 			if(!interface_up_p(i)){
 				len += PREFIXSTRLEN * 2 + 1;
@@ -439,11 +442,12 @@ print_iface_host(const interface *i,const iface_state *is,WINDOW *w,
 				selectchar,legend,len,len,hw) != ERR);
 		}
 		if(interface_up_p(i)){
-			char sbuf[PREFIXSTRLEN + 1],dbuf[PREFIXSTRLEN + 1];
+			char dbuf[PREFIXSTRLEN + 1];
 			if(get_srcpkts(l->l2) == 0 && (l->cat == RTN_MULTICAST || l->cat == RTN_BROADCAST)){
 				wprintw(w,"%-*.*s"PREFIXFMT,PREFIXSTRLEN + 1,PREFIXSTRLEN + 1,
 						"",prefix(get_dstpkts(l->l2),1,dbuf,sizeof(dbuf),1));
 			}else{
+				char sbuf[PREFIXSTRLEN + 1];
 				wprintw(w,PREFIXFMT" "PREFIXFMT,prefix(get_srcpkts(l->l2),1,sbuf,sizeof(sbuf),1),
 						prefix(get_dstpkts(l->l2),1,dbuf,sizeof(dbuf),1));
 			}
