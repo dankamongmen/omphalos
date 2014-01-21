@@ -44,8 +44,8 @@ all: tags bin doc $(SUPPORT)
 
 check: test
 
-ctags:
-	ctags --languages=C,Sh,Make -R .
+#ctags:
+#	ctags --languages=C,Sh,Make -R .
 
 bin: $(BIN)
 
