@@ -45,7 +45,7 @@ int update_network_details(WINDOW *w){
 	}
 	switch(z){ // Intentional fallthroughs all the way to 0
 	case (NETWORKROWS - 1):{
-		assert(mvwprintw(w,row + z,col,"TCP [%s]: SACK%lc DSACK%lc FACK%lc FRTO%lc",
+		assert(mvwprintw(w,row + z,col,"TCP [%s]: SAck%lc DSAck%lc FAck%lc FRTO%lc",
 					ps.tcp_ccalg,state3char(ps.tcp_sack),
 					state3char(ps.tcp_dsack),
 					state3char(ps.tcp_fack),
