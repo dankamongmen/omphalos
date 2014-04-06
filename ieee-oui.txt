@@ -9399,11 +9399,11 @@
 				SE-11134 Stockholm
 				SWEDEN
 
-  00-05-BC   		Resorsys Ltd.
-  0005BC     		Resorsys Ltd.
-  				80 Johnsdone Avenue,
+  00-05-BC   		Resource Data Management Ltd
+  0005BC     		Resource Data Management Ltd
+  				80 Johnstone Avenue,
 				Hilington, Glasgow,
-				Scotland  G52 4LT
+				Scotland  G52 4NZ
 				UNITED KINGDOM
 
   00-05-BD   		ROAX BV
@@ -16970,8 +16970,8 @@
 				NANCY cedex  54009
 				FRANCE
 
-  00-0A-79   		Allied Telesis K.K. corega division
-  000A79     		Allied Telesis K.K. corega division
+  00-0A-79   		corega K.K
+  000A79     		corega K.K
   				1-19-20, Shinyokohama
 				Kouhoku-ku
 				Yokohama-city Kanagawa-ken 222-0033
@@ -19208,8 +19208,8 @@
 				Tokyo Ueno Taitoh-ku 3-4-1 110-0005
 				JAPAN
 
-  00-0B-DB   		Dell ESG PCBA Test
-  000BDB     		Dell ESG PCBA Test
+  00-0B-DB   		Dell Inc
+  000BDB     		Dell Inc
   				One Dell Way
 				Round Rock Texas 78682
 				UNITED STATES
@@ -21610,8 +21610,8 @@
 				Beijing  100031
 				CHINA
 
-  00-0D-56   		Dell ESG PCBA Test
-  000D56     		Dell ESG PCBA Test
+  00-0D-56   		Dell Inc
+  000D56     		Dell Inc
   				One Dell Way
 				Round Rock Texas 78682
 				UNITED STATES
@@ -24457,8 +24457,8 @@
 				Chengdu Sichuan 610041
 				CHINA
 
-  00-0F-1F   		Dell ESG PCBA Test
-  000F1F     		Dell ESG PCBA Test
+  00-0F-1F   		Dell Inc
+  000F1F     		Dell Inc
   				One Dell Way
 				Round Rock Texas 78682
 				UNITED STATES
@@ -27918,8 +27918,8 @@
 				Suwon Kyoungki-Do 440-310
 				KOREA, REPUBLIC OF
 
-  00-11-43   		Dell ESG PCBA Test
-  001143     		Dell ESG PCBA Test
+  00-11-43   		Dell Inc
+  001143     		Dell Inc
   				One Dell Way
 				Round Rock Texas 78682
 				UNITED STATES
@@ -29516,8 +29516,8 @@
 				Tao Yuan  326
 				TAIWAN, PROVINCE OF CHINA
 
-  00-12-3F   		Dell ESG PCBA Test
-  00123F     		Dell ESG PCBA Test
+  00-12-3F   		Dell Inc
+  00123F     		Dell Inc
   				One Dell Way
 				Round Rock Texas 78682
 				UNITED STATES
@@ -31451,8 +31451,8 @@
 				Suwanee GA 30024
 				UNITED STATES
 
-  00-13-72   		Dell ESG PCBA Test
-  001372     		Dell ESG PCBA Test
+  00-13-72   		Dell Inc
+  001372     		Dell Inc
   				One Dell Way
 				Round Rock Texas 78682
 				UNITED STATES
@@ -32579,8 +32579,8 @@
 				159836
 				SINGAPORE
 
-  00-14-22   		Dell ESG PCBA Test
-  001422     		Dell ESG PCBA Test
+  00-14-22   		Dell Inc
+  001422     		Dell Inc
   				One Dell Way
 				Round Rock Texas 78682
 				UNITED STATES
@@ -35243,8 +35243,8 @@
 				Tokyo  190-0003
 				JAPAN
 
-  00-15-C5   		Dell ESG PCBA Test
-  0015C5     		Dell ESG PCBA Test
+  00-15-C5   		Dell Inc
+  0015C5     		Dell Inc
   				One Dell Way
 				Round Rock Texas 78682
 				UNITED STATES
@@ -36699,8 +36699,8 @@
 				KOBE HYOGO 650-0024
 				JAPAN
 
-  00-16-AB   		PBI-Dansensor A/S
-  0016AB     		PBI-Dansensor A/S
+  00-16-AB   		Dansensor A/S
+  0016AB     		Dansensor A/S
   				Roennedevej 18
 				Ringsted  DK-4100
 				DENMARK
@@ -39730,8 +39730,8 @@
 				Monmouth Junction New Jersey 08852
 				UNITED STATES
 
-  00-18-8B   		Dell ESG PCBA Test
-  00188B     		Dell ESG PCBA Test
+  00-18-8B   		Dell Inc
+  00188B     		Dell Inc
   				One Dell Way
 				Round Rock Texas 78682
 				UNITED STATES
@@ -43901,8 +43901,9 @@
 
   00-1B-1B   		Siemens AG,
   001B1B     		Siemens AG,
-  				I IA SC EWK PU1, Oestliche Rheinbrueckenstrasse 50
-				76181, Karlsruhe Baden Wuerttemberg 
+  				I IA SC MF-K PE 3
+				Oestliche Rheinbrueckenstr. 50
+				76187 Karlsruhe Baden Wuerttemberg 
 				GERMANY
 
   00-1B-1C   		Coherent
@@ -47396,10 +47397,11 @@
 				Artarmon NSW 2065
 				AUSTRALIA
 
-  00-1D-40   		Living Independently Group, Inc.
-  001D40     		Living Independently Group, Inc.
-  				767 Third Ave, 14th Floor
-				New York NY 10017
+  00-1D-40   		 Intel – GE Care Innovations LLC
+  001D40     		 Intel – GE Care Innovations LLC
+  				3721 Douglas Blvd
+				Suite 100
+				Roseville CA 95661
 				UNITED STATES
 
   00-1D-41   		Hardy Instruments
@@ -56568,10 +56570,10 @@
 				Burnaby BC V5J 5L2
 				CANADA
 
-  00-22-EF   		Ibis Tek, LLC
-  0022EF     		Ibis Tek, LLC
-  				912 Pittsburgh Road
-				Butler PA 16002
+  00-22-EF   		iWDL Technologies
+  0022EF     		iWDL Technologies
+  				10522 Meinert Rd
+				Wexford PA 15090
 				UNITED STATES
 
   00-22-F0   		3 Greens Aviation Limited
@@ -62317,8 +62319,8 @@
 				Fremont CA 94538
 				UNITED STATES
 
-  00-26-87   		ALLIED TELESIS, K.K corega division.
-  002687     		ALLIED TELESIS, K.K corega division.
+  00-26-87   		Corega K.K
+  002687     		Corega K.K
   				1-19-20, Shinyokohama
 				Kouhoku-ku
 				Yokohama-city Kanagawa-ken 222-0033
@@ -80557,6 +80559,12 @@
 				Nagaokakyo-shi Kyoto 617-8555
 				JAPAN
 
+  04-48-9A   		Apple
+  04489A     		Apple
+  				1 Infinite Loop
+				Cupertino CA 95014
+				UNITED STATES
+
   04-4A-50    limited company
   044A50      limited company
   				2-5/F,North Block Southeast Industrial and Commercial Building Houhai Road,Shekou Shenzhen
@@ -80606,6 +80614,12 @@
   				NO.1998 West of Fangshan Road,Xiang An Branch,Torch Hi-tech lndustrial Development Zone,
 				Xiamen city Fujian Province 361102
 				CHINA
+
+  04-57-2F   		Sertel Electronics UK Ltd
+  04572F     		Sertel Electronics UK Ltd
+  				Rutland House, 148 Edmund Street,
+				Birmingham  B3 2FD
+				UNITED KINGDOM
 
   04-58-6F   		Sichuan Whayer information industry Co.,LTD
   04586F     		Sichuan Whayer information industry Co.,LTD
@@ -82256,6 +82270,12 @@
 				Cupertino CA 95014
 				UNITED STATES
 
+  08-74-F6   		Winterhalter Gastronom GmbH
+  0874F6     		Winterhalter Gastronom GmbH
+  				Tettnanger Straße 72
+				Meckenbeuren Baden-Württemberg 88074
+				GERMANY
+
   08-75-72   		Obelux Oy
   087572     		Obelux Oy
   				Kutomotie 6 B
@@ -82399,6 +82419,12 @@
   				1505 Wallace Drive, Suite 102
 				Carrollton TX 75006
 				UNITED STATES
+
+  08-B2-A3   		Cynny Italia S.r.L.
+  08B2A3     		Cynny Italia S.r.L.
+  				Via delle Mantellate, 8
+				Firenze FI 59021
+				ITALY
 
   08-B4-CF   		Abicom International
   08B4CF     		Abicom International
@@ -82791,6 +82817,13 @@
   0C6076     		Hon Hai Precision Ind. Co.,Ltd.
   				NO.1925,Nanle Road ,Songjiang Export Processing Zone
 				Shanghai  201613
+				CHINA
+
+  0C-63-FC   		Nanjing Signway Technology Co., Ltd
+  0C63FC     		Nanjing Signway Technology Co., Ltd
+  				Rm 1001,10/F,28 Ningshuang Rd,
+				Yuhuatai Dist.
+				Nanjing Jiangsu 210012
 				CHINA
 
   0C-68-03   		Cisco
@@ -84125,6 +84158,12 @@
 				Tokyo  1030007
 				JAPAN
 
+  14-56-45   		Savitech Corp.
+  145645     		Savitech Corp.
+  				3F, No.309, Guangming 1st Rd.,
+				Zhubei Hsinchu 30259
+				TAIWAN, PROVINCE OF CHINA
+
   14-5A-05   		Apple
   145A05     		Apple
   				1 Infinite Loop
@@ -84891,8 +84930,8 @@
 				Houston Texas 77070
 				UNITED STATES
 
-  18-A9-9B   		Dell Inc PCBA Test
-  18A99B     		Dell Inc PCBA Test
+  18-A9-9B   		Dell Inc
+  18A99B     		Dell Inc
   				one dell way
 				Round rock Texas 78682
 				UNITED STATES
@@ -85099,6 +85138,13 @@
 				Pointe-claire QC H9R-1A3
 				CANADA
 
+  18-FB-7B   		Dell Inc
+  18FB7B     		Dell Inc
+  				one dell way
+				MS:RR5-45
+				Round rock Texas 78682
+				UNITED STATES
+
   18-FC-9F   		Changhe Electronics Co., Ltd.
   18FC9F     		Changhe Electronics Co., Ltd.
   				6th Floor, Building B, Dajiahao Square, YuÂ¡Â¯an 1st Road, BaoÂ¡Â¯an,
@@ -85182,11 +85228,23 @@
 				Reutlingen BW 72766
 				GERMANY
 
+  1C-1A-C0   		Apple
+  1C1AC0     		Apple
+  				1 Infinite Loop
+				Cupertino CA 95014
+				UNITED STATES
+
   1C-1B-68   		ARRIS Group, Inc.
   1C1B68     		ARRIS Group, Inc.
   				6450 Sequence Drive
 				San Diego CA 92121
 				UNITED STATES
+
+  1C-1C-FD   		Dalian Hi-Think Computer Technology, Corp
+  1C1CFD     		Dalian Hi-Think Computer Technology, Corp
+  				Hi-Think Software Building,No.6 Hi-Tech Street, Qixianling Industrial Base, Hi-Tech Zone, Dalian, China
+				Dalian LiaoNing 116023
+				CHINA
 
   1C-1D-67   		Shenzhen Huawei Communication Technologies Co., Ltd
   1C1D67     		Shenzhen Huawei Communication Technologies Co., Ltd
@@ -86062,6 +86120,13 @@
 				Kettering Northamptonshire NN14 2QW
 				UNITED KINGDOM
 
+  20-A7-87   		Bointec Taiwan Corporation Limited
+  20A787     		Bointec Taiwan Corporation Limited
+  				1F, A20, L790, SEC.5,
+				CHUNGHSIAO E. RD.
+				TAIPEI TAIWAN 11082
+				TAIWAN, PROVINCE OF CHINA
+
   20-AA-25   		IP-NET LLC
   20AA25     		IP-NET LLC
   				10256 N.W. 47th St.
@@ -86415,6 +86480,9 @@
 				3039 E Cornwallis Rd
 				RTP NC 27709
 				UNITED STATES
+
+  24-33-6C   		PRIVATE
+  24336C     		 
 
   24-37-4C   		Cisco SPVTG
   24374C     		Cisco SPVTG
@@ -86964,6 +87032,13 @@
 				Titricus Science Park
 				DSTL Porton Down Salisbury SP4 0JQ
 				UNITED KINGDOM
+
+  28-34-A2   		Cisco
+  2834A2     		Cisco
+  				170 West Tasman Drive
+				SJCM/2
+				San Jose CA 95134
+				UNITED STATES
 
   28-37-37   		Apple
   283737     		Apple
@@ -88315,6 +88390,12 @@
 				Shenzhen Guang Dong 518106
 				CHINA
 
+  30-59-B7   		Microsoft
+  3059B7     		Microsoft
+  				1 Microsoft Way
+				Redmond Washington 98052
+				UNITED STATES
+
   30-5D-38   		Beissbarth
   305D38     		Beissbarth
   				Hanauer Str. 101
@@ -88441,6 +88522,12 @@
   				1 Infinite Loop
 				Cupertino CA 95014
 				UNITED STATES
+
+  30-91-8F   		Technicolor
+  30918F     		Technicolor
+  				Prins Boudewijnlaan 47
+				Edegem - Belgium Antwerp B-2650
+				BELGIUM
 
   30-92-F6   		SHANGHAI SUNMON COMMUNICATION TECHNOGY CO.,LTD
   3092F6     		SHANGHAI SUNMON COMMUNICATION TECHNOGY CO.,LTD
@@ -88646,8 +88733,8 @@
 				Cupertino CA 95014
 				UNITED STATES
 
-  34-17-EB   		Dell Inc PCBA Test
-  3417EB     		Dell Inc PCBA Test
+  34-17-EB   		Dell Inc
+  3417EB     		Dell Inc
   				one dell way
 				MS:RR5-45
 				Round rock Texas 78682
@@ -88755,6 +88842,13 @@
 				LANNION FRANCE 22300
 				FRANCE
 
+  34-51-AA   		JID GLOBAL
+  3451AA     		JID GLOBAL
+  				211, Biz Plus Suwon 2F Chungho Bldg, 17 363Road, Susung-ro
+				, Jangan-gu, Suwon-si, Gyeonggi-do, Korea
+				SUWON Gyeonggi-do 440-846
+				KOREA, REPUBLIC OF
+
   34-51-C9   		Apple
   3451C9     		Apple
   				1 Infinite Loop
@@ -88842,6 +88936,12 @@
   				UL.WADOWICKA 12
 				KRAKOW woj. malopolskie 30-415
 				POLAND
+
+  34-81-C4   		AVM GmbH
+  3481C4     		AVM GmbH
+  				Alt-Moabit 95
+				Berlin  10559
+				GERMANY
 
   34-82-DE   		Kayo Technology, Inc.
   3482DE     		Kayo Technology, Inc.
@@ -89194,6 +89294,12 @@
   34E2FD     		Apple
   				1 Infinite Loop
 				Cupertino CA 95014
+				UNITED STATES
+
+  34-E4-2A   		Automatic Bar Controls Inc.
+  34E42A     		Automatic Bar Controls Inc.
+  				790 Eubanks Dr
+				Vacaville CA 95688
 				UNITED STATES
 
   34-EF-44   		2Wire
@@ -90208,6 +90314,12 @@
 				Kulim Kedah 09000
 				MALAYSIA
 
+  3C-AB-8E   		Apple
+  3CAB8E     		Apple
+  				1 Infinite Loop
+				Cupertino CA 95014
+				UNITED STATES
+
   3C-B1-5B   		Avaya, Inc
   3CB15B     		Avaya, Inc
   				211 Mount Airy Road
@@ -90461,6 +90573,12 @@
 				Round Rock TX 78681
 				UNITED STATES
 
+  40-16-7E   		ASUSTek COMPUTER INC.
+  40167E     		ASUSTek COMPUTER INC.
+  				15,Li-Te Rd., Peitou, Taipei 112, Taiwan
+				Taipei Taiwan 112
+				TAIWAN, PROVINCE OF CHINA
+
   40-16-9F   		TP-LINK TECHNOLOGIES CO., LTD.
   40169F     		TP-LINK TECHNOLOGIES CO., LTD.
   				1-6F, Building 2, Pingshandayuan Industrial, South Zone,
@@ -90570,6 +90688,13 @@
   				Vikingsgatan 3
 				Göteborg  41104
 				SWEDEN
+
+  40-45-DA    Co., Ltd.
+  4045DA      Co., Ltd.
+  				Building 1, Spreadtrum Center, No.2288, Zuchongzhi Rd
+				Zhangjiang High-Tech Park, Pudong District,
+				Shanghai 201203
+				CHINA
 
   40-4A-03   		ZyXEL Communications Corporation
   404A03     		ZyXEL Communications Corporation
@@ -90853,6 +90978,12 @@
   				1 Infinite Loop
 				Cupertino CA 95014
 				UNITED STATES
+
+  40-B3-CD   		Chiyoda Electronics Co.,Ltd.
+  40B3CD     		Chiyoda Electronics Co.,Ltd.
+  				1-3-11 Nishiki-cho
+				Warabi Saitama 335-0005
+				JAPAN
 
   40-B3-FC   		Logital Co. Limited
   40B3FC     		Logital Co. Limited
@@ -91979,6 +92110,13 @@
 				Santa Ana CA 92707
 				UNITED STATES
 
+  48-D1-8E   		Metis Communication Co.,Ltd
+  48D18E     		Metis Communication Co.,Ltd
+  				#102-805 Digital Empire2
+				YeongTong-Gu Sinwon-Ro 88
+				Suwon-Si GyeongGi-Do 443-734
+				KOREA, REPUBLIC OF
+
   48-D2-24   		Liteon Technology Corporation
   48D224     		Liteon Technology Corporation
   				4F,90,Chien 1 Road,ChungHo
@@ -92907,6 +93045,12 @@
 				SAN JOSE CA 95134-1706
 				UNITED STATES
 
+  50-58-00   		WyTec International, Inc.
+  505800     		WyTec International, Inc.
+  				19206 Huebner Rd Suite 202
+				San Antonio Texas 78258
+				UNITED STATES
+
   50-5A-C6   		GUANGDONG SUPER TELECOM CO.,LTD.
   505AC6     		GUANGDONG SUPER TELECOM CO.,LTD.
   				4/F,NO.1025-1027 Gaopu Rd
@@ -93466,6 +93610,12 @@
 				Tettnang  88069
 				GERMANY
 
+  54-4A-16   		Texas Instruments
+  544A16     		Texas Instruments
+  				12500 TI Blvd
+				Dallas Texas 75093
+				UNITED STATES
+
   54-53-ED   		Sony Corporation
   5453ED     		Sony Corporation
   				Gotenyama Tec.
@@ -93780,6 +93930,13 @@
   54EE75     Co.,Ltd.
   				168# First Avenue,Kunshan Integrated Free Trade Zone,Kunshan,Jiangsu,China
 				Kunshan Jiangsu 215300
+				CHINA
+
+  54-EF-92   		Shenzhen Elink Technology Co., LTD
+  54EF92     		Shenzhen Elink Technology Co., LTD
+  				A531, Famous, No 168 Bao Yuan Road,
+				 Xixiang, Bao'an District
+				Shenzhen Guangdong 518000
 				CHINA
 
   54-F5-B6   		ORIENTAL PACIFIC INTERNATIONAL LIMITED
@@ -94490,6 +94647,12 @@
 				Sydney NSW 2113
 				AUSTRALIA
 
+  5C-31-3E   		Texas Instruments
+  5C313E     		Texas Instruments
+  				12500 TI Blvd
+				Dallas Texas 75093
+				UNITED STATES
+
   5C-33-27   		Spazio Italia srl
   5C3327     		Spazio Italia srl
   				Via G.Galilei, 50
@@ -94907,6 +95070,12 @@
 				Research Triangle Park NC 27709-2195
 				UNITED STATES
 
+  5C-F4-AB   		ZyXEL Communications Corp
+  5CF4AB     		ZyXEL Communications Corp
+  				No. 6 Innovation Road II, Science Park
+				Hsichu Taiwan 300
+				TAIWAN, PROVINCE OF CHINA
+
   5C-F5-0D   		Institute of microelectronic applications
   5CF50D     		Institute of microelectronic applications
   				Na Valentince 1003/1
@@ -95229,6 +95398,12 @@
 				Morgan Hill CA 95037
 				UNITED STATES
 
+  60-81-2B   		Custom Control Concepts
+  60812B     		Custom Control Concepts
+  				6020 S 190th ST
+				Kent Washington 98032
+				UNITED STATES
+
   60-83-B2   		GkWare e.K.
   6083B2     		GkWare e.K.
   				Hatzper Str. 172B
@@ -95282,6 +95457,12 @@
   609084     		DSSD Inc
   				4025 Bohannon Dr
 				Menlo Park CA 94025
+				UNITED STATES
+
+  60-92-17   		Apple
+  609217     		Apple
+  				1 Infinite Loop
+				Cupertino CA 95014
 				UNITED STATES
 
   60-96-20   		PRIVATE
@@ -97349,6 +97530,12 @@
 				Oslo  0277
 				NORWAY
 
+  6C-AA-B3   		Ruckus Wireless
+  6CAAB3     		Ruckus Wireless
+  				350 W. Java Drive
+				Sunnyvale California 94089
+				UNITED STATES
+
   6C-AB-4D   		Digital Payment Technologies
   6CAB4D     		Digital Payment Technologies
   				4105 Grandview Hwy
@@ -97494,6 +97681,12 @@
 				SHENZ GUANGONG 518057
 				CHINA
 
+  6C-EC-EB   		Texas Instruments
+  6CECEB     		Texas Instruments
+  				12500 TI BLVD
+				Dallas Texas 75243
+				UNITED STATES
+
   6C-F0-49   		GIGA-BYTE TECHNOLOGY CO.,LTD.
   6CF049     		GIGA-BYTE TECHNOLOGY CO.,LTD.
   				No.215,Nan-Ping Road,
@@ -97523,6 +97716,13 @@
   				211 Mout Airy Road
 				Basking Ridge NJ 07920-2311
 				UNITED STATES
+
+  6C-FA-A7   		AMPAK Technology Inc.
+  6CFAA7     		AMPAK Technology Inc.
+  				No.1,Jen Ai Road
+				Hsinchu Industrail Park,Hukou
+				Hsinchu  30352
+				TAIWAN, PROVINCE OF CHINA
 
   6C-FD-B9   		Proware Technologies Co Ltd.
   6CFDB9     		Proware Technologies Co Ltd.
@@ -97657,6 +97857,12 @@
   				211 Mount Airy Road
 				Basking Ridge NJ 07920
 				UNITED STATES
+
+  70-30-5D   		Ubiquoss Inc
+  70305D     		Ubiquoss Inc
+  				8F Ubiquoss B/D, 68, Pangyo-ro 255beon-gil, Bundang-gu
+				Seongnam-si Gyeonggi-do 463-400
+				KOREA, REPUBLIC OF
 
   70-30-5E   		Nanjing Zhongke Menglian Information Technology Co.,LTD
   70305E     		Nanjing Zhongke Menglian Information Technology Co.,LTD
@@ -97830,6 +98036,12 @@
 				Aufgang C
 				Berlin 12627
 				GERMANY
+
+  70-62-B8   		D-Link International
+  7062B8     		D-Link International
+  				1 Internal Business Park, #03-12,The Synergy, Singapore
+				Singapore Singapore 609917
+				SINGAPORE
 
   70-64-17   		ORBIS TECNOLOGIA ELECTRICA S.A.
   706417     		ORBIS TECNOLOGIA ELECTRICA S.A.
@@ -98515,8 +98727,8 @@
 				Beijing  100176
 				CHINA
 
-  74-86-7A   		Dell Inc PCBA Test
-  74867A     		Dell Inc PCBA Test
+  74-86-7A   		Dell Inc
+  74867A     		Dell Inc
   				one dell way
 				Round rock Texas 78682
 				UNITED STATES
@@ -99189,6 +99401,12 @@
 				 Hsinchu Science Park,
 				Hsin-chu  300
 				TAIWAN, PROVINCE OF CHINA
+
+  78-92-3E   		Nokia Corporation
+  78923E     		Nokia Corporation
+  				Joensuunkatu 7
+				Salo N.A. 24101
+				FINLAND
 
   78-92-9C   		Intel Corporate
   78929C     		Intel Corporate
@@ -100183,6 +100401,13 @@
 				Cupertino CA 95014
 				UNITED STATES
 
+  7C-D3-0A   		INVENTEC Corporation
+  7CD30A     		INVENTEC Corporation
+  				Inventec Building, 66 Hou-Kang Street
+				Shih-Lin District,
+				Taipei  111
+				TAIWAN, PROVINCE OF CHINA
+
   7C-D7-62   		Freestyle Technology Pty Ltd
   7CD762     		Freestyle Technology Pty Ltd
   				1A 24 Ricketts Road
@@ -100361,6 +100586,12 @@
 				Miyoshi-shi Aichi-ken 470-0206
 				JAPAN
 
+  80-0E-24   		ForgetBox
+  800E24     		ForgetBox
+  				61 rue de Sèvres
+				Ville d'Avray IDF 92140
+				FRANCE
+
   80-14-40   		Sunlit System Technology Corp
   801440     		Sunlit System Technology Corp
   				8F, No.19,Lane 120, Sec1, Neihu Rd.
@@ -100472,6 +100703,12 @@
   				Konradstrasse 15
 				Winterthur ZH 8400
 				SWITZERLAND
+
+  80-41-4E   		BBK Electronics Corp., Ltd.,
+  80414E     		BBK Electronics Corp., Ltd.,
+  				#255,BBK Road,
+				Wusha,Chang'An, DongGuan City,Guangdong, 523860
+				CHINA
 
   80-42-7C   		Adolf Tedsen GmbH & Co. KG
   80427C     		Adolf Tedsen GmbH & Co. KG
@@ -101327,6 +101564,12 @@
 				Okayama-city Okayama 700-0815
 				JAPAN
 
+  84-B1-53   		Apple
+  84B153     		Apple
+  				1 Infinite Loop
+				Cupertino CA 95014
+				UNITED STATES
+
   84-B5-9C   		Juniper networks
   84B59C     		Juniper networks
   				1194 N. Mathilda Avenue
@@ -101472,6 +101715,13 @@
 				3F-Hirayama building
 				Ichinomiya-shi Aichi-ken 491-0853
 				JAPAN
+
+  88-0F-10   		Huami Information Technology Co.,Ltd.
+  880F10     		Huami Information Technology Co.,Ltd.
+  				Room 1201 Building A4, National Animation Industry Base
+				No.800 Wangjing West Road.
+				Hefei Anhui 230088
+				CHINA
 
   88-0F-B6   		Jabil Circuits India Pvt Ltd,-EHTP unit
   880FB6     		Jabil Circuits India Pvt Ltd,-EHTP unit
@@ -101664,6 +101914,12 @@
   				170 West Tasman Drive
 				SJCM/2
 				San Jose CA 95134
+				UNITED STATES
+
+  88-5B-DD   		Aerohive Networks Inc.
+  885BDD     		Aerohive Networks Inc.
+  				330 Gibraltar Drive
+				Sunnyvale CA 94089
 				UNITED STATES
 
   88-5C-4F   		Alcatel Lucent
@@ -103041,13 +103297,6 @@
 				Shenzhen  518026
 				CHINA
 
-  90-8F-93   		MakerBot Industries
-  908F93     		MakerBot Industries
-  				One MetroTech Center
-				21st Floor
-				Brooklyn NY 11201
-				UNITED STATES
-
   90-8F-CF   		UNO System Co., Ltd
   908FCF     		UNO System Co., Ltd
   				#402 Kolon Science Valley °., 187-10, Guro-dong, Guro-gu
@@ -103261,8 +103510,8 @@
 				Braunschweig NI 38108
 				GERMANY
 
-  90-E0-F0   		Harman International
-  90E0F0     		Harman International
+  90-E0-F0   		IEEE 1722a Working Group
+  90E0F0     		IEEE 1722a Working Group
   				8760 Sandy Parkway
 				Sandy Utah 84070
 				UNITED STATES
@@ -104061,6 +104310,13 @@
 				Rogers Arkansas 72756
 				UNITED STATES
 
+  98-37-13   		PT.Navicom Indonesia
+  983713     		PT.Navicom Indonesia
+  				Perkantoran Citragrand Blok CW7 no 10
+				Jl.Raya Alternatif Cibubur Km.4
+				Bekasi Jawa Barat 17435
+				INDONESIA
+
   98-3B-16   		AMPAK Technology Inc
   983B16     		AMPAK Technology Inc
   				No.1,Jen Ai Road
@@ -104345,6 +104601,12 @@
   				#302 Jamae Bldg, 1010-28, Sadang-dong, Dongjak=gu
 				Seoul  156-824
 				KOREA, REPUBLIC OF
+
+  98-BE-94   		IBM
+  98BE94     		IBM
+  				3039 E Cornwallis Rd
+				Research Triangle Park NC 27709
+				UNITED STATES
 
   98-C0-EB   		Global Regency Ltd
   98C0EB     		Global Regency Ltd
@@ -106111,11 +106373,17 @@
 				Norrköping  60221
 				SWEDEN
 
-  A4-7C-1F   		Global Microwave Systems Inc.
-  A47C1F     		Global Microwave Systems Inc.
-  				1916 Palomar Oaks Way, Suite 100
-				Carlsbad CA 92008
+  A4-7C-1F   		Cobham plc
+  A47C1F     		Cobham plc
+  				3985 Gateway Centre Blvd
+				Pinellas Park FL 33782
 				UNITED STATES
+
+  A4-7E-39   		zte corporation
+  A47E39     		zte corporation
+  				12/F.,zte R&D building ,kejinan Road,Shenzhen,P.R.China
+				shenzhen guangdong 518057
+				CHINA
 
   A4-81-EE   		Nokia Corporation
   A481EE     		Nokia Corporation
@@ -106187,6 +106455,12 @@
   A49EDB     		AutoCrib, Inc.
   				3011 S. Croddy Way
 				Santa Ana CA 92704
+				UNITED STATES
+
+  A4-9F-85   		Lyve Minds, Inc
+  A49F85     		Lyve Minds, Inc
+  				10001 N. De Anza Blvd, Ste 300
+				Cupertino CA 95014
 				UNITED STATES
 
   A4-9F-89   		Shanghai Rui Rui Communication Technology Co.Ltd.
@@ -106820,6 +107094,12 @@
 				KLN
 				HONG KONG
 
+  A8-A6-68   		zte corporation
+  A8A668     		zte corporation
+  				12/F.,zte R&D building ,kejinan Road,Shenzhen,P.R.China
+				shenzhen guangdong 518057
+				CHINA
+
   A8-AD-3D   		Alcatel-Lucent Shanghai Bell Co., Ltd
   A8AD3D     		Alcatel-Lucent Shanghai Bell Co., Ltd
   				No.389 Ningqiao Road,Pudong,Jingqiao,Shanghai, P.R.
@@ -107451,6 +107731,12 @@
 				Lorsch Hessen 64653
 				GERMANY
 
+  AC-A9-A0   		Audioengine, Ltd.
+  ACA9A0     		Audioengine, Ltd.
+  				1535 Dido Mt Salem Rd
+				Ackerman Ms 39735
+				UNITED STATES
+
   AC-AB-8D   		Lyngso Marine A/S
   ACAB8D     		Lyngso Marine A/S
   				Lyngso Alle 2
@@ -107764,6 +108050,9 @@
   				9500 Innovation Drive
 				Manassas VA 20110
 				UNITED STATES
+
+  B0-25-AA   		PRIVATE
+  B025AA     		 
 
   B0-34-95   		Apple
   B03495     		Apple
@@ -109153,6 +109442,12 @@
 				Burr Ridge IL 60527
 				UNITED STATES
 
+  B8-75-C0   		PayPal, Inc.
+  B875C0     		PayPal, Inc.
+  				2211 North 1st Street
+				San Jose California 95131
+				UNITED STATES
+
   B8-76-3F   		Hon Hai Precision Ind. Co.,Ltd.
   B8763F     		Hon Hai Precision Ind. Co.,Ltd.
   				NO.1925,Nanle Road ,Songjiang Export Processing Zone
@@ -109183,6 +109478,12 @@
   				885 Mountain Hwy
 				Bayswater Victoria 3153
 				AUSTRALIA
+
+  B8-7C-F2   		Aerohive Networks Inc.
+  B87CF2     		Aerohive Networks Inc.
+  				330 Gibraltar Drive
+				Sunnyvale CA 94089
+				UNITED STATES
 
   B8-87-1E   		Good Mind Industries Co., Ltd.
   B8871E     		Good Mind Industries Co., Ltd.
@@ -109415,8 +109716,8 @@
 				Shanghai 200241
 				CHINA
 
-  B8-CA-3A   		Dell PCBA Test
-  B8CA3A     		Dell PCBA Test
+  B8-CA-3A   		Dell Inc
+  B8CA3A     		Dell Inc
   				One Dell Way
 				MS RR5-45
 				Round Rock Texas 78682
@@ -109943,6 +110244,12 @@
 				SEMTHAI. WELLGROW INDUSTRIAL ESTATE
 				Bangpakong Chachoengsao 24180
 				THAILAND
+
+  BC-8D-0E   		Alcatel-Lucent
+  BC8D0E     		Alcatel-Lucent
+  				600 March Road
+				Kanata Ontario K2K 2E6
+				CANADA
 
   BC-92-6B   		Apple
   BC926B     		Apple
@@ -110856,6 +111163,12 @@
 				Cupertino CA 95014
 				UNITED STATES
 
+  C4-34-6B   		Hewlett Packard
+  C4346B     		Hewlett Packard
+  				11445 Compaq Center Drive
+				Houston Texas 77070
+				UNITED STATES
+
   C4-36-DA   		Rusteletech Ltd.
   C436DA     		Rusteletech Ltd.
   				Ordzhonikidze Str. 11, Bldg. 40, Off. 15
@@ -111045,6 +111358,13 @@
   				Quanshitiandi Tower A,8th Floor,jia50-1 Wangjing Xilu,Chaoyang District, Beijing, China 100102
 				Beijing Beijing 100102
 				CHINA
+
+  C4-6B-B4   		myIDkey
+  C46BB4     		myIDkey
+  				65 Enterprise
+				370
+				Aliso Viejo CA 92656
+				UNITED STATES
 
   C4-6D-F1   		DataGravity
   C46DF1     		DataGravity
@@ -111421,8 +111741,8 @@
 				209386
 				SINGAPORE
 
-  C8-1F-66   		Dell Inc PCBA Test
-  C81F66     		Dell Inc PCBA Test
+  C8-1F-66   		Dell Inc
+  C81F66     		Dell Inc
   				one dell way
 				Round rock Texas 78682
 				UNITED STATES
@@ -111681,6 +112001,13 @@
   				NO. 239, Sec. 2, Ti Ding Blvd.
 				Taipei  11493
 				TAIWAN, PROVINCE OF CHINA
+
+  C8-9F-1D   		SHENZHEN COMMUNICATION TECHNOLOGIES CO.,LTD
+  C89F1D     		SHENZHEN COMMUNICATION TECHNOLOGIES CO.,LTD
+  				NO.6 QINGNING ROAD,CAIHUANG INDUSTRY PARK,
+				QINGHU,LONGHUA,NEW DISTRICT,SHENZHEN,P.R.CHINA
+				SHENZHEN GUANGDONG 518109
+				CHINA
 
   C8-9F-42   		VDII Innovation AB
   C89F42     		VDII Innovation AB
@@ -111941,6 +112268,12 @@
   C8F406     		Avaya, Inc
   				211 Mount Airy Road
 				Basking Ridge NJ 07920
+				UNITED STATES
+
+  C8-F6-50   		Apple
+  C8F650     		Apple
+  				1 Infinite Loop
+				Cupertino CA 95014
 				UNITED STATES
 
   C8-F6-8D   		S.E.TECHNOLOGIES LIMITED
@@ -112401,6 +112734,12 @@
 				Warsaw  02-968
 				POLAND
 
+  CC-A0-E5   		DZG Metering GmbH
+  CCA0E5     		DZG Metering GmbH
+  				Heidelberger Str. 32
+				Oranienburg Brandenburg 16515
+				GERMANY
+
   CC-A3-74   		Guangdong Guanglian Electronic Technology Co.Ltd
   CCA374     		Guangdong Guanglian Electronic Technology Co.Ltd
   				B338,Block13,No.232 Waihuandonglu Road,High Education Mega Center
@@ -112442,6 +112781,13 @@
   				Fraunhoferplatz 1
 				Kaiserslautern Rhineland-Palatinae 67663
 				GERMANY
+
+  CC-B6-91   		NECMagnusCommunications
+  CCB691     		NECMagnusCommunications
+  				4-28 MITA 1Chome
+				 MitaKokusai Buld
+				 Minato-ku Tokyo 108-0073
+				JAPAN
 
   CC-B8-88   		AnB Securite s.a.
   CCB888     		AnB Securite s.a.
@@ -112548,6 +112894,12 @@
   				6 Haomanut St.
 				Netanya  42504
 				ISRAEL
+
+  CC-E1-D5   		Buffalo Inc.
+  CCE1D5     		Buffalo Inc.
+  				AKAMONDORI Bldg.,30-20,Ohsu 3-chome
+				Naka-ku,Nagoya Aichi Pref 460-8315
+				JAPAN
 
   CC-E7-98   		My Social Stuff
   CCE798     		My Social Stuff
@@ -112833,6 +113185,12 @@
 				New Taipei  235
 				TAIWAN, PROVINCE OF CHINA
 
+  D0-5F-B8   		Texas Instruments
+  D05FB8     		Texas Instruments
+  				12500 TI Blvd
+				Dallas Texas 75093
+				UNITED STATES
+
   D0-5F-CE   		Hitachi Data Systems
   D05FCE     		Hitachi Data Systems
   				750 Central Expressway
@@ -112875,6 +113233,13 @@
 				St. Louis Missouri 63012
 				UNITED STATES
 
+  D0-72-DC   		Cisco
+  D072DC     		Cisco
+  				170 West Tasman Drive
+				SJCM/2
+				San Jose CA 95134
+				UNITED STATES
+
   D0-73-7F   		Mini-Circuits
   D0737F     		Mini-Circuits
   				50 Yosef Levi Street
@@ -112897,6 +113262,13 @@
   D075BE     		Reno A&E
   				4655 Aircenter Circle
 				Reno Nevada 89502
+				UNITED STATES
+
+  D0-76-50   		IEEE REGISTRATION AUTHORITY  - Please see MAM public listing for more information.
+  D07650     		IEEE REGISTRATION AUTHORITY  - Please see MAM public listing for more information.
+  				
+				445 HOES LANE
+				PISCATAWAY NJ 08854
 				UNITED STATES
 
   D0-7A-B5   		Huawei Technologies Co., Ltd
@@ -113520,6 +113892,13 @@
 				Duedingen FR 3186
 				SWITZERLAND
 
+  D4-67-61   		SAHAB TECHNOLOGY
+  D46761     		SAHAB TECHNOLOGY
+  				OFFICE 31 , BUILDING 134 , ROAD 39 , BLOCK 335
+				UMM AL-HASSAM
+				MANAMA 26584
+				BAHRAIN
+
   D4-67-E7   		Fiberhome Telecommunication Tech.Co.,Ltd.
   D467E7     		Fiberhome Telecommunication Tech.Co.,Ltd.
   				No.5 DongXin Road
@@ -113751,6 +114130,12 @@
 				ShenZhen GuangDong 518129
 				CHINA
 
+  D4-B4-3E   		Messcomp Datentechnik GmbH
+  D4B43E     		Messcomp Datentechnik GmbH
+  				Neudecker Str. 11
+				Wasserburg Bayern 83512
+				GERMANY
+
   D4-BE-D9   		Dell Inc
   D4BED9     		Dell Inc
   				One Dell Way, MS:RR5-45
@@ -113813,6 +114198,12 @@
 				Christchurch Canterbury 8042
 				NEW ZEALAND
 
+  D4-CF-F9   		Shenzhen Sen5 Technology Co., Ltd.
+  D4CFF9     		Shenzhen Sen5 Technology Co., Ltd.
+  				3F , Block D, SDG Infoport, No.2 Kefeng Road,Nanshan District
+				Shenzhen Guangdong 518057
+				CHINA
+
   D4-D1-84   		ADB Broadband Italia
   D4D184     		ADB Broadband Italia
   				via Sarca 222
@@ -113858,6 +114249,12 @@
 				Guro3-Dong Guro-Gu
 				Seoul  181-848
 				KOREA, REPUBLIC OF
+
+  D4-E0-8E   		ValueHD Corporation
+  D4E08E     		ValueHD Corporation
+  				Xinwei Xili, Nanshan District, Shenzhen City Industrial Zone, Shiling 8, 3rd Floor, North
+				Shenzhen Guangdong 518055
+				CHINA
 
   D4-E3-2C   		S. Siedle & Sohne
   D4E32C     		S. Siedle & Sohne
@@ -114103,6 +114500,12 @@
 				Shenzhen Guangdong 518129
 				CHINA
 
+  D8-49-2F   		CANON INC.
+  D8492F     		CANON INC.
+  				30-2 Shimomaruko 3-chome,
+				Ohta-ku Tokyo 146-8501
+				JAPAN
+
   D8-4B-2A   		Cognitas Technologies, Inc.
   D84B2A     		Cognitas Technologies, Inc.
   				6406 Laurel Bush Ln.
@@ -114235,6 +114638,12 @@
 				Chikushino-shi Fukuoka 818-0041
 				JAPAN
 
+  D8-7E-B1   		x.o.ware, inc.
+  D87EB1     		x.o.ware, inc.
+  				114 E. Haley St., Ste N
+				Santa Barbara California 93101
+				UNITED STATES
+
   D8-81-CE   		AHN INC.
   D881CE     		AHN INC.
   				1006,Halla sigma valley, 53, Gasandigital 2-Ro
@@ -114285,6 +114694,12 @@
   				127 S Bell Ave
 				Ames IA 50010
 				UNITED STATES
+
+  D8-97-7C   		Grey Innovation
+  D8977C     		Grey Innovation
+  				255 Mary St
+				Richmond Victoria 3121
+				AUSTRALIA
 
   D8-9D-67   		Hewlett Packard
   D89D67     		Hewlett Packard
@@ -114417,6 +114832,12 @@
   				22/F DELTA HOUSE 3 ON YIU ST
 				SHATIN NT  
 				HONG KONG
+
+  D8-CF-9C   		Apple
+  D8CF9C     		Apple
+  				1 Infinite Loop
+				Cupertino CA 95014
+				UNITED STATES
 
   D8-D1-CB   		Apple
   D8D1CB     		Apple
@@ -116955,6 +117376,12 @@
 				Meguro-ku Tokyo 153-8904
 				JAPAN
 
+  EC-2E-4E   		HITACHI-LG DATA STORAGE INC
+  EC2E4E     		HITACHI-LG DATA STORAGE INC
+  				4F, MSC CENTER  BLDG., 22-23 KAIGAN 3-CHOME, MINATO-KU,
+				TOKYO TOKYO 108-0022
+				JAPAN
+
   EC-30-91   		CISCO SYSTEMS, INC.
   EC3091     		CISCO SYSTEMS, INC.
   				170 W. TASMAN DRIVE
@@ -117300,6 +117727,12 @@
 				San Jose CA 95134
 				UNITED STATES
 
+  EC-E5-12   		tado GmbH
+  ECE512     		tado GmbH
+  				Lindwurmstr. 76
+				Munich Bavaria 80337
+				GERMANY
+
   EC-E5-55   		Hirschmann Automation
   ECE555     		Hirschmann Automation
   				Stuttgarter Straße 45-51
@@ -117354,8 +117787,8 @@
 				Salo N.A. 24101
 				FINLAND
 
-  EC-F4-BB   		Dell Inc PCBA Test
-  ECF4BB     		Dell Inc PCBA Test
+  EC-F4-BB   		Dell Inc
+  ECF4BB     		Dell Inc
   				one dell way
 				MS:RR5-45
 				Round rock Texas 78682
@@ -117437,8 +117870,8 @@
 				Seoul  153-801
 				KOREA, REPUBLIC OF
 
-  F0-1F-AF   		Dell Inc PCBA Test
-  F01FAF     		Dell Inc PCBA Test
+  F0-1F-AF   		Dell Inc
+  F01FAF     		Dell Inc
   				one dell way
 				Round rock Texas 78682
 				UNITED STATES
@@ -118799,6 +119232,12 @@
 				Tokyo  140-8572
 				JAPAN
 
+  F8-4A-73   		EUMTECH CO., LTD
+  F84A73     		EUMTECH CO., LTD
+  				Room 1201, 115, Dongdeok-ro
+				Daegu 700-719
+				KOREA, REPUBLIC OF
+
   F8-4A-7F   		Innometriks Inc
   F84A7F     		Innometriks Inc
   				3654 Ocean Ranch Blvd
@@ -118875,6 +119314,13 @@
 				Gasan-dong, Guemchun-gu
 				Seoul 153759
 				KOREA, REPUBLIC OF
+
+  F8-66-01   		Suzhou Chi-tek information technology Co., Ltd
+  F86601     		Suzhou Chi-tek information technology Co., Ltd
+  				Rm204C、204D, Building A7,
+				Biobay, No.218, Xinghu St, SIP
+				 SuZhou Jiangsu 215123
+				CHINA
 
   F8-66-F2   		CISCO SYSTEMS, INC.
   F866F2     		CISCO SYSTEMS, INC.
@@ -119063,8 +119509,8 @@
 				Chippenham Wiltshire SN15 1BN
 				UNITED KINGDOM
 
-  F8-B1-56   		Dell Inc PCBA Test
-  F8B156     		Dell Inc PCBA Test
+  F8-B1-56   		Dell Inc
+  F8B156     		Dell Inc
   				one dell way
 				Round rock Texas 78682
 				UNITED STATES
@@ -119075,8 +119521,8 @@
 				Guangzhou Guangdong 510006
 				CHINA
 
-  F8-BC-12   		Dell Inc PCBA Test
-  F8BC12     		Dell Inc PCBA Test
+  F8-BC-12   		Dell Inc
+  F8BC12     		Dell Inc
   				one dell way
 				Round rock Texas 78682
 				UNITED STATES
@@ -119175,8 +119621,8 @@
 				Taoyuan County  330
 				TAIWAN, PROVINCE OF CHINA
 
-  F8-DB-88   		Dell Inc PCBA Test
-  F8DB88     		Dell Inc PCBA Test
+  F8-DB-88   		Dell Inc
+  F8DB88     		Dell Inc
   				one dell way
 				Round rock Texas 78682
 				UNITED STATES
@@ -119522,6 +119968,13 @@
 				ShenZhen GuangDong 518129
 				CHINA
 
+  FC-4A-E9   		Castlenet Technology Inc.
+  FC4AE9     		Castlenet Technology Inc.
+  				No.64, Chung-Shan Rd.
+				Tu-Cheng Dist.
+				New Taipei City  23680
+				TAIWAN, PROVINCE OF CHINA
+
   FC-4B-1C   		INTERSENSOR S.R.L.
   FC4B1C     		INTERSENSOR S.R.L.
   				101 Bd. Iuliu Maniu str., Bl. A2, Sc. 2, #47
@@ -119739,6 +120192,12 @@
 				Colorado Springs CO 80906
 				UNITED STATES
 
+  FC-C2-DE   		Murata Manufacturing Co., Ltd.
+  FCC2DE     		Murata Manufacturing Co., Ltd.
+  				1-10-1, Higashikotari
+				Nagaokakyo-shi Kyoto 617-8555
+				JAPAN
+
   FC-C7-34   		Samsung Electronics Co.,Ltd
   FCC734     		Samsung Electronics Co.,Ltd
   				#94-1, Imsoo-Dong
@@ -119802,6 +120261,13 @@
 				Nanshan District
 				Shenzhen Guangdong 518000
 				CHINA
+
+  FC-E1-86   		A3M Co., LTD
+  FCE186     		A3M Co., LTD
+  				KeumJeong Highview 2F #205,
+				153-8, LS-ro,
+				Gunpo Gyeonggi 435-845
+				KOREA, REPUBLIC OF
 
   FC-E1-92   		Sichuan Jinwangtong Electronic Science&Technology Co,.Ltd
   FCE192     		Sichuan Jinwangtong Electronic Science&Technology Co,.Ltd

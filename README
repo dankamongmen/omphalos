@@ -43,6 +43,8 @@ wget is used to download the USB ID file.
 
 GnuPG is used to verify signed tarballs.
 
+Manpages and XHTML documentation require xsltproc and docbook-xsl.
+
 Your TERM and LOCALE/LANG environment variables need be correctly set to make
 full use of omphalos-ncurses. Ensure that a UTF-8 locale is being used, and
 that your terminal definition supports 256 colors.
