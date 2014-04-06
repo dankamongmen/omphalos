@@ -25,6 +25,10 @@ AX_PROG_XSLTPROC
 if test "$XSLTPROC" = "" ; then
 	AC_MSG_ERROR([Cannot find xsltproc.])
 fi
+AX_CHECK_DOCBOOK_XSLT
+if test "x$HAVE_DOCBOOK_XSLT_current" != "xyes"; then
+	AC_MSG_ERROR([Cannot find docbook-xsl.])
+fi
 AC_CHECK_PROGS(MANBIN,makewhatis mandb,no)
 if test "$MANBIN" = no ; then
 	AC_MSG_ERROR([Cannot find manpage indexer.])
