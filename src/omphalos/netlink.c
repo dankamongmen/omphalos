@@ -1007,6 +1007,7 @@ handle_netlink_event(int fd){
 		diagnostic("Warning: unterminated multipart on %d",fd);
 		res = -1;
 	}
+	// FIXME handle EAGAIN via loop?
 	if(r < 0 && errno != EAGAIN){
 		diagnostic("Error reading netlink socket %d (%s?)",
 				fd,strerror(errno));
