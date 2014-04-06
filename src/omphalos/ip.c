@@ -178,18 +178,18 @@ void handle_ipv4_packet(omphalos_packet *op,const void *frame,size_t len){
 
 	if(len < sizeof(*ip)){
 		op->malformed = 1;
-		diagnostic("[%s] ipv4 malformed with %zu",op->i->name,len);
+		diagnostic("[%s] IPv4 malformed with %zu",op->i->name,len);
 		return;
 	}
 	hlen = ip->ihl << 2u;
 	if(len < hlen){
 		op->malformed = 1;
-		diagnostic("[%s] ipv4 malformed with %zu vs %u",op->i->name,len,hlen);
+		diagnostic("[%s] IPv4 malformed with %zu vs %u",op->i->name,len,hlen);
 		return;
 	}
 	if(!hlen){
 		op->malformed = 1;
-		diagnostic("[%s] ipv4 malformed with 0 hdrlen",op->i->name);
+		diagnostic("[%s] IPv4 malformed with 0 hdrlen",op->i->name);
 		return;
 	}
 	if(ipv4_csum(frame)){
@@ -199,13 +199,14 @@ void handle_ipv4_packet(omphalos_packet *op,const void *frame,size_t len){
 	}
 	if(ip->version != 4){
 		op->noproto = 1;
-		diagnostic("[%s] ipv4 noversion for %u",op->i->name,ip->version);
+		diagnostic("[%s] IPv4 noversion for %u",op->i->name,ip->version);
 		return;
 	}
 	// len can be greater than tot_len due to layer 2 padding requirements
 	if(len < ntohs(ip->tot_len)){
 		op->malformed = 1;
-		diagnostic("[%s] IPv4 tot_len malformed with %zu vs %hu",op->i->name,len,ntohs(ip->tot_len));
+		diagnostic("[%s] IPv4 tot_len malformed frame: %zu TLspec: %hu",
+				op->i->name,len,ntohs(ip->tot_len));
 		return;
 	}
 	memcpy(op->l3saddr,&ip->saddr,4);
