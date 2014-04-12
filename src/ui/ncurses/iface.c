@@ -743,7 +743,7 @@ print_iface_state(const interface *i,const iface_state *is,WINDOW *w,
 		usecdomain / 1000000,
 		prefix(timestat_val(&i->bps) * CHAR_BIT * 1000000 * 100 / usecdomain,100,buf,sizeof(buf),0),
 		prefix(timestat_val(&i->fps),1,buf2,sizeof(buf2),1)) != ERR);
-	mvwaddstr(w,1,cols - PREFIXSTRLEN * 2 - 5,"Total: Src     Dst");
+	mvwaddstr(w,1,cols - PREFIXSTRLEN * 2 - 1,"TotSrc  TotDst");
 	draw_right_vline(i,active,w);
 }
 
