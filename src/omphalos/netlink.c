@@ -807,6 +807,18 @@ handle_newlink_locked(interface *iface,const struct ifinfomsg *ii,const struct n
 #endif
 			break;}case IFLA_NUM_TX_QUEUES:{
 			break;}case IFLA_NUM_RX_QUEUES:{
+#ifndef IFLA_CARRIER
+#define IFLA_CARRIER 33
+#endif
+			break;}case IFLA_CARRIER:{
+#ifndef IFLA_PHYS_PORT_ID
+#define IFLA_PHYS_PORT_ID 34
+#endif
+			break;}case IFLA_PHYS_PORT_ID:{
+#ifndef IFLA_CARRIER_CHANGES
+#define IFLA_CARRIER_CHANGES 35
+#endif
+			break;}case IFLA_CARRIER_CHANGES:{
 			break;}default:{
 				diagnostic("Unknown iflatype %u on %s",
 						ra->rta_type,iface->name);
