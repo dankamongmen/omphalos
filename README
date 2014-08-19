@@ -19,8 +19,9 @@ VI. Thanks
 I. Requirements
 ===================================================================
 
-GNU Autotools are used to build the configure script. They are not necessary
-when building from a release tarball.
+GNU Autotools and the Autoconf Archive are used to build the configure script.
+They are not necessary when building from a release tarball. On Debian-based
+systems, install "automake" and "autoconf-archive".
 
 A C compiler is used at buildtime.
 
