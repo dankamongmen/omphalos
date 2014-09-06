@@ -61,25 +61,24 @@ usage(const char *arg0,int ret){
 	omphalos_mode_enum e;
 
 	fprintf(fp,"usage: %s [ options... ]\n",basename(arg0));
-	fprintf(fp,"\noptions:\n");
 	fprintf(fp,"-h print this help, and exit\n");
 	fprintf(fp,"-p do not make newly-discovered devices promiscuous\n");
 	fprintf(fp,"--version print version info, and exit\n");
 	fprintf(fp,"-u username: user name to take after creating packet socket.\n");
-	fprintf(fp,"\t'%s' by default. provide empty string to disable.\n",DEFAULT_USERNAME);
+	fprintf(fp," '%s' by default, empty string to disable.\n",DEFAULT_USERNAME);
 	fprintf(fp,"-f filename: libpcap-format save file for input.\n");
 	fprintf(fp,"--usbids=filename: USB ID Repository (http://www.linux-usb.org/usb-ids.html).\n");
-	fprintf(fp,"\t'%s' by default. provide empty string to disable.\n",DEFAULT_USBIDS_FILENAME);
+	fprintf(fp," '%s' by default, empty string to disable.\n",DEFAULT_USBIDS_FILENAME);
 	fprintf(fp,"--ouis=filename: IANA's OUI mapping in get-oui(1) format.\n");
-	fprintf(fp,"\t'%s' by default. provide empty string to disable.\n",DEFAULT_IANA_FILENAME);
+	fprintf(fp," '%s' by default, empty string to disable.\n",DEFAULT_IANA_FILENAME);
 	fprintf(fp,"--resolv=filename: resolv.conf-format nameserver list.\n");
-	fprintf(fp,"\t'%s' by default. provide empty string to disable.\n",DEFAULT_RESOLVCONF_FILENAME);
+	fprintf(fp," '%s' by default, empty string to disable.\n",DEFAULT_RESOLVCONF_FILENAME);
 	fprintf(fp,"--plog=filename: Enable malformed packet logging to this file.\n");
 	fprintf(fp,"--mode=");
 	for(e = 0 ; e < OMPHALOS_MODE_MAX ; ++e){
 		fprintf(fp,"%s%s",omphalos_modes[e].str,e + 1 == OMPHALOS_MODE_MAX ? ": Operating mode.\n" : "|");
 	}
-	fprintf(fp,"\t'%s' by default. See documentation for details.\n",DEFAULT_MODESTRING);
+	fprintf(fp," '%s' by default. See documentation for details.\n",DEFAULT_MODESTRING);
 	exit(ret);
 }
 
