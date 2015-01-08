@@ -123,9 +123,6 @@ int omphalos_init(const omphalos_ctx *);
 
 void omphalos_cleanup(const omphalos_ctx *);
 
-// Classify the packet as a sockaddr_ll-style pkttype (PACKET_HOST etc)
-int packet_sll_type(const omphalos_packet *);
-
 #ifdef __cplusplus
 }
 #endif

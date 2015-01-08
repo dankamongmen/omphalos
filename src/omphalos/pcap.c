@@ -31,6 +31,21 @@ typedef struct pcap_marshal {
 	analyzefxn handler;
 } pcap_marshal;
 
+static int
+packet_sll_type(const omphalos_packet *packet){
+	// FIXME if we're the source, is a broadcast-targeted packet a
+	// PACKET_BROADCAST or a PACKET_OUTGOING?
+	switch(l2categorize(packet->i,packet->l2d)){
+		case RTN_MULTICAST:
+			return PACKET_MULTICAST;
+		case RTN_BROADCAST:
+			return PACKET_BROADCAST;
+		// FIXME differentiate between HOST, _OTHERHOST and _OUTGOING
+		default:
+			return PACKET_HOST;
+	}
+}
+
 static void
 postprocess(pcap_marshal *pm,omphalos_packet *packet,interface *iface,
 			const struct pcap_pkthdr *h,const void *bytes){

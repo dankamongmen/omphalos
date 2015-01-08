@@ -376,7 +376,3 @@ void omphalos_cleanup(const omphalos_ctx *pctx){
 	cleanup_procfs();
 	pthread_key_delete(omphalos_ctx_key);
 }
-
-int packet_sll_type(const omphalos_packet *packet){
-	return packet ? 1 : 0; // FIXME
-}
