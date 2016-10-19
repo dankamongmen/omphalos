@@ -97,7 +97,7 @@ $(OMPHALOS)-coretest: $(COREOBJS) $(CORETESTOBJS)
 
 $(OMPHALOS)-ncurses: $(COREOBJS) $(NCURSESOBJS)
 	@mkdir -p $(@D)
-	$(CC) $(CFLAGS) -o $@ $^ $(LFLAGS) $(PANEL_LIB) $(CURSES_LIB)
+	$(CC) $(CFLAGS) -o $@ $^ $(LFLAGS) $(PANEL_LIBS) $(CURSES_LIBS)
 
 $(OMPHALOS)-tty: $(COREOBJS) $(TTYOBJS)
 	@mkdir -p $(@D)
