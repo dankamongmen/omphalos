@@ -13,12 +13,12 @@
 #include <omphalos/interface.h>
 
 int handle_dhcp_packet(omphalos_packet *op,const void *frame,size_t fsize){
-	assert(op && frame && fsize);
+	assert((op != frame) && fsize);
 	return 1; // FIXME
 }
 
 int handle_dhcp6_packet(omphalos_packet *op,const void *frame,size_t fsize){
-	assert(op && frame && fsize);
+	assert((op != frame) && fsize);
 	return 1; // FIXME
 }
 

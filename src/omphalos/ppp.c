@@ -6,6 +6,6 @@
 #include <omphalos/interface.h>
 
 void handle_ppp_packet(omphalos_packet *op,const void *frame,size_t len){
-	assert(op && frame && len);
+	assert((op != frame) && len);
 	// FIXME handle...
 }
