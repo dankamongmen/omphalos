@@ -195,7 +195,7 @@ minimum:
  - a means of acquiring physical information from the kernel, especially
     for wireless devices (we use nl80211).
  - a means of dropping general privileges, but retaining those capabilities
-    necessary for network activity (perhaps a client/server process pair'
+    necessary for network activity (perhaps a client/server process pair
     communicating over PF_UNIX sockets).
 
 =======================================
