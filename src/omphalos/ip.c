@@ -50,9 +50,24 @@ handle_dsr_packet(omphalos_packet *op,const void *frame,size_t len){
 	// FIXME
 }
 
+typedef struct l2tphdr {
+	uint16_t flags;		// flags and version info
+	uint16_t length;	// length, optional
+	uint16_t tun_id;	// tunnel id
+	uint16_t sess_id;	// session id
+	uint16_t ns, nr;
+	uint16_t offset_size, offset_pad;
+} __attribute__ ((packed)) l2tphdr;
+
 static void
 handle_l2tp_packet(omphalos_packet *op,const void *frame,size_t len){
-	assert(op && frame && len);
+	const struct l2tphdr *l2tp = frame;
+
+	if(len < sizeof(*l2tp)){
+		diagnostic("%s malformed with %zu",__func__,len);
+		op->malformed = 1;
+		return;
+	}
 	// FIXME
 }
 
