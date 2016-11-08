@@ -63,8 +63,23 @@ void handle_cld_packet(omphalos_packet *op,const void *frame,size_t len){
 	assert(op && frame && len); // FIXME
 }
 
+typedef struct eigrphdr {
+	uint8_t version;
+	uint8_t opcode;
+	uint16_t csum;
+	uint32_t flags, seq, ack, asn;
+	// TLVs follow
+} __attribute__ ((packed)) eigrphdr;
+
 void handle_eigrp_packet(omphalos_packet *op,const void *frame,size_t len){
-	assert(op && frame && len); // FIXME
+	const eigrphdr *eigrp = frame;
+
+	if(len < sizeof(*eigrp)){
+		op->malformed = 1;
+		diagnostic("%s packet too small (%zu) on %s",__func__,len,op->i->name);
+		return;
+	}
+	// FIXME
 }
 
 void handle_dtp_packet(omphalos_packet *op,const void *frame,size_t len){
