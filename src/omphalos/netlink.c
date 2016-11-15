@@ -819,6 +819,36 @@ handle_newlink_locked(interface *iface,const struct ifinfomsg *ii,const struct n
 #define IFLA_CARRIER_CHANGES 35
 #endif
 			break;}case IFLA_CARRIER_CHANGES:{
+#ifndef IFLA_PHYS_SWITCH_ID
+#define IFLA_PHYS_SWITCH_ID 36
+#endif
+			break;}case IFLA_PHYS_SWITCH_ID:{
+#ifndef IFLA_LINK_NETNSID
+#define IFLA_LINK_NETNSID 37
+#endif
+			break;}case IFLA_LINK_NETNSID:{
+#ifndef IFLA_PHYS_PORT_NAME
+#define IFLA_PHYS_PORT_NAME 38
+#endif
+			break;}case IFLA_PHYS_PORT_NAME:{
+#ifndef IFLA_PROTO_DOWN
+#define IFLA_PROTO_DOWN 39
+#endif
+			break;}case IFLA_PROTO_DOWN:{
+#ifndef IFLA_GSO_MAX_SEGS
+#define IFLA_GSO_MAX_SEGS 40
+#define IFLA_GSO_MAX_SIZE 41
+#endif
+			break;}case IFLA_GSO_MAX_SEGS:{
+			break;}case IFLA_GSO_MAX_SIZE:{
+#ifndef IFLA_PAD
+#define IFLA_PAD 42
+#endif
+			break;}case IFLA_PAD:{
+#ifndef IFLA_XDP
+#define IFLA_XDP 43
+#endif
+			break;}case IFLA_XDP:{
 			break;}default:{
 				diagnostic("Unknown iflatype %u on %s",
 						ra->rta_type,iface->name);

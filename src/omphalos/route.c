@@ -64,6 +64,7 @@ int handle_rtm_delroute(const struct nlmsghdr *nl){
 		break;}case RTA_SRC:{
 		break;}case RTA_IIF:{
 		break;}case RTA_OIF:{
+		break;}case RTA_PREF:{
 		break;}default:{
 			diagnostic("Unknown rtatype %u",ra->rta_type);
 			break;
