@@ -189,7 +189,7 @@ handle_rtm_newneigh(const struct nlmsghdr *nl){
 		ra = RTA_NEXT(ra,rlen);
 	}
 	if(rlen){
-		diagnostic("%d excess bytes on %s newlink message",rlen,iface->name);
+		diagnostic("%d excess bytes on %s newneigh message",rlen,iface->name);
 	}
 	if(llen){
 		if(!(nd->ndm_state & (NUD_NOARP|NUD_FAILED|NUD_INCOMPLETE))){
@@ -1008,8 +1008,11 @@ handle_netlink_event(int fd){
 	res = 0;
 	// For handling multipart messages
 	inmulti = 0;
-	// FIXME probably want MSG_TRUNC here, and a check against buf size?
-	while((r = recvmsg(fd,&msg,MSG_DONTWAIT)) > 0){
+	while((r = recvmsg(fd,&msg,MSG_DONTWAIT | MSG_TRUNC)) > 0){
+		if((unsigned)r > msg.msg_iov[0].iov_len){
+			diagnostic("Truncated %dB message on %d\n", r, fd);
+			r = msg.msg_iov[0].iov_len;
+		}
 		// NLMSG_LENGTH sanity checks enforced via NLMSG_OK() and
 		// _NEXT() -- we needn't check amount read within the loop
 		for(nh = (struct nlmsghdr *)buf ; NLMSG_OK(nh,(unsigned)r) ; nh = NLMSG_NEXT(nh,r)){
