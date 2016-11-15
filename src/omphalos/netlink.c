@@ -978,6 +978,7 @@ handle_netlink_event(int fd){
 	res = 0;
 	// For handling multipart messages
 	inmulti = 0;
+	// FIXME probably want MSG_TRUNC here, and a check against buf size?
 	while((r = recvmsg(fd,&msg,MSG_DONTWAIT)) > 0){
 		// NLMSG_LENGTH sanity checks enforced via NLMSG_OK() and
 		// _NEXT() -- we needn't check amount read within the loop
