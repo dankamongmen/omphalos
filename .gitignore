@@ -1,10 +1,12 @@
 INSTALL
+TAGS
 Makefile
 Makefile.in
 aclocal.m4
 autoscan.log
 autom4te.cache/
 bz2/
+compile
 config.h
 config.in
 config.in~
