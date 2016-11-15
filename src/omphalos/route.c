@@ -64,7 +64,6 @@ int handle_rtm_delroute(const struct nlmsghdr *nl){
 		break;}case RTA_SRC:{
 		break;}case RTA_IIF:{
 		break;}case RTA_OIF:{
-		break;}case RTA_PREF:{
 		break;}default:{
 			diagnostic("Unknown rtatype %u",ra->rta_type);
 			break;
@@ -186,6 +185,14 @@ int handle_rtm_newroute(const struct nlmsghdr *nl){
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,36)
 		break;}case RTA_MARK:{
 #endif
+		break;}case RTA_MFC_STATS:{
+		break;}case RTA_VIA:{
+		break;}case RTA_NEWDST:{
+		break;}case RTA_PREF:{
+		break;}case RTA_ENCAP_TYPE:{
+		break;}case RTA_ENCAP:{
+		break;}case RTA_EXPIRES:{
+		break;}case RTA_PAD:{
 		break;}default:{
 			diagnostic("Unknown rtatype %u",ra->rta_type);
 		break;}}
