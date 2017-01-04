@@ -725,6 +725,9 @@ dev_handler(struct nl_msg *msg,void *arg){
 	devstate = nls->state;
 	nla_parse(tb_msg, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0),
 		  genlmsg_attrlen(gnlh, 0), NULL);
+	if(tb_msg[NL80211_ATTR_IFINDEX] == NULL){
+		return NL_SKIP;
+	}
 	idx = nla_get_u32(tb_msg[NL80211_ATTR_IFINDEX]);
 	if(idx != devstate->idx){
 		return NL_SKIP;
