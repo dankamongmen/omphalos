@@ -133,11 +133,11 @@ $(OUT)/$(XMLDIR)/$(PROJ).ent:
 
 clean-local:
 	rm -rf $(OUT) $(wildcard core*) $(wildcard vgcore*) tags
-	rm -rf $(IANAOUI) $(USBIDS)
 
 maintainer-clean-local:
 	rm -rf aclocal.m4 configure config config.in config.in~ \
 		install-sh missing Makefile.in
+	rm -rf $(SUPPORT)
 
 bless: all
 	$(ADDCAPS) $(BIN)
