@@ -65,6 +65,7 @@ process_reverse6_lookup(const char *buf,int *fam,void *addr,size_t len){
 				return -1;
 			}
 			val = strtoul(buf,NULL,16);
+			// FIXME i don't think this indexing can possibly be correct
 			addr6[len / 16] = htonl(ntohl(addr6[len / 16]) | (val << (28 - ((len % 16) / 2 * 4))));
 		}else{
 			if(*buf != '.'){

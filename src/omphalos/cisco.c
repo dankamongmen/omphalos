@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <sys/socket.h>
 #include <omphalos/diag.h>
 #include <asm/byteorder.h>
 #include <omphalos/cisco.h>
