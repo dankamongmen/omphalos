@@ -252,16 +252,6 @@ ustrlen(const unsigned char *s){
 	return strlen((const char *)s);
 }
 
-static inline char *
-ustrcat(char *to,const unsigned char *s){
-	return strcat(to,(const char *)s);
-}
-
-static inline char *
-ustrcpy(char *to,const unsigned char *s){
-	return strcpy(to,(const char *)s);
-}
-
 // inflate the previous dns data at offset into buf, which we are responsible
 // for resizing. data must have been previous, or else we can go into a loop!
 static char *
