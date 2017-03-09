@@ -69,26 +69,41 @@ parse_file(const char *fn){
 	b = NULL;
 	l = 0;
 	while( (line = fgetl(&b,&l,fp)) ){
+		const char *hexstart;
 		unsigned long hex;
 		unsigned char b;
 		ouitrie *cur,*c;
 		char *end,*nl;
 
-		if((hex = strtoul(line,&end,16)) > ((1u << 24u) - 1)){
+		hexstart = line;
+		while(isspace(*hexstart)){
+			++hexstart;
+		}
+		if(!isxdigit(*hexstart)){
 			continue;
 		}
-		if(!isspace(*end) || end == line){
+		if((hex = strtoul(hexstart,&end,16)) > ((1u << 24u) - 1)){
+			continue;
+		}
+		if(!isspace(*end) || end == hexstart){
+			continue;
+		}
+		// It's just half of an address, but each character is only
+		// half a byte. This still admits street addresses of 6 numbers,
+		// though, leading to nonsense entries FIXME.
+		if(end - hexstart != ETH_ALEN){
 			continue;
 		}
 		while(isspace(*end)){
 			++end;
 		}
 		nl = end;
-		while(*nl && *nl != '\n'){
+		while(*nl){
+			if(*nl == '\n' || *nl == '\r'){
+				*nl = '\0';
+				break;
+			}
 			++nl;
-		}
-		if(*nl == '\n'){
-			*nl = '\0';
 		}
 		if(nl == end){
 			continue;
