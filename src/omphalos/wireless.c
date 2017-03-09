@@ -80,7 +80,7 @@ wireless_freq_info(const char *name,wless_info *wi){
 		int idx = wireless_idx_byfreq(freq);
 
 		if(idx < 0){
-			diagnostic("Unknown frequency: %ju",freq);
+			diagnostic("Unknown wext frequency: %ju",freq);
 			return -1;
 		}
 		wi->dBm[idx] = 1.0; // FIXME get real maxstrength

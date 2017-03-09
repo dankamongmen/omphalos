@@ -452,7 +452,7 @@ phy_handler(struct nl_msg *msg,void *arg){
 					nli->dBm[idx] = 0.01 * nla_get_u32(tb_freq[NL80211_FREQUENCY_ATTR_MAX_TX_POWER]);
 				}
 			}else{
-				diagnostic("Unknown frequency %ju",freq);
+				diagnostic("Unknown nl80211 frequency %ju",freq);
 				goto err;
 			}
 
