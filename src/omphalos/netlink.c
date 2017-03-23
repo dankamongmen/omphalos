@@ -32,7 +32,6 @@
 #include <omphalos/netaddrs.h>
 #include <omphalos/wireless.h>
 #include <omphalos/omphalos.h>
-#include <omphalos/bluetooth.h>
 #include <omphalos/interface.h>
 
 #define OFFLOAD_MTU (32678 - (int)TPACKET2_HDRLEN)
@@ -1088,9 +1087,6 @@ netlink_thread(void){
 	if((pfd[0].fd = netlink_socket()) < 0){
 		watch_stop();
 		return -1;
-	}
-	if(discover_bluetooth()){
-		goto done;
 	}
 	if(discover_links(pfd[0].fd)){
 		goto done;
