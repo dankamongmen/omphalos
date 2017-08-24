@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <unistd.h>
+#include <arpa/inet.h>
 #include <omphalos/diag.h>
 #include <ui/ncurses/core.h>
 #include <ui/ncurses/util.h>
@@ -193,15 +194,18 @@ iface_details(WINDOW *hw,const interface *i,int rows){
 					i->drops,i->truncated,i->truncated_recovered,
 					scrcols - 2 - 72,"") != ERR);
 		--z;
-	}case 7:{
+	} /* intentional fallthrough */
+	case 7:{
 		assert(mvwprintw(hw,row + z,col,"mform: "U64FMT" noprot: "U64FMT,
 					i->malformed,i->noprotocol) != ERR);
 		--z;
-	}case 6:{
+	} /* intentional fallthrough */
+	case 6:{
 		assert(mvwprintw(hw,row + z,col,"Rbyte: "U64FMT" frames: "U64FMT,
 					i->bytes,i->frames) != ERR);
 		--z;
-	}case 5:{
+	} /* intentional fallthrough */
+	case 5:{
 		char b[PREFIXSTRLEN];
 		char fb[PREFIXSTRLEN];
 		char buf[U64STRLEN];
@@ -212,11 +216,13 @@ iface_details(WINDOW *hw,const interface *i,int rows){
 					i->rtpr.tp_block_nr,
 					bprefix(i->rs,1,b,sizeof(b),1)) != ERR);
 		--z;
-	}case 4:{
+	} /* intentional fallthrough */
+	case 4:{
 		assert(mvwprintw(hw,row + z,col,"Tbyte: "U64FMT" frames: "U64FMT" aborts: %llu",
 					i->txbytes,i->txframes,i->txaborts) != ERR);
 		--z;
-	}case 3:{
+	} /* intentional fallthrough */
+	case 3:{
 		char b[PREFIXSTRLEN];
 		char fb[PREFIXSTRLEN];
 		char buf[U64STRLEN];
@@ -227,7 +233,8 @@ iface_details(WINDOW *hw,const interface *i,int rows){
 					bprefix(i->ttpr.tp_block_size,1,buf,sizeof(buf),1),i->ttpr.tp_block_nr,
 					bprefix(i->ts,1,b,sizeof(b),1)) != ERR);
 		--z;
-	}case 2:{
+	} /* intentional fallthrough */
+	case 2:{
 		assert(offload_details(hw,i,row + z,col,"TSO",TCP_SEG_OFFLOAD) != ERR);
 		assert(offload_details(hw,i,row + z,col + 5,"S/G",ETH_SCATTER_GATHER) != ERR);
 		assert(offload_details(hw,i,row + z,col + 10,"UFO",UDP_FRAG_OFFLOAD) != ERR);
@@ -240,11 +247,13 @@ iface_details(WINDOW *hw,const interface *i,int rows){
 		assert(offload_details(hw,i,row + z,col + 48,"RVln",RXVLAN_OFFLOAD) != ERR);
 		assert(mvwprintw(hw,row + z,col + 53," MTU: %-6d",i->mtu) != ERR);
 		--z;
-	}case 1:{
+	} /* intentional fallthrough */
+	case 1:{
 		assert(mvwprintw(hw,row + z,col,"%-*ls",scrcols - 2,i->topinfo.devname ?
 					i->topinfo.devname : L"Unknown device") != ERR);
 		--z;
-	}case 0:{
+	} /* intentional fallthrough */
+	case 0:{
 		if(i->addr){
 			char mac[i->addrlen * 3];
 

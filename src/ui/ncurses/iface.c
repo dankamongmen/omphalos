@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <limits.h>
 #include <unistd.h>
+#include <arpa/inet.h>
 #include <sys/socket.h>
 #include <linux/version.h>
 #include <linux/nl80211.h>
@@ -854,11 +855,14 @@ int lines_for_interface(const iface_state *is){
 	switch(is->expansion){ // Intentional fallthrus
 		case EXPANSION_SERVICES:
 			lines += is->srvs;
+			/* intentional fallthrough */
 		case EXPANSION_HOSTS:
 			lines += is->hosts;
+			/* intentional fallthrough */
 		case EXPANSION_NODES:
 			lines += is->nodes;
 			lines += is->vnodes;
+			/* intentional fallthrough */
 		case EXPANSION_NONE:
 			return lines;
 	}

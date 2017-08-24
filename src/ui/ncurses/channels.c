@@ -93,31 +93,40 @@ channel_details(WINDOW *w){
 		case (WIRELESSROWS - 1):{
 			iface_row(w,freqrows - 1,row + z,col);
 			--z;
-		}case 8:{
+		}	/* intentional fallthrough */
+		case 8:{
 			channel_row(w,freqrows - 1,row + z,col);
 			--z;
-		}case 7:{
+		}	/* intentional fallthrough */
+		case 7:{
 			iface_row(w,freqrows - 2,row + z,col);
 			--z;
-		}case 6:{
+		}	/* intentional fallthrough */
+		case 6:{
 			channel_row(w,freqrows - 2,row + z,col);
 			--z;
-		}case 5:{
+		}	/* intentional fallthrough */
+		case 5:{
 			iface_row(w,freqrows - 3,row + z,col);
 			--z;
-		}case 4:{
+		}	/* intentional fallthrough */
+		case 4:{
 			channel_row(w,freqrows - 3,row + z,col);
 			--z;
-		}case 3:{
+		}	/* intentional fallthrough */
+		case 3:{
 			iface_row(w,freqrows - 4,row + z,col);
 			--z;
-		}case 2:{
+		}	/* intentional fallthrough */
+		case 2:{
 			channel_row(w,freqrows - 4,row + z,col);
 			--z;
-		}case 1:{
+		}	/* intentional fallthrough */
+		case 1:{
 			iface_row(w,freqrows - 5,row + z,col);
 			--z;
-		}case 0:{
+		}	/* intentional fallthrough */
+		case 0:{
 			channel_row(w,freqrows - 5,row + z,col);
 			--z;
 			break;

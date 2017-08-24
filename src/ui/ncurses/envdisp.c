@@ -39,11 +39,14 @@ env_details(WINDOW *hw,int rows){
 			--z;
 			assert(wattrset(hw,SUBDISPLAY_ATTR) == OK);
 		}
-	}case 1:{
+		
+	}	/* intentional fallthrough */
+	case 1:{
 		assert(mvwprintw(hw,row + z,col,"Colors (pairs): %u (%u) Geom: %dx%d",
 				COLORS,COLOR_PAIRS,srows,scols) != ERR);
 		--z;
-	}case 0:{
+	}	/* intentional fallthrough */
+	case 0:{
 		const char *lang = getenv("LANG");
 		const char *term = getenv("TERM");
 

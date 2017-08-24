@@ -51,7 +51,8 @@ int update_network_details(WINDOW *w){
 					state3char(ps.tcp_fack),
 					state3char(ps.tcp_frto)) != ERR);
 		--z;
-	}case 2:{
+	}	/* intentional fallthrough */
+	case 2:{
 		char *dns = stringize_resolvers();
 
 		if(dns){
@@ -61,13 +62,15 @@ int update_network_details(WINDOW *w){
 			assert(mvwprintw(w,row + z,col,"No DNS servers configured") != ERR);
 		}
 		--z;
-	}case 1:{
+	}	/* intentional fallthrough */
+	case 1:{
 		assert(mvwprintw(w,row + z,col,"Forwarding: IPv4%lc IPv6%lc   Reverse path filtering: %ls",
 					state3char(ps.ipv4_forwarding),
 					state3char(ps.ipv6_forwarding),
 					state3str(ps.rp_filter)) != ERR);
 		--z;
-	}case 0:{
+	}	/* intentional fallthrough */
+	case 0:{
 		assert(mvwprintw(w,row + z,col,"Proxy ARP: %ls",state3str(ps.proxyarp)) != ERR);
 		--z;
 		break;
