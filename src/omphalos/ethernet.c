@@ -1,6 +1,7 @@
 #include <net/if.h>
+#include <arpa/inet.h>
 #include <linux/llc.h>
-#include <netinet/in.h>
+//#include <netinet/in.h>
 #include <sys/socket.h>
 #include <omphalos/ip.h>
 #include <omphalos/arp.h>

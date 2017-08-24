@@ -13,7 +13,6 @@ extern "C" {
 #include <pthread.h>
 #include <sys/socket.h>
 #include <linux/if.h>
-#include <arpa/inet.h>
 #include <omphalos/128.h>
 #include <linux/ethtool.h>
 #include <linux/if_packet.h>

@@ -1,6 +1,7 @@
 #include <ctype.h>
 #include <assert.h>
 #include <stdint.h>
+#include <arpa/inet.h>
 #include <linux/udp.h>
 #include <netinet/ip.h>
 #include <netinet/ip6.h>

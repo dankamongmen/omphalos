@@ -1,5 +1,6 @@
 #include <limits.h>
 #include <assert.h>
+#include <arpa/inet.h>
 #include <sys/socket.h>
 #include <net/if_arp.h>
 #include <omphalos/csum.h>
@@ -142,13 +143,13 @@ handle_ieee80211_mgmtfix(omphalos_packet *op,const void *frame,size_t len,unsign
 	if(tagtbl[IEEE80211_MGMT_TAG_SSID].ptr){
 		char *tmp;
 
-		// 8 for 16-bit frequency + unit plus space
-		if((tmp = realloc(tagtbl[IEEE80211_MGMT_TAG_SSID].ptr,8 + tagtbl[IEEE80211_MGMT_TAG_SSID].len + 1)) == NULL){
+		// 9 for 16-bit frequency + unit plus space
+		if((tmp = realloc(tagtbl[IEEE80211_MGMT_TAG_SSID].ptr,9 + tagtbl[IEEE80211_MGMT_TAG_SSID].len + 1)) == NULL){
 			goto freetags;
 		}
 		tagtbl[IEEE80211_MGMT_TAG_SSID].ptr = tmp;
 		// FIXME ugh
-		snprintf(tmp + tagtbl[IEEE80211_MGMT_TAG_SSID].len,9," %u.%02uGHz",freq / 1000,(freq % 1000) / 10);
+		snprintf(tmp + tagtbl[IEEE80211_MGMT_TAG_SSID].len,10," %u.%02uGHz",freq / 1000,(freq % 1000) / 10);
 		name_l3host_absolute(op->i,op->l2s,op->l3s,tmp,NAMING_LEVEL_MAX);
 	}
 

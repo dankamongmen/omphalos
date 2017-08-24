@@ -1,3 +1,4 @@
+#include <arpa/inet.h>
 #include <sys/socket.h>
 #include <omphalos/diag.h>
 #include <omphalos/util.h>

@@ -1,4 +1,5 @@
 #include <sys/socket.h>
+#include <arpa/inet.h>
 #include <linux/ipx.h>
 #include <omphalos/ipx.h>
 #include <omphalos/diag.h>

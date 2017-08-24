@@ -7,6 +7,7 @@
 #include <pthread.h>
 #include <sys/poll.h>
 #include <sys/mman.h>
+#include <arpa/inet.h>
 #include <sys/socket.h>
 #include <net/if_arp.h>
 #include <omphalos/pci.h>

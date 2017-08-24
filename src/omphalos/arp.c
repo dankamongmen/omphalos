@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <arpa/inet.h>
 #include <sys/socket.h>
 #include <net/if_arp.h>
 #include <omphalos/tx.h>
