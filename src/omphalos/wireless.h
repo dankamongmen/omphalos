@@ -41,7 +41,7 @@ modestr(unsigned dplx){
 	return "";
 }
 
-int wireless_idx_byfreq(unsigned);
+int wireless_idx_byfreq(uint64_t);
 unsigned wireless_freq_count(void);
 unsigned wireless_freq_byidx(unsigned);
 unsigned wireless_chan_byidx(unsigned);
