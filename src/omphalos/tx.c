@@ -113,10 +113,11 @@ void *get_tx_frame(interface *i,size_t *fsize){
 // sockets (we need one per protocol family -- effectively, AF_INET and
 // AF_INET6). This suffers a copy, of course.
 //
-// We currently only support IPv4, but ought support IPv6 also. UDP and ICMP
-// are the only transport protocols supported now.
+// UDP and ICMP are the only transport protocols supported now. We cannot
+// currently use ARPHRD_NONE interfaces (e.g. TUN), because it doesn't carry the
+// L3 protocol in the header FIXME.
 static ssize_t
-send_to_self(interface *i,void *frame){
+send_to_self(interface *i, void *frame){
 	struct tpacket_hdr *thdr = frame;
 	struct sockaddr_in6 sina6;
 	struct sockaddr_in sina;
@@ -140,9 +141,7 @@ send_to_self(interface *i,void *frame){
 			l2proto = ((const struct ethhdr *)l2)->h_proto;
 			break;
 		case ARPHRD_NONE:
-			l2len = 0;
-			l2proto = ntohs(ETH_P_IP);
-			break;
+			return -1;
 		default:
 			assert(0);
 			break;
