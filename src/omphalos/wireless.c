@@ -240,16 +240,27 @@ static const struct freq {
 	{ MHZ(5300),		60,	FREQ_5,	},
 	{ MHZ(5320),		64,	FREQ_5,	},
 	{ MHZ(5500),		100,	FREQ_5,	},
+	{ MHZ(5510),		102,	FREQ_5,	},
 	{ MHZ(5520),		104,	FREQ_5,	},
+	{ MHZ(5530),		106,	FREQ_5,	},
 	{ MHZ(5540),		108,	FREQ_5,	},
+	{ MHZ(5550),		110,	FREQ_5,	},
 	{ MHZ(5560),		112,	FREQ_5,	},
+	{ MHZ(5570),		114,	FREQ_5,	},
 	{ MHZ(5580),		116,	FREQ_5,	},
+	{ MHZ(5590),		118,	FREQ_5,	},
 	{ MHZ(5600),		120,	FREQ_5,	},
+	{ MHZ(5610),		122,	FREQ_5,	},
 	{ MHZ(5620),		124,	FREQ_5,	},
+	{ MHZ(5630),		126,	FREQ_5,	},
 	{ MHZ(5640),		128,	FREQ_5,	},
 	{ MHZ(5660),		132,	FREQ_5,	},
+	{ MHZ(5670),		134,	FREQ_5,	},
 	{ MHZ(5680),		136,	FREQ_5,	},
+	{ MHZ(5690),		138,	FREQ_5,	},
 	{ MHZ(5700),		140,	FREQ_5,	},
+	{ MHZ(5710),		142,	FREQ_5, },
+	{ MHZ(5720),		144,	FREQ_5, },
 	{ MHZ(5745),		149,	FREQ_5,	},
 	{ MHZ(5765),		153,	FREQ_5,	},
 	{ MHZ(5785),		157,	FREQ_5,	},
@@ -283,7 +294,7 @@ unsigned wireless_freq_byidx(unsigned idx){
 	return freqtable[idx].hz;
 }
 
-int wireless_idx_byfreq(unsigned freq){
+int wireless_idx_byfreq(uint64_t freq){
 	int idx,lb,ub;
 
 	lb = 0;
