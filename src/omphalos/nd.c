@@ -166,12 +166,12 @@ void handle_nd_routerad(struct omphalos_packet *op,const void *frame,size_t len)
 				break;
 			case ICMP6_OP_RDNSS:{
 				const struct rdnss {
-					struct icmp6_op *iop;
+					struct icmp6_op iop;
 					uint16_t reserved;
 					uint32_t lifetime;
 					uint128_t servers;
 				} *rdnss = frame;
-				unsigned ilen = rdnss->iop->len;
+				unsigned ilen = rdnss->iop.len;
 				const void *server;
 
 				if(ilen < 3 || !(ilen % 2)){
