@@ -45,7 +45,7 @@ free_service(l4srv *l){
 
 void observe_proto(interface *i,struct l2host *l2,const wchar_t *proto){
 	assert(i && l2 && proto);
-	diagnostic("Observed protocol '%ls' on %s",proto,i->name);
+	diagnostic("[%s] observed protocol '%ls'", i->name, proto);
 	// FIXME
 }
 
