@@ -89,7 +89,8 @@ $(USBIDS):
 # IEEE recently added a wholly useless second column consisting of a string in
 # parens. Filter this column out, but don't touch further parens (no /g). 
 $(IANAOUI):
-	wget http://standards.ieee.org/develop/regauth/oui/oui.txt -O - | sed -e 's/(.*)//' > $@
+	wget http://standards.ieee.org/develop/regauth/oui/oui.txt -O - \
+	 | sed -e 's/([^)]*)//' > $@
 
 $(OMPHALOS)-coretest: $(COREOBJS) $(CORETESTOBJS)
 	@mkdir -p $(@D)
