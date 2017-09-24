@@ -387,6 +387,13 @@ struct l3host *lookup_global_l3host(int fam,const void *addr){
 	}
 	assert(gh->addrlen <= sizeof(cmp));
 	memcpy(&cmp,addr,gh->addrlen);
+	// FIXME sometimes we have an invalid l3:
+	// #0  __memcmp_sse4_1 () at ../sysdeps/x86_64/multiarch/memcmp-sse4.S:793
+	// #1  0x000055fc15638398 in lookup_global_l3host (fam=fam@entry=10,
+	//     addr=addr@entry=0x7f1c25305dc0) at src/omphalos/netaddrs.c:391
+	//         l3 = 0x3a
+	//         cmp = {ip4 = 2155545894, ip6 = {2155545894, 2986349824, 20329236,
+	//             1718821246}, mac = "&\005{\200\000\025"}
 	for(l3 = gh->head ; l3 ; l3 = l3->gnext){
 		if(memcmp(&l3->addr,&cmp,gh->addrlen) == 0){
 			break;
