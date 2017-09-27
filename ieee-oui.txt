@@ -28055,54 +28055,6 @@ F4F5DB     		Xiaomi Communications Co Ltd
 				Brentwood  Essex  08854
 				GB
 
-10-77-B0   		Fiberhome Telecommunication Technologies Co.,LTD
-1077B0     		Fiberhome Telecommunication Technologies Co.,LTD
-				No.5 DongXin Road
-				Wuhan  Hubei  430074
-				CN
-
-1C-39-8A   		Fiberhome Telecommunication Technologies Co.,LTD
-1C398A     		Fiberhome Telecommunication Technologies Co.,LTD
-				No.5 DongXin Road
-				Wuhan  Hubei  430074
-				CN
-
-CC-06-77   		Fiberhome Telecommunication Technologies Co.,LTD
-CC0677     		Fiberhome Telecommunication Technologies Co.,LTD
-				No.5 DongXin Road
-				Wuhan  Hubei  430074
-				CN
-
-C8-40-29   		Fiberhome Telecommunication Technologies Co.,LTD
-C84029     		Fiberhome Telecommunication Technologies Co.,LTD
-				No.5 DongXin Road
-				Wuhan  Hubei  430074
-				CN
-
-28-BF-89   		Fiberhome Telecommunication Technologies Co.,LTD
-28BF89     		Fiberhome Telecommunication Technologies Co.,LTD
-				No.5 DongXin Road
-				Wuhan  Hubei  430074
-				CN
-
-F4-57-3E   		Fiberhome Telecommunication Technologies Co.,LTD
-F4573E     		Fiberhome Telecommunication Technologies Co.,LTD
-				No.5 DongXin Road
-				Wuhan  Hubei  430074
-				CN
-
-88-94-7E   		Fiberhome Telecommunication Technologies Co.,LTD
-88947E     		Fiberhome Telecommunication Technologies Co.,LTD
-				No.5 DongXin Road
-				Wuhan  Hubei  430074
-				CN
-
-B0-E2-E5   		Fiberhome Telecommunication Technologies Co.,LTD
-B0E2E5     		Fiberhome Telecommunication Technologies Co.,LTD
-				No.5 DongXin Road
-				Wuhan City  Hubei Province  430074
-				CN
-
 F0-AB-54   		MITSUMI ELECTRIC CO.,LTD.
 F0AB54     		MITSUMI ELECTRIC CO.,LTD.
 				2-11-2, Tsurumaki
@@ -28666,6 +28618,126 @@ D88466     		Extreme Networks, Inc.
 				Lot 8, Jalan Hi-Tech 2/3
 				Kulim  Kedah  09000
 				MY
+
+8C-EC-4B   		Dell Inc.
+8CEC4B     		Dell Inc.
+				One Dell Way
+				Round Rock  TX  78682
+				US
+
+3C-9A-77   		Technicolor CH USA Inc.
+3C9A77     		Technicolor CH USA Inc.
+				101 West 103rd St.
+				Indianapolis  IN  46290
+				US
+
+6C-2A-CB   		Paxton Access Ltd
+6C2ACB     		Paxton Access Ltd
+				Paxton House
+				Brighton  East Sussex  BN1 9HU
+				GB
+
+00-27-90   		Cisco Systems, Inc
+002790     		Cisco Systems, Inc
+				80 West Tasman Drive
+				San Jose  CA  94568
+				US
+
+FC-A1-83   		Amazon Technologies Inc.
+FCA183     		Amazon Technologies Inc.
+				P.O Box 8102
+				Reno    89507
+				US
+
+B8-9F-09   		Wistron Neweb Corporation
+B89F09     		Wistron Neweb Corporation
+				No.20,Park Avenue II,Hsinchu Science Park
+				Hsin-Chu  R.O.C.  308
+				TW
+
+94-29-0C   		Shenyang wisdom Foundation Technology Development Co., Ltd.
+94290C     		Shenyang wisdom Foundation Technology Development Co., Ltd.
+				No. 262 North Main Street, Huanggu District, the Yellow River
+				shenyang    110000
+				CN
+
+40-64-A4   		THE FURUKAWA ELECTRIC CO., LTD
+4064A4     		THE FURUKAWA ELECTRIC CO., LTD
+				2-2-3,Marunouchi
+				Chiyoda-ku  Tokyo  100-8322
+				JP
+
+DC-A2-66   		Hon Hai Precision Ind. Co.,Ltd.
+DCA266     		Hon Hai Precision Ind. Co.,Ltd.
+				Building D21,No.1, East Zone 1st Road
+				Chongqing  Chongqing  401332
+				CN
+
+D8-9C-67   		Hon Hai Precision Ind. Co.,Ltd.
+D89C67     		Hon Hai Precision Ind. Co.,Ltd.
+				Building D21,No.1, East Zone 1st Road
+				Chongqing  Chongqing  401332
+				CN
+
+80-2B-F9   		Hon Hai Precision Ind. Co.,Ltd.
+802BF9     		Hon Hai Precision Ind. Co.,Ltd.
+				Building D21,No.1, East Zone 1st Road
+				Chongqing  Chongqing  401332
+				CN
+
+4C-DD-31   		Samsung Electronics Co.,Ltd
+4CDD31     		Samsung Electronics Co.,Ltd
+				#94-1, Imsoo-Dong
+				Gumi  Gyeongbuk  730-350
+				KR
+
+C8-40-29   		Fiberhome Telecommunication Technologies Co.,LTD
+C84029     		Fiberhome Telecommunication Technologies Co.,LTD
+				No.5 DongXin Road
+				Wuhan  Hubei  430074
+				CN
+
+CC-06-77   		Fiberhome Telecommunication Technologies Co.,LTD
+CC0677     		Fiberhome Telecommunication Technologies Co.,LTD
+				No.5 DongXin Road
+				Wuhan  Hubei  430074
+				CN
+
+1C-39-8A   		Fiberhome Telecommunication Technologies Co.,LTD
+1C398A     		Fiberhome Telecommunication Technologies Co.,LTD
+				No.5 DongXin Road
+				Wuhan  Hubei  430074
+				CN
+
+10-77-B0   		Fiberhome Telecommunication Technologies Co.,LTD
+1077B0     		Fiberhome Telecommunication Technologies Co.,LTD
+				No.5 DongXin Road
+				Wuhan  Hubei  430074
+				CN
+
+88-94-7E   		Fiberhome Telecommunication Technologies Co.,LTD
+88947E     		Fiberhome Telecommunication Technologies Co.,LTD
+				No.5 DongXin Road
+				Wuhan  Hubei  430074
+				CN
+
+F4-57-3E   		Fiberhome Telecommunication Technologies Co.,LTD
+F4573E     		Fiberhome Telecommunication Technologies Co.,LTD
+				No.5 DongXin Road
+				Wuhan  Hubei  430074
+				CN
+
+28-BF-89   		Fiberhome Telecommunication Technologies Co.,LTD
+28BF89     		Fiberhome Telecommunication Technologies Co.,LTD
+				No.5 DongXin Road
+				Wuhan  Hubei  430074
+				CN
+
+B0-E2-E5   		Fiberhome Telecommunication Technologies Co.,LTD
+B0E2E5     		Fiberhome Telecommunication Technologies Co.,LTD
+				No.5 DongXin Road
+				Wuhan City  Hubei Province  430074
+				CN
 
 0C-6F-9C   		Shaw Communications Inc.
 0C6F9C     		Shaw Communications Inc.
@@ -52829,9 +52901,6 @@ C4BB4C     		Zebra Information Tech Co. Ltd
 				    118502
 				SG
 
-CC-3A-DF   		Private
-CC3ADF     		Private
-
 14-1F-78   		Samsung Electronics Co.,Ltd
 141F78     		Samsung Electronics Co.,Ltd
 				#94-1, Imsoo-Dong
@@ -56702,54 +56771,6 @@ F079E8     		GUANGDONG OPPO MOBILE TELECOMMUNICATIONS CORP.,LTD
 				DONG GUAN  GUANG DONG  523860
 				CN
 
-A0-13-CB   		Fiberhome Telecommunication Technologies Co.,LTD
-A013CB     		Fiberhome Telecommunication Technologies Co.,LTD
-				No.5 DongXin Road
-				Wuhan  Hubei  430074
-				CN
-
-20-89-6F   		Fiberhome Telecommunication Technologies Co.,LTD
-20896F     		Fiberhome Telecommunication Technologies Co.,LTD
-				No.5 DongXin Road
-				Wuhan  Hubei  430074
-				CN
-
-74-1E-93   		Fiberhome Telecommunication Technologies Co.,LTD
-741E93     		Fiberhome Telecommunication Technologies Co.,LTD
-				No.5 DongXin Road
-				Wuhan City  Hubei Province  430074
-				CN
-
-18-A3-E8   		Fiberhome Telecommunication Technologies Co.,LTD
-18A3E8     		Fiberhome Telecommunication Technologies Co.,LTD
-				No.5 DongXin Road
-				Wuhan City  Hubei Province  430074
-				CN
-
-60-B6-17   		Fiberhome Telecommunication Technologies Co.,LTD
-60B617     		Fiberhome Telecommunication Technologies Co.,LTD
-				No.5 DongXin Road
-				Wuhan City  Hubei Province  430074
-				CN
-
-CC-50-0A   		Fiberhome Telecommunication Technologies Co.,LTD
-CC500A     		Fiberhome Telecommunication Technologies Co.,LTD
-				No.5 DongXin Road
-				Wuhan  Hubei  430074
-				CN
-
-A8-E7-05   		Fiberhome Telecommunication Technologies Co.,LTD
-A8E705     		Fiberhome Telecommunication Technologies Co.,LTD
-				No.5 DongXin Road
-				Wuhan  Hubei  430074
-				CN
-
-74-C9-A3   		Fiberhome Telecommunication Technologies Co.,LTD
-74C9A3     		Fiberhome Telecommunication Technologies Co.,LTD
-				No.5 DongXin Road
-				Wuhan  Hubei  430074
-				CN
-
 D8-A5-34   		Spectronix Corporation
 D8A534     		Spectronix Corporation
 				3-28-15, Tarumi-cho
@@ -57366,6 +57387,138 @@ B8-50-01   		Extreme Networks, Inc.
 B85001     		Extreme Networks, Inc.
 				ONE ZEBRA PLAZA
 				HOLTSVILLE  NY  11742
+				US
+
+7C-76-30   		Shenzhen YOUHUA Technology Co., Ltd
+7C7630     		Shenzhen YOUHUA Technology Co., Ltd
+				Room 407 Shenzhen University-town Business Park,Lishan Road,Taoyuan Street,Nanshan District
+				Shenzhen  Guangdong  518055
+				CN
+
+98-22-EF   		Liteon Technology Corporation
+9822EF     		Liteon Technology Corporation
+				4F, 90, Chien 1 Road
+				New Taipei City  Taiwan  23585
+				TW
+
+58-04-54   		ICOMM HK LIMITED
+580454     		ICOMM HK LIMITED
+				SUITES 2302-6, 23/F GREAT EAGLE CTR 23 HARBOUR RD 
+				WANCHAI    NA
+				HK
+
+A0-BD-CD   		BSkyB Ltd
+A0BDCD     		BSkyB Ltd
+				130 Kings Road
+				Brentwood  Essex  08854
+				GB
+
+80-3A-59   		AT&T
+803A59     		AT&T
+				1025 Lenox Park Blvd
+				Atlanta  GA  30319
+				US
+
+60-6D-3C   		Luxshare Precision Industry Company Limited
+606D3C     		Luxshare Precision Industry Company Limited
+				Floor 2, Block A, Sanyo New Industrial Area
+				West Haoyi Community, Shajing Subdistrict Office  Bao'an District, Shenzhen, Guangdong  523000
+				CN
+
+CC-4D-38   		Carnegie Technologies
+CC4D38     		Carnegie Technologies
+				9737 Great Hills Trail #260
+				Austin  TX  78759
+				US
+
+54-FC-F0   		Samsung Electronics Co.,Ltd
+54FCF0     		Samsung Electronics Co.,Ltd
+				#94-1, Imsoo-Dong
+				Gumi  Gyeongbuk  730-350
+				KR
+
+08-AE-D6   		Samsung Electronics Co.,Ltd
+08AED6     		Samsung Electronics Co.,Ltd
+				#94-1, Imsoo-Dong
+				Gumi  Gyeongbuk  730-350
+				KR
+
+B0-67-2F   		Bowers & Wilkins
+B0672F     		Bowers & Wilkins
+				900 Middlefield Rd Floor 4
+				Redwood City  CA  94063
+				US
+
+A8-16-D0   		Samsung Electronics Co.,Ltd
+A816D0     		Samsung Electronics Co.,Ltd
+				#94-1, Imsoo-Dong
+				Gumi  Gyeongbuk  730-350
+				KR
+
+88-BD-45   		Samsung Electronics Co.,Ltd
+88BD45     		Samsung Electronics Co.,Ltd
+				#94-1, Imsoo-Dong
+				Gumi  Gyeongbuk  730-350
+				KR
+
+74-C9-A3   		Fiberhome Telecommunication Technologies Co.,LTD
+74C9A3     		Fiberhome Telecommunication Technologies Co.,LTD
+				No.5 DongXin Road
+				Wuhan  Hubei  430074
+				CN
+
+A8-E7-05   		Fiberhome Telecommunication Technologies Co.,LTD
+A8E705     		Fiberhome Telecommunication Technologies Co.,LTD
+				No.5 DongXin Road
+				Wuhan  Hubei  430074
+				CN
+
+CC-50-0A   		Fiberhome Telecommunication Technologies Co.,LTD
+CC500A     		Fiberhome Telecommunication Technologies Co.,LTD
+				No.5 DongXin Road
+				Wuhan  Hubei  430074
+				CN
+
+60-B6-17   		Fiberhome Telecommunication Technologies Co.,LTD
+60B617     		Fiberhome Telecommunication Technologies Co.,LTD
+				No.5 DongXin Road
+				Wuhan City  Hubei Province  430074
+				CN
+
+18-A3-E8   		Fiberhome Telecommunication Technologies Co.,LTD
+18A3E8     		Fiberhome Telecommunication Technologies Co.,LTD
+				No.5 DongXin Road
+				Wuhan City  Hubei Province  430074
+				CN
+
+74-1E-93   		Fiberhome Telecommunication Technologies Co.,LTD
+741E93     		Fiberhome Telecommunication Technologies Co.,LTD
+				No.5 DongXin Road
+				Wuhan City  Hubei Province  430074
+				CN
+
+20-89-6F   		Fiberhome Telecommunication Technologies Co.,LTD
+20896F     		Fiberhome Telecommunication Technologies Co.,LTD
+				No.5 DongXin Road
+				Wuhan  Hubei  430074
+				CN
+
+A0-13-CB   		Fiberhome Telecommunication Technologies Co.,LTD
+A013CB     		Fiberhome Telecommunication Technologies Co.,LTD
+				No.5 DongXin Road
+				Wuhan  Hubei  430074
+				CN
+
+3C-FB-5C   		Fiberhome Telecommunication Technologies Co.,LTD
+3CFB5C     		Fiberhome Telecommunication Technologies Co.,LTD
+				No.5 DongXin Road
+				Wuhan  Hubei  430074
+				CN
+
+CC-3A-DF   		Neptune Technology Group Inc.
+CC3ADF     		Neptune Technology Group Inc.
+				1600 AL Highway 229 S
+				Tallassee  AL  36078
 				US
 
 58-46-E1   		Baxter International Inc
@@ -84983,66 +85136,6 @@ C850E9     		Raisecom Technology CO., LTD
 				San Jose  CA  94568
 				US
 
-34-4B-3D   		Fiberhome Telecommunication Technologies Co.,LTD
-344B3D     		Fiberhome Telecommunication Technologies Co.,LTD
-				No.5 DongXin Road
-				Wuhan City  Hubei Province  430074
-				CN
-
-E4-2F-26   		Fiberhome Telecommunication Technologies Co.,LTD
-E42F26     		Fiberhome Telecommunication Technologies Co.,LTD
-				No.5 DongXin Road
-				Wuhan City  Hubei Province  430074
-				CN
-
-BC-98-89   		Fiberhome Telecommunication Technologies Co.,LTD
-BC9889     		Fiberhome Telecommunication Technologies Co.,LTD
-				No.5 DongXin Road
-				Wuhan City  Hubei Province  430074
-				CN
-
-10-88-CE   		Fiberhome Telecommunication Technologies Co.,LTD
-1088CE     		Fiberhome Telecommunication Technologies Co.,LTD
-				No.5 DongXin Road
-				Wuhan City  Hubei Province  430074
-				CN
-
-FC-F6-47   		Fiberhome Telecommunication Technologies Co.,LTD
-FCF647     		Fiberhome Telecommunication Technologies Co.,LTD
-				No.5 DongXin Road
-				Wuhan City  Hubei Province  430074
-				CN
-
-74-CC-39   		Fiberhome Telecommunication Technologies Co.,LTD
-74CC39     		Fiberhome Telecommunication Technologies Co.,LTD
-				No.5 DongXin Road
-				Wuhan  Hubei  430074
-				CN
-
-6C-A8-58   		Fiberhome Telecommunication Technologies Co.,LTD
-6CA858     		Fiberhome Telecommunication Technologies Co.,LTD
-				No.5 DongXin Road
-				Wuhan  Hubei  430074
-				CN
-
-34-1A-35   		Fiberhome Telecommunication Technologies Co.,LTD
-341A35     		Fiberhome Telecommunication Technologies Co.,LTD
-				No.5 DongXin Road
-				Wuhan  Hubei  430074
-				CN
-
-18-D2-25   		Fiberhome Telecommunication Technologies Co.,LTD
-18D225     		Fiberhome Telecommunication Technologies Co.,LTD
-				No.5 DongXin Road
-				Wuhan  Hubei  430074
-				CN
-
-18-52-82   		Fiberhome Telecommunication Technologies Co.,LTD
-185282     		Fiberhome Telecommunication Technologies Co.,LTD
-				No.5 DongXin Road
-				Wuhan  Hubei  430074
-				CN
-
 BC-41-01   		Shenzhen TINNO Mobile Technology Corp.
 BC4101     		Shenzhen TINNO Mobile Technology Corp.
 				4/F, H-3 Building, Qiao Cheng Eastern Industrial Park, Overseas Chinese Town, Shenzhen 
@@ -85053,12 +85146,6 @@ BC4101     		Shenzhen TINNO Mobile Technology Corp.
 5C8D2D     		Shanghai Wellpay Information Technology Co., Ltd
 				 Loushanguan Road 523, Jin Hongqiao International Center Building, 1501
 				Shanghai    200000
-				CN
-
-70-B9-21   		Fiberhome Telecommunication Technologies Co.,LTD
-70B921     		Fiberhome Telecommunication Technologies Co.,LTD
-				No.5 DongXin Road
-				Wuhan  Hubei  430074
 				CN
 
 BC-82-5D   		MITSUMI ELECTRIC CO.,LTD.
@@ -85240,12 +85327,6 @@ E4BD4B     		zte corporation
 				P.O Box 8102
 				Reno  NV  89507
 				US
-
-74-E1-9A   		Fiberhome Telecommunication Technologies Co.,LTD
-74E19A     		Fiberhome Telecommunication Technologies Co.,LTD
-				No.5 DongXin Road
-				Wuhan  Hubei  430074
-				CN
 
 3C-A5-81   		vivo Mobile Communication Co., Ltd.
 3CA581     		vivo Mobile Communication Co., Ltd.
@@ -85589,6 +85670,12 @@ C8DF84     		Texas Instruments
 				Dallas  TX  75243
 				US
 
+5C-0E-8B   		Extreme Networks, Inc.
+5C0E8B     		Extreme Networks, Inc.
+				475 Half Day Road
+				Lincolnshire  IL  60069
+				US
+
 B4-C7-99   		Extreme Networks, Inc.
 B4C799     		Extreme Networks, Inc.
 				475 Half Day Road
@@ -85619,11 +85706,29 @@ B4C799     		Extreme Networks, Inc.
 				CUPERINT0  CA  95014
 				US
 
-5C-0E-8B   		Extreme Networks, Inc.
-5C0E8B     		Extreme Networks, Inc.
-				475 Half Day Road
-				Lincolnshire  IL  60069
-				US
+A4-86-AE   		Quectel Wireless Solutions
+A486AE     		Quectel Wireless Solutions
+				No.1801 Hongmei Road, Xuhui District
+				Shanghai    200233
+				CN
+
+70-26-05   		SONY Visual Products Inc.
+702605     		SONY Visual Products Inc.
+				2-10-1 Osaki
+				Shinagawa-ku  Tokyo  141-8610
+				JP
+
+5C-5F-67   		Intel Corporate
+5C5F67     		Intel Corporate
+				Lot 8, Jalan Hi-Tech 2/3
+				Kulim  Kedah  09000
+				MY
+
+7C-76-35   		Intel Corporate
+7C7635     		Intel Corporate
+				Lot 8, Jalan Hi-Tech 2/3
+				Kulim  Kedah  09000
+				MY
 
 DC-48-B2   		Baraja Pty. Ltd.
 DC48B2     		Baraja Pty. Ltd.
@@ -85637,11 +85742,116 @@ DC48B2     		Baraja Pty. Ltd.
 				4-4-9 Kitahama  Chuo-ku, Osaka  541-0041
 				JP
 
-7C-76-35   		Intel Corporate
-7C7635     		Intel Corporate
-				Lot 8, Jalan Hi-Tech 2/3
-				Kulim  Kedah  09000
-				MY
+D8-63-75   		Xiaomi Communications Co Ltd
+D86375     		Xiaomi Communications Co Ltd
+				The Rainbow City of China Resources
+				NO.68, Qinghe Middle Street  Haidian District, Beijing  100085
+				CN
+
+DC-BF-E9   		Motorola Mobility LLC, a Lenovo Company
+DCBFE9     		Motorola Mobility LLC, a Lenovo Company
+				222 West Merchandise Mart Plaza
+				Chicago  IL  60654
+				US
+
+2C-37-C5   		Qingdao Haier Intelligent Home Appliance Technology Co.,Ltd
+2C37C5     		Qingdao Haier Intelligent Home Appliance Technology Co.,Ltd
+				ingdao high-tech park haier road 1
+				Qingdao  Shandong  266101
+				CN
+
+74-95-EC   		ALPS ELECTRIC CO.,LTD.
+7495EC     		ALPS ELECTRIC CO.,LTD.
+				6-1
+				Kakuda  Miyagi-Pref  981-1595
+				JP
+
+18-52-82   		Fiberhome Telecommunication Technologies Co.,LTD
+185282     		Fiberhome Telecommunication Technologies Co.,LTD
+				No.5 DongXin Road
+				Wuhan  Hubei  430074
+				CN
+
+04-02-CA   		Shenzhen Vtsonic Co.,ltd
+0402CA     		Shenzhen Vtsonic Co.,ltd
+				No.35,the 2nd Industrial Zone,Tangxiayong Village,Songgang Town,Bao'an District,Shenzhen,China.
+				Shenzhen  Guangdong  518102
+				CN
+
+30-6A-85   		Samsung Electronics Co.,Ltd
+306A85     		Samsung Electronics Co.,Ltd
+				#94-1, Imsoo-Dong
+				Gumi  Gyeongbuk  730-350
+				KR
+
+E4-F1-4C   		Private
+E4F14C     		Private
+
+74-CC-39   		Fiberhome Telecommunication Technologies Co.,LTD
+74CC39     		Fiberhome Telecommunication Technologies Co.,LTD
+				No.5 DongXin Road
+				Wuhan  Hubei  430074
+				CN
+
+FC-F6-47   		Fiberhome Telecommunication Technologies Co.,LTD
+FCF647     		Fiberhome Telecommunication Technologies Co.,LTD
+				No.5 DongXin Road
+				Wuhan City  Hubei Province  430074
+				CN
+
+10-88-CE   		Fiberhome Telecommunication Technologies Co.,LTD
+1088CE     		Fiberhome Telecommunication Technologies Co.,LTD
+				No.5 DongXin Road
+				Wuhan City  Hubei Province  430074
+				CN
+
+BC-98-89   		Fiberhome Telecommunication Technologies Co.,LTD
+BC9889     		Fiberhome Telecommunication Technologies Co.,LTD
+				No.5 DongXin Road
+				Wuhan City  Hubei Province  430074
+				CN
+
+E4-2F-26   		Fiberhome Telecommunication Technologies Co.,LTD
+E42F26     		Fiberhome Telecommunication Technologies Co.,LTD
+				No.5 DongXin Road
+				Wuhan City  Hubei Province  430074
+				CN
+
+34-4B-3D   		Fiberhome Telecommunication Technologies Co.,LTD
+344B3D     		Fiberhome Telecommunication Technologies Co.,LTD
+				No.5 DongXin Road
+				Wuhan City  Hubei Province  430074
+				CN
+
+18-D2-25   		Fiberhome Telecommunication Technologies Co.,LTD
+18D225     		Fiberhome Telecommunication Technologies Co.,LTD
+				No.5 DongXin Road
+				Wuhan  Hubei  430074
+				CN
+
+34-1A-35   		Fiberhome Telecommunication Technologies Co.,LTD
+341A35     		Fiberhome Telecommunication Technologies Co.,LTD
+				No.5 DongXin Road
+				Wuhan  Hubei  430074
+				CN
+
+6C-A8-58   		Fiberhome Telecommunication Technologies Co.,LTD
+6CA858     		Fiberhome Telecommunication Technologies Co.,LTD
+				No.5 DongXin Road
+				Wuhan  Hubei  430074
+				CN
+
+70-B9-21   		Fiberhome Telecommunication Technologies Co.,LTD
+70B921     		Fiberhome Telecommunication Technologies Co.,LTD
+				No.5 DongXin Road
+				Wuhan  Hubei  430074
+				CN
+
+74-E1-9A   		Fiberhome Telecommunication Technologies Co.,LTD
+74E19A     		Fiberhome Telecommunication Technologies Co.,LTD
+				No.5 DongXin Road
+				Wuhan  Hubei  430074
+				CN
 
 D8-6C-E9   		Sagemcom Broadband SAS
 D86CE9     		Sagemcom Broadband SAS
@@ -113657,78 +113867,6 @@ A0648F     		ASKEY COMPUTER CORP
 				NEW TAIPEI  TAIWAN  23585
 				TW
 
-04-C1-B9   		Fiberhome Telecommunication Technologies Co.,LTD
-04C1B9     		Fiberhome Telecommunication Technologies Co.,LTD
-				No.5 DongXin Road
-				Wuhan City  Hubei Province  430074
-				CN
-
-D4-67-E7   		Fiberhome Telecommunication Technologies Co.,LTD
-D467E7     		Fiberhome Telecommunication Technologies Co.,LTD
-				No.5 DongXin Road
-				Wuhan City  Hubei Province  430074
-				CN
-
-34-BF-90   		Fiberhome Telecommunication Technologies Co.,LTD
-34BF90     		Fiberhome Telecommunication Technologies Co.,LTD
-				No.5 DongXin Road
-				Wuhan City  Hubei Province  430074
-				CN
-
-F8-C9-6C   		Fiberhome Telecommunication Technologies Co.,LTD
-F8C96C     		Fiberhome Telecommunication Technologies Co.,LTD
-				No.5 DongXin Road
-				Wuhan City  Hubei Province  430074
-				CN
-
-48-55-5F   		Fiberhome Telecommunication Technologies Co.,LTD
-48555F     		Fiberhome Telecommunication Technologies Co.,LTD
-				No.5 DongXin Road
-				Wuhan City  Hubei Province  430074
-				CN
-
-D4-AD-2D   		Fiberhome Telecommunication Technologies Co.,LTD
-D4AD2D     		Fiberhome Telecommunication Technologies Co.,LTD
-				No.5 DongXin Road
-				Wuhan City  Hubei Province  430074
-				CN
-
-D0-04-92   		Fiberhome Telecommunication Technologies Co.,LTD
-D00492     		Fiberhome Telecommunication Technologies Co.,LTD
-				No.5 DongXin Road
-				Wuhan  Hubei  430074
-				CN
-
-80-9F-AB   		Fiberhome Telecommunication Technologies Co.,LTD
-809FAB     		Fiberhome Telecommunication Technologies Co.,LTD
-				No.5 DongXin Road
-				Wuhan  Hubei  430074
-				CN
-
-9C-88-AD   		Fiberhome Telecommunication Technologies Co.,LTD
-9C88AD     		Fiberhome Telecommunication Technologies Co.,LTD
-				No.5 DongXin Road
-				Wuhan  Hubei  430074
-				CN
-
-5C-E3-B6   		Fiberhome Telecommunication Technologies Co.,LTD
-5CE3B6     		Fiberhome Telecommunication Technologies Co.,LTD
-				No.5 DongXin Road
-				Wuhan  Hubei  430074
-				CN
-
-48-F9-7C   		Fiberhome Telecommunication Technologies Co.,LTD
-48F97C     		Fiberhome Telecommunication Technologies Co.,LTD
-				No.5 DongXin Road
-				Wuhan  Hubei  430074
-				CN
-
-10-58-87   		Fiberhome Telecommunication Technologies Co.,LTD
-105887     		Fiberhome Telecommunication Technologies Co.,LTD
-				No.5 DongXin Road
-				Wuhan  Hubei  430074
-				CN
-
 04-84-8A   		7INOVA TECHNOLOGY LIMITED
 04848A     		7INOVA TECHNOLOGY LIMITED
 				3F, A Building, QuanYuanFa Industrial Park, No. 72, GuanLan Rd
@@ -113972,8 +114110,80 @@ E8825B     		ARRIS Group, Inc.
 				Hsinchu    30077
 				TW
 
+04-C1-B9   		Fiberhome Telecommunication Technologies Co.,LTD
+04C1B9     		Fiberhome Telecommunication Technologies Co.,LTD
+				No.5 DongXin Road
+				Wuhan City  Hubei Province  430074
+				CN
+
+5C-E3-B6   		Fiberhome Telecommunication Technologies Co.,LTD
+5CE3B6     		Fiberhome Telecommunication Technologies Co.,LTD
+				No.5 DongXin Road
+				Wuhan  Hubei  430074
+				CN
+
+9C-88-AD   		Fiberhome Telecommunication Technologies Co.,LTD
+9C88AD     		Fiberhome Telecommunication Technologies Co.,LTD
+				No.5 DongXin Road
+				Wuhan  Hubei  430074
+				CN
+
+80-9F-AB   		Fiberhome Telecommunication Technologies Co.,LTD
+809FAB     		Fiberhome Telecommunication Technologies Co.,LTD
+				No.5 DongXin Road
+				Wuhan  Hubei  430074
+				CN
+
+D0-04-92   		Fiberhome Telecommunication Technologies Co.,LTD
+D00492     		Fiberhome Telecommunication Technologies Co.,LTD
+				No.5 DongXin Road
+				Wuhan  Hubei  430074
+				CN
+
 00-BE-9E   		Fiberhome Telecommunication Technologies Co.,LTD
 00BE9E     		Fiberhome Telecommunication Technologies Co.,LTD
+				No.5 DongXin Road
+				Wuhan  Hubei  430074
+				CN
+
+D4-AD-2D   		Fiberhome Telecommunication Technologies Co.,LTD
+D4AD2D     		Fiberhome Telecommunication Technologies Co.,LTD
+				No.5 DongXin Road
+				Wuhan City  Hubei Province  430074
+				CN
+
+48-55-5F   		Fiberhome Telecommunication Technologies Co.,LTD
+48555F     		Fiberhome Telecommunication Technologies Co.,LTD
+				No.5 DongXin Road
+				Wuhan City  Hubei Province  430074
+				CN
+
+F8-C9-6C   		Fiberhome Telecommunication Technologies Co.,LTD
+F8C96C     		Fiberhome Telecommunication Technologies Co.,LTD
+				No.5 DongXin Road
+				Wuhan City  Hubei Province  430074
+				CN
+
+34-BF-90   		Fiberhome Telecommunication Technologies Co.,LTD
+34BF90     		Fiberhome Telecommunication Technologies Co.,LTD
+				No.5 DongXin Road
+				Wuhan City  Hubei Province  430074
+				CN
+
+D4-67-E7   		Fiberhome Telecommunication Technologies Co.,LTD
+D467E7     		Fiberhome Telecommunication Technologies Co.,LTD
+				No.5 DongXin Road
+				Wuhan City  Hubei Province  430074
+				CN
+
+10-58-87   		Fiberhome Telecommunication Technologies Co.,LTD
+105887     		Fiberhome Telecommunication Technologies Co.,LTD
+				No.5 DongXin Road
+				Wuhan  Hubei  430074
+				CN
+
+48-F9-7C   		Fiberhome Telecommunication Technologies Co.,LTD
+48F97C     		Fiberhome Telecommunication Technologies Co.,LTD
 				No.5 DongXin Road
 				Wuhan  Hubei  430074
 				CN
@@ -114262,6 +114472,48 @@ FC0A81     		Extreme Networks, Inc.
 				3-1-11 NNT build. 
 				Tokyo    1030013
 				JP
+
+BC-FF-EB   		Motorola Mobility LLC, a Lenovo Company
+BCFFEB     		Motorola Mobility LLC, a Lenovo Company
+				222 West Merchandise Mart Plaza
+				Chicago  IL  60654
+				US
+
+CC-40-D0   		NETGEAR
+CC40D0     		NETGEAR
+				350 East Plumeria Drive
+				San Jose  CA  95134
+				US
+
+B4-2D-56   		Extreme Networks, Inc.
+B42D56     		Extreme Networks, Inc.
+				6480 Via Del Oro
+				San Jose  CA  95119
+				US
+
+00-5D-73   		Cisco Systems, Inc
+005D73     		Cisco Systems, Inc
+				80 West Tasman Drive
+				San Jose  CA  94568
+				US
+
+9C-32-CE   		CANON INC.
+9C32CE     		CANON INC.
+				30-2 Shimomaruko 3-chome,
+				Ohta-ku  Tokyo  146-8501
+				JP
+
+74-40-BB   		Hon Hai Precision Ind. Co.,Ltd.
+7440BB     		Hon Hai Precision Ind. Co.,Ltd.
+				Building D21,No.1, East Zone 1st Road
+				Chongqing  Chongqing  401332
+				CN
+
+68-5A-CF   		Samsung Electronics Co.,Ltd
+685ACF     		Samsung Electronics Co.,Ltd
+				#94-1, Imsoo-Dong
+				Gumi  Gyeongbuk  730-350
+				KR
 
 2C-39-96   		Sagemcom Broadband SAS
 2C3996     		Sagemcom Broadband SAS
@@ -141575,12 +141827,6 @@ C8DE51     		 IntegraOptics
 				Seoul  Seoul  03920
 				KR
 
-14-78-0B   		PerkinElmer Technologies GmbH & Co. KG
-14780B     		PerkinElmer Technologies GmbH & Co. KG
-				In der Rehbach 22
-				Walluf    65396
-				DE
-
 74-DA-DA   		D-Link International
 74DADA     		D-Link International
 				1 Internal Business Park, #03-12,The Synergy, Singapore
@@ -142148,9 +142394,6 @@ A040A0     		NETGEAR
 				San Jose  CA  95134
 				US
 
-00-50-79   		Private
-005079     		Private
-
 F8-64-65   		Anova Applied Electronics, Inc.
 F86465     		Anova Applied Electronics, Inc.
 				580 Howard Street, #403
@@ -142427,34 +142670,10 @@ F4E204     		Traqueur
 				Qingdao    266000
 				CN
 
-F0-8C-FB   		Fiberhome Telecommunication Technologies Co.,LTD
-F08CFB     		Fiberhome Telecommunication Technologies Co.,LTD
-				No.5 DongXin Road
-				Wuhan City  Hubei Province  430074
-				CN
-
-F0-40-7B   		Fiberhome Telecommunication Technologies Co.,LTD
-F0407B     		Fiberhome Telecommunication Technologies Co.,LTD
-				No.5 DongXin Road
-				Wuhan  Hubei  430074
-				CN
-
-BC-C0-0F   		Fiberhome Telecommunication Technologies Co.,LTD
-BCC00F     		Fiberhome Telecommunication Technologies Co.,LTD
-				No.5 DongXin Road
-				Wuhan  Hubei  430074
-				CN
-
 64-05-E9   		Shenzhen WayOS Technology Crop., Ltd.
 6405E9     		Shenzhen WayOS Technology Crop., Ltd.
 				F18, Yousong Business Building, Longhua New District, Shenzhen, China
 				Shenzhen  Guangdong  518109
-				CN
-
-B8-C7-16   		Fiberhome Telecommunication Technologies Co.,LTD
-B8C716     		Fiberhome Telecommunication Technologies Co.,LTD
-				No.5 DongXin Road
-				Wuhan  Hubei  430074
 				CN
 
 50-A8-3A   		S Mobile Devices Limited
@@ -142462,12 +142681,6 @@ B8C716     		Fiberhome Telecommunication Technologies Co.,LTD
 				Unit B-303, 3rd Floor, Tower-B, Plot No-7,Advant IT Park Ltd , Sector-142
 				NOIDA  Uttar Pradesh  201301
 				IN
-
-EC-8A-C7   		Fiberhome Telecommunication Technologies Co.,LTD
-EC8AC7     		Fiberhome Telecommunication Technologies Co.,LTD
-				No.5 DongXin Road
-				Wuhan  Hubei  430074
-				CN
 
 E0-84-F3   		High Grade Controls Corporation
 E084F3     		High Grade Controls Corporation
@@ -142587,18 +142800,6 @@ BC903A     		Robert Bosch GmbH
 705896     		InShow Technology
 				Jinqi Zhigu Building, Chongwen Garden, Liuxian Avenue, Nanshan District
 				shenzhen  Guangdong  518055
-				CN
-
-D0-59-95   		Fiberhome Telecommunication Technologies Co.,LTD
-D05995     		Fiberhome Telecommunication Technologies Co.,LTD
-				No.5 DongXin Road
-				Wuhan  Hubei  430074
-				CN
-
-54-DF-24   		Fiberhome Telecommunication Technologies Co.,LTD
-54DF24     		Fiberhome Telecommunication Technologies Co.,LTD
-				No.5 DongXin Road
-				Wuhan  Hubei  430074
 				CN
 
 78-87-0D   		Unifiedgateways India Private Limited
@@ -143102,23 +143303,17 @@ D8C8E9     		Phicomm (Shanghai) Co., Ltd.
 				Chongqing  Chongqing  401336
 				CN
 
-68-DB-54   		Phicomm (Shanghai) Co., Ltd.
-68DB54     		Phicomm (Shanghai) Co., Ltd.
-				3666 SiXian Rd.,Songjiang District
-				Shanghai  Shanghai  201616
-				CN
-
 6C-49-C1   		o2ones Co., Ltd.
 6C49C1     		o2ones Co., Ltd.
 				503 Glory Tower, 3-10, Gumi-ro 9beon-gil, Bundang-gu
 				Seongnam-si  Gyeonggi-do  13637
 				KR
 
-2C-6B-7D   		Texas Instruments
-2C6B7D     		Texas Instruments
-				12500 TI Blvd
-				Dallas  TX  75243
-				US
+68-DB-54   		Phicomm (Shanghai) Co., Ltd.
+68DB54     		Phicomm (Shanghai) Co., Ltd.
+				3666 SiXian Rd.,Songjiang District
+				Shanghai  Shanghai  201616
+				CN
 
 E4-8F-34   		Vodafone Italia S.p.A.
 E48F34     		Vodafone Italia S.p.A.
@@ -143126,10 +143321,10 @@ E48F34     		Vodafone Italia S.p.A.
 				Milan  Italy  20147
 				IT
 
-00-01-30   		Extreme Networks, Inc.
-000130     		Extreme Networks, Inc.
-				3585 Monroe Street
-				Santa Clara  CA  95051
+2C-6B-7D   		Texas Instruments
+2C6B7D     		Texas Instruments
+				12500 TI Blvd
+				Dallas  TX  75243
 				US
 
 78-80-38   		FUNAI ELECTRIC CO., LTD.
@@ -143137,3 +143332,120 @@ E48F34     		Vodafone Italia S.p.A.
 				7-1, NAKAGAITO 7-CHOME
 				DAITO  OSAKA  5740013
 				JP
+
+00-01-30   		Extreme Networks, Inc.
+000130     		Extreme Networks, Inc.
+				3585 Monroe Street
+				Santa Clara  CA  95051
+				US
+
+CC-6E-A4   		Samsung Electronics Co.,Ltd
+CC6EA4     		Samsung Electronics Co.,Ltd
+				129, Samsung-ro, Youngtongl-Gu
+				Suwon  Gyeonggi-Do  16677
+				KR
+
+C4-77-AF   		Advanced Digital Broadcast SA
+C477AF     		Advanced Digital Broadcast SA
+				Route de Crassier 21, B2
+				Eysins    CH-1262
+				CH
+
+20-DF-B9   		Google, Inc.
+20DFB9     		Google, Inc.
+				1600 Amphitheatre Parkway
+				Mountain View  CA  94043
+				US
+
+44-F0-34   		Kaonmedia CO., LTD.
+44F034     		Kaonmedia CO., LTD.
+				884-3, Seongnam-daero, Bundang-gu
+				Seongnam-si  Gyeonggi-do  13517
+				KR
+
+14-78-0B   		Varex Imaging Deutschland AG
+14780B     		Varex Imaging Deutschland AG
+				Zweigniederlassung/Branch Walluf
+				In der Rehbach 22  Walluf  65396
+				DE
+
+10-CD-6E   		FISYS
+10CD6E     		FISYS
+				303 Expotel, 44, Dunsan-daero 117beon-gil, Seo-gu, Daejeon, Korea
+				Daejeon, Korea    KS015
+				KR
+
+A4-6C-F1   		Samsung Electronics Co.,Ltd
+A46CF1     		Samsung Electronics Co.,Ltd
+				#94-1, Imsoo-Dong
+				Gumi  Gyeongbuk  730-350
+				KR
+
+0C-A8-A7   		Samsung Electronics Co.,Ltd
+0CA8A7     		Samsung Electronics Co.,Ltd
+				#94-1, Imsoo-Dong
+				Gumi  Gyeongbuk  730-350
+				KR
+
+54-B8-02   		Samsung Electronics Co.,Ltd
+54B802     		Samsung Electronics Co.,Ltd
+				#94-1, Imsoo-Dong
+				Gumi  Gyeongbuk  730-350
+				KR
+
+28-2C-02   		IEEE Registration Authority
+282C02     		IEEE Registration Authority
+				445 Hoes Lane
+				Piscataway  NJ  08554
+				US
+
+B8-C7-16   		Fiberhome Telecommunication Technologies Co.,LTD
+B8C716     		Fiberhome Telecommunication Technologies Co.,LTD
+				No.5 DongXin Road
+				Wuhan  Hubei  430074
+				CN
+
+D0-59-95   		Fiberhome Telecommunication Technologies Co.,LTD
+D05995     		Fiberhome Telecommunication Technologies Co.,LTD
+				No.5 DongXin Road
+				Wuhan  Hubei  430074
+				CN
+
+54-DF-24   		Fiberhome Telecommunication Technologies Co.,LTD
+54DF24     		Fiberhome Telecommunication Technologies Co.,LTD
+				No.5 DongXin Road
+				Wuhan  Hubei  430074
+				CN
+
+58-3B-D9   		Fiberhome Telecommunication Technologies Co.,LTD
+583BD9     		Fiberhome Telecommunication Technologies Co.,LTD
+				No.5 DongXin Road
+				Wuhan  Hubei  430074
+				CN
+
+BC-C0-0F   		Fiberhome Telecommunication Technologies Co.,LTD
+BCC00F     		Fiberhome Telecommunication Technologies Co.,LTD
+				No.5 DongXin Road
+				Wuhan  Hubei  430074
+				CN
+
+F0-40-7B   		Fiberhome Telecommunication Technologies Co.,LTD
+F0407B     		Fiberhome Telecommunication Technologies Co.,LTD
+				No.5 DongXin Road
+				Wuhan  Hubei  430074
+				CN
+
+F0-8C-FB   		Fiberhome Telecommunication Technologies Co.,LTD
+F08CFB     		Fiberhome Telecommunication Technologies Co.,LTD
+				No.5 DongXin Road
+				Wuhan City  Hubei Province  430074
+				CN
+
+EC-8A-C7   		Fiberhome Telecommunication Technologies Co.,LTD
+EC8AC7     		Fiberhome Telecommunication Technologies Co.,LTD
+				No.5 DongXin Road
+				Wuhan  Hubei  430074
+				CN
+
+00-50-79   		Private
+005079     		Private
