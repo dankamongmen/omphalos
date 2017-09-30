@@ -192,8 +192,10 @@ int handle_rtm_newroute(const struct nlmsghdr *nl){
 		break;}case RTA_PREF:{
 		break;}case RTA_ENCAP_TYPE:{
 		break;}case RTA_ENCAP:{
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,5,0)
 		break;}case RTA_EXPIRES:{
 		break;}case RTA_PAD:{
+#endif
 		break;}default:{
 			diagnostic("Unknown rtatype %u",ra->rta_type);
 		break;}}
