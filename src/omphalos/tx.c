@@ -80,13 +80,13 @@ void *get_tx_frame(interface *i,size_t *fsize){
 	thdr = i->curtxm;
 	if(thdr == NULL){
 		pthread_mutex_unlock(&i->lock);
-		diagnostic("Can't transmit on %s (fd %d)",i->name,i->fd);
+		diagnostic("[%s] can't transmit (fd %d)", i->name, i->fd);
 		return NULL;
 	}
 	if(thdr->tp_status != TP_STATUS_AVAILABLE){
 		if(thdr->tp_status != TP_STATUS_WRONG_FORMAT){
 			pthread_mutex_unlock(&i->lock);
-			diagnostic("No available TX frames on %s",i->name);
+			diagnostic("[%s] no available TX frames", i->name);
 			return NULL;
 		}
 		thdr->tp_status = TP_STATUS_AVAILABLE;
