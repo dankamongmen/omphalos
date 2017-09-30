@@ -864,7 +864,7 @@ handle_newlink_locked(interface *iface,const struct ifinfomsg *ii,const struct n
 		return -1;
 	}
 	if(lookup_arptype(ii->ifi_type,&iface->analyzer,&iface->l2hlen) == NULL){
-		diagnostic("Unknown device type for %s",iface->name);
+		diagnostic("[%s] unknown device type %u", iface->name, ii->ifi_type);
 		return -1;
 	}
 	if(iface->mtu == 0){

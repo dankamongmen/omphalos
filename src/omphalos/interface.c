@@ -8,6 +8,7 @@
 #include <sys/socket.h>
 #include <net/if_arp.h>
 #include <omphalos/128.h>
+#include <omphalos/ppp.h>
 #include <omphalos/util.h>
 #include <omphalos/irda.h>
 #include <omphalos/hdlc.h>
@@ -528,6 +529,11 @@ static arptype arptypes[] = {
 		.name = "Tunnelv6",
 		.analyze = handle_ethernet_packet,
 		.l2hlen = ETH_HLEN, // FIXME???
+	},{
+		.ifi_type = ARPHRD_PPP,
+		.name = "PPP",
+		.analyze = handle_ppp_packet,
+		.l2hlen = 0,
 	},{
 		.ifi_type = ARPHRD_NONE,
 		.name = "VArpless",
