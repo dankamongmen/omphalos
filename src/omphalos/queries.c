@@ -1,3 +1,5 @@
+#include <sys/socket.h>
+#include <linux/if.h>
 #include <net/if_arp.h>
 #include <omphalos/icmp.h>
 #include <omphalos/dhcp.h>
