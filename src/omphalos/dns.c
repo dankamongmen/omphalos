@@ -256,7 +256,7 @@ ustrlen(const unsigned char *s){
 // inflate the previous dns data at offset into buf, which we are responsible
 // for resizing. data must have been previous, or else we can go into a loop!
 static char *
-dns_inflate(char *buf,unsigned *bsize,const unsigned char *orig,unsigned offset,
+dns_inflate(char **ubuf,unsigned *bsize,const unsigned char *orig,unsigned offset,
 				unsigned curoffset){
 	size_t z,zz;
 
@@ -264,9 +264,11 @@ dns_inflate(char *buf,unsigned *bsize,const unsigned char *orig,unsigned offset,
 		return NULL;
 	}
 	z = ustrlen(orig + offset);
-	if((buf = realloc(buf,*bsize + z + 1)) == NULL){
+	char *buf;
+	if((buf = realloc(*ubuf,*bsize + z + 1)) == NULL){
 		return NULL; // caller is responsible for free()ing
 	}
+	*ubuf = buf;
 	if(*bsize){
 		buf[*bsize - 1] = '.';
 	}
@@ -275,13 +277,9 @@ dns_inflate(char *buf,unsigned *bsize,const unsigned char *orig,unsigned offset,
 		if(orig[offset + zz] & 0xc0){
 			if((orig[offset + zz] & 0xc0) == 0xc0){
 				unsigned newoffset;
-				char *tmp;
 
 				newoffset = ((orig[offset + zz] & ~0xc0) << 8u) + orig[offset + zz + 1];
-				if((tmp = dns_inflate(buf,bsize,orig,newoffset,offset + zz)) == NULL){
-					free(buf);
-				}
-				return tmp;
+				return dns_inflate(ubuf,bsize,orig,newoffset,offset + zz);
 			}
 			return NULL;
 		}
@@ -322,11 +320,10 @@ extract_dns_record(size_t len,const unsigned char *sec,unsigned *class,
 				free(buf);
 				return NULL;
 			}
-			if((tmp = dns_inflate(buf,&bsize,orig,offset,sec - orig)) == NULL){
+			if((tmp = dns_inflate(&buf,&bsize,orig,offset,sec - orig)) == NULL){
 				free(buf);
 				return NULL;
 			}
-			buf = tmp;
 			++sec;
 			++*idx;
 			break;
@@ -491,6 +488,7 @@ int handle_dns_packet(omphalos_packet *op,const void *frame,size_t len){
 
 		buf = extract_dns_record(len,sec,&class,&type,&bsize,frame);
 		if(buf == NULL){
+			free(cname);
 			goto malformed;
 		}
 		//diagnostic("lookup [%s]",buf);
@@ -499,6 +497,7 @@ int handle_dns_packet(omphalos_packet *op,const void *frame,size_t len){
 		data = extract_dns_extra(len,sec,&ttl,&bsize,frame,type);
 		if(data == NULL){
 			free(buf);
+			free(cname);
 			goto malformed;
 		}
 		if(class == DNS_CLASS_IN){
