@@ -776,7 +776,8 @@ void *interface_cb_locked(interface *i,iface_state *ret,struct panel_state *ps){
 			// calls draw_main_window(), updating iface count
 			wstatus_locked(stdscr,"Set up new interface %s",i->name);
 		}else{
-			rb = NULL;
+			wstatus_locked(stdscr,"Error for new interface %s",i->name);
+			return NULL;
 		}
 		add_channel_support(ret);
 	}else{
@@ -1079,11 +1080,11 @@ void use_next_iface_locked(WINDOW *w,struct panel_state *ps){
 			pull_interfaces_up(rb,rows,cols,getmaxy(rb->subwin) + 1);
 			if(last_reelbox){
 				rb->scrline = last_reelbox->scrline + getmaxy(last_reelbox->subwin) + 1;
+				last_reelbox->next = rb;
 			}else{
 				rb->scrline = 0;
 			}
 			rb->prev = last_reelbox;
-			last_reelbox->next = rb;
 			rb->next = NULL;
 			last_reelbox = rb;
 			move_interface_generic(rb,rows,cols,rb->scrline - getbegy(rb->subwin));
