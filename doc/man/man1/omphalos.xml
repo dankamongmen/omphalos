@@ -188,13 +188,13 @@
 	</refsect1>
 	<refsect1 id="bugs">
 		<title>BUGS</title>
-		<para>Search <ulink url="http://bugs.qemfd.net/bugzilla/buglist.cgi?product=omphalos"/>.
+		<para>Search <ulink url="https://bugs.qemfd.net/bugzilla/buglist.cgi?product=omphalos"/>.
 		Mail bug reports and/or patches to the authors.</para>
 	</refsect1>
 	<refsect1 id="see_also">
 		<title>SEE ALSO</title>
-		<para>GitHub: <ulink url="http://github.com/dankamongmen/omphalos"/></para>
-		<para>Project wiki: <ulink url="http://nick-black.com/dankwiki/index.php/Omphalos"/></para>
+		<para>GitHub: <ulink url="https://github.com/dankamongmen/omphalos"/></para>
+		<para>Project wiki: <ulink url="https://nick-black.com/dankwiki/index.php/Omphalos"/></para>
 		<para>
 		<citerefentry>
 			<refentrytitle>arp-scan</refentrytitle>
