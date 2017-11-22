@@ -24,6 +24,7 @@ sanitize_cmd(const char *cmd){
 		if((conv = mbrtowc(&w,cmd,left,&ps)) == (size_t)-1){
 			diagnostic("Error converting multibyte: %s",cmd);
 			free(san);
+			return NULL;
 		}
 		left -= conv;
 		if(w == L'(' || w == L')'){
@@ -107,10 +108,12 @@ char *spopen_drain(const char *cmd){
 		       if(o < s){
 				diagnostic("Error reading from '%s' (%s?)",cmd,strerror(errno));
 				fclose(fd);
+				free(buf);
 				return NULL;
 		       }
 		}else if(fclose(fd)){
 			diagnostic("Error running '%s'",cmd);
+			free(buf);
 			return NULL;
 		}else{
 			return buf;

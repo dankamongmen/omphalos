@@ -151,6 +151,7 @@ void name_l3host_absolute(const interface *i,struct l2host *l2,l3host *l3,
 		r = mbstowcs(wname,name,wlen + 1);
 		if(r == (size_t)-1){
 			diagnostic("Invalid name: [%s]",name);
+			free(wname);
 			return;
 		}
 		if(r != wlen){
