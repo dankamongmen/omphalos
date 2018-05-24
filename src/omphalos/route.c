@@ -205,7 +205,7 @@ int handle_rtm_newroute(const struct nlmsghdr *nl){
 		diagnostic("%d excess bytes on newlink message",rlen);
 	}
 	if((r->iface = iface_by_idx(oif)) == NULL){
-		diagnostic("Unknown output interface %d on %s",oif,r->iface->name);
+		diagnostic("Unknown output interface %d",oif);
 		goto err;
 	}
 	{
