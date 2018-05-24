@@ -308,7 +308,7 @@ int add_route4(interface *i,const uint32_t *dst,const uint32_t *via,
 		}
 		assert(lookup_local_l3host(NULL,i,l2,AF_INET,src));
 	}
-	if(r->addrs & ROUTE_HAS_VIA && r->maskbits < 32){
+	if(r->addrs & ROUTE_HAS_VIA && r->maskbits < 32 && via){
 		if( (l3 = lookup_global_l3host(AF_INET,via)) ){
 			if( (l2 = l3_getlastl2(l3)) ){
 				observe_service(i,l2,l3,IPPROTO_IP,4,L"Router",NULL);
@@ -364,7 +364,7 @@ int add_route6(interface *i,const uint128_t dst,const uint128_t via,
 		}
 		assert(lookup_local_l3host(NULL,i,l2,AF_INET6,src));
 	}
-	if(r->addrs & ROUTE_HAS_VIA && r->maskbits < 128){
+	if(r->addrs & ROUTE_HAS_VIA && r->maskbits < 128 && via){
 		if( (l3 = lookup_global_l3host(AF_INET6,via)) ){
 			if( (l2 = l3_getlastl2(l3)) ){
 				observe_service(i,l2,l3,IPPROTO_IP,6,L"Router",NULL);
