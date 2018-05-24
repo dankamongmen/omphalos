@@ -80,10 +80,12 @@ char *first_level_decode(const char *enc,size_t len){
 	}
 	if(len == 0){
 		diagnostic("%s truncated First-Level Encoding",__func__);
+		free(ret);
 		return NULL;
 	}
 	if(odd || slen){
 		diagnostic("%s invalid First-Level Encoding %u %zu",__func__,odd,slen);
+		free(ret);
 		return NULL;
 	}
 	if(ret == NULL){
