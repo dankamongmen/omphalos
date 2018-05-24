@@ -104,14 +104,14 @@ int handle_rtm_newroute(const struct nlmsghdr *nl){
 	break;}case AF_BRIDGE:{
 		// FIXME wtf is a bridge route
 		diagnostic("got a bridge route hrmmm FIXME");
-		return -1; // FIXME
+		goto err;
 	break;}default:{
 		flen = 0;
 	break;} }
 	r->maskbits = rt->rtm_dst_len;
 	if(flen == 0 || flen > sizeof(r->sss.__ss_padding)){
 		diagnostic("Unknown route family %u",rt->rtm_family);
-		return -1;
+		goto err;
 	}
 	rlen = nl->nlmsg_len - NLMSG_LENGTH(sizeof(*rt));
 	ra = (struct rtattr *)((char *)(NLMSG_DATA(nl)) + sizeof(*rt));
