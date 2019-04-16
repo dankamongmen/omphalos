@@ -40,12 +40,12 @@ USBIDS:=usb.ids
 IANAOUI:=ieee-oui.txt
 SUPPORT:=$(USBIDS) $(IANAOUI)
 
-all: ctags bin doc $(SUPPORT)
+all: bin doc $(SUPPORT)
 
 check: test
 
-ctags:
-	ctags --languages=C,Sh,Make -R .
+#ctags:
+#	ctags --languages=C,Sh,Make -R .
 
 bin: $(BIN)
 
