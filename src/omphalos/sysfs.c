@@ -1,5 +1,10 @@
 #include <stdlib.h>
+// libsysfs implementation
+#ifdef HAVE_SYSFS
+#include <sysfs/libsysfs.h>
+#else
 #include <libsysfs.h>
+#endif
 #include <omphalos/usb.h>
 #include <omphalos/pci.h>
 #include <omphalos/sysfs.h>

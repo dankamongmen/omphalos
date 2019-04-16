@@ -40,12 +40,12 @@ USBIDS:=usb.ids
 IANAOUI:=ieee-oui.txt
 SUPPORT:=$(USBIDS) $(IANAOUI)
 
-all: tags bin doc $(SUPPORT)
+all: ctags bin doc $(SUPPORT)
 
 check: test
 
-#ctags:
-#	ctags --languages=C,Sh,Make -R .
+ctags:
+	ctags --languages=C,Sh,Make -R .
 
 bin: $(BIN)
 
@@ -133,7 +133,7 @@ $(OUT)/$(XMLDIR)/$(PROJ).ent:
 	echo -e '<!ENTITY dhfirstname "Nick">\n<!ENTITY dhsurname "Black">\n<!ENTITY dhemail "nick.black@sprezzatech.com">\n<!ENTITY dhusername "&dhfirstname; &dhsurname;">\n<!ENTITY dhrelease "$(VERSION)">' > "$@"
 
 clean-local:
-	rm -rf $(OUT) $(wildcard core*) $(wildcard vgcore*) tags
+	rm -rf $(OUT) $(wildcard core*) $(wildcard vgcore*) ctags
 
 maintainer-clean-local:
 	rm -rf aclocal.m4 configure config config.in config.in~ \

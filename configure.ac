@@ -50,9 +50,15 @@ PKG_CHECK_MODULES(LIBNL3, libnl-3.0 >= 3.0, [have_libnl3=yes])
 PKG_CHECK_MODULES(LIBNL3GEN, libnl-genl-3.0 >= 3.0, [have_libnl3gen=yes] )
 	CFLAGS+=" $LIBNL3GEN_CFLAGS"
 	LIBS+=" $LIBNL3GEN_LIBS"
-PKG_CHECK_MODULES(LIBSYSFS, libsysfs, [have_libsysfs=yes])
-	CFLAGS+=" $LIBSYSFS_CFLAGS"
-	LIBS+=" $LIBSYSFS_LIBS"
+# no libsysfs.pc anywhere but debian. kill off use FIXME
+PKG_CHECK_MODULES(LIBSYSFS, libsysfs, [have_libsysfs=yes], [No sysfs pkg-config])
+   CFLAGS+=" $LIBSYSFS_CFLAGS"
+   LIBS+=" $LIBSYSFS_LIBS"
+if test "$have_libsysfs" != "yes" ; then
+  AC_CHECK_LIB(sysfs,sysfs_open_device, ([AC_DEFINE([HAVE_SYSFS], [1], [Use sysfs.h from sysfs/]), [have_libsysfs=yes]]),
+	     [AC_MSG_ERROR([Cannot find libsysfs.])])
+  LIBS+=" -lsysfs"
+fi
 PKG_CHECK_MODULES(LIBZ, zlib, [have_zlib=yes])
 	CFLAGS+=" $LIBZ_CFLAGS"
 	LIBS+=" $LIBZ_LIBS"
@@ -71,7 +77,10 @@ fi
 AX_WITH_CURSES
 AX_WITH_CURSES_PANEL
 if test "x$ax_cv_panel" != xyes; then
-	AC_MSG_WARN([Cannot find the Curses Panel library. Will not build the Ncurses client.])
+  PKG_CHECK_MODULES([libpanel], [panel], [AC_DEFINE([HAVE_PANEL], [1], [Use libpanel from ncursesw])],
+	 AC_MSG_WARN([Cannot find the Curses Panel library. Will not build the Ncurses client.]))
+    CFLAGS+=" $libpanel_CFLAGS"
+    LIBS+=" $libpanel_LIBS"
 else
 	CONFIGURED_UIS+=" ncurses"
 fi
