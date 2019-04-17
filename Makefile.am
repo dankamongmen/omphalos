@@ -128,7 +128,7 @@ $(OUT)/$(XHTMLDIR)/$(PROJ).xhtml: $(MANDIR)/man1/$(PROJ).xml $(OUT)/$(XMLDIR)/$(
 
 $(OUT)/$(XMLDIR)/$(PROJ).ent:
 	@mkdir -p $(@D)
-	echo -e '<!ENTITY dhfirstname "Nick">\n<!ENTITY dhsurname "Black">\n<!ENTITY dhemail "nick.black@sprezzatech.com">\n<!ENTITY dhusername "&dhfirstname; &dhsurname;">\n<!ENTITY dhrelease "$(VERSION)">' > "$@"
+	echo -e '<!ENTITY dhfirstname "Nick">\n<!ENTITY dhsurname "Black">\n<!ENTITY dhemail "dankamongmen@gmail.com">\n<!ENTITY dhusername "&dhfirstname; &dhsurname;">\n<!ENTITY dhrelease "$(VERSION)">' > "$@"
 
 clean-local:
 	rm -rf $(OUT) $(wildcard core*) $(wildcard vgcore*) ctags
