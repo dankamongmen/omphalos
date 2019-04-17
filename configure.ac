@@ -66,14 +66,6 @@ AX_LIB_READLINE
 AC_CHECK_LIB([readline], [main],
 	      [CONFIGURED_UIS+=" tty"],
 	      [AC_MSG_WARN([Cannot find readline headers. Will not build TTY client.])])
-PKG_CHECK_MODULES(X11, x11, [have_x11=yes], [have_x11=no])
-if test "$have_x11" = "yes" ; then
-	CONFIGURED_UIS+=" x"
-	X_CFLAGS+="$LIBX11_CFLAGS"
-	X_LIBS+=" $LIBX11_LIBS"
-else
-	AC_MSG_WARN([Cannot find X11 headers. Will not build X11 client.])
-fi
 AX_WITH_CURSES
 AX_WITH_CURSES_PANEL
 if test "x$ax_cv_panel" != xyes; then

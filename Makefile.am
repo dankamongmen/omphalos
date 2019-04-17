@@ -106,10 +106,6 @@ $(OMPHALOS)-tty: $(COREOBJS) $(TTYOBJS)
 	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -o $@ $^ $(LFLAGS)
 
-$(OMPHALOS)-x: $(COREOBJS) $(XOBJS)
-	@mkdir -p $(@D)
-	$(CC) $(CFLAGS) $(X11_CFLAGS) -o $@ $^ $(LFLAGS) $(X11_LIBS)
-
 $(OUT)/%.o: %.c $(CINCS) $(MAKEFILE)
 	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -c -o $@ $<
