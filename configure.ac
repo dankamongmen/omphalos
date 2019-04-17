@@ -77,10 +77,15 @@ fi
 AX_WITH_CURSES
 AX_WITH_CURSES_PANEL
 if test "x$ax_cv_panel" != xyes; then
-  PKG_CHECK_MODULES([libpanel], [panel], [AC_DEFINE([HAVE_PANEL], [1], [Use libpanel from ncursesw])],
-	 AC_MSG_WARN([Cannot find the Curses Panel library. Will not build the Ncurses client.]))
+  PKG_CHECK_MODULES([libpanel], [panel], [have_panel=yes], [have_panel=no])
+  if test "$have_panel" = "yes" ; then
+    AC_DEFINE([HAVE_PANEL], [1], [Use libpanel from ncursesw])
     CFLAGS+=" $libpanel_CFLAGS"
     LIBS+=" $libpanel_LIBS"
+	  CONFIGURED_UIS+=" ncurses"
+  else
+	  AC_MSG_WARN([Cannot find the Curses Panel library. Will not build the Ncurses client.])
+  fi
 else
 	CONFIGURED_UIS+=" ncurses"
 fi
