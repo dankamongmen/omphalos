@@ -1,4 +1,4 @@
-AC_INIT([omphalos],[0.99.8],[omphalos-dev@googlegroups.com],[omphalos],[https://nick-black.com/dankwiki/index.php/Omphalos])
+AC_INIT([omphalos],[0.99.9~pre],[omphalos-dev@googlegroups.com],[omphalos],[https://nick-black.com/dankwiki/index.php/Omphalos])
 AM_INIT_AUTOMAKE([-Wall foreign dist-xz])
 AC_CONFIG_HEADERS([config.h:config.in])
 AC_USE_SYSTEM_EXTENSIONS
