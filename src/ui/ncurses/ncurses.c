@@ -25,13 +25,11 @@
 
 #include <sys/utsname.h>
 #include <linux/version.h>
-#include <ncursesw/panel.h>
 #include <linux/rtnetlink.h>
 #include <ui/ncurses/util.h>
 #include <ui/ncurses/core.h>
 #include <omphalos/timing.h>
 #include <ui/ncurses/color.h>
-#include <ncursesw/ncurses.h>
 #include <omphalos/hwaddrs.h>
 #include <ui/ncurses/iface.h>
 #include <gnu/libc-version.h>

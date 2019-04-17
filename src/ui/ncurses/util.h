@@ -7,10 +7,8 @@ extern "C" {
 
 #include <assert.h>
 #include <stdint.h>
-#include <ncursesw/panel.h>
 #include <ui/ncurses/core.h>
 #include <ui/ncurses/color.h>
-#include <ncursesw/ncurses.h>
 
 #define PAD_LINES 3
 #define START_COL 1

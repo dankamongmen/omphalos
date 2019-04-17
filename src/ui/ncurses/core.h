@@ -7,10 +7,21 @@ extern "C" {
 
 #include <limits.h>
 #include <stdarg.h>
+#if defined(HAVE_NCURSESW_H) || defined(HAVE_NCURSESW)
+#include <term.h>
+#include <panel.h>
+#include <ncurses.h>
+#else
+#ifdef HAVE_NCURSESW_CURSES_H
+#include <ncursesw/term.h>
 #include <ncursesw/panel.h>
-#include <ncursesw/ncurses.h>
-#include <ui/ncurses/iface.h>
+#include <ncursesw/curses.h>
+#else
+#error "Couldn't find working cursesw headers"
+#endif
+#endif
 
+struct l4srv;
 struct l2obj;
 struct l2host;
 struct l3host;
@@ -58,7 +69,7 @@ typedef struct reelbox {
 	WINDOW *subwin;			// subwin
 	PANEL *panel;			// panel
 	struct reelbox *next,*prev;	// circular list
-	iface_state *is;		// backing interface state
+	struct iface_state *is;		// backing interface state
 	struct l2obj *selected;		// selected subentry
 	int selline;			// line where the selection starts
 					//  within the subwindow (if != NULL)
@@ -87,8 +98,8 @@ struct l4obj *service_callback_locked(const struct interface *,struct l2host *,
 struct l3obj *host_callback_locked(const struct interface *,struct l2host *,
 					struct l3host *);
 struct l2obj *neighbor_callback_locked(const struct interface *,struct l2host *);
-void interface_removed_locked(iface_state *,struct panel_state **);
-void *interface_cb_locked(struct interface *,iface_state *,struct panel_state *);
+void interface_removed_locked(struct iface_state *,struct panel_state **);
+void *interface_cb_locked(struct interface *,struct iface_state *,struct panel_state *);
 int packet_cb_locked(const struct interface *,struct omphalos_packet *,struct panel_state *);
 void toggle_promisc_locked(WINDOW *w);
 void sniff_interface_locked(WINDOW *w);

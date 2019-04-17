@@ -29,14 +29,14 @@ static int resize_iface(reelbox *);
 static reelbox *
 create_reelbox(iface_state *is,int rows,int scrline,int cols){
 	reelbox *ret;
-	int lines;
+	int lnes;
 
-	lines = iface_lines_bounded(is,rows);
-	if(lines >= rows - scrline){
-		lines = rows - scrline - 1;
+	lnes = iface_lines_bounded(is,rows);
+	if(lnes >= rows - scrline){
+		lnes = rows - scrline - 1;
 	}
 	if( (ret = malloc(sizeof(*ret))) ){
-		assert( (ret->subwin = newwin(lines,PAD_COLS(cols),scrline,START_COL)) );
+		assert( (ret->subwin = newwin(lnes,PAD_COLS(cols),scrline,START_COL)) );
 		assert( (ret->panel = new_panel(ret->subwin)) );
 		ret->scrline = scrline;
 		ret->selected = NULL;

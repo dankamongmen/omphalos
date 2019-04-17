@@ -6,8 +6,7 @@ extern "C" {
 #endif
 
 #include <sys/time.h>
-#include <ncursesw/panel.h>
-#include <ncursesw/ncurses.h>
+#include <ui/ncurses/util.h>
 
 struct l2obj;
 struct l3obj;
@@ -71,12 +70,12 @@ void recompute_selection(iface_state *,int,int,int);
 
 static inline int
 iface_lines_bounded(const iface_state *is,int rows){
-	int lines = lines_for_interface(is);
+	int lnes = lines_for_interface(is);
 
-	if(lines > rows - 1){ // bottom border
-		lines = rows - 1;
+	if(lnes > rows - 1){ // bottom border
+		lnes = rows - 1;
 	}
-	return lines;
+	return lnes;
 }
 
 static inline int

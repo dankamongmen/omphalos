@@ -3,6 +3,7 @@
 #include <net/if.h>
 #include <ui/ncurses/core.h>
 #include <ui/ncurses/util.h>
+#include <ui/ncurses/iface.h>
 #include <omphalos/wireless.h>
 #include <omphalos/interface.h>
 #include <ui/ncurses/channels.h>
