@@ -33,8 +33,10 @@ DOCS:=$(MAN1OBJ) $(XHTML)
 
 # This can be a URL; it's the docbook-to-manpage XSL
 # Should the network be inaccessible, and local copies are installed, try:
-DOCMANXSL:=--nonet /usr/share/xml/docbook/stylesheet/docbook-xsl/manpages/docbook.xsl
-DOCXHTMLXSL:=--nonet /usr/share/xml/docbook/stylesheet/docbook-xsl/xhtml/docbook.xsl
+#DOCMANXSL:=--nonet /usr/share/xml/docbook/stylesheet/docbook-xsl/manpages/docbook.xsl
+#DOCXHTMLXSL:=--nonet /usr/share/xml/docbook/stylesheet/docbook-xsl/xhtml/docbook.xsl
+DOCMANXSL:=http://docbook.sourceforge.net/release/xsl/current/manpages/docbook.xsl
+DOCXHTMLXSL:=http://docbook.sourceforge.net/release/xsl/current/xhtml/docbook.xsl
 
 USBIDS:=usb.ids
 IANAOUI:=ieee-oui.txt
