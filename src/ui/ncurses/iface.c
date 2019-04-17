@@ -12,7 +12,6 @@
 #include <ui/ncurses/color.h>
 #include <omphalos/service.h>
 #include <omphalos/hwaddrs.h>
-#include <ncursesw/ncurses.h>
 #include <ui/ncurses/iface.h>
 #include <omphalos/netaddrs.h>
 #include <omphalos/wireless.h>
@@ -34,7 +33,7 @@ typedef struct l3obj {
 typedef struct l2obj {
 	struct l2obj *next,*prev;
 	struct l2host *l2;
-	unsigned lines;			// number of lines node would take up
+	unsigned lnes;			// number of lines node would take up
 	int cat;			// cached result of l2categorize()
 	struct l3obj *l3objs;
 } l2obj;
@@ -63,7 +62,7 @@ l2obj *l2obj_prev(l2obj *l2){
 }
 
 int l2obj_lines(const l2obj *l2){
-	return l2->lines;
+	return l2->lnes;
 }
 
 iface_state *create_interface_state(interface *i){
@@ -90,7 +89,7 @@ get_l2obj(const interface *i,const iface_state *is,struct l2host *l2){
 	l2obj *l;
 
 	if( (l = malloc(sizeof(*l))) ){
-		l->lines = is->expansion > EXPANSION_NONE;
+		l->lnes = is->expansion > EXPANSION_NONE;
 		l->cat = l2categorize(i,l2);
 		l->l3objs = NULL;
 		l->l2 = l2;
@@ -152,21 +151,21 @@ get_l3obj(struct l3host *l3){
 static unsigned
 node_lines(int e,const l2obj *l){
 	const l3obj *l3;
-	unsigned lines;
+	unsigned lnes;
 
 	if(e == EXPANSION_NONE){
 		return 0;
 	}
-	lines = 1;
+	lnes = 1;
 	if(e > EXPANSION_NODES){
 		for(l3 = l->l3objs ; l3 ; l3 = l3->next){
-			++lines;
+			++lnes;
 			if(e > EXPANSION_HOSTS){
-				lines += !!l3->l4objs;
+				lnes += !!l3->l4objs;
 			}
 		}
 	}
-	return lines;
+	return lnes;
 }
 
 // returns < 0 if c0 < c1, 0 if c0 == c1, > 0 if c0 > c1
@@ -233,7 +232,7 @@ l3obj *add_l3_to_iface(iface_state *is,l2obj *l2,struct l3host *l3h){
 		l2->l3objs = l3;
 		l3->l2 = l2;
 		if(is->expansion >= EXPANSION_HOSTS){
-			++l2->lines;
+			++l2->lnes;
 		}
 		++is->hosts;
 	}
@@ -257,7 +256,7 @@ l4obj *add_service_to_iface(iface_state *is,struct l2obj *l2,struct l3obj *l3,
 		if(*prev == NULL){
 			++is->srvs;
 			if(is->expansion >= EXPANSION_SERVICES){
-				++l3->l2->lines;
+				++l3->l2->lnes;
 			}
 		}else do{
 			struct l4srv *c = (*prev)->l4;
@@ -277,8 +276,8 @@ l4obj *add_service_to_iface(iface_state *is,struct l2obj *l2,struct l3obj *l3,
 		l4->next = *prev;
 		*prev = l4;
 	}
-	assert(node_lines(is->expansion,l3->l2) == l3->l2->lines);
-	assert(node_lines(is->expansion,l2) == l2->lines);
+	assert(node_lines(is->expansion,l3->l2) == l3->l2->lnes);
+	assert(node_lines(is->expansion,l2) == l2->lnes);
 	return l4;
 }
 
@@ -533,22 +532,22 @@ print_iface_hosts(const interface *i,const iface_state *is,const reelbox *rb,
 	// First, print the selected interface (if there is one)
 	cur = rb->selected;
 	line = rb->selline + sumline;
-	while(cur && line + (long)cur->lines >= !!topp + sumline){
+	while(cur && line + (long)cur->lnes >= !!topp + sumline){
 		print_iface_host(i,is,w,cur,line,rows,cols,cur == rb->selected,
 					!!topp + sumline,endp,active);
 		// here we traverse, then account...
 		if( (cur = cur->prev) ){
-			line -= cur->lines;
+			line -= cur->lnes;
 		}
 	}
-	line = rb->selected ? (rb->selline + (long)rb->selected->lines) :
+	line = rb->selected ? (rb->selline + (long)rb->selected->lnes) :
 						-(long)topp + 1;
 	line += sumline;
 	cur = (rb->selected ? rb->selected->next : is->l2objs);
 	while(cur && line < rows){
 		print_iface_host(i,is,w,cur,line,rows,cols,0,0,endp,active);
 		// here, we account before we traverse. this is correct.
-		line += cur->lines;
+		line += cur->lnes;
 		cur = cur->next;
 	}
 }
@@ -850,21 +849,21 @@ void move_interface(reelbox *rb,int targ,int rows,int cols,int delta,int active)
 // This is the number of lines we'd have in an optimal world; we might have
 // fewer available to us on this screen at this time.
 int lines_for_interface(const iface_state *is){
-	int lines = 2 + interface_up_p(is->iface);
+	int lnes = 2 + interface_up_p(is->iface);
 
 	switch(is->expansion){ // Intentional fallthrus
 		case EXPANSION_SERVICES:
-			lines += is->srvs;
+			lnes += is->srvs;
 			/* intentional fallthrough */
 		case EXPANSION_HOSTS:
-			lines += is->hosts;
+			lnes += is->hosts;
 			/* intentional fallthrough */
 		case EXPANSION_NODES:
-			lines += is->nodes;
-			lines += is->vnodes;
+			lnes += is->nodes;
+			lnes += is->vnodes;
 			/* intentional fallthrough */
 		case EXPANSION_NONE:
-			return lines;
+			return lnes;
 	}
 	assert(0);
 	return -1;
@@ -886,7 +885,7 @@ int iface_wholly_visible_p(int rows,const reelbox *rb){
 	return 1;
 }
 
-// Recompute ->lines values for all nodes, and return the number of lines of
+// Recompute ->lnes values for all nodes, and return the number of lines of
 // output available before and after the current selection. If there is no
 // current selection, the return value ought not be ascribed meaning. O(N) on
 // the number of l2hosts, not just those visible -- unacceptable! FIXME
@@ -899,14 +898,14 @@ recompute_lines(iface_state *is,int *before,int *after){
 	*before = -1;
 	newsel = !!interface_up_p(is->iface);
 	for(l = is->l2objs ; l ; l = l->next){
-		l->lines = node_lines(is->expansion,l);
+		l->lnes = node_lines(is->expansion,l);
 		if(l == is->rb->selected){
 			*before = newsel;
-			*after = l->lines ? l->lines - 1 : 0;
+			*after = l->lnes ? l->lnes - 1 : 0;
 		}else if(*after >= 0){
-			*after += l->lines;
+			*after += l->lnes;
 		}else{
-			newsel += l->lines;
+			newsel += l->lnes;
 		}
 	}
 }

@@ -181,7 +181,7 @@ static int
 proc_rp_filter(const char *fn){
 	int rp;
 
-	if((rp = lex_unsigned_file(fn,1)) < 0){
+	if((rp = lex_unsigned_file(fn,2)) < 0){
 		return -1;
 	}
 	lock_net();
@@ -190,6 +190,7 @@ proc_rp_filter(const char *fn){
 	return 0;
 }
 
+// FIXME this is a legacy setting, no longer used, remove it
 static int
 proc_tcp_fack(const char *fn){
 	int fack;

@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-#include <ncursesw/ncurses.h>
+#include <ui/ncurses/core.h>
 
 struct panel_state;
 

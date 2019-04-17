@@ -33,14 +33,16 @@ DOCS:=$(MAN1OBJ) $(XHTML)
 
 # This can be a URL; it's the docbook-to-manpage XSL
 # Should the network be inaccessible, and local copies are installed, try:
-DOCMANXSL:=--nonet /usr/share/xml/docbook/stylesheet/docbook-xsl/manpages/docbook.xsl
-DOCXHTMLXSL:=--nonet /usr/share/xml/docbook/stylesheet/docbook-xsl/xhtml/docbook.xsl
+#DOCMANXSL:=--nonet /usr/share/xml/docbook/stylesheet/docbook-xsl/manpages/docbook.xsl
+#DOCXHTMLXSL:=--nonet /usr/share/xml/docbook/stylesheet/docbook-xsl/xhtml/docbook.xsl
+DOCMANXSL:=http://docbook.sourceforge.net/release/xsl/current/manpages/docbook.xsl
+DOCXHTMLXSL:=http://docbook.sourceforge.net/release/xsl/current/xhtml/docbook.xsl
 
 USBIDS:=usb.ids
 IANAOUI:=ieee-oui.txt
 SUPPORT:=$(USBIDS) $(IANAOUI)
 
-all: tags bin doc $(SUPPORT)
+all: bin doc $(SUPPORT)
 
 check: test
 
@@ -133,7 +135,7 @@ $(OUT)/$(XMLDIR)/$(PROJ).ent:
 	echo -e '<!ENTITY dhfirstname "Nick">\n<!ENTITY dhsurname "Black">\n<!ENTITY dhemail "nick.black@sprezzatech.com">\n<!ENTITY dhusername "&dhfirstname; &dhsurname;">\n<!ENTITY dhrelease "$(VERSION)">' > "$@"
 
 clean-local:
-	rm -rf $(OUT) $(wildcard core*) $(wildcard vgcore*) tags
+	rm -rf $(OUT) $(wildcard core*) $(wildcard vgcore*) ctags
 
 maintainer-clean-local:
 	rm -rf aclocal.m4 configure config config.in config.in~ \
