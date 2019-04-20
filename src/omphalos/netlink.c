@@ -848,6 +848,46 @@ handle_newlink_locked(interface *iface,const struct ifinfomsg *ii,const struct n
 #define IFLA_XDP 43
 #endif
 			break;}case IFLA_XDP:{
+#ifndef IFLA_EVENT
+#define IFLA_EVENT 44
+#endif
+			break;}case IFLA_EVENT:{
+#ifndef IFLA_NEW_NETNSID
+#define IFLA_NEW_NETNSID 45
+#endif
+			break;}case IFLA_NEW_NETNSID:{
+#ifndef IFLA_IF_NETNSID
+#define IFLA_IF_NETNSID 46
+#endif
+			break;}case IFLA_IF_NETNSID:{
+#ifndef IFLA_TARGET_NETNSID
+#define IFLA_TARGET_NETNSID 47
+#endif
+			break;}case IFLA_TARGET_NETNSID:{
+#ifndef IFLA_CARRIER_UP_COUNT
+#define IFLA_CARRIER_UP_COUNT 48
+#endif
+			break;}case IFLA_CARRIER_UP_COUNT:{
+#ifndef IFLA_CARRIER_DOWN_COUNT
+#define IFLA_CARRIER_DOWN_COUNT 49
+#endif
+			break;}case IFLA_CARRIER_DOWN_COUNT:{
+#ifndef IFLA_NEW_IFINDEX
+#define IFLA_NEW_IFINDEX 50
+#endif
+			break;}case IFLA_NEW_IFINDEX:{
+#ifndef IFLA_MIN_MTU
+#define IFLA_MIN_MTU 51
+#endif
+			break;}case IFLA_MIN_MTU:{
+        // FIXME would be good to capture MIN_MTU and MAX_MTU
+#ifndef IFLA_MAX_MTU
+#define IFLA_MAX_MTU 52
+#endif
+			break;}case IFLA_MAX_MTU:{
+#if IFLA_MAX_MTU < IFLA_MAX
+#warning "IFLA_MAX implies new IFLA types"
+#endif
 			break;}default:{
 				diagnostic("Unknown iflatype %u on %s",
 						ra->rta_type,iface->name);
