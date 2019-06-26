@@ -36,8 +36,6 @@ The TTY UI requires GNU Readline.
 The ncurses UI requires libncursesw (ncurses with wide character support),
 and libpanelw (distributed with SVR4 curses and ncurses).
 
-The X UI requires libX11 and friends.
-
 arp-scan's 'get-oui' program is used to build the IANA OUI file.
 
 wget is used to download the USB ID file.
