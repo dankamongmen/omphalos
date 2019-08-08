@@ -6,7 +6,7 @@
 #include <assert.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
-#include <net/if_arp.h>
+#include <linux/if_arp.h>
 #include <omphalos/128.h>
 #include <omphalos/ppp.h>
 #include <omphalos/util.h>
@@ -22,6 +22,7 @@
 #include <omphalos/netaddrs.h>
 #include <omphalos/ethernet.h>
 #include <omphalos/radiotap.h>
+#include <omphalos/socketcan.h>
 #include <omphalos/interface.h>
 
 #define MAXINTERFACES (1u << 16) // lame FIXME
@@ -530,6 +531,11 @@ static arptype arptypes[] = {
 		.analyze = handle_ethernet_packet,
 		.l2hlen = ETH_HLEN, // FIXME???
 	},{
+		.ifi_type = ARPHRD_CAN,
+		.name = "CAN",
+		.analyze = handle_can_packet,
+		.l2hlen = 0,
+	},{
 		.ifi_type = ARPHRD_PPP,
 		.name = "PPP",
 		.analyze = handle_ppp_packet,
@@ -547,7 +553,7 @@ static arptype arptypes[] = {
 	},
 };
 
-const char *lookup_arptype(unsigned arphrd,analyzefxn *analyzer,size_t *hlen){
+const char *lookup_arptype(unsigned arphrd, analyzefxn *analyzer, size_t *hlen){
 	unsigned idx;
 
 	for(idx = 0 ; idx < sizeof(arptypes) / sizeof(*arptypes) ; ++idx){
