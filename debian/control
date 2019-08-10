@@ -1,0 +1,24 @@
+Source: omphalos
+Section: net
+Priority: optional
+Maintainer: Nick Black <nick.black@sprezzatech.com>
+Build-Depends: debhelper (>= 8.1.3), docbook-xml, pkg-config, libcap-dev,
+	libsysfs-dev, autoconf-archive, docbook-xsl, xsltproc, libiw-dev,
+	libpcap-dev, libpciaccess-dev, libnl-3-dev, libnl-genl-3-dev,
+	exuberant-ctags, libbluetooth-dev, arp-scan, libpci-dev, libwww-perl,
+	libreadline-dev, libncursesw5-dev, libx11-dev
+Standards-Version: 3.9.4
+Homepage: http://nick-black.com/dankwiki/index.php/Omphalos
+Vcs-Git: git://github.com/dankamongmen/omphalos.git
+Vcs-Browser: https://github.com/dankamongmen/omphalos/tree
+
+Package: omphalos
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, wget, arp-scan, libcap2-bin, pciutils
+Description: Network enumeration and domination
+ Omphalos is a tool for visualizing and controlling a local network (though it
+ will also process pcap savefiles). Captured packets are analyzed to build a
+ database of hosts and services. Various scans can be performed to elicit
+ informative packets. Spoofing and redirection at several layers allows flows
+ to be redirected through the host machine, or silenced. Omphalos is fully IPv6
+ aware, and makes use of numerous service discovery protocols.

@@ -1,0 +1,3 @@
+version=3
+opts=uversionmangle=s/-/~/ \
+http://nick-black.com/pub/omphalos-(.*)\.tar\.xz
