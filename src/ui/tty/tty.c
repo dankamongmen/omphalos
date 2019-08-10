@@ -415,7 +415,7 @@ int main(int argc,char * const *argv){
 	}
 	if(strcmp(codeset,"UTF-8")){
 		fprintf(stderr,"Only UTF-8 is supported; got %s\n",codeset);
-		return EXIT_FAILURE;
+		// return EXIT_FAILURE;
 	}
 	if(omphalos_setup(argc,argv,&pctx)){
 		return EXIT_FAILURE;
