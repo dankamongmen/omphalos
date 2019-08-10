@@ -9,4 +9,4 @@ pipeline:
       - autoreconf -fis
       - ./configure
       - make -j8
-      - make check
+      - env LANG="en_US.UTF-8" make check
