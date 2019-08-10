@@ -2,6 +2,7 @@ pipeline:
   build:
     image: library/debian:unstable
     commands: 
+      - locale-gen --purge en_US.UTF-8
       - apt-get update
       - apt-get -y dist-upgrade
       - apt-get -y install devscripts git-buildpackage
