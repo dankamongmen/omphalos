@@ -2,9 +2,11 @@ pipeline:
   build:
     image: library/debian:unstable
     commands: 
+      - echo 'en_US.UTF-8 UTF-8' > /etc/locale.gen
       - apt-get update
       - apt-get -y dist-upgrade
       - apt-get -y install devscripts git-buildpackage locales
+      - locale-gen
       - mk-build-deps --install -t'apt-get -y'
       - autoreconf -fis
       - ./configure
