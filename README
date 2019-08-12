@@ -1,6 +1,8 @@
 *omphalos* by nick black <nickblack@linux.com>
 ==============================================
 
+[![Build Status](https://drone.dsscaw.com:4443/api/badges/dankamongmen/omphalos/status.svg)](https://drone.dsscaw.com:4443/dankamongmen/omphalos)
+
 "Gaze into your omphalos." - James Joyce, Ulysses
 
 Omphalos is an integrated tool for network enumeration and domination. It
