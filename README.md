@@ -1,25 +1,27 @@
-*omphalos* by nick black <nickblack@linux.com>
-==============================================
+# *omphalos* by nick black (<nickblack@linux.com>)
+--------------------------------------------------
 
 [![Build Status](https://drone.dsscaw.com:4443/api/badges/dankamongmen/omphalos/status.svg)](https://drone.dsscaw.com:4443/dankamongmen/omphalos)
 
-"Gaze into your omphalos." - James Joyce, Ulysses
+> Gaze into your *omphalos*. — James Joyce, *Ulysses*
 
 Omphalos is an integrated tool for network enumeration and domination. It
 is designed around Linux's rtnetlink(7) layer and PACKET_MMAP capabilities.
 Whereas other tools are geared towards either reconnaissance or directed
 attacks, omphalos is designed to "spray the area".
 
-I. Requirements
-II. Building and installation
-III. Usage
-IV. Hacking
-V. FAQs
-VI. Thanks
+- [Requirements](#Requirements)
+- [Building and installation](#Building-and-installation)
+- [Usage](#usage)
+- [Hacking](#hacking)
+  * [Networking](#networking)
+  * [UIs/Clients](#uis-clients)
+  * [Porting](#porting)
+- [FAQs](#faqs)
+- [Thanks](#thanks)
 
-===================================================================
-I. Requirements
-===================================================================
+-------------------------------------------------------------------
+## Requirements
 
 GNU Autotools and the Autoconf Archive are used to build the configure script.
 They are not necessary when building from a release tarball. On Debian-based
@@ -50,9 +52,8 @@ Your TERM and LOCALE/LANG environment variables need be correctly set to make
 full use of omphalos-ncurses. Ensure that a UTF-8 locale is being used, and
 that your terminal definition supports 256 colors.
 
-===================================================================
-II. Building and installation
-===================================================================
+-------------------------------------------------------------------
+## Building and installation
 
 If compiling from checked-out source, run "autoreconf -fi -Wall,error" to build
 the initial configure script (a configure script will be present in release
@@ -76,9 +77,8 @@ ringbuffers. This could improve performance.
 To restore an omphalos directory to its pristine form, ensure a Makefile has
 been generated via ./configure, and run "make maintainer-clean".
 
-===================================================================
-III. Usage
-===================================================================
+-------------------------------------------------------------------
+## Usage
 
 Several capabilities are required for omphalos's usage of packet and
 netlink sockets. Omphalos *does not* need to run as root, and generally
@@ -115,13 +115,11 @@ Fonts known to work include:
  - PragmataPro
  - Sansation
 
-===================================================================
-IV. Hacking
-===================================================================
+-------------------------------------------------------------------
+## Hacking
 
-=======================================
-IV.A Networking
-=======================================
+***************************************
+### Networking
 
 We cannot assume that we will see all control traffic, due to switched
 networks, wireless topography, physical/network-layer encryption and drops.
@@ -139,9 +137,8 @@ requires configuration, and will never be the case for eg a bridge.
 
 We cannot assume other hosts are not misconfigured, broken, or adversarial.
 
-=======================================
-IV.B UIs/clients
-=======================================
+***************************************
+### UIs/clients
 
 Callback functions might be called by any number of different threads,
 possibly concurrently. No relationship can be assumed between threads and
@@ -177,9 +174,8 @@ device removal callback invocation. A device removal callback can be invoked
 with no corresponding device event callback. Host callbacks follow the same
 rules as packet callbacks with regard to device callbacks.
 
-=======================================
-IV.C Porting
-=======================================
+***************************************
+### Porting
 
 Omphalos uses several advanced features of the Linux kernel directly, and
 many use cases require other functionality. Porting will involve, at
@@ -198,27 +194,28 @@ minimum:
     necessary for network activity (perhaps a client/server process pair
     communicating over PF_UNIX sockets).
 
-=======================================
-V. FAQs
-=======================================
+---------------------------------------
+## FAQs
 
-1. omphalos-ncurses exits immediately after printing "Entering ncurses mode..."
-1A. initscr() is probably calling exit() because it couldn't set up your
-    terminal. Ensure the TERM environment variable is exported, and correctly
-    set for your terminal type.
+> omphalos-ncurses exits immediately after printing "Entering ncurses mode..."
 
-2. I see hosts with 0 packets sent or transmitted.
-2A. Most likely they were present in your system's ARP cache.
+initscr() is probably calling exit() because it couldn't set up your
+terminal. Ensure the TERM environment variable is exported, and correctly
+set for your terminal type.
 
-3. I see a lot of "protocol 0800 is buggy, dev XXX" messages in dmesg.
-3A. This is a diagnostic issued by the kernel's packet socket mechanism. It
-    will show up if you run tcpdump, wireshark, or any other user of PF_PACKET
-    sockets on the interface. It has nothing to do with omphalos or the packets
-    it generates.
+> I see hosts with 0 packets sent or transmitted.
 
-=======================================
-VI. Thanks
-=======================================
+Most likely they were present in your system's ARP cache.
+
+> I see a lot of "protocol 0800 is buggy, dev XXX" messages in dmesg.
+
+This is a diagnostic issued by the kernel's packet socket mechanism. It
+will show up if you run tcpdump, wireshark, or any other user of PF_PACKET
+sockets on the interface. It has nothing to do with omphalos or the packets
+it generates.
+
+---------------------------------------
+## Thanks
 
 * Jeremy Stretch of PacketLife.net, for supplying PCAP-format unit tests.
 * Peter Jensen <peter@diff.net>, patch [master f9fee3b]
