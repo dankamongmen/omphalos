@@ -1,3 +1,12 @@
+omphalos (0.99.7~rc1-dsscaw1) unstable; urgency=medium
+
+  * SprezzOS becomes DSSCAW
+  * Debcompat 8 -> 11
+  * Standards 4.4.0.1
+  * Bugfixes from 6 years, heh
+
+ -- nick black <dankamongmen@gmail.com>  Sun, 25 Aug 2019 18:34:12 -0400
+
 omphalos (0.99.7~rc1-SprezzOS2) unstable; urgency=low
 
   * Add ncursesw-dev and x11-dev build deps
