@@ -2,11 +2,11 @@ Source: omphalos
 Section: net
 Priority: optional
 Maintainer: Nick Black <nick.black@sprezzatech.com>
-Build-Depends: debhelper (>= 8.1.3), docbook-xml, pkg-config, libcap-dev,
+Build-Depends: debhelper (>= 11), docbook-xml, pkg-config, libcap-dev,
 	libsysfs-dev, autoconf-archive, docbook-xsl, xsltproc, libiw-dev, ctags,
 	libpcap-dev, libpciaccess-dev, libnl-3-dev, libnl-genl-3-dev, libpci-dev,
 	libbluetooth-dev, arp-scan, libwww-perl, libreadline-dev, libncursesw5-dev
-Standards-Version: 3.9.4
+Standards-Version: 4.4.0.1
 Homepage: http://nick-black.com/dankwiki/index.php/Omphalos
 Vcs-Git: git://github.com/dankamongmen/omphalos.git
 Vcs-Browser: https://github.com/dankamongmen/omphalos/tree
