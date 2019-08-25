@@ -1,4 +1,4 @@
-omphalos (0.99.7~rc1-dsscaw1) unstable; urgency=medium
+omphalos (0.99.9~pre-dsscaw1) unstable; urgency=medium
 
   * SprezzOS becomes DSSCAW
   * Debcompat 8 -> 11
