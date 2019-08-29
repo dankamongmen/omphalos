@@ -27,17 +27,6 @@ ICONV="`which iconv 2> /dev/null`" || true
 # We have a hard Depends on libcap2-bin; don't accept a lookup failure
 SETCAP="`which setcap 2> /dev/null`"
 
-tmp="`mktemp`"
-
-exithandle () {
-        trap "" EXIT
-        if [ -n "$tmp" ] ; then
-                rm -vf "$tmp" || true
-        fi
-}
-
-trap exithandle EXIT SIGINT SIGHUP
-
 bless () {
 	for i in "$@" ; do
 		# don't fall back to generic root setuid
@@ -47,12 +36,14 @@ bless () {
 
 case "$1" in
     configure)
+        # FIXME doesn't clean up tmpdir on signal interruption
 	mkdir -p /usr/share/omphalos
 	if [ -z "$WGET" ] ; then
 		echo "Couldn't find wget; not updating USB IDs." >&2
 	elif [ -z "$ICONV" ] ; then
 		echo "Couldn't find iconv; not updating USB IDs." >&2
 	else
+	        tmp="`mktemp`"
 		"$WGET" http://www.linux-usb.org/usb.ids -O "$tmp"
 		"$ICONV" -f iso-8859-1 -t utf-8 -o $USBIDS "$tmp"
 	fi
@@ -61,6 +52,7 @@ case "$1" in
 	elif [ -z "$ICONV" ] ; then
 		echo "Couldn't find iconv; not updating OUI IDs." >&2
 	else
+	        tmp="`mktemp`"
 		"$OUI" -v -f "$tmp"
 		"$ICONV" -f iso-8859-1 -t utf-8 -o "$OUIIDS" "$tmp"
 	fi
