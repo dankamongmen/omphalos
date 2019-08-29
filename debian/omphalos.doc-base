@@ -5,5 +5,5 @@ Abstract: Omphalos operation manual
 Section: Network/Monitoring
 
 Format: HTML
-Index: /usr/share/doc/omphalos/omphalos-ncurses.xhtml.gz
-Files: /usr/share/doc/omphalos/*.xhtml.gz
+Index: /usr/share/doc/omphalos/omphalos-ncurses.xhtml
+Files: /usr/share/doc/omphalos/*.xhtml

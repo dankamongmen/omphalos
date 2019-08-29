@@ -1,3 +1,9 @@
+omphalos (0.99.9~pre-dsscaw2) unstable; urgency=medium
+
+  * Fix up doc-base entries -- XHTML is not compressed
+
+ -- nick black <dankamongmen@gmail.com>  Thu, 29 Aug 2019 02:29:04 -0400
+
 omphalos (0.99.9~pre-dsscaw1) unstable; urgency=medium
 
   * SprezzOS becomes DSSCAW
