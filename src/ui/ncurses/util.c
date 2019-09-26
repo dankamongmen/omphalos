@@ -69,7 +69,7 @@ int bevel(WINDOW *w){
 // indicates scaling, and should be '1' if no scaling has taken place.
 const char *genprefix(uintmax_t val,unsigned decimal,char *buf,size_t bsize,
 			int omitdec,unsigned mult,int uprefix){
-	const char prefixes[] = "KMGTPEY";
+	const char prefixes[] = "KMGTPEZ";
 	unsigned consumed = 0;
 	uintmax_t div;
 
