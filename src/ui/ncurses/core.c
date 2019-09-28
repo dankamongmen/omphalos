@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <unistd.h>
 #include <arpa/inet.h>
+#include <outcurses.h>
 #include <omphalos/diag.h>
 #include <ui/ncurses/core.h>
 #include <ui/ncurses/util.h>

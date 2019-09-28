@@ -61,18 +61,6 @@ int bevel(WINDOW *);
 int bevel_top(WINDOW *);
 int bevel_bottom(WINDOW *);
 
-const char *genprefix(uintmax_t,unsigned,char *,size_t,int,unsigned,int);
-
-static inline const char *
-prefix(uintmax_t val,unsigned decimal,char *buf,size_t bsize,int omitdec){
-	return genprefix(val,decimal,buf,bsize,omitdec,1000,'\0');
-}
-
-static inline const char *
-bprefix(uintmax_t val,unsigned decimal,char *buf,size_t bsize,int omitdec){
-	return genprefix(val,decimal,buf,bsize,omitdec,1024,'i');
-}
-
 #ifdef __cplusplus
 }
 #endif

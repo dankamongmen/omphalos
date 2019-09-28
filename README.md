@@ -27,7 +27,7 @@ GNU Autotools and the Autoconf Archive are used to build the configure script.
 They are not necessary when building from a release tarball. On Debian-based
 systems, install "automake" and "autoconf-archive".
 
-A C compiler is used at buildtime.
+A C compiler is used at buildtime, as is liboutcurses.
 
 libsysfs, libnl3, libpcap, libpciaccess, libz, libiw and libcap are used at
 both build and runtime.
