@@ -60,7 +60,7 @@ if test "$have_libsysfs" != "yes" ; then
   LIBS+=" -lsysfs"
 fi
 # we don't use the outcurses library, just its headers
-PKG_CHECK_MODULES([outcurses], [outcurses], [have_outcurses=yes])
+PKG_CHECK_MODULES([outcurses], [outcurses >= 0.0.3], [have_outcurses=yes])
     CFLAGS+=" $outcurses_CFLAGS"
 PKG_CHECK_MODULES(LIBZ, zlib, [have_zlib=yes])
 	CFLAGS+=" $LIBZ_CFLAGS"

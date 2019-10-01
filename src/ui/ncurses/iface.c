@@ -446,11 +446,11 @@ print_iface_host(const interface *i,const iface_state *is,WINDOW *w,
 			char dbuf[PREFIXSTRLEN + 1];
 			if(get_srcpkts(l->l2) == 0 && (l->cat == RTN_MULTICAST || l->cat == RTN_BROADCAST)){
 				wprintw(w, "%-*.*s"PREFIXFMT,PREFIXSTRLEN + 1, PREFIXSTRLEN + 1,
-						"", qprefix(get_dstpkts(l->l2), 1, dbuf, sizeof(dbuf), 1));
+						"", qprefix(get_dstpkts(l->l2), 1, dbuf,  1));
 			}else{
 				char sbuf[PREFIXSTRLEN + 1];
-				wprintw(w, PREFIXFMT" "PREFIXFMT, qprefix(get_srcpkts(l->l2), 1, sbuf, sizeof(sbuf), 1),
-						qprefix(get_dstpkts(l->l2), 1, dbuf, sizeof(dbuf), 1));
+				wprintw(w, PREFIXFMT" "PREFIXFMT, qprefix(get_srcpkts(l->l2), 1, sbuf,  1),
+						qprefix(get_dstpkts(l->l2), 1, dbuf,  1));
 			}
 		}
 		draw_right_vline(i,active,w);
@@ -494,11 +494,11 @@ print_iface_host(const interface *i,const iface_state *is,WINDOW *w,
 					char dbuf[PREFIXSTRLEN + 1];
 					if(l3_get_srcpkt(l3->l3) == 0 && (l->cat == RTN_MULTICAST || l->cat == RTN_BROADCAST)){
 						wprintw(w, "%-*.*s"PREFIXFMT,PREFIXSTRLEN + 1, PREFIXSTRLEN + 1,
-								"", qprefix(l3_get_dstpkt(l3->l3), 1, dbuf, sizeof(dbuf), 1));
+								"", qprefix(l3_get_dstpkt(l3->l3), 1, dbuf,  1));
 					}else{
 						wprintw(w,PREFIXFMT" "PREFIXFMT,
-								qprefix(l3_get_srcpkt(l3->l3), 1, sbuf, sizeof(sbuf), 1),
-								qprefix(l3_get_dstpkt(l3->l3), 1, dbuf, sizeof(dbuf), 1));
+								qprefix(l3_get_srcpkt(l3->l3), 1, sbuf,  1),
+								qprefix(l3_get_dstpkt(l3->l3), 1, dbuf,  1));
 					}
 				}
 				draw_right_vline(i,active,w);
@@ -656,7 +656,7 @@ iface_box(const interface *i,const iface_state *is,WINDOW *w,int active,
 				if(!interface_carrier_p(i)){
 					assert(waddstr(w," (no carrier)") != ERR);
 				}else{
-					assert(wprintw(w, " (%sb %s)", qprefix(i->settings.ethtool.speed * (uint64_t)1000000lu, 1, buf, sizeof(buf), 1),
+					assert(wprintw(w, " (%sb %s)", qprefix(i->settings.ethtool.speed * (uint64_t)1000000lu, 1, buf,  1),
 								duplexstr(i->settings.ethtool.duplex)) != ERR);
 				}
 			}else if(i->settings_valid == SETTINGS_VALID_WEXT){
@@ -665,11 +665,11 @@ iface_box(const interface *i,const iface_state *is,WINDOW *w,int active,
 				}else if(!interface_carrier_p(i)){
 					assert(wprintw(w," (%s, no carrier",modestr(i->settings.wext.mode)) != ERR);
 				}else{
-					assert(wprintw(w, " (%sb %s", qprefix(i->settings.wext.bitrate, 1, buf, sizeof(buf), 1),
+					assert(wprintw(w, " (%sb %s", qprefix(i->settings.wext.bitrate, 1, buf,  1),
 								modestr(i->settings.wext.mode)) != ERR);
 				}
 				if(i->settings.wext.freq >= MAX_WIRELESS_CHANNEL){
-					assert(wprintw(w," %sHz)", qprefix(i->settings.wext.freq, 1, buf, sizeof(buf), 1)) != ERR);
+					assert(wprintw(w," %sHz)", qprefix(i->settings.wext.freq, 1, buf,  1)) != ERR);
 				}else if(i->settings.wext.freq){
 					assert(wprintw(w," ch %ju)",i->settings.wext.freq) != ERR);
 				}else{
@@ -681,11 +681,11 @@ iface_box(const interface *i,const iface_state *is,WINDOW *w,int active,
 				}else if(!interface_carrier_p(i)){
 					assert(wprintw(w," (%s, no carrier",modestr(i->settings.nl80211.mode)) != ERR);
 				}else{
-					assert(wprintw(w, " (%sb %s", qprefix(i->settings.nl80211.bitrate, 1, buf, sizeof(buf), 1),
+					assert(wprintw(w, " (%sb %s", qprefix(i->settings.nl80211.bitrate, 1, buf,  1),
 								modestr(i->settings.nl80211.mode)) != ERR);
 				}
 				if(i->settings.nl80211.freq >= MAX_WIRELESS_CHANNEL){
-					assert(wprintw(w," %sHz)", qprefix(i->settings.nl80211.freq, 1, buf, sizeof(buf), 1)) != ERR);
+					assert(wprintw(w," %sHz)", qprefix(i->settings.nl80211.freq, 1, buf,  1)) != ERR);
 				}else if(i->settings.nl80211.freq){
 					assert(wprintw(w," ch %ju)",i->settings.nl80211.freq) != ERR);
 				}else{
@@ -742,8 +742,8 @@ print_iface_state(const interface *i,const iface_state *is,WINDOW *w,
 	assert(mvwprintw(w,!topp,0,"%u node%s. Last %lus: %7sb/s (%sp)",
 		is->nodes,is->nodes == 1 ? "" : "s",
 		usecdomain / 1000000,
-		qprefix(timestat_val(&i->bps) * CHAR_BIT * 1000000 * 100 / usecdomain, 100, buf, sizeof(buf), 0),
-		qprefix(timestat_val(&i->fps), 1, buf2, sizeof(buf2), 1)) != ERR);
+		qprefix(timestat_val(&i->bps) * CHAR_BIT * 1000000 * 100 / usecdomain, 100, buf,  0),
+		qprefix(timestat_val(&i->fps), 1, buf2,  1)) != ERR);
 	mvwaddstr(w,1,cols - PREFIXSTRLEN * 2 - 1,"TotSrc  TotDst");
 	draw_right_vline(i,active,w);
 }

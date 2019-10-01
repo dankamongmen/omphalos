@@ -211,11 +211,11 @@ iface_details(WINDOW *hw,const interface *i,int rows){
 		char fb[PREFIXSTRLEN];
 		char buf[U64STRLEN];
 		assert(mvwprintw(hw,row + z,col,"RXfd: %-4d flen: %-6u fnum: %-4s blen: %-5s bnum: %-5u rxr: %5sB",
-					i->rfd,i->rtpr.tp_frame_size,
-					bprefix(i->rtpr.tp_frame_nr,1,fb,sizeof(fb),1),
-					bprefix(i->rtpr.tp_block_size,1,buf,sizeof(buf),1),
+					i->rfd, i->rtpr.tp_frame_size,
+					bprefix(i->rtpr.tp_frame_nr, 1, fb,  1),
+					bprefix(i->rtpr.tp_block_size, 1, buf, 1),
 					i->rtpr.tp_block_nr,
-					bprefix(i->rs,1,b,sizeof(b),1)) != ERR);
+					bprefix(i->rs, 1, b, 1)) != ERR);
 		--z;
 	} /* intentional fallthrough */
 	case 4:{
@@ -229,10 +229,11 @@ iface_details(WINDOW *hw,const interface *i,int rows){
 		char buf[U64STRLEN];
 
 		assert(mvwprintw(hw,row + z,col,"TXfd: %-4d flen: %-6u fnum: %-4s blen: %-5s bnum: %-5u txr: %5sB",
-					i->fd,i->ttpr.tp_frame_size,
-					bprefix(i->ttpr.tp_frame_nr,1,fb,sizeof(fb),1),
-					bprefix(i->ttpr.tp_block_size,1,buf,sizeof(buf),1),i->ttpr.tp_block_nr,
-					bprefix(i->ts,1,b,sizeof(b),1)) != ERR);
+					i->fd, i->ttpr.tp_frame_size,
+					bprefix(i->ttpr.tp_frame_nr, 1, fb,  1),
+					bprefix(i->ttpr.tp_block_size, 1, buf, 1),
+					i->ttpr.tp_block_nr,
+					bprefix(i->ts, 1, b, 1)) != ERR);
 		--z;
 	} /* intentional fallthrough */
 	case 2:{
