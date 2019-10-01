@@ -4,9 +4,13 @@ pipeline:
     commands: 
       - echo 'en_US.UTF-8 UTF-8' > /etc/locale.gen
       - apt-get update
+      - apt-get -y remove man-db
       - apt-get -y dist-upgrade
-      - apt-get -y install devscripts git-buildpackage locales
+      - apt-get -y install devscripts git-buildpackage locales software-properties-common
       - locale-gen
+      - apt-add-repository 'deb https://www.dsscaw.com/repos/apt/debian unstable main'
+      - wget -qO- https://www.dsscaw.com/repos/9EA957D484A4266A.asc | apt-key add -
+      - apt-get update
       - mk-build-deps --install -t'apt-get -y'
       - autoreconf -fis
       - ./configure
