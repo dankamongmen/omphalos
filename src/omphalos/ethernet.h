@@ -15,7 +15,9 @@ struct omphalos_packet;
 
 // STP actually travels over 802.3 with SAP == 0x42 (most of the time).
 #define ETH_P_STP	0x0802
-#define ETH_P_LLDP	0x88cc
+#ifndef ETH_P_LLDP
+#define ETH_P_LLDP 0x88cc
+#endif
 #define ETH_P_CTP	0x9000
 // FIXME for SAP/DAP == 0xfe in 802.3 traffic ("routed osi pdu's")
 #define ETH_P_OSI	ETH_P_802_3
