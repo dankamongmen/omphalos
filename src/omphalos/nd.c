@@ -18,16 +18,29 @@ struct icmp6_op {
 	uint8_t len;
 } __attribute__ ((packed));
 
-// From RFC 4861 "IPv6 Neighbor Discovery Option Formats"
-#define ICMP6_OP_NEXTHOP	0
-#define ICMP6_OP_SRCLINK	1
-#define ICMP6_OP_TARGLINK	2
-#define ICMP6_OP_PREFIX		3
+// Sources:
+// RFC 4861 "IPv6 Neighbor Discovery Option Formats"
+// RFC3971 "SEcure Neighbor Discovery (SEND)"
+#define ICMP6_OP_NEXTHOP    0
+#define ICMP6_OP_SRCLINK    1
+#define ICMP6_OP_TARGLINK   2
+#define ICMP6_OP_PREFIX     3
 #define ICMP6_OP_REDIRECTED	4
-#define ICMP6_OP_MTU		5
-#define ICMP6_OP_ROUTE		24
-#define ICMP6_OP_RDNSS		25
-#define ICMP6_OP_RAFLAGEXT	26
+#define ICMP6_OP_MTU        5
+#define ICMP6_NBMA_SHORTCUT 6
+#define ICMP6_ADINTERVAL    7
+#define ICMP6_HOME_AGENT    8
+#define ICMP6_SRCADDRLIST   9
+#define ICMP6_TARGADDRLIST  10
+#define IMCP6_CGA_OPTION    11
+#define ICMP6_RSASIG        12
+#define ICMP6_TIMESTAMP     13
+#define ICMP6_NONCE         14
+#define ICMP6_TRUST_ANCHOR  15
+#define ICMP6_CERTIFICATE   16
+#define ICMP6_OP_ROUTE      24
+#define ICMP6_OP_RDNSS      25
+#define ICMP6_OP_RAFLAGEXT  26
 
 // Take as input everything following the ICMPv6 header
 void handle_nd_routersol(struct omphalos_packet *op,const void *frame,size_t len){
@@ -63,9 +76,12 @@ void handle_nd_routersol(struct omphalos_packet *op,const void *frame,size_t len
 				// FIXME do something?
 				break;
 			default:
-				diagnostic("%s unknown option (%u)",__func__,iop->type);
-				op->noproto = 1;
-				// Continue processing the packet
+        if((iop->type > ICMP6_CERTIFICATE && iop->type < ICMP6_OP_ROUTE) ||
+           (iop->type > ICMP6_OP_RAFLAGEXT)){
+				  diagnostic("%s unknown option (%u)", __func__, iop->type);
+				  op->noproto = 1;
+				  // Continue processing the packet
+        }
 		}
 		len -= iop->len * 8;
 		frame = (const char *)frame + iop->len * 8;
