@@ -123,7 +123,7 @@ resize_screen_locked(WINDOW *w){
 }
 
 // Completely redraw the screen, for instance after a corruption (see wrefresh
-// man pageL: "If the argument to wrefresh is curscr, the screen is immediately
+// man page: "If the argument to wrefresh is curscr, the screen is immediately
 // cleared and repainted from scratch."
 static void
 redraw_screen_locked(void){
