@@ -85,7 +85,6 @@ channel_details(WINDOW *w){
   assert(col >= 0);
   assert(wattrset(w, SUBDISPLAY_ATTR) == OK);
   freqs = wireless_freq_count();
-fprintf(stderr,  "count: %u\n",  freqs);
   freqrows = freqs / FREQSPERROW;
   if(freqs % FREQSPERROW){
     ++freqrows;
@@ -93,7 +92,6 @@ fprintf(stderr,  "count: %u\n",  freqs);
   z = r - 2;
   int y = 1;
   while(z > 0){
-fprintf(stderr,  "Y: %d Z: %d uhh: %d\n",  y,  z,  z > 0);
     iface_row(w,  freqrows - y,  row + z,  col);
     --z;
     channel_row(w,  freqrows - y,  row + z,  col);
