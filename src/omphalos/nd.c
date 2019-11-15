@@ -119,6 +119,7 @@ void handle_nd_neighsol(struct omphalos_packet *op,const void *frame __attribute
 		}
 		switch(iop->type){
 			case ICMP6_OP_SRCLINK:
+      case ICMP6_NONCE:
 				// FIXME do something?
 				break;
 			default:
