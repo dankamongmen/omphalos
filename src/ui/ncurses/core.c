@@ -448,7 +448,7 @@ static void
 push_interfaces_above(reelbox *pusher,int rows,int cols,int delta){
   reelbox *rb;
 
-  assert(delta < 0);
+  assert(delta <= 0);
   //fprintf(stderr,"pushing up %d from %s@%d\n",delta,pusher ? pusher->is ? pusher->is->iface->name : "destroyed" : "all",
   //    pusher ? pusher->scrline : rows);
   rb = top_reelbox;
