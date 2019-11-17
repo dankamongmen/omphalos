@@ -5,7 +5,7 @@ Maintainer: Nick Black <dankamongmen@gmail.com>
 Build-Depends: debhelper (>= 12), docbook-xml, pkg-config, libcap-dev, ctags,
  libsysfs-dev, autoconf-archive, docbook-xsl, xsltproc, libiw-dev, libpci-dev,
  libpcap-dev, libpciaccess-dev, libnl-3-dev, libnl-genl-3-dev, libwww-perl,
- libbluetooth-dev, arp-scan, libreadline-dev, libncursesw5-dev (>= 6.1),
+ libbluetooth-dev, arp-scan, libreadline-dev, libncurses-dev (>= 6.1),
  liboutcurses-dev (>= 0.0.7)
 Standards-Version: 4.4.0.1
 Homepage: https://nick-black.com/dankwiki/index.php/Omphalos
