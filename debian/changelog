@@ -5,6 +5,7 @@ omphalos (0.99.9~pre-dsscaw3) UNRELEASED; urgency=medium
   * Debcompat level 12, remove debian/compat
   * Dep on libncurses-dev not libncursesw5-dev
   * Purge doc-base entry
+  * Dep on libnetstack-dev
 
  -- Nick Black <dankamongmen@gmail.com>  Sun, 17 Nov 2019 06:29:11 -0500
 

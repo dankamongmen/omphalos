@@ -29,8 +29,8 @@ systems, install "automake" and "autoconf-archive".
 
 A C compiler is used at buildtime, as is liboutcurses.
 
-libsysfs, libnl3, libpcap, libpciaccess, libz, libiw and libcap are used at
-both build and runtime.
+libsysfs, libnl3, libpcap, libpciaccess, libz, libiw, outcurses, libnetstack,
+and libcap are used at both build and runtime.
 
 Omphalos currently only builds or runs on a Linux kernel with PACKET_MMAP
 sockets. Packet transmission requires at least a 2.6.29 kernel.
