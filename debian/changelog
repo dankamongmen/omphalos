@@ -1,3 +1,9 @@
+omphalos (0.99.9~pre-dsscaw4) unstable; urgency=medium
+
+  * Require outcurses 0.0.6+
+
+ -- nick black <dankamongmen@gmail.com>  Thu, 29 Aug 2019 02:37:23 -0400
+
 omphalos (0.99.9~pre-dsscaw3) unstable; urgency=medium
 
   * Don't trap signals in the postinst; it upsets dpkg

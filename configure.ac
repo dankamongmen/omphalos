@@ -52,16 +52,16 @@ PKG_CHECK_MODULES(LIBNL3GEN, libnl-genl-3.0 >= 3.0, [have_libnl3gen=yes] )
 	LIBS+=" $LIBNL3GEN_LIBS"
 # no libsysfs.pc anywhere but debian. kill off use FIXME
 PKG_CHECK_MODULES(LIBSYSFS, libsysfs, [have_libsysfs=yes], [No sysfs pkg-config])
-   CFLAGS+=" $LIBSYSFS_CFLAGS"
-   LIBS+=" $LIBSYSFS_LIBS"
+  CFLAGS+=" $LIBSYSFS_CFLAGS"
+  LIBS+=" $LIBSYSFS_LIBS"
 if test "$have_libsysfs" != "yes" ; then
   AC_CHECK_LIB(sysfs,sysfs_open_device, ([AC_DEFINE([HAVE_SYSFS], [1], [Use sysfs.h from sysfs/]), [have_libsysfs=yes]]),
 	     [AC_MSG_ERROR([Cannot find libsysfs.])])
   LIBS+=" -lsysfs"
 fi
-# we don't use the outcurses library, just its headers
-PKG_CHECK_MODULES([outcurses], [outcurses >= 0.0.3], [have_outcurses=yes])
-    CFLAGS+=" $outcurses_CFLAGS"
+PKG_CHECK_MODULES([outcurses], [outcurses >= 0.0.6], [have_outcurses=yes])
+  CFLAGS+=" $outcurses_CFLAGS"
+  LIBS+=" $outcurses_LIBS"
 PKG_CHECK_MODULES(LIBZ, zlib, [have_zlib=yes])
 	CFLAGS+=" $LIBZ_CFLAGS"
 	LIBS+=" $LIBZ_LIBS"
