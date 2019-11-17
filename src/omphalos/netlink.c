@@ -48,7 +48,8 @@ cancellation_signal_handler(int signo __attribute__ ((unused))){
 }
 // End nasty signals-based cancellation.
 
-int netlink_socket(void){
+static int
+netlink_socket(void){
 	struct sockaddr_nl sa;
 	int fd;
 

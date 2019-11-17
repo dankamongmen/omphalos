@@ -569,7 +569,8 @@ const char *lookup_arptype(unsigned arphrd,analyzefxn *analyzer,size_t *hlen){
 int up_interface(const interface *i){
 	int fd;
 
-	if((fd = netlink_socket()) < 0){
+	if((fd = socket(AF_NETLINK, SOCK_RAW, NETLINK_ROUTE)) < 0){
+		diagnostic("Couldn't open NETLINK_ROUTE socket (%s?)", strerror(errno));
 		return -1;
 	}
 	if(iplink_modify(fd,iface_get_idx(i),IFF_UP,IFF_UP)){
@@ -588,7 +589,8 @@ int up_interface(const interface *i){
 int down_interface(const interface *i){
 	int fd;
 
-	if((fd = netlink_socket()) < 0){
+	if((fd = socket(AF_NETLINK, SOCK_RAW, NETLINK_ROUTE)) < 0){
+		diagnostic("Couldn't open NETLINK_ROUTE socket (%s?)", strerror(errno));
 		return -1;
 	}
 	if(iplink_modify(fd,iface_get_idx(i),0,IFF_UP)){
@@ -607,7 +609,8 @@ int down_interface(const interface *i){
 int enable_promiscuity(const interface *i){
 	int fd;
 
-	if((fd = netlink_socket()) < 0){
+	if((fd = socket(AF_NETLINK, SOCK_RAW, NETLINK_ROUTE)) < 0){
+		diagnostic("Couldn't open NETLINK_ROUTE socket (%s?)", strerror(errno));
 		return -1;
 	}
 	if(iplink_modify(fd,iface_get_idx(i),IFF_PROMISC,IFF_PROMISC)){
@@ -626,7 +629,8 @@ int enable_promiscuity(const interface *i){
 int disable_promiscuity(const interface *i){
 	int fd;
 
-	if((fd = netlink_socket()) < 0){
+	if((fd = socket(AF_NETLINK, SOCK_RAW, NETLINK_ROUTE)) < 0){
+		diagnostic("Couldn't open NETLINK_ROUTE socket (%s?)", strerror(errno));
 		return -1;
 	}
 	if(iplink_modify(fd,iface_get_idx(i),0,IFF_PROMISC)){

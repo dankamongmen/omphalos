@@ -10,9 +10,7 @@ extern "C" {
 struct interface;
 struct omphalos_ctx;
 
-int netlink_socket(void);
-
-int iplink_modify(int,int,unsigned,unsigned);
+int iplink_modify(int, int, unsigned, unsigned);
 
 void reap_thread(struct interface *);
 
