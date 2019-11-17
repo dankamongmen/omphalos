@@ -108,7 +108,7 @@ int display_channels_locked(WINDOW *w, struct panel_state *ps){
   if(count % FREQSPERROW){
     ++rows;
   }
-  if(new_display_panel(w, ps, rows + 6, 76, L"press 'w' to dismiss display")){
+  if(new_display_panel(w, ps, rows + 7, 76, L"press 'w' to dismiss display")){
     goto err;
   }
   if(channel_details(panel_window(ps->p))){
