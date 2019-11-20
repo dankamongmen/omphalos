@@ -1,4 +1,4 @@
-omphalos (0.99.9~pre-dsscaw3) UNRELEASED; urgency=medium
+omphalos (0.99.9-1) unstable; urgency=medium
 
   * Require outcurses 0.0.7+
   * Require ncurses 6.1+
