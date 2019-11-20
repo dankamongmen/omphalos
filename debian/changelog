@@ -2,7 +2,7 @@ omphalos (0.99.9-1) unstable; urgency=medium
 
   * Require outcurses 0.0.7+
   * Require ncurses 6.1+
-  * Debcompat level 12, remove debian/compat
+  * Debcompat level 12, remove debian/compat, debhelper-compat (= 12)
   * Dep on libncurses-dev not libncursesw5-dev
   * Purge doc-base entry
 
