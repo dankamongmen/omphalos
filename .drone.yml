@@ -1,3 +1,4 @@
+---
 pipeline:
   build:
     image: library/debian:unstable
@@ -16,3 +17,8 @@ pipeline:
       - ./configure
       - make -j8
       - env LANG="en_US.UTF-8" make check
+---
+kind: signature
+hmac: e7989193ab9392c62bcdaadcc652c1eb6f6ecebfd80d4199504d1e700a3f0d17
+
+...
