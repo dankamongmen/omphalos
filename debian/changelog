@@ -6,7 +6,7 @@ omphalos (0.99.9-1) unstable; urgency=medium
   * Dep on libncurses-dev not libncursesw5-dev
   * Purge doc-base entry
 
- -- Nick Black <dankamongmen@gmail.com>  Sun, 17 Nov 2019 06:29:11 -0500
+ -- Nick Black <dankamongmen@gmail.com>  Wed, 20 Nov 2019 14:23:58 -0500
 
 omphalos (0.99.9~pre-dsscaw2) unstable; urgency=medium
 
