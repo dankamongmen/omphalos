@@ -296,11 +296,11 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 	// Drop privileges (possibly requiring a setuid()), and mask
 	// cancellation signals, before creating other threads.
 	if(pctx->pcapfn){
-		if(handle_priv_drop(user,NULL,0)){
+		if(handle_priv_drop(user, NULL, 0)){
 			return -1;
 		}
 	}else{
-		if(handle_priv_drop(user,caparray,sizeof(caparray) / sizeof(*caparray))){
+		if(handle_priv_drop(user, caparray, sizeof(caparray) / sizeof(*caparray))){
 			return -1;
 		}
 	}
