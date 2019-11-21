@@ -10,6 +10,7 @@ extern "C" {
 struct omphalos_packet;
 
 // Various Cisco garbage protocols
+#define ETH_P_ISP 0x
 #define ETH_P_DTP	0x2004
 
 // Cisco Discovery Protocol over Ethernet
