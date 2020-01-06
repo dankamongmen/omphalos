@@ -3,7 +3,7 @@
 #include <limits.h>
 #include <unistd.h>
 #include <arpa/inet.h>
-#include <outcurses.h>
+#include <notcurses.h>
 #include <sys/socket.h>
 #include <linux/version.h>
 #include <linux/nl80211.h>

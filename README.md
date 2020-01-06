@@ -27,10 +27,10 @@ GNU Autotools and the Autoconf Archive are used to build the configure script.
 They are not necessary when building from a release tarball. On Debian-based
 systems, install "automake" and "autoconf-archive".
 
-A C compiler is used at buildtime, as is liboutcurses.
+A C compiler is used at buildtime.
 
-libsysfs, libnl3, libpcap, libpciaccess, libz, libiw and libcap are used at
-both build and runtime.
+libsysfs, libnl3, libpcap, libpciaccess, libz, libiw, notcurses, and libcap are
+used at both build and runtime.
 
 Omphalos currently only builds or runs on a Linux kernel with PACKET_MMAP
 sockets. Packet transmission requires at least a 2.6.29 kernel.

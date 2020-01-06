@@ -5,36 +5,12 @@ name: debian-unstable
 
 steps:
 - name: build
-  image: dankamongmen/unstable_builder:2019-12-18
+  image: dankamongmen/unstable_builder:2020-01-06a
   commands:
     - apt-get update
     - apt-get -y remove man-db
     - apt-get -y dist-upgrade
-    - apt-get -y install devscripts git-buildpackage locales software-properties-common
-    - echo 'en_US.UTF-8 UTF-8' > /etc/locale.gen
-    - locale-gen
-    - apt-add-repository 'deb https://www.dsscaw.com/repos/apt/debian unstable main'
-    - wget -qO- https://www.dsscaw.com/repos/9EA957D484A4266A.asc | apt-key add -
-    - apt-get update
-    - mk-build-deps --install -t'apt-get -y'
-    - autoreconf -fis
-    - ./configure
-    - make -j8
-    - env LANG="en_US.UTF-8" make check
----
-kind: pipeline
-type: docker
-name: debian-stable
-
-steps:
-- name: build
-  image: library/debian:stable
-  commands:
-    - echo 'en_US.UTF-8 UTF-8' > /etc/locale.gen
-    - apt-get update
-    - apt-get -y remove man-db
-    - apt-get -y dist-upgrade
-    - apt-get -y install devscripts git-buildpackage locales software-properties-common
+    - apt-get -y install devscripts git-buildpackage locales equivs software-properties-common
     - echo 'en_US.UTF-8 UTF-8' > /etc/locale.gen
     - locale-gen
     - apt-add-repository 'deb https://www.dsscaw.com/repos/apt/debian unstable main'
