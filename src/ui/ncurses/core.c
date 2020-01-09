@@ -1414,7 +1414,7 @@ static const wchar_t *helps[] = {
   L"'a': attack configuration     'l': view recent diagnostics",
   L"'⏎Enter': browse interface    '⌫BkSpc': leave interface browser",
   L"'k'/'↑': previous selection   'j'/'↓': next selection",
-  L"'⇞PgUp': previous page        '⇟PgDwn': next page",
+  L"PageUp: previous page         PageDown: next page",
   L"'↖Home': first selection      '↘End': last selection",
   L"'-'/'←': collapse selection   '+'/'→': expand selection",
   L"'r': reset selection's stats  'D': reresolve selection",
