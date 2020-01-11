@@ -279,8 +279,8 @@ free_reelbox(reelbox *rb){
     assert(rb->is->rb == rb);
 
     rb->is->rb = NULL;
-    assert(delwin(rb->subwin) == OK);
     assert(del_panel(rb->panel) == OK);
+    assert(delwin(rb->subwin) == OK);
     free(rb);
   }
 }
