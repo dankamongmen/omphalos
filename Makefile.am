@@ -18,7 +18,7 @@ BIN:=$(addsuffix $(EXEEXT),$(addprefix $(OMPHALOS)-,$(UI)))
 DFLAGS=-D_XOPEN_SOURCE_EXTENDED -include config.h #-finput-charset=UTF-8
 DFLAGS+=-D_FORTIFY_SOURCE=2
 AM_CPPFLAGS:=-DOMPHALOS_DATADIR=\"$(datadir)\"
-CFLAGS=$(DFLAGS) -O2 -march=native -pthread -I$(SRC) -fpic -fstrict-aliasing -fvisibility=hidden -Wall -W -Wextra -Werror -Wno-format-zero-length @CFLAGS@ $(AM_CPPFLAGS)
+CFLAGS=$(DFLAGS) -g -ggdb -march=native -pthread -I$(SRC) -fpic -fstrict-aliasing -fvisibility=hidden -Wall -W -Wextra -Werror -Wno-format-zero-length @CFLAGS@ $(AM_CPPFLAGS)
 DBCFLAGS:=$(DFLAGS) -march=native -pthread -I$(SRC) -fpic -fstrict-aliasing -fvisibility=hidden -Wall -W -Wextra -Werror -Wno-format-zero-length -g -ggdb @CFLAGS@ $(AM_CPPFLAGS)
 AM_CFLAGS:=$(CFLAGS)
 # FIXME can't use --default-symver with GNU gold
