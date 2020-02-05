@@ -128,8 +128,8 @@ void offer_nameserver(int nsfam,const void *nameserver){
 	}
 }
 
-int offer_resolution(int fam,const void *addr,const char *name,namelevel nlevel,
-				int nsfam,const void *nameserver){
+int offer_resolution(int fam, const void *addr, const char *name,
+                     namelevel nlevel, int nsfam, const void *nameserver){
 	wchar_t *wname;
 	size_t len;
 	int r;
@@ -138,9 +138,13 @@ int offer_resolution(int fam,const void *addr,const char *name,namelevel nlevel,
 	if((wname = malloc((len + 1) * sizeof(*wname))) == NULL){
 		return -1;
 	}
-	assert(mbsrtowcs(wname,&name,len,NULL) == len);
-	wname[len] = L'\0';
-	r = offer_wresolution(fam,addr,wname,nlevel,nsfam,nameserver);
+	size_t wlen = mbsrtowcs(wname, &name, len, NULL);
+  if(wlen == (size_t)-1){
+    free(wname);
+    return -1;
+  }
+	wname[wlen] = L'\0';
+	r = offer_wresolution(fam, addr, wname, nlevel, nsfam, nameserver);
 	free(wname);
 	return r;
 }
