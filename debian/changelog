@@ -1,7 +1,8 @@
-omphalos (1.0.0-1) UNRELEASED; urgency=medium
+omphalos (0.99.10-1) unstable; urgency=medium
 
   * Require notcurses 1.1.5+
   * Debian standards version 4.5.0
+  * New upstream version
   * Drop requirement on outcurses
 
  -- Nick Black <dankamongmen@gmail.com>  Mon, 06 Jan 2020 17:35:20 -0500
