@@ -2,11 +2,29 @@ Source: omphalos
 Section: net
 Priority: optional
 Maintainer: Nick Black <dankamongmen@gmail.com>
-Build-Depends: debhelper (>= 12), debhelper-compat (= 12), docbook-xml,
- pkg-config, libcap-dev, ctags, libsysfs-dev, autoconf-archive, docbook-xsl,
- xsltproc, libiw-dev, libpci-dev, libpcap-dev, libpciaccess-dev, libnl-3-dev,
- libnl-genl-3-dev, libwww-perl, libbluetooth-dev, arp-scan, libreadline-dev,
- libncurses-dev (>= 6.1), libnotcurses-dev (>= 1.1.5)
+Build-Depends:
+ arp-scan,
+ autoconf-archive,
+ ctags,
+ debhelper (>= 12),
+ debhelper-compat (= 12),
+ docbook-xml,
+ docbook-xsl,
+ libbluetooth-dev,
+ libcap-dev,
+ libiw-dev,
+ libncurses-dev (>= 6.1),
+ libnl-3-dev,
+ libnl-genl-3-dev,
+ libnotcurses-dev (>= 1.1.5),
+ libpcap-dev,
+ libpci-dev,
+ libpciaccess-dev,
+ libreadline-dev,
+ libsysfs-dev,
+ libwww-perl,
+ pkg-config,
+ xsltproc,
 Standards-Version: 4.5.0
 Homepage: https://nick-black.com/dankwiki/index.php/Omphalos
 Vcs-Git: git://github.com/dankamongmen/omphalos.git
@@ -14,8 +32,13 @@ Vcs-Browser: https://github.com/dankamongmen/omphalos/tree
 
 Package: omphalos
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, wget, arp-scan, libcap2-bin,
- pciutils
+Depends:
+ arp-scan,
+ libcap2-bin,
+ pciutils,
+ wget,
+ ${misc:Depends},
+ ${shlibs:Depends},
 Description: Network enumeration and domination
  Omphalos is a tool for visualizing and controlling a local network (though it
  will also process pcap savefiles). Captured packets are analyzed to build a
