@@ -22,7 +22,7 @@ name: ubuntu-focal
 
 steps:
 - name: ubuntu-build
-  image: dankamongmen/focal:2020-02-05a
+  image: dankamongmen/focal:2020-02-11a
   commands:
     - apt-get update
     - apt-get -y install git-buildpackage
