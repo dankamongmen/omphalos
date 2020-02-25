@@ -3,7 +3,6 @@
 #include <limits.h>
 #include <unistd.h>
 #include <arpa/inet.h>
-#include <notcurses.h>
 #include <sys/socket.h>
 #include <linux/version.h>
 #include <linux/nl80211.h>
@@ -17,6 +16,7 @@
 #include <omphalos/netaddrs.h>
 #include <omphalos/wireless.h>
 #include <omphalos/interface.h>
+#include <notcurses/notcurses.h>
 
 typedef struct l4obj {
 	struct l4obj *next;

@@ -1,7 +1,6 @@
 #include <assert.h>
 #include <unistd.h>
 #include <arpa/inet.h>
-#include <notcurses.h>
 #include <omphalos/diag.h>
 #include <ui/ncurses/core.h>
 #include <ui/ncurses/util.h>
@@ -12,6 +11,7 @@
 #include <omphalos/netaddrs.h>
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
+#include <notcurses/notcurses.h>
 #include <ui/ncurses/channels.h>
 
 static unsigned count_interface;
