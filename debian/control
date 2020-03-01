@@ -16,7 +16,7 @@ Build-Depends:
  libncurses-dev (>= 6.1),
  libnl-3-dev,
  libnl-genl-3-dev,
- libnotcurses-dev (>= 1.1.5),
+ libnotcurses-dev (>= 1.2.1),
  libpcap-dev,
  libpci-dev,
  libpciaccess-dev,
@@ -25,6 +25,7 @@ Build-Depends:
  libwww-perl,
  pkg-config,
  xsltproc,
+>>>>>>> e9a114b7b77c6aab54972f73c5d5a1bfdc6ffa95
 Standards-Version: 4.5.0
 Homepage: https://nick-black.com/dankwiki/index.php/Omphalos
 Vcs-Git: git://github.com/dankamongmen/omphalos.git
