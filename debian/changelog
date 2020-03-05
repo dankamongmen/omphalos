@@ -1,6 +1,6 @@
-omphalos (0.99.10-1) unstable; urgency=medium
+omphalos (0.99.11-1) unstable; urgency=medium
 
-  * Require notcurses 1.1.5+
+  * Require notcurses 1.2.2+
   * Debian standards version 4.5.0
   * New upstream version
   * Drop requirement on outcurses
