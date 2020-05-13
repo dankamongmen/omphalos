@@ -16,7 +16,7 @@ Build-Depends:
  libncurses-dev (>= 6.1),
  libnl-3-dev,
  libnl-genl-3-dev,
- libnotcurses-dev (>= 1.2.2),
+ libnotcurses-dev (>= 1.4.2),
  libpcap-dev,
  libpci-dev,
  libpciaccess-dev,

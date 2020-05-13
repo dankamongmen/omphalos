@@ -428,27 +428,27 @@ print_iface_host(const interface *i,const iface_state *is,WINDOW *w,
 		if(devname){
 			// FIXME this doesn't properly account for multicolumn
 			// characters in the devname, including tabs
-			len = cols - PREFIXSTRLEN * 2 - 5 - HWADDRSTRLEN(i->addrlen);
+			len = cols - PREFIXCOLUMNS * 2 - 5 - HWADDRSTRLEN(i->addrlen);
 			if(!interface_up_p(i)){
-				len += PREFIXSTRLEN * 2 + 1;
+				len += PREFIXCOLUMNS * 2 + 1;
 			}
 			assert(mvwprintw(w,line,0,"%lc%c %s %-*.*ls",
 				selectchar,legend,hw,len,len,devname) != ERR);
 		}else{
-			len = cols - PREFIXSTRLEN * 2 - 5;
+			len = cols - PREFIXCOLUMNS * 2 - 5;
 			if(!interface_up_p(i)){
-				len += PREFIXSTRLEN * 2 + 1;
+				len += PREFIXCOLUMNS * 2 + 1;
 			}
 			assert(mvwprintw(w,line,0,"%lc%c %-*.*s",
 				selectchar,legend,len,len,hw) != ERR);
 		}
 		if(interface_up_p(i)){
-			char dbuf[PREFIXSTRLEN + 1];
+			char dbuf[PREFIXCOLUMNS + 1];
 			if(get_srcpkts(l->l2) == 0 && (l->cat == RTN_MULTICAST || l->cat == RTN_BROADCAST)){
-				wprintw(w, "%-*.*s"PREFIXFMT,PREFIXSTRLEN + 1, PREFIXSTRLEN + 1,
+				wprintw(w, "%-*.*s"PREFIXFMT,PREFIXCOLUMNS + 1, PREFIXCOLUMNS + 1,
 						"", qprefix(get_dstpkts(l->l2), 1, dbuf,  1));
 			}else{
-				char sbuf[PREFIXSTRLEN + 1];
+				char sbuf[PREFIXCOLUMNS + 1];
 				wprintw(w, PREFIXFMT" "PREFIXFMT, qprefix(get_srcpkts(l->l2), 1, sbuf,  1),
 						qprefix(get_dstpkts(l->l2), 1, dbuf,  1));
 			}
@@ -482,7 +482,7 @@ print_iface_host(const interface *i,const iface_state *is,WINDOW *w,
 				assert(mvwprintw(w,line,0,"%lc   %s ",
 					selectchar,nw) != ERR);
 				assert(wattrset(w,!(line % 2) ? rattrs : arattrs) != ERR);
-				len = cols - PREFIXSTRLEN * 2 - 7 - strlen(nw);
+				len = cols - PREFIXCOLUMNS * 2 - 7 - strlen(nw);
 				wlen = len - wcswidth(name,wcslen(name));
 				if(wlen < 0){
 					wlen = 0;
@@ -493,7 +493,7 @@ print_iface_host(const interface *i,const iface_state *is,WINDOW *w,
 					char sbuf[PREFIXSTRLEN + 1];
 					char dbuf[PREFIXSTRLEN + 1];
 					if(l3_get_srcpkt(l3->l3) == 0 && (l->cat == RTN_MULTICAST || l->cat == RTN_BROADCAST)){
-						wprintw(w, "%-*.*s"PREFIXFMT,PREFIXSTRLEN + 1, PREFIXSTRLEN + 1,
+						wprintw(w, "%-*.*s"PREFIXFMT, PREFIXCOLUMNS + 1, PREFIXCOLUMNS + 1,
 								"", qprefix(l3_get_dstpkt(l3->l3), 1, dbuf,  1));
 					}else{
 						wprintw(w,PREFIXFMT" "PREFIXFMT,
@@ -744,7 +744,7 @@ print_iface_state(const interface *i,const iface_state *is,WINDOW *w,
 		usecdomain / 1000000,
 		qprefix(timestat_val(&i->bps) * CHAR_BIT * 1000000 * 100 / usecdomain, 100, buf,  0),
 		qprefix(timestat_val(&i->fps), 1, buf2,  1)) != ERR);
-	mvwaddstr(w,1,cols - PREFIXSTRLEN * 2 - 1,"TotSrc  TotDst");
+	mvwaddstr(w,1,cols - PREFIXCOLUMNS * 2 - 1,"TotSrc  TotDst");
 	draw_right_vline(i,active,w);
 }
 
