@@ -8,6 +8,7 @@ steps:
   image: dankamongmen/unstable_builder:2020-05-23a
   commands:
     - export LANG=en_US.UTF-8
+    - apt-get install -y libiw-dev libpci-dev libpciaccess-dev libcap-dev libpcap-dev libnl-genl-3-dev libsysfs-dev
     - autoreconf -fis
     - ./configure
     - make
@@ -22,6 +23,9 @@ steps:
   image: dankamongmen/focal:2020-05-23a
   commands:
     - export LANG=en_US.UTF-8
+    - apt-get update
+    - apt-get upgrade -y
+    - apt-get install -y libiw-dev libpci-dev libpciaccess-dev libcap-dev libpcap-dev libnl-genl-3-dev libsysfs-dev
     - autoreconf -fis
     - ./configure
     - make
