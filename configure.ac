@@ -59,7 +59,7 @@ if test "$have_libsysfs" != "yes" ; then
 	     [AC_MSG_ERROR([Cannot find libsysfs.])])
   LIBS+=" -lsysfs"
 fi
-PKG_CHECK_MODULES([notcurses], [notcurses >= 1.4.2], [have_notcurses=yes])
+PKG_CHECK_MODULES([notcurses], [notcurses >= 1.4.3], [have_notcurses=yes])
   CFLAGS+=" $notcurses_CFLAGS"
   LIBS+=" $notcurses_LIBS"
 PKG_CHECK_MODULES(LIBZ, zlib, [have_zlib=yes])

@@ -424,33 +424,34 @@ print_iface_host(const interface *i,const iface_state *is,WINDOW *w,
 		char hw[HWADDRSTRLEN(i->addrlen)];
 		int len;
 
-		l2ntop(l->l2,i->addrlen,hw);
+		l2ntop(l->l2, i->addrlen, hw);
 		if(devname){
 			// FIXME this doesn't properly account for multicolumn
-			// characters in the devname, including tabs
+			// characters in the devname,  including tabs
 			len = cols - PREFIXCOLUMNS * 2 - 5 - HWADDRSTRLEN(i->addrlen);
 			if(!interface_up_p(i)){
 				len += PREFIXCOLUMNS * 2 + 1;
 			}
-			assert(mvwprintw(w,line,0,"%lc%c %s %-*.*ls",
-				selectchar,legend,hw,len,len,devname) != ERR);
+			assert(mvwprintw(w, line, 0, "%lc%c %s %-*.*ls",
+				selectchar, legend, hw, len, len, devname) != ERR);
 		}else{
 			len = cols - PREFIXCOLUMNS * 2 - 5;
 			if(!interface_up_p(i)){
 				len += PREFIXCOLUMNS * 2 + 1;
 			}
-			assert(mvwprintw(w,line,0,"%lc%c %-*.*s",
-				selectchar,legend,len,len,hw) != ERR);
+			assert(mvwprintw(w, line, 0, "%lc%c %-*.*s",
+				selectchar, legend, len, len, hw) != ERR);
 		}
 		if(interface_up_p(i)){
 			char dbuf[PREFIXCOLUMNS + 1];
 			if(get_srcpkts(l->l2) == 0 && (l->cat == RTN_MULTICAST || l->cat == RTN_BROADCAST)){
-				wprintw(w, "%-*.*s"PREFIXFMT,PREFIXCOLUMNS + 1, PREFIXCOLUMNS + 1,
-						"", qprefix(get_dstpkts(l->l2), 1, dbuf,  1));
+        qprefix(get_dstpkts(l->l2), 1, dbuf,  1);
+				wprintw(w, "%-*.*s%*s", PREFIXCOLUMNS + 1, PREFIXCOLUMNS + 1, "", PREFIXFMT(dbuf));
 			}else{
 				char sbuf[PREFIXCOLUMNS + 1];
-				wprintw(w, PREFIXFMT" "PREFIXFMT, qprefix(get_srcpkts(l->l2), 1, sbuf,  1),
-						qprefix(get_dstpkts(l->l2), 1, dbuf,  1));
+        qprefix(get_srcpkts(l->l2), 1, sbuf,  1);
+				qprefix(get_dstpkts(l->l2), 1, dbuf,  1);
+				wprintw(w, "%*s %*s",  PREFIXFMT(sbuf), PREFIXFMT(dbuf));
 			}
 		}
 		draw_right_vline(i,active,w);
@@ -493,12 +494,13 @@ print_iface_host(const interface *i,const iface_state *is,WINDOW *w,
 					char sbuf[PREFIXSTRLEN + 1];
 					char dbuf[PREFIXSTRLEN + 1];
 					if(l3_get_srcpkt(l3->l3) == 0 && (l->cat == RTN_MULTICAST || l->cat == RTN_BROADCAST)){
-						wprintw(w, "%-*.*s"PREFIXFMT, PREFIXCOLUMNS + 1, PREFIXCOLUMNS + 1,
-								"", qprefix(l3_get_dstpkt(l3->l3), 1, dbuf,  1));
+            qprefix(l3_get_dstpkt(l3->l3), 1, dbuf,  1);
+						wprintw(w, "%-*.*s%*s", PREFIXCOLUMNS + 1, PREFIXCOLUMNS + 1,
+								"", PREFIXFMT(dbuf));
 					}else{
-						wprintw(w,PREFIXFMT" "PREFIXFMT,
-								qprefix(l3_get_srcpkt(l3->l3), 1, sbuf,  1),
-								qprefix(l3_get_dstpkt(l3->l3), 1, dbuf,  1));
+						qprefix(l3_get_srcpkt(l3->l3), 1, sbuf,  1);
+					  qprefix(l3_get_dstpkt(l3->l3), 1, dbuf,  1);
+						wprintw(w, "%*s %*s", PREFIXFMT(sbuf), PREFIXFMT(dbuf));
 					}
 				}
 				draw_right_vline(i,active,w);
