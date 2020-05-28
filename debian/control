@@ -25,7 +25,7 @@ Build-Depends:
  libwww-perl,
  pkg-config,
  xsltproc,
-Standards-Version: 4.5.0
+Standards-Version: 4.5.0.2
 Homepage: https://nick-black.com/dankwiki/index.php/Omphalos
 Vcs-Git: git://github.com/dankamongmen/omphalos.git
 Vcs-Browser: https://github.com/dankamongmen/omphalos/tree

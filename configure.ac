@@ -27,10 +27,6 @@ AX_CHECK_DOCBOOK_XSLT
 if test "x$HAVE_DOCBOOK_XSLT_current" != "xyes"; then
 	AC_MSG_ERROR([Cannot find docbook-xsl.])
 fi
-AC_CHECK_PROGS(MANBIN,makewhatis mandb,no)
-if test "$MANBIN" = no ; then
-	AC_MSG_ERROR([Cannot find manpage indexer.])
-fi
 AC_CHECK_LIB(iw,iw_get_kernel_we_version, [have_libiw=yes],
 	     [AC_MSG_ERROR([Cannot find libiw.])])
 	LIBS+=" -liw"
