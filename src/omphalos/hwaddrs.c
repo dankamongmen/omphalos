@@ -81,7 +81,7 @@ l2host *lookup_l2host(interface *i,const void *hwaddr){
 }
 
 void cleanup_l2hosts(l2host **list){
-	l2host *l2,*tmp;
+	l2host *l2, *tmp;
 
 	for(l2 = *list ; l2 ; l2 = tmp){
 		tmp = l2->next;
@@ -90,23 +90,25 @@ void cleanup_l2hosts(l2host **list){
 	*list = NULL;
 }
 
-void hwntop(const void *hwaddr,size_t len,char *buf){
+void hwntop(const void *hwaddr, size_t len, char *buf){
 	unsigned idx;
 	size_t s;
 
 	if(len){
 		s = HWADDRSTRLEN(len);
-		for(idx = 0 ; idx < len ; ++idx){
-			snprintf(buf + idx * 3,s - idx * 3,"%02x:",
+		for(idx = 0 ; idx < len - 1 ; ++idx){
+			snprintf(buf + idx * 3, s - idx * 3, "%02x:",
 					((const unsigned char *)hwaddr)[idx]);
 		}
+    snprintf(buf + idx * 3, s - idx * 3, "%02x",
+        ((const unsigned char *)hwaddr)[idx]);
 	}else{
 		buf[0] = '\0';
 	}
 }
 
-void l2ntop(const l2host *l2,size_t len,void *buf){
-	hwntop(&l2->hwaddr,len,buf);
+void l2ntop(const l2host *l2, size_t len, void *buf){
+	hwntop(&l2->hwaddr, len, buf);
 }
 
 char *l2addrstr(const l2host *l2){
@@ -114,7 +116,7 @@ char *l2addrstr(const l2host *l2){
 	char *r;
 
 	if( (r = malloc(HWADDRSTRLEN(len))) ){
-		l2ntop(l2,len,r);
+		l2ntop(l2, len, r);
 	}
 	return r;
 }
