@@ -152,8 +152,8 @@ int categorize_l2addr(const interface *i,const void *hwaddr){
 	return RTN_UNICAST;
 }
 
-int l2categorize(const interface *i,const l2host *l2){
-	return categorize_l2addr(i,&l2->hwaddr);
+int l2categorize(const interface *i, const l2host *l2){
+	return categorize_l2addr(i, &l2->hwaddr);
 }
 
 hwaddrint get_hwaddr(const l2host *l2){

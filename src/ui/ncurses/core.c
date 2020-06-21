@@ -1198,8 +1198,11 @@ void use_prev_iface_locked(WINDOW *w,struct panel_state *ps){
       }
       pull_interfaces_down(rb,rows,cols,getmaxy(rb->subwin) + 1);
       rb->scrline = 0;
-      rb->next = top_reelbox;
-      top_reelbox->prev = rb;
+      if( (rb->next = top_reelbox) ){
+        top_reelbox->prev = rb;
+      }else{
+        top_reelbox = rb;
+      }
       rb->prev = NULL;
       top_reelbox = rb;
       move_interface_generic(rb,rows,cols,getbegy(rb->subwin) - rb->scrline);
