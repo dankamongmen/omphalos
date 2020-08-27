@@ -336,15 +336,14 @@ ncurses_input_thread(void *unsafe_marsh){
 // Cleanup which ought be performed even if we had a failure elsewhere, or
 // indeed never started.
 static int
-mandatory_cleanup(WINDOW **w){
+mandatory_cleanup(WINDOW *w){
   int ret = 0;
 
   pthread_mutex_lock(&bfl);
-  if(*w){
-    if(delwin(*w) != OK){
+  if(w){
+    if(delwin(w) != OK){
       ret = -1;
     }
-    *w = NULL;
   }
   if(stdscr){
     if(delwin(stdscr) != OK){
@@ -407,7 +406,6 @@ ncurses_setup(void){
     goto err;
   }
   w = stdscr;
-  ESCDELAY = 100;
   keypad(stdscr,TRUE);
   if(nodelay(stdscr,FALSE) != OK){
     errstr = "Couldn't set blocking input\n";
@@ -535,7 +533,7 @@ ncurses_setup(void){
   return w;
 
 err:
-  mandatory_cleanup(&w);
+  mandatory_cleanup(w);
   fprintf(stderr,"%s",errstr);
   return NULL;
 }
@@ -677,12 +675,12 @@ int main(int argc,char * const *argv){
   if(omphalos_init(&pctx)){
     int err = errno;
 
-    mandatory_cleanup(&stdscr);
+    mandatory_cleanup(stdscr);
     fprintf(stderr,"Error in omphalos_init() (%s?)\n",strerror(err));
     return EXIT_FAILURE;
   }
   omphalos_cleanup(&pctx);
-  if(mandatory_cleanup(&stdscr)){
+  if(mandatory_cleanup(stdscr)){
     return EXIT_FAILURE;
   }
   return EXIT_SUCCESS;
