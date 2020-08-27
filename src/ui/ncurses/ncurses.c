@@ -349,7 +349,6 @@ mandatory_cleanup(WINDOW *w){
     if(delwin(stdscr) != OK){
       ret = -2;
     }
-    stdscr = NULL;
   }
   if(endwin() != OK){
     ret = -3;
