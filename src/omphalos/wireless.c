@@ -240,6 +240,7 @@ static const struct freq {
   { MHZ(5300),      60,   FREQ_5,  },
   { MHZ(5320),      64,   FREQ_5,  },
   { MHZ(5340),      68,   FREQ_5,  },
+  { MHZ(5360),      72,   FREQ_5,  },
   { MHZ(5480),      96,   FREQ_5,  },
   { MHZ(5500),      100,  FREQ_5,  },
   { MHZ(5510),      102,  FREQ_5,  },
