@@ -14,6 +14,7 @@
 #include <omphalos/ethernet.h>
 #include <omphalos/interface.h>
 
+#define ICMP_ROUTER_AD 9
 #define ICMPV6_MLD2_REPORT	143
 
 #define COMMON_ICMPV4_LEN 4
@@ -42,6 +43,8 @@ void handle_icmp_packet(omphalos_packet *op,const void *frame,size_t len){
 			break;
 		case ICMP_ECHO:
 			break;
+    case ICMP_ROUTER_AD: // RFC 1256
+      break;
 		case ICMP_TIME_EXCEEDED:
 			break;
 		case ICMP_PARAMETERPROB:
