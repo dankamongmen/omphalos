@@ -886,6 +886,18 @@ handle_newlink_locked(interface *iface,const struct ifinfomsg *ii,const struct n
 #define IFLA_MAX_MTU 52
 #endif
 			break;}case IFLA_MAX_MTU:{
+#ifndef IFLA_PROP_LIST
+#define IFLA_PROP_LIST 53
+#endif
+			break;}case IFLA_PROP_LIST:{
+#ifndef IFLA_ALT_IFNAME
+#define IFLA_ALT_IFNAME 54
+#endif
+			break;}case IFLA_ALT_IFNAME:{ // alternative ifname
+#ifndef IFLA_PERM_ADDRESS
+#define IFLA_PERM_ADDRESS 55
+#endif
+			break;}case IFLA_PERM_ADDRESS:{
 #if IFLA_MAX_MTU < IFLA_MAX
 #warning "IFLA_MAX implies new IFLA types"
 #endif
