@@ -183,6 +183,15 @@ handle_rtm_newneigh(const struct nlmsghdr *nl){
 			}
 		break;}case NDA_CACHEINFO:{
 		break;}case NDA_PROBES:{
+    break;}case NDA_VLAN:{
+    break;}case NDA_PORT:{
+    break;}case NDA_VNI:{
+    break;}case NDA_IFINDEX:{
+    break;}case NDA_MASTER:{
+    break;}case NDA_LINK_NETNSID:{
+    break;}case NDA_SRC_VNI:{
+    break;}case NDA_PROTOCOL:{
+    break;}case NDA_NH_ID:{
 		break;}default:{
 			diagnostic("Unknown ndatype %u on %s",ra->rta_type,iface->name);
 		break;}}
