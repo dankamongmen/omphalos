@@ -241,6 +241,11 @@ static const struct freq {
   { MHZ(5320),      64,   FREQ_5,  },
   { MHZ(5340),      68,   FREQ_5,  },
   { MHZ(5360),      72,   FREQ_5,  },
+  { MHZ(5380),      76,   FREQ_5,  },
+  { MHZ(5400),      80,   FREQ_5,  },
+  { MHZ(5420),      84,   FREQ_5,  },
+  { MHZ(5440),      88,   FREQ_5,  },
+  { MHZ(5460),      92,   FREQ_5,  },
   { MHZ(5480),      96,   FREQ_5,  },
   { MHZ(5500),      100,  FREQ_5,  },
   { MHZ(5510),      102,  FREQ_5,  },
@@ -262,8 +267,8 @@ static const struct freq {
   { MHZ(5680),      136,  FREQ_5,  },
   { MHZ(5690),      138,  FREQ_5,  },
   { MHZ(5700),      140,  FREQ_5,  },
-  { MHZ(5710),      142,  FREQ_5, },
-  { MHZ(5720),      144,  FREQ_5, },
+  { MHZ(5710),      142,  FREQ_5,  },
+  { MHZ(5720),      144,  FREQ_5,  },
   { MHZ(5745),      149,  FREQ_5,  },
   { MHZ(5755),      151,  FREQ_5,  },
   { MHZ(5765),      153,  FREQ_5,  },
@@ -272,6 +277,10 @@ static const struct freq {
   { MHZ(5795),      159,  FREQ_5,  },
   { MHZ(5805),      161,  FREQ_5,  },
   { MHZ(5825),      165,  FREQ_5,  },
+  { MHZ(5845),      169,  FREQ_5,  },
+  { MHZ(5865),      173,  FREQ_5,  },
+  { MHZ(5885),      177,  FREQ_5,  },
+  { MHZ(5905),      181,  FREQ_5,  },
 };
 
 unsigned wireless_freq_count(void){
