@@ -29,7 +29,7 @@ systems, install "automake" and "autoconf-archive".
 
 A C compiler is used at buildtime.
 
-libsysfs, libnl3, libpcap, libpciaccess, libz, libiw, notcurses, and libcap are
+libnl3, libpcap, libpciaccess, libz, libiw, notcurses, and libcap are
 used at both build and runtime.
 
 Omphalos currently only builds or runs on a Linux kernel with PACKET_MMAP

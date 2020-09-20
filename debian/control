@@ -13,19 +13,17 @@ Build-Depends:
  libbluetooth-dev,
  libcap-dev,
  libiw-dev,
- libncurses-dev (>= 6.1),
  libnl-3-dev,
  libnl-genl-3-dev,
- libnotcurses-dev (>= 1.4.3),
+ libnotcurses-dev (>= 1.7.3),
  libpcap-dev,
  libpci-dev,
  libpciaccess-dev,
  libreadline-dev,
- libsysfs-dev,
  libwww-perl,
  pkg-config,
  xsltproc,
-Standards-Version: 4.5.0.2
+Standards-Version: 4.5.0
 Homepage: https://nick-black.com/dankwiki/index.php/Omphalos
 Vcs-Git: git://github.com/dankamongmen/omphalos.git
 Vcs-Browser: https://github.com/dankamongmen/omphalos/tree
