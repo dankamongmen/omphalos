@@ -1,5 +1,5 @@
-#ifndef OMPHALOS_UI_NCURSES_UTIL
-#define OMPHALOS_UI_NCURSES_UTIL
+#ifndef OMPHALOS_UI_NOTCURSES_UTIL
+#define OMPHALOS_UI_NOTCURSES_UTIL
 
 #ifdef __cplusplus
 extern "C" {
@@ -7,8 +7,8 @@ extern "C" {
 
 #include <assert.h>
 #include <stdint.h>
-#include <ui/ncurses/core.h>
-#include <ui/ncurses/color.h>
+#include <ui/notcurses/core.h>
+#include <notcurses/notcurses.h>
 
 #define PAD_LINES 3
 #define START_COL 1
@@ -25,39 +25,26 @@ extern "C" {
 
 // FIXME eliminate all callers!
 static inline void
-unimplemented(WINDOW *w){
+unimplemented(struct ncplane *w){
 	wstatus_locked(w,"Sorry bro; that ain't implemented yet!");
 }
 
 static inline int
-start_screen_update(void){
-	int ret = OK;
-
-	update_panels();
-	return ret;
-}
-
-static inline int
 finish_screen_update(void){
-	// FIXME we definitely don't need wrefresh() in its entirety?
-	if(doupdate() == ERR){
-		return ERR;
-	}
-	return OK;
+  if(notcurses_render(NC)){
+    return -1;
+  }
+	return 0;
 }
 
 static inline int
 screen_update(void){
-	int ret;
-
-	assert((ret = start_screen_update()) == 0);
-	assert((ret |= finish_screen_update()) == 0);
-	return ret;
+	return finish_screen_update();
 }
 
-int bevel(WINDOW *);
-int bevel_top(WINDOW *);
-int bevel_bottom(WINDOW *);
+int bevel(struct ncplane *);
+int bevel_top(struct ncplane *);
+int bevel_bottom(struct ncplane *);
 
 #ifdef __cplusplus
 }

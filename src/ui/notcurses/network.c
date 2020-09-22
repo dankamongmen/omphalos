@@ -2,9 +2,9 @@
 #include <stdlib.h>
 #include <omphalos/resolv.h>
 #include <omphalos/procfs.h>
-#include <ui/ncurses/util.h>
-#include <ui/ncurses/core.h>
-#include <ui/ncurses/network.h>
+#include <ui/notcurses/util.h>
+#include <ui/notcurses/core.h>
+#include <ui/notcurses/network.h>
 
 static const wchar_t *
 state3str(int state){
@@ -28,15 +28,15 @@ state3char(int state){
 
 #define NETWORKROWS 4
 
-int update_network_details(WINDOW *w){
+int update_network_details(struct ncplane *w){
 	const int col = START_COL;
 	const int row = 1;
 	procfs_state ps;
 	int r,c,z;
 
-	assert(wattrset(w,SUBDISPLAY_ATTR) == OK);
+	assert(wattrset(w,SUBDISPLAY_ATTR) == 0);
 	if(get_procfs_state(&ps)){
-		return ERR;
+		return -1;
 	}
 	getmaxyx(w,r,c);
 	assert(c > col);
@@ -49,17 +49,17 @@ int update_network_details(WINDOW *w){
 					ps.tcp_ccalg,state3char(ps.tcp_sack),
 					state3char(ps.tcp_dsack),
 					state3char(ps.tcp_fack),
-					state3char(ps.tcp_frto)) != ERR);
+					state3char(ps.tcp_frto)) != -1);
 		--z;
 	}	/* intentional fallthrough */
 	case 2:{
 		char *dns = stringize_resolvers();
 
 		if(dns){
-			assert(mvwprintw(w,row + z,col,"DNS: %s",dns) != ERR);
+			assert(mvwprintw(w,row + z,col,"DNS: %s",dns) != -1);
 			free(dns);
 		}else{
-			assert(mvwprintw(w,row + z,col,"No DNS servers configured") != ERR);
+			assert(mvwprintw(w,row + z,col,"No DNS servers configured") != -1);
 		}
 		--z;
 	}	/* intentional fallthrough */
@@ -67,57 +67,57 @@ int update_network_details(WINDOW *w){
 		assert(mvwprintw(w,row + z,col,"Forwarding: IPv4%lc IPv6%lc   Reverse path filtering: %ls",
 					state3char(ps.ipv4_forwarding),
 					state3char(ps.ipv6_forwarding),
-					state3str(ps.rp_filter)) != ERR);
+					state3str(ps.rp_filter)) != -1);
 		--z;
 	}	/* intentional fallthrough */
 	case 0:{
-		assert(mvwprintw(w,row + z,col,"Proxy ARP: %ls",state3str(ps.proxyarp)) != ERR);
+		assert(mvwprintw(w,row + z,col,"Proxy ARP: %ls",state3str(ps.proxyarp)) != -1);
 		--z;
 		break;
 	}default:{
-		return ERR;
+		return -1;
 	} }
-	return OK;
+	return 0;
 }
 
-int display_network_locked(WINDOW *mainw,struct panel_state *ps){
+int display_network_locked(struct ncplane *mainw,struct panel_state *ps){
 	memset(ps,0,sizeof(*ps));
 	if(new_display_panel(mainw,ps,NETWORKROWS,0,L"press 'n' to dismiss display")){
 		goto err;
 	}
 	update_network_details(panel_window(ps->p));
-	return OK;
+	return 0;
 
 err:
 	if(ps->p){
-		WINDOW *psw = panel_window(ps->p);
+		struct ncplane *psw = panel_window(ps->p);
 
 		hide_panel(ps->p);
 		del_panel(ps->p);
 		delwin(psw);
 	}
 	memset(ps,0,sizeof(*ps));
-	return ERR;
+	return -1;
 }
 
 #define BRIDGEROWS 1
 
-int display_bridging_locked(WINDOW *mainw,struct panel_state *ps){
+int display_bridging_locked(struct ncplane *mainw,struct panel_state *ps){
 	memset(ps,0,sizeof(*ps));
 	if(new_display_panel(mainw,ps,BRIDGEROWS,0,L"press 'b' to dismiss display")){
 		goto err;
 	}
 	//update_bridge_details(panel_window(ps->p));
-	return OK;
+	return 0;
 
 err:
 	if(ps->p){
-		WINDOW *psw = panel_window(ps->p);
+		struct ncplane *psw = panel_window(ps->p);
 
 		hide_panel(ps->p);
 		del_panel(ps->p);
 		delwin(psw);
 	}
 	memset(ps,0,sizeof(*ps));
-	return ERR;
+	return -1;
 }

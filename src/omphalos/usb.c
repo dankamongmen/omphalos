@@ -7,6 +7,7 @@
 #include <inttypes.h>
 #include <omphalos/usb.h>
 #include <omphalos/diag.h>
+#include <sysfs/libsysfs.h>
 #include <omphalos/inotify.h>
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
