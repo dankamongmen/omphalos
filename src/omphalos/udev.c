@@ -164,70 +164,74 @@ int stop_udev_support(void){
 	return 0;
 }
 
-int find_net_device(int netdevid, topdev_info *tinf){
-	struct udev_device *parent, *dev;
-	unsigned long val;
+static int
+udev_dev_tinf(struct udev_device* dev, struct topdev_info* tinf){
+  unsigned long val;
 	wchar_t *tmp;
 	char *e;
-
-  char devstr[20];
-  int sp = snprintf(devstr, sizeof(devstr), "n%d", netdevid);
-  if(sp < 0 || (size_t)sp >= sizeof(devstr)){
-    return -1;
+  const char* veasy = udev_device_get_property_value(dev, "ID_VENDOR_FROM_DATABASE");
+  if(veasy){
+		if((tinf->devname = malloc(sizeof(wchar_t) * (strlen(veasy) + 1))) == NULL){
+			return -1;
+		}
+    mbstowcs(tinf->devname, veasy, strlen(veasy) + 1);
+    veasy = udev_device_get_property_value(dev, "ID_MODEL_FROM_DATABASE");
+    if(veasy){
+      size_t wlen = wcslen(tinf->devname);
+      wchar_t *tmp;
+      if((tmp = realloc(tinf->devname, sizeof(*tinf->devname) * (wlen + strlen(veasy) + 2))) == NULL){
+        free(tinf->devname);
+        tinf->devname = NULL;
+        return -1;
+      }
+      tmp[wlen] = L' ';
+      tmp[wlen + 1] = L'\0';
+      mbstowcs(tmp + wlen + 1, veasy, strlen(veasy) + 1);
+      tinf->devname = tmp;
+    }
+    return 0;
   }
-  if((dev = udev_device_new_from_device_id(udev, devstr)) == NULL){
-    return -1;
-  }
-	if((parent = udev_device_get_parent(dev)) == NULL){
-    udev_device_unref(dev);
-		return -1;
-	}
-  udev_device_unref(dev);
-  return 0;
-  /*
-	if((attr = sysfs_get_device_attr(parent,"idVendor")) == NULL){
-		return -1;
-	}
-	if((val = strtoul(attr->value,&e,16)) > 0xffffu || *e != '\n' || e == attr->value ||
-					!vendors[val].name){
+  const char* vendstr = udev_device_get_property_value(dev, "ID_VENDOR_ID");
+	if(!vendstr || (val = strtoul(vendstr, &e, 16)) > 0xffffu || *e
+     || e == vendstr || !vendors[val].name){
+    /*
 		if((attr = sysfs_get_device_attr(parent,"manufacturer")) == NULL){
 			return -1;
 		}
-		if((tinf->devname = malloc(sizeof(wchar_t) * (strlen(attr->value) + 1))) == NULL){
+		if((tinf->devname = malloc(sizeof(wchar_t) * (strlen(vendstr) + 1))) == NULL){
 			return -1;
 		}
-		assert(mbstowcs(tinf->devname,attr->value,strlen(attr->value)) == strlen(attr->value));
+		mbstowcs(tinf->devname,vendstr,strlen(vendstr));
+    */
 	}else{
 		const struct usb_vendor *vend;
 
 		if((tinf->devname = wcsdup(vendors[val].name)) == NULL){
 			return -1;
 		}
-	       	vend = &vendors[val];
-		if((attr = sysfs_get_device_attr(parent,"idProduct")) == NULL){
-			return -1;
-		}
-		if((val = strtoul(attr->value,&e,16)) <= 0xffffu && *e == '\n' && e != attr->value){
+	  vend = &vendors[val];
+    const char* modstr = udev_device_get_property_value(dev, "ID_MODEL_ID");
+		if(modstr && (val = strtoul(modstr, &e, 16)) <= 0xffffu && !*e && e != modstr){
 			unsigned dev;
 
 			for(dev = 0 ; dev < vend->devcount ; ++dev){
 				if(vend->devices[dev].devid == val){
 					size_t wlen = wcslen(tinf->devname);
 
-					if((tmp = realloc(tinf->devname,sizeof(*tinf->devname) * (wlen + wcslen(vend->devices[dev].name) + 2))) == NULL){
+					if((tmp = realloc(tinf->devname, sizeof(*tinf->devname) * (wlen + wcslen(vend->devices[dev].name) + 2))) == NULL){
 						free(tinf->devname);
 						tinf->devname = NULL;
 						return -1;
 					}
 					tmp[wlen] = L' ';
 					tmp[wlen + 1] = L'\0';
-					wcscat(tmp,vend->devices[dev].name);
+					wcscat(tmp, vend->devices[dev].name);
 					tinf->devname = tmp;
 					return 0;
 				}
 			}
 		}
-	}
+  /*
 	if((attr = sysfs_get_device_attr(parent,"product")) == NULL){
 		free(tinf->devname);
 		tinf->devname = NULL;
@@ -243,6 +247,24 @@ int find_net_device(int netdevid, topdev_info *tinf){
 	mbstowcs(tmp + wcslen(tmp) + 1,attr->value,strlen(attr->value));
 	tmp[wcslen(tmp)] = L'\0';
 	tinf->devname = tmp;
-	return 0;
   */
+	}
+	return 0;
+}
+
+int find_net_device(int netdevid, topdev_info *tinf){
+	struct udev_device *dev;
+
+  char devstr[20];
+  int sp = snprintf(devstr, sizeof(devstr), "n%d", netdevid);
+  if(sp < 0 || (size_t)sp >= sizeof(devstr)){
+    return -1;
+  }
+  if((dev = udev_device_new_from_device_id(udev, devstr)) == NULL){
+    diagnostic("Udev failed to return netdevid %d", netdevid);
+    return -1;
+  }
+  int ret = udev_dev_tinf(dev, tinf);
+  udev_device_unref(dev);
+  return ret;
 }
