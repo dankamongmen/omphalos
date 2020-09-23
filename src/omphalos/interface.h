@@ -53,7 +53,7 @@ typedef struct wless_info {
 } wless_info;
 
 typedef struct topdev_info {
-	wchar_t *devname;		// as in output from lspci or lsusb
+	wchar_t *devname;      // as in output from lspci or lsusb
 } topdev_info;
 
 typedef void (*analyzefxn)(struct omphalos_packet *,const void *,size_t);
