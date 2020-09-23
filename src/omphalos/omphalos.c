@@ -9,8 +9,8 @@
 #include <signal.h>
 #include <pcap/pcap.h>
 #include <sys/socket.h>
-#include <omphalos/usb.h>
 #include <omphalos/pci.h>
+#include <omphalos/udev.h>
 #include <omphalos/diag.h>
 #include <omphalos/iana.h>
 #include <omphalos/lltd.h>
@@ -321,7 +321,7 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 		return -1;
 	}
 	if(strcmp(pctx->usbidsfn,"")){
-		if(init_usb_support(pctx->usbidsfn)){
+		if(init_udev_support(pctx->usbidsfn)){
 			return -1;
 		}
 	}
@@ -372,7 +372,7 @@ void omphalos_cleanup(const omphalos_ctx *pctx){
 	stop_lltd_service();
 	cleanup_iana_naming();
 	stop_pci_support();
-	stop_usb_support();
+	stop_udev_support();
 	cleanup_procfs();
 	pthread_key_delete(omphalos_ctx_key);
 }

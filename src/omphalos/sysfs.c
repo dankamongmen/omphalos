@@ -1,41 +1,18 @@
 #include <stdlib.h>
-// libsysfs implementation
-#ifdef HAVE_SYSFS
-#include <sysfs/libsysfs.h>
-#else
-#include <libsysfs.h>
-#endif
-#include <omphalos/usb.h>
 #include <omphalos/pci.h>
+#include <omphalos/udev.h>
+#include <omphalos/diag.h>
 #include <omphalos/sysfs.h>
 #include <omphalos/interface.h>
 
-// PCIe devices show up as PCI devices; the /bus/pci_express entries in sysfs
-// are all about PCIe routing, not end devices.
-static struct bus {
-	const char *bus;
-	int (*bus_lookup)(const char *,struct sysfs_device *,
-				struct topdev_info *);
-} buses[] = {
-	{ "pci",	find_pci_device,	},
-	{ "usb",	find_usb_device,	},
-	{ NULL,		NULL,			}
-};
+#define SYSFS_PATH_MAX    256
+#define SYSFS_NAME_LEN    64
 
-const char *lookup_bus(const char *dname,topdev_info *tinf){
-	struct sysfs_device *dev;
-	const struct bus *b;
-
-	free(tinf->devname);
-	tinf->devname = NULL;
-	for(b = buses ; b->bus ; ++b){
-		if( (dev = sysfs_open_device(b->bus,dname)) ){
-			if(b->bus_lookup){
-				b->bus_lookup(dname,dev,tinf);
-			}
-			sysfs_close_device(dev);
-			return b->bus;
-		}
-	}
-	return NULL;
+// returns one of "pci" or "usb"
+const char *lookup_bus(int netdev, topdev_info *tinf){
+  if(find_net_device(netdev, tinf)){
+    return NULL;
+  }
+  return "pci"; // FIXME no!
+  return 0;
 }
