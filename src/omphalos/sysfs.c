@@ -1,5 +1,4 @@
 #include <stdlib.h>
-#include <omphalos/pci.h>
 #include <omphalos/udev.h>
 #include <omphalos/diag.h>
 #include <omphalos/sysfs.h>
@@ -14,5 +13,4 @@ const char *lookup_bus(int netdev, topdev_info *tinf){
     return NULL;
   }
   return "pci"; // FIXME no!
-  return 0;
 }
