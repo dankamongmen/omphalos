@@ -29,18 +29,16 @@ systems, install "automake" and "autoconf-archive".
 
 A C compiler is used at buildtime.
 
-libsysfs, libnl3, libpcap, libpciaccess, libz, libiw, notcurses, and libcap are
-used at both build and runtime.
+libnl3, libpcap, libz, libiw, and libcap are used at both build and runtime.
 
-Omphalos currently only builds or runs on a Linux kernel with PACKET_MMAP
+Omphalos currently only builds or runs on a Linux kernel with `PACKET_MMAP`
 sockets. Packet transmission requires at least a 2.6.29 kernel.
 
 The TTY UI requires GNU Readline.
 
-The ncurses UI requires libncursesw (ncurses with wide character support),
-and libpanelw (distributed with SVR4 curses and ncurses).
+The fullscreen UI requires Notcurses.
 
-arp-scan's 'get-oui' program is used to build the IANA OUI file.
+arp-scan's `get-oui` program is used to build the IANA OUI file.
 
 wget is used to download the USB ID file.
 
@@ -49,8 +47,8 @@ GnuPG is used to verify signed tarballs.
 Manpages and XHTML documentation require xsltproc and docbook-xsl.
 
 Your TERM and LOCALE/LANG environment variables need be correctly set to make
-full use of omphalos-ncurses. Ensure that a UTF-8 locale is being used, and
-that your terminal definition supports 256 colors.
+full use of omphalos-notcurses. Ensure that a UTF-8 locale is being used, and
+that your terminal definition supports 256 colors or RGB.
 
 -------------------------------------------------------------------
 ## Building and installation
@@ -196,12 +194,6 @@ minimum:
 
 ---------------------------------------
 ## FAQs
-
-> omphalos-ncurses exits immediately after printing "Entering ncurses mode..."
-
-initscr() is probably calling exit() because it couldn't set up your
-terminal. Ensure the TERM environment variable is exported, and correctly
-set for your terminal type.
 
 > I see hosts with 0 packets sent or transmitted.
 

@@ -18,7 +18,6 @@ Build-Depends:
  libnl-genl-3-dev,
  libnotcurses-dev (>= 1.4.3),
  libpcap-dev,
- libpciaccess-dev,
  libreadline-dev,
  libsysfs-dev,
  libwww-perl,
