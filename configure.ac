@@ -39,6 +39,9 @@ AC_CHECK_LIB(pcap,pcap_create, [have_pcap=yes],
 AC_CHECK_LIB(pciaccess,pci_system_init, [have_pciaccess=yes],
 	     [AC_MSG_ERROR([Cannot find libpciaccess.])])
 	LIBS+=" -lpciaccess"
+AC_CHECK_LIB(udev,udev_new, [have_udev=yes],
+	     [AC_MSG_ERROR([Cannot find libudev.])])
+	LIBS+=" -ludev"
 PKG_PROG_PKG_CONFIG
 PKG_CHECK_MODULES(LIBNL3, libnl-3.0 >= 3.0, [have_libnl3=yes])
 	CFLAGS+=" $LIBNL3_CFLAGS"
@@ -46,15 +49,6 @@ PKG_CHECK_MODULES(LIBNL3, libnl-3.0 >= 3.0, [have_libnl3=yes])
 PKG_CHECK_MODULES(LIBNL3GEN, libnl-genl-3.0 >= 3.0, [have_libnl3gen=yes] )
 	CFLAGS+=" $LIBNL3GEN_CFLAGS"
 	LIBS+=" $LIBNL3GEN_LIBS"
-# no libsysfs.pc anywhere but debian. kill off use FIXME
-PKG_CHECK_MODULES(LIBSYSFS, libsysfs, [have_libsysfs=yes], [No sysfs pkg-config])
-  CFLAGS+=" $LIBSYSFS_CFLAGS"
-  LIBS+=" $LIBSYSFS_LIBS"
-if test "$have_libsysfs" != "yes" ; then
-  AC_CHECK_LIB(sysfs,sysfs_open_device, ([AC_DEFINE([HAVE_SYSFS], [1], [Use sysfs.h from sysfs/]), [have_libsysfs=yes]]),
-	     [AC_MSG_ERROR([Cannot find libsysfs.])])
-  LIBS+=" -lsysfs"
-fi
 PKG_CHECK_MODULES([notcurses], [notcurses >= 1.4.3], [have_notcurses=yes])
   CFLAGS+=" $notcurses_CFLAGS"
   LIBS+=" $notcurses_LIBS"
