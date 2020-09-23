@@ -9,7 +9,6 @@
 #include <signal.h>
 #include <pcap/pcap.h>
 #include <sys/socket.h>
-#include <omphalos/pci.h>
 #include <omphalos/udev.h>
 #include <omphalos/diag.h>
 #include <omphalos/iana.h>
@@ -354,9 +353,6 @@ int omphalos_init(const omphalos_ctx *pctx){
 			return -1;
 		}
 	}else{
-		if(init_pci_support()){
-			diagnostic("Warning: no PCI support available");
-		}
 		if(handle_netlink_socket()){
 			return -1;
 		}
@@ -371,7 +367,6 @@ void omphalos_cleanup(const omphalos_ctx *pctx){
 	cleanup_interfaces();
 	stop_lltd_service();
 	cleanup_iana_naming();
-	stop_pci_support();
 	stop_udev_support();
 	cleanup_procfs();
 	pthread_key_delete(omphalos_ctx_key);

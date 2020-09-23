@@ -10,7 +10,6 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <net/if_arp.h>
-#include <omphalos/pci.h>
 #include <omphalos/pcap.h>
 #include <omphalos/diag.h>
 #include <omphalos/privs.h>

@@ -942,8 +942,8 @@ handle_newlink_locked(interface *iface,const struct ifinfomsg *ii,const struct n
 		memset(&iface->drv,0,sizeof(iface->drv));
 		iface->topinfo.devname = wcsdup(name_virtual_device(ii,NULL));
 	}else{
-		if((iface->busname = lookup_bus(iface->drv.bus_info,&iface->topinfo)) == NULL){
-			iface->topinfo.devname = wcsdup(name_virtual_device(ii,&iface->drv));
+		if((iface->busname = lookup_bus(ii->ifi_index, &iface->topinfo)) == NULL){
+			iface->topinfo.devname = wcsdup(name_virtual_device(ii, &iface->drv));
 		}else{
 			// Try to get detailed wireless info first (first from
 			// nl80211, then wireless extensions), falling back to
