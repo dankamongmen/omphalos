@@ -26,19 +26,19 @@
 #include <sys/utsname.h>
 #include <linux/version.h>
 #include <linux/rtnetlink.h>
-#include <ui/ncurses/util.h>
-#include <ui/ncurses/core.h>
 #include <omphalos/timing.h>
-#include <ui/ncurses/color.h>
 #include <omphalos/hwaddrs.h>
-#include <ui/ncurses/iface.h>
 #include <gnu/libc-version.h>
 #include <omphalos/ethtool.h>
 #include <omphalos/netaddrs.h>
 #include <omphalos/omphalos.h>
-#include <ui/ncurses/network.h>
+#include <ui/notcurses/util.h>
+#include <ui/notcurses/core.h>
+#include <ui/notcurses/color.h>
+#include <ui/notcurses/iface.h>
 #include <omphalos/interface.h>
-#include <ui/ncurses/channels.h>
+#include <ui/notcurses/network.h>
+#include <ui/notcurses/channels.h>
 
 #define KEY_ESC 27
 

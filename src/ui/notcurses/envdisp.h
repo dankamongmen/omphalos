@@ -1,11 +1,11 @@
-#ifndef OMPHALOS_UI_NCURSES_ENVDISP
-#define OMPHALOS_UI_NCURSES_ENVDISP
+#ifndef OMPHALOS_UI_NOTCURSES_ENVDISP
+#define OMPHALOS_UI_NOTCURSES_ENVDISP
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include <ui/ncurses/core.h>
+#include <ui/notcurses/core.h>
 
 struct panel_state;
 

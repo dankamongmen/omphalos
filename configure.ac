@@ -49,9 +49,11 @@ PKG_CHECK_MODULES(LIBNL3, libnl-3.0 >= 3.0, [have_libnl3=yes])
 PKG_CHECK_MODULES(LIBNL3GEN, libnl-genl-3.0 >= 3.0, [have_libnl3gen=yes] )
 	CFLAGS+=" $LIBNL3GEN_CFLAGS"
 	LIBS+=" $LIBNL3GEN_LIBS"
-PKG_CHECK_MODULES([notcurses], [notcurses >= 1.4.3], [have_notcurses=yes])
+PKG_CHECK_MODULES([notcurses], [notcurses >= 1.4.3], [have_notcurses=yes],
+	  AC_MSG_WARN([Cannot find Notcurses. Will not build the fullscreen client.]))
   CFLAGS+=" $notcurses_CFLAGS"
   LIBS+=" $notcurses_LIBS"
+	CONFIGURED_UIS+=" notcurses"
 PKG_CHECK_MODULES(LIBZ, zlib, [have_zlib=yes])
 	CFLAGS+=" $LIBZ_CFLAGS"
 	LIBS+=" $LIBZ_LIBS"
@@ -59,21 +61,6 @@ AX_LIB_READLINE
 AC_CHECK_LIB([readline], [main],
 	      [CONFIGURED_UIS+=" tty"],
 	      [AC_MSG_WARN([Cannot find readline headers. Will not build TTY client.])])
-AX_WITH_CURSES
-AX_WITH_CURSES_PANEL
-if test "x$ax_cv_panel" != xyes; then
-  PKG_CHECK_MODULES([libpanel], [panel], [have_panel=yes], [have_panel=no])
-  if test "$have_panel" = "yes" ; then
-    AC_DEFINE([HAVE_PANEL], [1], [Use libpanel from ncursesw])
-    CFLAGS+=" $libpanel_CFLAGS"
-    LIBS+=" $libpanel_LIBS"
-	  CONFIGURED_UIS+=" ncurses"
-  else
-	  AC_MSG_WARN([Cannot find the Curses Panel library. Will not build the Ncurses client.])
-  fi
-else
-	CONFIGURED_UIS+=" ncurses"
-fi
 AC_SUBST([CFLAGS])
 AC_SUBST([CONFIGURED_UIS])
 AC_CONFIG_FILES([Makefile])

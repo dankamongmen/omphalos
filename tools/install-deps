@@ -1,6 +1,0 @@
-#!/bin/sh
-
-set -e || exit 1
-
-aptitude install libpciaccess-dev libcap-dev libpcap-dev libncursesw5-dev \
-		libiw-dev
