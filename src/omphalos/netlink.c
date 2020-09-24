@@ -19,8 +19,8 @@
 #include <linux/netlink.h>
 #include <linux/version.h>
 #include <omphalos/diag.h>
+#include <omphalos/udev.h>
 #include <omphalos/route.h>
-#include <omphalos/sysfs.h>
 #include <linux/rtnetlink.h>
 #include <omphalos/signals.h>
 #include <omphalos/queries.h>

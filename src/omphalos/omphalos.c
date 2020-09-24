@@ -55,29 +55,29 @@ static const struct omphalos_mode {
 };
 
 static void
-usage(const char *arg0,int ret){
+usage(const char *arg0, int ret){
 	FILE *fp = ret == EXIT_SUCCESS ? stdout : stderr;
 	omphalos_mode_enum e;
 
-	fprintf(fp,"usage: %s [ options... ]\n",basename(arg0));
-	fprintf(fp,"-h print this help, and exit\n");
-	fprintf(fp,"-p do not make newly-discovered devices promiscuous\n");
-	fprintf(fp,"--version print version info, and exit\n");
-	fprintf(fp,"-u username: user name to take after creating packet socket.\n");
-	fprintf(fp," '%s' by default, empty string to disable.\n",DEFAULT_USERNAME);
-	fprintf(fp,"-f filename: libpcap-format save file for input.\n");
-	fprintf(fp,"--usbids=filename: USB ID Repository (http://www.linux-usb.org/usb-ids.html).\n");
-	fprintf(fp," '%s' by default, empty string to disable.\n",DEFAULT_USBIDS_FILENAME);
-	fprintf(fp,"--ouis=filename: IANA's OUI mapping in get-oui(1) format.\n");
-	fprintf(fp," '%s' by default, empty string to disable.\n",DEFAULT_IANA_FILENAME);
-	fprintf(fp,"--resolv=filename: resolv.conf-format nameserver list.\n");
-	fprintf(fp," '%s' by default, empty string to disable.\n",DEFAULT_RESOLVCONF_FILENAME);
-	fprintf(fp,"--plog=filename: Enable malformed packet logging to this file.\n");
-	fprintf(fp,"--mode=");
+	fprintf(fp, "usage: %s [ options... ]\n",basename(arg0));
+	fprintf(fp, "-h print this help, and exit\n");
+	fprintf(fp, "-p do not make newly-discovered devices promiscuous\n");
+	fprintf(fp, "--version print version info, and exit\n");
+	fprintf(fp, "-u username: user name to take after creating packet socket.\n");
+	fprintf(fp, " '%s' by default, empty string to disable.\n", DEFAULT_USERNAME);
+	fprintf(fp, "-f filename: libpcap-format save file for input.\n");
+	fprintf(fp, "--usbids=filename: USB ID Repository (http://www.linux-usb.org/usb-ids.html).\n");
+	fprintf(fp, " '%s' by default, empty string to disable.\n", DEFAULT_USBIDS_FILENAME);
+	fprintf(fp, "--ouis=filename: IANA's OUI mapping in get-oui(1) format.\n");
+	fprintf(fp, " '%s' by default, empty string to disable.\n", DEFAULT_IANA_FILENAME);
+	fprintf(fp, "--resolv=filename: resolv.conf-format nameserver list.\n");
+	fprintf(fp, " '%s' by default, empty string to disable.\n", DEFAULT_RESOLVCONF_FILENAME);
+	fprintf(fp, "--plog=filename: Enable malformed packet logging to this file.\n");
+	fprintf(fp, "--mode=");
 	for(e = 0 ; e < OMPHALOS_MODE_MAX ; ++e){
-		fprintf(fp,"%s%s",omphalos_modes[e].str,e + 1 == OMPHALOS_MODE_MAX ? ": Operating mode.\n" : "|");
+		fprintf(fp, "%s%s", omphalos_modes[e].str, e + 1 == OMPHALOS_MODE_MAX ? ": Operating mode.\n" : "|");
 	}
-	fprintf(fp," '%s' by default. See documentation for details.\n",DEFAULT_MODESTRING);
+	fprintf(fp, " '%s' by default. See documentation for details.\n", DEFAULT_MODESTRING);
 	exit(ret);
 }
 
@@ -86,7 +86,7 @@ lex_omphalos_mode(const char *str){
 	const typeof(*omphalos_modes) *m;
 
 	for(m = omphalos_modes ; m->str ; ++m){
-		if(strcmp(str,m->str) == 0){
+		if(strcmp(str, m->str) == 0){
 			return m->level;
 		}
 	}
@@ -95,15 +95,15 @@ lex_omphalos_mode(const char *str){
 
 static void
 version(const char *arg0){
-	fprintf(stdout,"%s %s\n",PACKAGE,VERSION);
-	fprintf(stdout,"invoked as %s\n",arg0);
+	fprintf(stdout, "%s %s\n", PACKAGE,VERSION);
+	fprintf(stdout, "invoked as %s\n", arg0);
 	exit(EXIT_SUCCESS);
 }
 
 static inline void
-default_vdiagnostic(const char *fmt,va_list v){
-	assert(vfprintf(stderr,fmt,v) >= 0);
-	assert(fputc('\n',stderr) != EOF);
+default_vdiagnostic(const char *fmt, va_list v){
+	assert(vfprintf(stderr, fmt, v) >= 0);
+	assert(fputc('\n', stderr) != EOF);
 }
 
 enum {

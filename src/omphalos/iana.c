@@ -180,7 +180,7 @@ make_oui(const wchar_t *broadcast){
 
 // Load IANA OUI descriptions from the specified file, and watch it for updates
 int init_iana_naming(const char *fn){
-  ouitrie *path,*p;
+  ouitrie *path, *p;
   wchar_t *w;
 
   if(((p = make_oui(NULL)) == NULL)){
@@ -200,7 +200,7 @@ int init_iana_naming(const char *fn){
   path->next[0xff] = w;
   trie[0x33] = p;
   p->next[0x33] = path;
-  if(watch_file(fn,parse_file)){
+  if(watch_file(fn, parse_file)){
     free_ouitries(trie);
     return -1;
   }
