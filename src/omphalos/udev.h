@@ -14,8 +14,9 @@ struct topdev_info;
 int init_udev_support(const char *fn);
 int stop_udev_support(void);
 
-// Will first consult the USB ID database, then sysfs.
-int find_net_device(int netdevid, struct topdev_info* tinf);
+// Consults udev's database, followed by USB/PCI IDs. Returns NULL,
+// "usb", or "pci".
+const char *lookup_bus(int netdevid, struct topdev_info *tinf);
 
 #ifdef __cplusplus
 }

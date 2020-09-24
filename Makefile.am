@@ -43,7 +43,7 @@ USBIDS:=usb.ids
 IANAOUI:=ieee-oui.txt
 SUPPORT:=$(USBIDS) $(IANAOUI)
 
-all: bin doc $(SUPPORT)
+all: bin doc #$(SUPPORT)
 
 check: test
 

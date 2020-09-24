@@ -4,6 +4,7 @@
 #include <stddef.h>
 #include <string.h>
 #include <wctype.h>
+#include <stdlib.h>
 #include <libudev.h>
 #include <inttypes.h>
 #include <omphalos/udev.h>
@@ -137,11 +138,7 @@ int init_udev_support(const char *fn){
     diagnostic("Couldn't initialize libudev");
     return -1;
   }
-	if(watch_file(fn, parse_usbids_file)){
-    diagnostic("Couldn't parse/watch %s", fn);
-    udev_unref(udev);
-		return -1;
-	}
+	watch_file(fn, parse_usbids_file); // don't require usb.ids
 	return 0;
 }
 
@@ -164,7 +161,7 @@ int stop_udev_support(void){
 	return 0;
 }
 
-static int
+static const char*
 udev_dev_tinf(struct udev_device* dev, struct topdev_info* tinf){
   unsigned long val;
 	wchar_t *tmp;
@@ -172,7 +169,7 @@ udev_dev_tinf(struct udev_device* dev, struct topdev_info* tinf){
   const char* veasy = udev_device_get_property_value(dev, "ID_VENDOR_FROM_DATABASE");
   if(veasy){
 		if((tinf->devname = malloc(sizeof(wchar_t) * (strlen(veasy) + 1))) == NULL){
-			return -1;
+			return NULL;
 		}
     mbstowcs(tinf->devname, veasy, strlen(veasy) + 1);
     veasy = udev_device_get_property_value(dev, "ID_MODEL_FROM_DATABASE");
@@ -182,89 +179,59 @@ udev_dev_tinf(struct udev_device* dev, struct topdev_info* tinf){
       if((tmp = realloc(tinf->devname, sizeof(*tinf->devname) * (wlen + strlen(veasy) + 2))) == NULL){
         free(tinf->devname);
         tinf->devname = NULL;
-        return -1;
+        return NULL;
       }
       tmp[wlen] = L' ';
       tmp[wlen + 1] = L'\0';
       mbstowcs(tmp + wlen + 1, veasy, strlen(veasy) + 1);
       tinf->devname = tmp;
     }
-    return 0;
+    return udev_device_get_property_value(dev, "ID_BUS");
   }
   const char* vendstr = udev_device_get_property_value(dev, "ID_VENDOR_ID");
 	if(!vendstr || (val = strtoul(vendstr, &e, 16)) > 0xffffu || *e
      || e == vendstr || !vendors[val].name){
-    /*
-		if((attr = sysfs_get_device_attr(parent,"manufacturer")) == NULL){
-			return -1;
-		}
-		if((tinf->devname = malloc(sizeof(wchar_t) * (strlen(vendstr) + 1))) == NULL){
-			return -1;
-		}
-		mbstowcs(tinf->devname,vendstr,strlen(vendstr));
-    */
-	}else{
-		const struct usb_vendor *vend;
-
-		if((tinf->devname = wcsdup(vendors[val].name)) == NULL){
-			return -1;
-		}
-	  vend = &vendors[val];
-    const char* modstr = udev_device_get_property_value(dev, "ID_MODEL_ID");
-		if(modstr && (val = strtoul(modstr, &e, 16)) <= 0xffffu && !*e && e != modstr){
-			unsigned dev;
-
-			for(dev = 0 ; dev < vend->devcount ; ++dev){
-				if(vend->devices[dev].devid == val){
-					size_t wlen = wcslen(tinf->devname);
-
-					if((tmp = realloc(tinf->devname, sizeof(*tinf->devname) * (wlen + wcslen(vend->devices[dev].name) + 2))) == NULL){
-						free(tinf->devname);
-						tinf->devname = NULL;
-						return -1;
-					}
-					tmp[wlen] = L' ';
-					tmp[wlen + 1] = L'\0';
-					wcscat(tmp, vend->devices[dev].name);
-					tinf->devname = tmp;
-					return 0;
-				}
-			}
-		}
-  /*
-	if((attr = sysfs_get_device_attr(parent,"product")) == NULL){
-		free(tinf->devname);
-		tinf->devname = NULL;
-		return -1;
+    return NULL;
 	}
-	if((tmp = realloc(tinf->devname,sizeof(wchar_t) * (wcslen(tinf->devname) + strlen(attr->value) + 2))) == NULL){
-		free(tinf->devname);
-		tinf->devname = NULL;
-		return -1;
-	}
-	// They come with a newline at the end, argh!
-	tmp[wcslen(tmp) - 1] = L' ';
-	mbstowcs(tmp + wcslen(tmp) + 1,attr->value,strlen(attr->value));
-	tmp[wcslen(tmp)] = L'\0';
-	tinf->devname = tmp;
-  */
-	}
-	return 0;
+  const struct usb_vendor *vend;
+  if((tinf->devname = wcsdup(vendors[val].name)) == NULL){
+    return NULL;
+  }
+  vend = &vendors[val];
+  const char* modstr = udev_device_get_property_value(dev, "ID_MODEL_ID");
+  if(!modstr || (val = strtoul(modstr, &e, 16)) > 0xffffu || *e || e == modstr){
+    return NULL; // leave partial devname
+  }
+  for(unsigned devno = 0 ; devno < vend->devcount ; ++devno){
+    if(vend->devices[devno].devid == val){
+      size_t wlen = wcslen(tinf->devname);
+      if((tmp = realloc(tinf->devname, sizeof(*tinf->devname) * (wlen + wcslen(vend->devices[devno].name) + 2))) == NULL){
+        return NULL; // leave partial devname
+      }
+      tmp[wlen] = L' ';
+      tmp[wlen + 1] = L'\0';
+      wcscat(tmp, vend->devices[devno].name);
+      tinf->devname = tmp;
+      return udev_device_get_property_value(dev, "ID_BUS");
+    }
+  }
+	return NULL;
 }
 
-int find_net_device(int netdevid, topdev_info *tinf){
+// returns one of "pci" or "usb" (or NULL)
+const char *lookup_bus(int netdev, topdev_info *tinf){
 	struct udev_device *dev;
 
   char devstr[20];
-  int sp = snprintf(devstr, sizeof(devstr), "n%d", netdevid);
+  int sp = snprintf(devstr, sizeof(devstr), "n%d", netdev);
   if(sp < 0 || (size_t)sp >= sizeof(devstr)){
-    return -1;
+    return NULL;
   }
   if((dev = udev_device_new_from_device_id(udev, devstr)) == NULL){
-    diagnostic("Udev failed to return netdevid %d", netdevid);
-    return -1;
+    diagnostic("Udev failed to return netdevid %d", netdev);
+    return NULL;
   }
-  int ret = udev_dev_tinf(dev, tinf);
+  const char* ret = udev_dev_tinf(dev, tinf);
   udev_device_unref(dev);
   return ret;
 }
