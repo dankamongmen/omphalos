@@ -1,12 +1,12 @@
-#ifndef OMPHALOS_UI_NCURSES_IFACE
-#define OMPHALOS_UI_NCURSES_IFACE
+#ifndef OMPHALOS_UI_NOTCURSES_IFACE
+#define OMPHALOS_UI_NOTCURSES_IFACE
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #include <sys/time.h>
-#include <ui/ncurses/util.h>
+#include <ui/notcurses/util.h>
 
 struct l2obj;
 struct l3obj;

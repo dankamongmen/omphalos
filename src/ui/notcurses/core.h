@@ -1,5 +1,5 @@
-#ifndef OMPHALOS_UI_NCURSES_CORE
-#define OMPHALOS_UI_NCURSES_CORE
+#ifndef OMPHALOS_UI_NOTCURSES_CORE
+#define OMPHALOS_UI_NOTCURSES_CORE
 
 #ifdef __cplusplus
 extern "C" {
@@ -7,19 +7,7 @@ extern "C" {
 
 #include <limits.h>
 #include <stdarg.h>
-#if defined(HAVE_NCURSESW_H) || defined(HAVE_NCURSESW)
-#include <term.h>
-#include <panel.h>
-#include <ncurses.h>
-#else
-#ifdef HAVE_NCURSESW_CURSES_H
-#include <ncursesw/term.h>
-#include <ncursesw/panel.h>
-#include <ncursesw/curses.h>
-#else
-#error "Couldn't find working cursesw headers"
-#endif
-#endif
+#include <notcurses/notcurses.h>
 
 struct l4srv;
 struct l2obj;

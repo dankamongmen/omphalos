@@ -1,5 +1,5 @@
-#ifndef OMPHALOS_UI_NCURSES_UTIL
-#define OMPHALOS_UI_NCURSES_UTIL
+#ifndef OMPHALOS_UI_NOTCURSES_UTIL
+#define OMPHALOS_UI_NOTCURSES_UTIL
 
 #ifdef __cplusplus
 extern "C" {
@@ -7,8 +7,8 @@ extern "C" {
 
 #include <assert.h>
 #include <stdint.h>
-#include <ui/ncurses/core.h>
-#include <ui/ncurses/color.h>
+#include <ui/notcurses/core.h>
+#include <ui/notcurses/color.h>
 
 #define PAD_LINES 3
 #define START_COL 1

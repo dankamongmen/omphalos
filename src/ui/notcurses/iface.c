@@ -7,14 +7,14 @@
 #include <linux/version.h>
 #include <linux/nl80211.h>
 #include <linux/rtnetlink.h>
-#include <ui/ncurses/core.h>
-#include <ui/ncurses/util.h>
-#include <ui/ncurses/color.h>
 #include <omphalos/service.h>
 #include <omphalos/hwaddrs.h>
-#include <ui/ncurses/iface.h>
+#include <ui/notcurses/core.h>
+#include <ui/notcurses/util.h>
 #include <omphalos/netaddrs.h>
 #include <omphalos/wireless.h>
+#include <ui/notcurses/color.h>
+#include <ui/notcurses/iface.h>
 #include <omphalos/interface.h>
 #include <notcurses/notcurses.h>
 

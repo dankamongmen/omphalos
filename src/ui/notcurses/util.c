@@ -1,6 +1,6 @@
 #include <assert.h>
 #include <string.h>
-#include <ui/ncurses/util.h>
+#include <ui/notcurses/util.h>
 
 // Without the sides, these functions are very much faster. If you'll fill
 // the interior, and can generate the sides yourself, go ahead and do that.

@@ -1,12 +1,12 @@
 #include <assert.h>
 #include <string.h>
 #include <net/if.h>
-#include <ui/ncurses/core.h>
-#include <ui/ncurses/util.h>
-#include <ui/ncurses/iface.h>
+#include <ui/notcurses/core.h>
+#include <ui/notcurses/util.h>
+#include <ui/notcurses/iface.h>
 #include <omphalos/wireless.h>
 #include <omphalos/interface.h>
-#include <ui/ncurses/channels.h>
+#include <ui/notcurses/channels.h>
 
 static unsigned ifaces_used;
 

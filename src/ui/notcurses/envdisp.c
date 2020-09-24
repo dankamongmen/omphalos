@@ -1,8 +1,8 @@
 #include <stdlib.h>
 #include <string.h>
-#include <ui/ncurses/util.h>
-#include <ui/ncurses/color.h>
-#include <ui/ncurses/envdisp.h>
+#include <ui/notcurses/util.h>
+#include <ui/notcurses/color.h>
+#include <ui/notcurses/envdisp.h>
 
 #define ENVROWS 10
 #define COLORSPERROW 32

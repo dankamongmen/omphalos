@@ -2,17 +2,17 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <omphalos/diag.h>
-#include <ui/ncurses/core.h>
-#include <ui/ncurses/util.h>
-#include <ui/ncurses/color.h>
-#include <ui/ncurses/iface.h>
 #include <omphalos/ethtool.h>
 #include <omphalos/service.h>
+#include <ui/notcurses/core.h>
+#include <ui/notcurses/util.h>
 #include <omphalos/netaddrs.h>
 #include <omphalos/omphalos.h>
+#include <ui/notcurses/color.h>
+#include <ui/notcurses/iface.h>
 #include <omphalos/interface.h>
 #include <notcurses/notcurses.h>
-#include <ui/ncurses/channels.h>
+#include <ui/notcurses/channels.h>
 
 static unsigned count_interface;
 // dequeue + single selection

@@ -2,9 +2,9 @@
 #include <stdlib.h>
 #include <omphalos/resolv.h>
 #include <omphalos/procfs.h>
-#include <ui/ncurses/util.h>
-#include <ui/ncurses/core.h>
-#include <ui/ncurses/network.h>
+#include <ui/notcurses/util.h>
+#include <ui/notcurses/core.h>
+#include <ui/notcurses/network.h>
 
 static const wchar_t *
 state3str(int state){

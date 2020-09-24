@@ -1,5 +1,5 @@
-#ifndef OMPHALOS_UI_NCURSES_COLOR
-#define OMPHALOS_UI_NCURSES_COLOR
+#ifndef OMPHALOS_UI_NOTCURSES_COLOR
+#define OMPHALOS_UI_NOTCURSES_COLOR
 
 #ifdef __cplusplus
 extern "C" {

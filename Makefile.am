@@ -65,16 +65,16 @@ COBJS:=$(addprefix $(OUT)/,$(CSRCS:%.c=%.o))
 # Various UI's plus the core make the binaries
 COREOBJS:=$(filter $(OUT)/$(SRC)/$(PROJ)/%.o,$(COBJS))
 CORETESTOBJS:=$(filter $(OUT)/$(SRC)/ui/coretest/%.o,$(COBJS))
-NCURSESOBJS:=$(filter $(OUT)/$(SRC)/ui/ncurses/%.o,$(COBJS))
+NOTCURSESOBJS:=$(filter $(OUT)/$(SRC)/ui/notcurses/%.o,$(COBJS))
 TTYOBJS:=$(filter $(OUT)/$(SRC)/ui/tty/%.o,$(COBJS))
 XOBJS:=$(filter $(OUT)/$(SRC)/ui/x/%.o,$(COBJS))
 
 # Requires CAP_NET_ADMIN privileges bestowed upon the binary
 livetest: sudobless $(SUPPORT)
-	$(OMPHALOS)-ncurses -u '' --plog=$(OUTCAP) --usbids=$(USBIDS) --ouis=$(IANAOUI)
+	$(OMPHALOS)-notcurses -u '' --plog=$(OUTCAP) --usbids=$(USBIDS) --ouis=$(IANAOUI)
 
 silenttest: sudobless $(SUPPORT)
-	$(OMPHALOS)-ncurses -u '' --mode=silent --plog=$(OUTCAP) --usbids=$(USBIDS) --ouis=$(IANAOUI)
+	$(OMPHALOS)-notcurses -u '' --mode=silent --plog=$(OUTCAP) --usbids=$(USBIDS) --ouis=$(IANAOUI)
 
 coretest: sudobless $(SUPPORT)
 	$(OMPHALOS)-coretest -u '' --plog=$(OUTCAP) --usbids=$(USBIDS) --ouis=$(IANAOUI)
@@ -99,9 +99,9 @@ $(OMPHALOS)-coretest: $(COREOBJS) $(CORETESTOBJS)
 	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -o $@ $^ $(LFLAGS)
 
-$(OMPHALOS)-ncurses: $(COREOBJS) $(NCURSESOBJS)
+$(OMPHALOS)-notcurses: $(COREOBJS) $(NOTCURSESOBJS)
 	@mkdir -p $(@D)
-	$(CC) $(CFLAGS) -o $@ $^ $(LFLAGS) $(PANEL_LIBS) $(CURSES_LIBS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LFLAGS) $(NOTCURSES_LIBS)
 
 $(OMPHALOS)-tty: $(COREOBJS) $(TTYOBJS)
 	@mkdir -p $(@D)
