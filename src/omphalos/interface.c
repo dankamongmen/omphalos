@@ -211,6 +211,7 @@ void free_iface(interface *i){
 	}
 	timestat_destroy(&i->fps);
 	timestat_destroy(&i->bps);
+  free(i->busname);
 	free(i->topinfo.devname);
 	i->topinfo.devname = NULL;
 	free(i->truncbuf);

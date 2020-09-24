@@ -16,7 +16,7 @@ int stop_udev_support(void);
 
 // Consults udev's database, followed by USB/PCI IDs. Returns NULL,
 // "usb", or "pci".
-const char *lookup_bus(int netdevid, struct topdev_info *tinf);
+char *lookup_bus(int netdevid, struct topdev_info *tinf);
 
 #ifdef __cplusplus
 }

@@ -219,7 +219,7 @@ udev_dev_tinf(struct udev_device* dev, struct topdev_info* tinf){
 }
 
 // returns one of "pci" or "usb" (or NULL)
-const char *lookup_bus(int netdev, topdev_info *tinf){
+char *lookup_bus(int netdev, topdev_info *tinf){
 	struct udev_device *dev;
 
   char devstr[20];
@@ -231,7 +231,8 @@ const char *lookup_bus(int netdev, topdev_info *tinf){
     diagnostic("Udev failed to return netdevid %d", netdev);
     return NULL;
   }
-  const char* ret = udev_dev_tinf(dev, tinf);
+  const char* cret = udev_dev_tinf(dev, tinf);
+  char* ret = cret ? strdup(cret) : NULL;
   udev_device_unref(dev);
   return ret;
 }

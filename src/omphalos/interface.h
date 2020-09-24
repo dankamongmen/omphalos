@@ -113,7 +113,7 @@ typedef struct interface {
 	struct ethtool_drvinfo drv;	// ethtool driver info
 	unsigned offload;	// offloading settings
 	unsigned offloadmask;	// which offloading settings are valid
-	const char *busname;	// "pci", "usb" etc (from sysfs/bus/)
+	char *busname;	// "pci", "usb" etc (from sysfs/bus/)
 	enum {
 		SETTINGS_INVALID,
 		SETTINGS_VALID_ETHTOOL,
