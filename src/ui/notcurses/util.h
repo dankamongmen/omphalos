@@ -30,29 +30,8 @@ unimplemented(WINDOW *w){
 }
 
 static inline int
-start_screen_update(void){
-	int ret = OK;
-
-	update_panels();
-	return ret;
-}
-
-static inline int
-finish_screen_update(void){
-	// FIXME we definitely don't need wrefresh() in its entirety?
-	if(doupdate() == ERR){
-		return ERR;
-	}
-	return OK;
-}
-
-static inline int
 screen_update(void){
-	int ret;
-
-	assert((ret = start_screen_update()) == 0);
-	assert((ret |= finish_screen_update()) == 0);
-	return ret;
+  return notcurses_render();
 }
 
 int bevel(WINDOW *);
