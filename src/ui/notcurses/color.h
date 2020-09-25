@@ -36,7 +36,6 @@ extern "C" {
 #define	COLOR_MODVIOLET		93
 #define COLOR_MODPURPLE         58
 #define COLOR_MODRED            130
-#define COLOR_MODWHITE          252
 #define COLOR_MODYELLOW         210
 #define COLOR_GREEN_75		46
 #define COLOR_GREEN_50          40
@@ -101,7 +100,6 @@ enum {
 	BCAST_ALTROW_L3_COLOR,
 	BCAST_ALTROW_RES_COLOR,
 	BSELECTED_COLOR,
-	SUBDISPLAY_COLOR,
 	FIRST_FREE_COLOR
 };
 

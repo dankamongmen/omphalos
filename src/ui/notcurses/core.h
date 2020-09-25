@@ -56,9 +56,8 @@ struct omphalos_packet;
 // are the dimensions on the real screen, not the desirable dimensions on an
 // infinitely large screen.
 typedef struct reelbox {
-	int scrline;			// FIXME eliminate this; use getbegy()
-	WINDOW *subwin;			// subwin
-	PANEL *panel;			// panel
+	int scrline; // FIXME eliminate this; use getbegy()
+	WINDOW *subwin; // drawing surface
 	struct reelbox *next,*prev;	// circular list
 	struct iface_state *is;		// backing interface state
 	struct l2obj *selected;		// selected subentry
@@ -70,7 +69,7 @@ struct panel_state {
 	int ysize;			// number of lines of *text* (not win)
 };
 
-// These functions may only be called while the ncurses lock is held. They
+// These functions may only be called while the notcurses lock is held. They
 // themselves will not attempt to do any locking. Furthermore, they will not
 // call screen_update() -- that is the caller's responsibility (in this way,
 // multiple operations can be chained without screen updates, for flicker-free

@@ -19,7 +19,13 @@ extern "C" {
 #define U64FMT "%-20ju"
 #define U32FMT "%-10ju"
 
-#define SUBDISPLAY_ATTR (COLOR_PAIR(SUBDISPLAY_COLOR) | A_BOLD)
+static inline int
+set_subdisplay_attr(struct ncplane* n){
+  int ret = ncplane_set_fg_rgb(n, 0xd0d0d0);
+  ret |= ncplane_set_bg_rgb(n, 0x0);
+  ncplane_styles_set(n, NCSTYLE_BOLD);
+  return ret;
+}
 
 #define COMB_UNDER '\u0332'
 
@@ -29,10 +35,7 @@ unimplemented(WINDOW *w){
 	wstatus_locked(w,"Sorry bro; that ain't implemented yet!");
 }
 
-static inline int
-screen_update(void){
-  return notcurses_render();
-}
+int screen_update(void);
 
 int bevel(WINDOW *);
 int bevel_top(WINDOW *);
