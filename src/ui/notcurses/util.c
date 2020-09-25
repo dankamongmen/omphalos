@@ -2,6 +2,12 @@
 #include <string.h>
 #include <ui/notcurses/util.h>
 
+static struct notcurses *nc;
+
+int screen_update(void){
+  return notcurses_render(nc);
+}
+
 // Without the sides, these functions are very much faster. If you'll fill
 // the interior, and can generate the sides yourself, go ahead and do that.
 int bevel_bottom(WINDOW *w){

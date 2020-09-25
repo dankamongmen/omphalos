@@ -34,7 +34,7 @@ int update_network_details(struct ncplane *n){
 	procfs_state ps;
 	int r, c, z;
 
-	wattrset(n, SUBDISPLAY_ATTR);
+  set_subdisplay_attr(n);
 	if(get_procfs_state(&ps)){
 		return -1;
 	}
