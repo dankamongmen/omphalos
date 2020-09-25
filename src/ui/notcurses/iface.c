@@ -301,9 +301,9 @@ print_host_services(WINDOW *w,const interface *i,const l3obj *l,int *line,
 	n = 0;
 	for(l4 = l->l4objs ; l4 ; l4 = l4->next){
 		if(l4->emph){
-			assert(wattrset(w,attrs | A_BOLD) == OK);
+			wattrset(w,attrs | A_BOLD);
 		}else{
-			assert(wattrset(w,attrs) == OK);
+			wattrset(w,attrs);
 		}
 		srv = l4srvstr(l4->l4);
 		if(n){
@@ -419,7 +419,7 @@ print_iface_host(const interface *i,const iface_state *is,WINDOW *w,
 		al3attrs = (al3attrs & A_BOLD) | COLOR_PAIR(BULKTEXT_ALTROW_COLOR);
 		arattrs = (arattrs & A_BOLD) | COLOR_PAIR(BULKTEXT_ALTROW_COLOR);
 	}
-	assert(wattrset(w,!(line % 2) ? attrs : aattrs) != ERR);
+	wattrset(w,!(line % 2) ? attrs : aattrs);
 	if(line >= minline){
 		char hw[HWADDRSTRLEN(i->addrlen)];
 		int len;
@@ -432,15 +432,15 @@ print_iface_host(const interface *i,const iface_state *is,WINDOW *w,
 			if(!interface_up_p(i)){
 				len += PREFIXCOLUMNS * 2 + 1;
 			}
-			assert(mvwprintw(w, line, 0, "%lc%c %s %-*.*ls",
-				selectchar, legend, hw, len, len, devname) != ERR);
+			mvwprintw(w, line, 0, "%lc%c %s %-*.*ls",
+				selectchar, legend, hw, len, len, devname);
 		}else{
 			len = cols - PREFIXCOLUMNS * 2 - 5;
 			if(!interface_up_p(i)){
 				len += PREFIXCOLUMNS * 2 + 1;
 			}
-			assert(mvwprintw(w, line, 0, "%lc%c %-*.*s",
-				selectchar, legend, len, len, hw) != ERR);
+			mvwprintw(w, line, 0, "%lc%c %-*.*s",
+				selectchar, legend, len, len, hw);
 		}
 		if(interface_up_p(i)){
 			char dbuf[PREFIXCOLUMNS + 1];
@@ -475,21 +475,20 @@ print_iface_host(const interface *i,const iface_state *is,WINDOW *w,
 			if(line >= minline){
 				int len,wlen;
 
-				assert(wattrset(w,!(line % 2) ? l3attrs : al3attrs) != ERR);
+				wattrset(w,!(line % 2) ? l3attrs : al3attrs);
 				l3ntop(l3->l3,nw,sizeof(nw));
 				if((name = get_l3name(l3->l3)) == NULL){
 					name = L"";
 				}
-				assert(mvwprintw(w,line,0,"%lc   %s ",
-					selectchar,nw) != ERR);
-				assert(wattrset(w,!(line % 2) ? rattrs : arattrs) != ERR);
+				mvwprintw(w,line,0,"%lc   %s ", selectchar,nw)
+				wattrset(w,!(line % 2) ? rattrs : arattrs);
 				len = cols - PREFIXCOLUMNS * 2 - 7 - strlen(nw);
 				wlen = len - wcswidth(name,wcslen(name));
 				if(wlen < 0){
 					wlen = 0;
 				}
-				assert(wprintw(w,"%.*ls%*.*s",len,name,wlen,wlen,"") != ERR);
-				assert(wattrset(w,!(line % 2) ? l3attrs : al3attrs) != ERR);
+				wprintw(w,"%.*ls%*.*s",len,name,wlen,wlen,"");
+				wattrset(w,!(line % 2) ? l3attrs : al3attrs);
 				{
 					char sbuf[PREFIXSTRLEN + 1];
 					char dbuf[PREFIXSTRLEN + 1];
@@ -557,19 +556,19 @@ print_iface_hosts(const interface *i,const iface_state *is,const reelbox *rb,
 
 static int
 iface_optstr(WINDOW *w,const char *str,int hcolor,int bcolor){
-	if(wcolor_set(w,bcolor,NULL) != OK){
-		return ERR;
+	if(wcolor_set(w,bcolor,NULL) != 0){
+		return -1;
 	}
 	if(waddch(w,'|') == ERR){
-		return ERR;
+		return -1;
 	}
-	if(wcolor_set(w,hcolor,NULL) != OK){
-		return ERR;
+	if(wcolor_set(w,hcolor,NULL) != 0){
+		return -1;
 	}
 	if(waddstr(w,str) == ERR){
-		return ERR;
+		return -1;
 	}
-	return OK;
+	return 0;
 }
 
 static const char *
@@ -596,132 +595,132 @@ iface_box(const interface *i,const iface_state *is,WINDOW *w,int active,
 	hcolor = interface_up_p(i) ? UHEADING_COLOR : DHEADING_COLOR;
 	if(abovetop == 0){
 		attrs = active ? A_REVERSE : A_BOLD;
-		assert(wattrset(w,attrs | COLOR_PAIR(bcolor)) == OK);
-		assert(bevel_top(w) == OK);
-		assert(wattroff(w,A_REVERSE) == OK);
+		wattrset(w,attrs | COLOR_PAIR(bcolor));
+		bevel_top(w);
+		wattroff(w,A_REVERSE);
 		if(active){
-			assert(wattron(w,A_BOLD) == OK);
+			wattron(w,A_BOLD);
 		}
-		assert(mvwprintw(w,0,0,"[") != ERR);
-		assert(wcolor_set(w,hcolor,NULL) == OK);
+		mvwprintw(w,0,0,"[");
+		wcolor_set(w,hcolor,NULL);
 		if(active){
-			assert(wattron(w,A_BOLD) == OK);
+			wattron(w,A_BOLD);
 		}else{
-			assert(wattroff(w,A_BOLD) == OK);
+			wattroff(w,A_BOLD);
 		}
-		assert(waddstr(w,i->name) != ERR);
-		assert(wprintw(w," (%s",is->typestr) != ERR);
+		waddstr(w,i->name);
+		wprintw(w," (%s",is->typestr);
 		if(strlen(i->drv.driver)){
-			assert(waddch(w,' ') != ERR);
-			assert(waddstr(w,i->drv.driver) != ERR);
+			waddch(w,' ');
+			waddstr(w,i->drv.driver);
 			if(strlen(i->drv.version)){
-				assert(wprintw(w," %s",i->drv.version) != ERR);
+				wprintw(w," %s",i->drv.version);
 			}
 			if(strlen(i->drv.fw_version)){
-				assert(wprintw(w," fw %s",i->drv.fw_version) != ERR);
+				wprintw(w," fw %s",i->drv.fw_version);
 			}
 		}
-		assert(waddch(w,')') != ERR);
-		assert(wcolor_set(w,bcolor,NULL) != ERR);
+		waddch(w,')');
+		wcolor_set(w,bcolor,NULL);
 		if(active){
-			assert(wattron(w,A_BOLD) == OK);
+			wattron(w,A_BOLD);
 		}
-		assert(wprintw(w,"]") != ERR);
-		assert(wmove(w,0,cols - 4) != ERR);
-		assert(wattron(w,A_BOLD) == OK);
-		assert(waddwstr(w,is->expansion == EXPANSION_MAX ? L"[-]" :
-					is->expansion == 0 ? L"[+]" : L"[±]") != ERR);
-		assert(wattron(w,attrs) != ERR);
-		assert(wattroff(w,A_REVERSE) != ERR);
+		wprintw(w,"]");
+		wmove(w,0,cols - 4);
+		wattron(w,A_BOLD);
+		waddwstr(w,is->expansion == EXPANSION_MAX ? L"[-]" :
+					      is->expansion == 0 ? L"[+]" : L"[±]");
+		wattron(w,attrs);
+		wattroff(w,A_REVERSE);
 	}
 	if(belowend == 0){
 		attrs = active ? A_REVERSE : A_BOLD;
-		assert(wattrset(w,attrs | COLOR_PAIR(bcolor)) == OK);
-		assert(bevel_bottom(w) == OK);
-		assert(wattroff(w,A_REVERSE) == OK);
+		wattrset(w,attrs | COLOR_PAIR(bcolor));
+		bevel_bottom(w);
+		wattroff(w,A_REVERSE);
 		if(active){
-			assert(wattron(w,A_BOLD) == OK);
+			wattron(w,A_BOLD);
 		}
-		assert(mvwprintw(w,rows - 1,2,"[") != ERR);
-		assert(wcolor_set(w,hcolor,NULL) != ERR);
+		mvwprintw(w,rows - 1,2,"[");
+		wcolor_set(w,hcolor,NULL);
 		if(active){
-			assert(wattron(w,A_BOLD) == OK);
+			wattron(w,A_BOLD);
 		}else{
-			assert(wattroff(w,A_BOLD) == OK);
+			wattroff(w,A_BOLD);
 		}
-		assert(wprintw(w,"mtu %d",i->mtu) != ERR);
+		wprintw(w,"mtu %d",i->mtu);
 		if(interface_up_p(i)){
 			char buf[U64STRLEN + 1];
 
-			assert(iface_optstr(w,"up",hcolor,bcolor) != ERR);
+			iface_optstr(w,"up",hcolor,bcolor);
 			if(i->settings_valid == SETTINGS_VALID_ETHTOOL){
 				if(!interface_carrier_p(i)){
-					assert(waddstr(w," (no carrier)") != ERR);
+					waddstr(w," (no carrier)");
 				}else{
-					assert(wprintw(w, " (%sb %s)", qprefix(i->settings.ethtool.speed * (uint64_t)1000000lu, 1, buf,  1),
-								duplexstr(i->settings.ethtool.duplex)) != ERR);
+					wprintw(w, " (%sb %s)", qprefix(i->settings.ethtool.speed * (uint64_t)1000000lu, 1, buf,  1),
+								duplexstr(i->settings.ethtool.duplex));
 				}
 			}else if(i->settings_valid == SETTINGS_VALID_WEXT){
 				if(i->settings.wext.mode == NL80211_IFTYPE_MONITOR){
-					assert(wprintw(w," (%s",modestr(i->settings.wext.mode)) != ERR);
+					wprintw(w," (%s",modestr(i->settings.wext.mode));
 				}else if(!interface_carrier_p(i)){
-					assert(wprintw(w," (%s, no carrier",modestr(i->settings.wext.mode)) != ERR);
+					wprintw(w," (%s, no carrier",modestr(i->settings.wext.mode));
 				}else{
-					assert(wprintw(w, " (%sb %s", qprefix(i->settings.wext.bitrate, 1, buf,  1),
-								modestr(i->settings.wext.mode)) != ERR);
+					wprintw(w, " (%sb %s", qprefix(i->settings.wext.bitrate, 1, buf,  1),
+								modestr(i->settings.wext.mode));
 				}
 				if(i->settings.wext.freq >= MAX_WIRELESS_CHANNEL){
-					assert(wprintw(w," %sHz)", qprefix(i->settings.wext.freq, 1, buf,  1)) != ERR);
+					wprintw(w," %sHz)", qprefix(i->settings.wext.freq, 1, buf,  1));
 				}else if(i->settings.wext.freq){
-					assert(wprintw(w," ch %ju)",i->settings.wext.freq) != ERR);
+					wprintw(w," ch %ju)",i->settings.wext.freq);
 				}else{
-					assert(wprintw(w,")") == OK);
+					wprintw(w,")");
 				}
 			}else if(i->settings_valid == SETTINGS_VALID_NL80211){
 				if(i->settings.nl80211.mode == NL80211_IFTYPE_MONITOR){
-					assert(wprintw(w," (%s",modestr(i->settings.nl80211.mode)) != ERR);
+					wprintw(w," (%s",modestr(i->settings.nl80211.mode));
 				}else if(!interface_carrier_p(i)){
-					assert(wprintw(w," (%s, no carrier",modestr(i->settings.nl80211.mode)) != ERR);
+					wprintw(w," (%s, no carrier",modestr(i->settings.nl80211.mode));
 				}else{
-					assert(wprintw(w, " (%sb %s", qprefix(i->settings.nl80211.bitrate, 1, buf,  1),
-								modestr(i->settings.nl80211.mode)) != ERR);
+					wprintw(w, " (%sb %s", qprefix(i->settings.nl80211.bitrate, 1, buf,  1),
+								modestr(i->settings.nl80211.mode));
 				}
 				if(i->settings.nl80211.freq >= MAX_WIRELESS_CHANNEL){
-					assert(wprintw(w," %sHz)", qprefix(i->settings.nl80211.freq, 1, buf,  1)) != ERR);
+					wprintw(w," %sHz)", qprefix(i->settings.nl80211.freq, 1, buf,  1));
 				}else if(i->settings.nl80211.freq){
-					assert(wprintw(w," ch %ju)",i->settings.nl80211.freq) != ERR);
+					wprintw(w," ch %ju)",i->settings.nl80211.freq);
 				}else{
-					assert(wprintw(w,")") == OK);
+					wprintw(w,")");
 				}
 			}
 		}else{
-			assert(iface_optstr(w,"down",hcolor,bcolor) != ERR);
+			iface_optstr(w,"down",hcolor,bcolor);
 			if(i->settings_valid == SETTINGS_VALID_WEXT){
-				assert(wprintw(w," (%s)",modestr(i->settings.wext.mode)) != ERR);
+				wprintw(w," (%s)",modestr(i->settings.wext.mode));
 			}
 		}
 		if(interface_promisc_p(i)){
-			assert(iface_optstr(w,"promisc",hcolor,bcolor) != ERR);
+			iface_optstr(w,"promisc",hcolor,bcolor);
 		}
-		assert(wcolor_set(w,bcolor,NULL) != ERR);
+		wcolor_set(w,bcolor,NULL);
 		if(active){
-			assert(wattron(w,A_BOLD) == OK);
+			wattron(w,A_BOLD);
 		}
-		assert(wprintw(w,"]") != ERR);
+		wprintw(w,"]");
 		if( (buslen = strlen(i->drv.bus_info)) ){
 			if(active){
 				// FIXME Want the text to be bold -- currently unreadable
-				assert(wattrset(w,A_REVERSE | COLOR_PAIR(bcolor)) != ERR);
+				wattrset(w,A_REVERSE | COLOR_PAIR(bcolor));
 			}else{
-				assert(wattrset(w,COLOR_PAIR(bcolor) | A_BOLD) != ERR);
+				wattrset(w,COLOR_PAIR(bcolor) | A_BOLD);
 			}
 			if(i->busname){
 				buslen += strlen(i->busname) + 1;
-				assert(mvwprintw(w,rows - 1,cols - (buslen + 2),
-						"%s:%s",i->busname,i->drv.bus_info) != ERR);
+				mvwprintw(w,rows - 1,cols - (buslen + 2),
+						"%s:%s",i->busname,i->drv.bus_info);
 			}else{
-				assert(mvwprintw(w,rows - 1,cols - (buslen + 2),
-						"%s",i->drv.bus_info) != ERR);
+				mvwprintw(w,rows - 1,cols - (buslen + 2),
+						"%s",i->drv.bus_info);
 			}
 		}
 	}
@@ -760,14 +759,14 @@ void free_iface_state(iface_state *is){
 	}
 }
 
-int redraw_iface(const reelbox *rb,int active){
+int redraw_iface(const reelbox *rb, int active){
 	const iface_state *is = rb->is;
 	const interface *i = is->iface;
 	int rows,cols,scrrows;
 	unsigned topp,endp;
 
 	if(panel_hidden(rb->panel)){
-		return OK;
+		return 0;
 	}
 	scrrows = getmaxy(stdscr);
 	if(iface_wholly_visible_p(scrrows,rb) || active){ // completely visible
@@ -780,13 +779,13 @@ int redraw_iface(const reelbox *rb,int active){
 		endp = 1; // no bottom FIXME
 	}
 	getmaxyx(rb->subwin,rows,cols);
-	assert(werase(rb->subwin) != ERR);
+	werase(rb->subwin);
 	iface_box(i,is,rb->subwin,active,topp,endp);
 	print_iface_hosts(i,is,rb,rb->subwin,rows,cols,topp,endp,active);
 	if(interface_up_p(i)){
 		print_iface_state(i,is,rb->subwin,rows,cols,topp,active);
 	}
-	return OK;
+	return 0;
 }
 
 // Move this interface, possibly hiding it. Negative delta indicates movement
@@ -800,29 +799,29 @@ void move_interface(reelbox *rb,int targ,int rows,int cols,int delta,int active)
 	//		iface_lines_bounded(is,rows),getbegy(rb->subwin),targ,delta);
 	assert(rb->is);
 	assert(rb->is->rb == rb);
-	assert(werase(rb->subwin) != ERR);
+	werase(rb->subwin);
 	screen_update();
 	if(iface_wholly_visible_p(rows,rb)){
-		assert(move_panel(rb->panel,targ,1) != ERR);
+		move_panel(rb->panel,targ,1);
 		if(getmaxy(rb->subwin) != iface_lines_bounded(is,rows)){
-			assert(wresize(rb->subwin,iface_lines_bounded(is,rows),PAD_COLS(cols)) == OK);
+			wresize(rb->subwin,iface_lines_bounded(is,rows),PAD_COLS(cols));
 			if(panel_hidden(rb->panel)){
-				assert(show_panel(rb->panel) == OK);
+				show_panel(rb->panel);
 			}
 		}
-		assert(redraw_iface(rb,active) == OK);
+		redraw_iface(rb,active);
 		return;
 	}
 	rr = getmaxy(rb->subwin);
 	if(delta > 0){ // moving down
 		if(targ >= rows - 1){
-			assert(hide_panel(rb->panel) != ERR);
+			hide_panel(rb->panel);
 			return;
 		}
 		nlines = rows - targ - 1; // sans-bottom partial
 	}else{
 		if((rr + getbegy(rb->subwin)) <= -delta){
-			assert(hide_panel(rb->panel) != ERR);
+			hide_panel(rb->panel);
 			return;
 		}
 		if(targ < 0){
@@ -833,19 +832,19 @@ void move_interface(reelbox *rb,int targ,int rows,int cols,int delta,int active)
 		}
 	}
 	if(nlines < 1){
-		assert(hide_panel(rb->panel) != ERR);
+		hide_panel(rb->panel);
 		return;
 	}else if(nlines > rr){
-		assert(move_panel(rb->panel,targ,1) == OK);
-		assert(wresize(rb->subwin,nlines,PAD_COLS(cols)) == OK);
+		move_panel(rb->panel,targ,1);
+		wresize(rb->subwin,nlines,PAD_COLS(cols));
 	}else if(nlines < rr){
-		assert(wresize(rb->subwin,nlines,PAD_COLS(cols)) == OK);
-		assert(move_panel(rb->panel,targ,1) == OK);
+		wresize(rb->subwin,nlines,PAD_COLS(cols));
+		move_panel(rb->panel,targ,1);
 	}else{
-		assert(move_panel(rb->panel,targ,1) == OK);
+		move_panel(rb->panel,targ,1);
 	}
-	assert(redraw_iface(rb,active) == OK);
-	assert(show_panel(rb->panel) == OK);
+	redraw_iface(rb,active);
+	show_panel(rb->panel);
 	return;
 }
 
