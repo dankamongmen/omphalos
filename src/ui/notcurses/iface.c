@@ -39,19 +39,18 @@ typedef struct l2obj {
 	struct l3obj *l3objs;
 } l2obj;
 
-static void
-draw_right_vline(const interface *i,int active,WINDOW *w){
-	//assert(i && w && (active || !active));
-	int co = interface_up_p(i) ? UBORDER_COLOR : DBORDER_COLOR;
-	cchar_t bchr[] = {
-		{
-		.attr = (active ? A_REVERSE : A_BOLD) | COLOR_PAIR(co),
-		.chars = L"│",
-		},
-	};
+#define UBORDER_FG 0x00d7ff
+#define UBORDER_BG 0x0
+#define DBORDER_FG 0x848789
+#define DBORDER_BG 0x0
 
-	//wattrset(w,0);
-	wins_wch(w,&bchr[0]);
+static void
+draw_right_vline(const interface *i, int active, struct ncplane *n){
+	//assert(i && w && (active || !active));
+  ncplane_styles_set(n, active ? NCSTYLE_REVERSE : NCSTYLE_BOLD);
+  ncplane_set_fg_rgb(n, interface_up_p(i) ? UBORDER_FG : DBORDER_FG);
+  ncplane_set_bg_rgb(n, interface_up_p(i) ? UBORDER_BG : DBORDER_BG);
+  ncplane_putwc(n,  L'│');
 }
 
 l2obj *l2obj_next(l2obj *l2){
@@ -283,9 +282,9 @@ l4obj *add_service_to_iface(iface_state *is,struct l2obj *l2,struct l3obj *l3,
 }
 
 static void
-print_host_services(WINDOW *w,const interface *i,const l3obj *l,int *line,
-			int rows,int cols,wchar_t selectchar,int attrs,
-			int minline,int active){
+print_host_services(struct ncplane *nc, const interface *i, const l3obj *l,
+                    int *line, int rows, int cols, wchar_t selectchar,
+                    int attrs, int minline, int active){
 	const struct l4obj *l4;
 	const wchar_t *srv;
 	int n;
@@ -301,9 +300,9 @@ print_host_services(WINDOW *w,const interface *i,const l3obj *l,int *line,
 	n = 0;
 	for(l4 = l->l4objs ; l4 ; l4 = l4->next){
 		if(l4->emph){
-			wattrset(w,attrs | A_BOLD);
+      ncplane_styles_set(nc, attrs | NCSTYLE_BOLD);
 		}else{
-			wattrset(w,attrs);
+      ncplane_styles_set(nc, attrs);
 		}
 		srv = l4srvstr(l4->l4);
 		if(n){
@@ -312,21 +311,21 @@ print_host_services(WINDOW *w,const interface *i,const l3obj *l,int *line,
 			}
 			cols -= 1 + wcslen(srv);
 			n += 1 + wcslen(srv);
-			wprintw(w," %ls",srv);
+			ncplane_printf(nc, " %ls", srv);
 		}else{
 			if((unsigned)cols < 2 + 5 + wcslen(srv)){ // two for borders
 				break;
 			}
 			cols -= 5 + wcslen(srv);
 			n += 5 + wcslen(srv);
-			mvwprintw(w,*line,0,"%lc    %ls",selectchar,srv);
+			ncplane_printf_yx(nc, *line, 0, "%lc    %ls", selectchar,srv);
 			++*line;
 		}
 	}
 	if(n && cols > 0){
-		wprintw(w,"%-*.*s",cols,cols,"");
+		ncplane_printf(nc, "%-*.*s", cols, cols, "");
 	}
-	draw_right_vline(i,active,w);
+	draw_right_vline(i, active, nc);
 }
 
 // line: line on which this node starts, within the WINDOW w of {rows x cols}
@@ -363,13 +362,13 @@ print_iface_host(const interface *i,const iface_state *is,WINDOW *w,
 			legend = 'U';
 			break;
 		case RTN_LOCAL:
-			attrs = COLOR_PAIR(LCAST_COLOR) | OUR_BOLD;
-			l3attrs = COLOR_PAIR(LCAST_L3_COLOR) | OUR_BOLD;
-			rattrs = COLOR_PAIR(LCAST_RES_COLOR) | OUR_BOLD;
+			attrs = COLOR_PAIR(LCAST_COLOR) | NCSTYLE_BOLD;
+			l3attrs = COLOR_PAIR(LCAST_L3_COLOR) | NCSTYLE_BOLD;
+			rattrs = COLOR_PAIR(LCAST_RES_COLOR) | NCSTYLE_BOLD;
 			sattrs = COLOR_PAIR(LSELECTED_COLOR);
-			aattrs = COLOR_PAIR(LCAST_ALTROW_COLOR) | OUR_BOLD;
-			al3attrs = COLOR_PAIR(LCAST_ALTROW_L3_COLOR) | OUR_BOLD;
-			arattrs = COLOR_PAIR(LCAST_ALTROW_RES_COLOR) | OUR_BOLD;
+			aattrs = COLOR_PAIR(LCAST_ALTROW_COLOR) | NCSTYLE_BOLD;
+			al3attrs = COLOR_PAIR(LCAST_ALTROW_L3_COLOR) | NCSTYLE_BOLD;
+			arattrs = COLOR_PAIR(LCAST_ALTROW_RES_COLOR) | NCSTYLE_BOLD;
 			if(interface_virtual_p(i) ||
 				(devname = get_devname(l->l2)) == NULL){
 				devname = i->topinfo.devname;
@@ -412,12 +411,12 @@ print_iface_host(const interface *i,const iface_state *is,WINDOW *w,
 		selectchar = L' ';
 	}
 	if(!interface_up_p(i)){
-		attrs = (attrs & A_BOLD) | COLOR_PAIR(BULKTEXT_COLOR);
-		l3attrs = (l3attrs & A_BOLD) | COLOR_PAIR(BULKTEXT_COLOR);
-		rattrs = (rattrs & A_BOLD) | COLOR_PAIR(BULKTEXT_COLOR);
-		aattrs = (aattrs & A_BOLD) | COLOR_PAIR(BULKTEXT_ALTROW_COLOR);
-		al3attrs = (al3attrs & A_BOLD) | COLOR_PAIR(BULKTEXT_ALTROW_COLOR);
-		arattrs = (arattrs & A_BOLD) | COLOR_PAIR(BULKTEXT_ALTROW_COLOR);
+		attrs = (attrs & NCSTYLE_BOLD) | COLOR_PAIR(BULKTEXT_COLOR);
+		l3attrs = (l3attrs & NCSTYLE_BOLD) | COLOR_PAIR(BULKTEXT_COLOR);
+		rattrs = (rattrs & NCSTYLE_BOLD) | COLOR_PAIR(BULKTEXT_COLOR);
+		aattrs = (aattrs & NCSTYLE_BOLD) | COLOR_PAIR(BULKTEXT_ALTROW_COLOR);
+		al3attrs = (al3attrs & NCSTYLE_BOLD) | COLOR_PAIR(BULKTEXT_ALTROW_COLOR);
+		arattrs = (arattrs & NCSTYLE_BOLD) | COLOR_PAIR(BULKTEXT_ALTROW_COLOR);
 	}
 	wattrset(w,!(line % 2) ? attrs : aattrs);
 	if(line >= minline){
@@ -432,26 +431,26 @@ print_iface_host(const interface *i,const iface_state *is,WINDOW *w,
 			if(!interface_up_p(i)){
 				len += PREFIXCOLUMNS * 2 + 1;
 			}
-			mvwprintw(w, line, 0, "%lc%c %s %-*.*ls",
+			ncplane_printf_yx(w, line, 0, "%lc%c %s %-*.*ls",
 				selectchar, legend, hw, len, len, devname);
 		}else{
 			len = cols - PREFIXCOLUMNS * 2 - 5;
 			if(!interface_up_p(i)){
 				len += PREFIXCOLUMNS * 2 + 1;
 			}
-			mvwprintw(w, line, 0, "%lc%c %-*.*s",
+			ncplane_printf_yx(w, line, 0, "%lc%c %-*.*s",
 				selectchar, legend, len, len, hw);
 		}
 		if(interface_up_p(i)){
 			char dbuf[PREFIXCOLUMNS + 1];
 			if(get_srcpkts(l->l2) == 0 && (l->cat == RTN_MULTICAST || l->cat == RTN_BROADCAST)){
         qprefix(get_dstpkts(l->l2), 1, dbuf,  1);
-				wprintw(w, "%-*.*s%*s", PREFIXCOLUMNS + 1, PREFIXCOLUMNS + 1, "", PREFIXFMT(dbuf));
+				ncplane_printf(w, "%-*.*s%*s", PREFIXCOLUMNS + 1, PREFIXCOLUMNS + 1, "", PREFIXFMT(dbuf));
 			}else{
 				char sbuf[PREFIXCOLUMNS + 1];
         qprefix(get_srcpkts(l->l2), 1, sbuf,  1);
 				qprefix(get_dstpkts(l->l2), 1, dbuf,  1);
-				wprintw(w, "%*s %*s",  PREFIXFMT(sbuf), PREFIXFMT(dbuf));
+				ncplane_printf(w, "%*s %*s",  PREFIXFMT(sbuf), PREFIXFMT(dbuf));
 			}
 		}
 		draw_right_vline(i,active,w);
@@ -480,26 +479,26 @@ print_iface_host(const interface *i,const iface_state *is,WINDOW *w,
 				if((name = get_l3name(l3->l3)) == NULL){
 					name = L"";
 				}
-				mvwprintw(w,line,0,"%lc   %s ", selectchar,nw)
+				ncplane_printf_yx(w,line,0,"%lc   %s ", selectchar,nw);
 				wattrset(w,!(line % 2) ? rattrs : arattrs);
 				len = cols - PREFIXCOLUMNS * 2 - 7 - strlen(nw);
 				wlen = len - wcswidth(name,wcslen(name));
 				if(wlen < 0){
 					wlen = 0;
 				}
-				wprintw(w,"%.*ls%*.*s",len,name,wlen,wlen,"");
+				ncplane_printf(w,"%.*ls%*.*s",len,name,wlen,wlen,"");
 				wattrset(w,!(line % 2) ? l3attrs : al3attrs);
 				{
 					char sbuf[PREFIXSTRLEN + 1];
 					char dbuf[PREFIXSTRLEN + 1];
 					if(l3_get_srcpkt(l3->l3) == 0 && (l->cat == RTN_MULTICAST || l->cat == RTN_BROADCAST)){
             qprefix(l3_get_dstpkt(l3->l3), 1, dbuf,  1);
-						wprintw(w, "%-*.*s%*s", PREFIXCOLUMNS + 1, PREFIXCOLUMNS + 1,
+						ncplane_printf(w, "%-*.*s%*s", PREFIXCOLUMNS + 1, PREFIXCOLUMNS + 1,
 								"", PREFIXFMT(dbuf));
 					}else{
 						qprefix(l3_get_srcpkt(l3->l3), 1, sbuf,  1);
 					  qprefix(l3_get_dstpkt(l3->l3), 1, dbuf,  1);
-						wprintw(w, "%*s %*s", PREFIXFMT(sbuf), PREFIXFMT(dbuf));
+						ncplane_printf(w, "%*s %*s", PREFIXFMT(sbuf), PREFIXFMT(dbuf));
 					}
 				}
 				draw_right_vline(i,active,w);
@@ -555,17 +554,17 @@ print_iface_hosts(const interface *i,const iface_state *is,const reelbox *rb,
 }
 
 static int
-iface_optstr(WINDOW *w,const char *str,int hcolor,int bcolor){
-	if(wcolor_set(w,bcolor,NULL) != 0){
+iface_optstr(struct ncplane *n, const char *str, int hcolor, int bcolor){
+  if(ncplane_set_fg_rgb(n, bcolor)){
+    return -1;
+  }
+	if(ncplane_putchar(n, '|') < 1){
 		return -1;
 	}
-	if(waddch(w,'|') == ERR){
+	if(ncplane_set_fg_rgb(n, hcolor)){
 		return -1;
 	}
-	if(wcolor_set(w,hcolor,NULL) != 0){
-		return -1;
-	}
-	if(waddstr(w,str) == ERR){
+	if(ncplane_putstr(n, str) < 0){
 		return -1;
 	}
 	return 0;
@@ -581,6 +580,7 @@ duplexstr(unsigned dplx){
 	return "";
 }
 
+/*
 // Abovetop: lines hidden at the top of the screen
 // Belowend: lines hidden at the bottom of the screen
 static void
@@ -590,65 +590,65 @@ iface_box(const interface *i,const iface_state *is,WINDOW *w,int active,
 	size_t buslen;
 	int attrs;
 
-	getmaxyx(w,rows,cols);
+	ncplane_dim_yx(w,rows,cols);
 	bcolor = interface_up_p(i) ? UBORDER_COLOR : DBORDER_COLOR;
 	hcolor = interface_up_p(i) ? UHEADING_COLOR : DHEADING_COLOR;
 	if(abovetop == 0){
-		attrs = active ? A_REVERSE : A_BOLD;
+		attrs = active ? NCSTYLE_REVERSE : NCSTYLE_BOLD;
 		wattrset(w,attrs | COLOR_PAIR(bcolor));
 		bevel_top(w);
-		wattroff(w,A_REVERSE);
+		wattroff(w,NCSTYLE_REVERSE);
 		if(active){
-			wattron(w,A_BOLD);
+			wattron(w,NCSTYLE_BOLD);
 		}
-		mvwprintw(w,0,0,"[");
+		ncplane_printf_yx(w,0,0,"[");
 		wcolor_set(w,hcolor,NULL);
 		if(active){
-			wattron(w,A_BOLD);
+			wattron(w,NCSTYLE_BOLD);
 		}else{
-			wattroff(w,A_BOLD);
+			wattroff(w,NCSTYLE_BOLD);
 		}
 		waddstr(w,i->name);
-		wprintw(w," (%s",is->typestr);
+		ncplane_printf(w," (%s",is->typestr);
 		if(strlen(i->drv.driver)){
 			waddch(w,' ');
 			waddstr(w,i->drv.driver);
 			if(strlen(i->drv.version)){
-				wprintw(w," %s",i->drv.version);
+				ncplane_printf(w," %s",i->drv.version);
 			}
 			if(strlen(i->drv.fw_version)){
-				wprintw(w," fw %s",i->drv.fw_version);
+				ncplane_printf(w," fw %s",i->drv.fw_version);
 			}
 		}
 		waddch(w,')');
 		wcolor_set(w,bcolor,NULL);
 		if(active){
-			wattron(w,A_BOLD);
+			wattron(w,NCSTYLE_BOLD);
 		}
-		wprintw(w,"]");
+		ncplane_printf(w,"]");
 		wmove(w,0,cols - 4);
-		wattron(w,A_BOLD);
+		wattron(w,NCSTYLE_BOLD);
 		waddwstr(w,is->expansion == EXPANSION_MAX ? L"[-]" :
 					      is->expansion == 0 ? L"[+]" : L"[±]");
 		wattron(w,attrs);
-		wattroff(w,A_REVERSE);
+		wattroff(w,NCSTYLE_REVERSE);
 	}
 	if(belowend == 0){
-		attrs = active ? A_REVERSE : A_BOLD;
+		attrs = active ? NCSTYLE_REVERSE : NCSTYLE_BOLD;
 		wattrset(w,attrs | COLOR_PAIR(bcolor));
 		bevel_bottom(w);
-		wattroff(w,A_REVERSE);
+		wattroff(w,NCSTYLE_REVERSE);
 		if(active){
-			wattron(w,A_BOLD);
+			wattron(w,NCSTYLE_BOLD);
 		}
-		mvwprintw(w,rows - 1,2,"[");
+		ncplane_printf_yx(w,rows - 1,2,"[");
 		wcolor_set(w,hcolor,NULL);
 		if(active){
-			wattron(w,A_BOLD);
+			wattron(w,NCSTYLE_BOLD);
 		}else{
-			wattroff(w,A_BOLD);
+			wattroff(w,NCSTYLE_BOLD);
 		}
-		wprintw(w,"mtu %d",i->mtu);
+		ncplane_printf(w,"mtu %d",i->mtu);
 		if(interface_up_p(i)){
 			char buf[U64STRLEN + 1];
 
@@ -657,46 +657,46 @@ iface_box(const interface *i,const iface_state *is,WINDOW *w,int active,
 				if(!interface_carrier_p(i)){
 					waddstr(w," (no carrier)");
 				}else{
-					wprintw(w, " (%sb %s)", qprefix(i->settings.ethtool.speed * (uint64_t)1000000lu, 1, buf,  1),
+					ncplane_printf(w, " (%sb %s)", qprefix(i->settings.ethtool.speed * (uint64_t)1000000lu, 1, buf,  1),
 								duplexstr(i->settings.ethtool.duplex));
 				}
 			}else if(i->settings_valid == SETTINGS_VALID_WEXT){
 				if(i->settings.wext.mode == NL80211_IFTYPE_MONITOR){
-					wprintw(w," (%s",modestr(i->settings.wext.mode));
+					ncplane_printf(w," (%s",modestr(i->settings.wext.mode));
 				}else if(!interface_carrier_p(i)){
-					wprintw(w," (%s, no carrier",modestr(i->settings.wext.mode));
+					ncplane_printf(w," (%s, no carrier",modestr(i->settings.wext.mode));
 				}else{
-					wprintw(w, " (%sb %s", qprefix(i->settings.wext.bitrate, 1, buf,  1),
+					ncplane_printf(w, " (%sb %s", qprefix(i->settings.wext.bitrate, 1, buf,  1),
 								modestr(i->settings.wext.mode));
 				}
 				if(i->settings.wext.freq >= MAX_WIRELESS_CHANNEL){
-					wprintw(w," %sHz)", qprefix(i->settings.wext.freq, 1, buf,  1));
+					ncplane_printf(w," %sHz)", qprefix(i->settings.wext.freq, 1, buf,  1));
 				}else if(i->settings.wext.freq){
-					wprintw(w," ch %ju)",i->settings.wext.freq);
+					ncplane_printf(w," ch %ju)",i->settings.wext.freq);
 				}else{
-					wprintw(w,")");
+					ncplane_printf(w,")");
 				}
 			}else if(i->settings_valid == SETTINGS_VALID_NL80211){
 				if(i->settings.nl80211.mode == NL80211_IFTYPE_MONITOR){
-					wprintw(w," (%s",modestr(i->settings.nl80211.mode));
+					ncplane_printf(w," (%s",modestr(i->settings.nl80211.mode));
 				}else if(!interface_carrier_p(i)){
-					wprintw(w," (%s, no carrier",modestr(i->settings.nl80211.mode));
+					ncplane_printf(w," (%s, no carrier",modestr(i->settings.nl80211.mode));
 				}else{
-					wprintw(w, " (%sb %s", qprefix(i->settings.nl80211.bitrate, 1, buf,  1),
+					ncplane_printf(w, " (%sb %s", qprefix(i->settings.nl80211.bitrate, 1, buf,  1),
 								modestr(i->settings.nl80211.mode));
 				}
 				if(i->settings.nl80211.freq >= MAX_WIRELESS_CHANNEL){
-					wprintw(w," %sHz)", qprefix(i->settings.nl80211.freq, 1, buf,  1));
+					ncplane_printf(w," %sHz)", qprefix(i->settings.nl80211.freq, 1, buf,  1));
 				}else if(i->settings.nl80211.freq){
-					wprintw(w," ch %ju)",i->settings.nl80211.freq);
+					ncplane_printf(w," ch %ju)",i->settings.nl80211.freq);
 				}else{
-					wprintw(w,")");
+					ncplane_printf(w,")");
 				}
 			}
 		}else{
 			iface_optstr(w,"down",hcolor,bcolor);
 			if(i->settings_valid == SETTINGS_VALID_WEXT){
-				wprintw(w," (%s)",modestr(i->settings.wext.mode));
+				ncplane_printf(w," (%s)",modestr(i->settings.wext.mode));
 			}
 		}
 		if(interface_promisc_p(i)){
@@ -704,22 +704,22 @@ iface_box(const interface *i,const iface_state *is,WINDOW *w,int active,
 		}
 		wcolor_set(w,bcolor,NULL);
 		if(active){
-			wattron(w,A_BOLD);
+			wattron(w,NCSTYLE_BOLD);
 		}
-		wprintw(w,"]");
+		ncplane_printf(w,"]");
 		if( (buslen = strlen(i->drv.bus_info)) ){
 			if(active){
 				// FIXME Want the text to be bold -- currently unreadable
-				wattrset(w,A_REVERSE | COLOR_PAIR(bcolor));
+				wattrset(w,NCSTYLE_REVERSE | COLOR_PAIR(bcolor));
 			}else{
-				wattrset(w,COLOR_PAIR(bcolor) | A_BOLD);
+				wattrset(w,COLOR_PAIR(bcolor) | NCSTYLE_BOLD);
 			}
 			if(i->busname){
 				buslen += strlen(i->busname) + 1;
-				mvwprintw(w,rows - 1,cols - (buslen + 2),
+				ncplane_printf_yx(w,rows - 1,cols - (buslen + 2),
 						"%s:%s",i->busname,i->drv.bus_info);
 			}else{
-				mvwprintw(w,rows - 1,cols - (buslen + 2),
+				ncplane_printf_yx(w,rows - 1,cols - (buslen + 2),
 						"%s",i->drv.bus_info);
 			}
 		}
@@ -735,16 +735,16 @@ print_iface_state(const interface *i,const iface_state *is,WINDOW *w,
 	if(rows < 2 || topp > 1){
 		return;
 	}
-	assert(wattrset(w,A_BOLD | COLOR_PAIR(IFACE_COLOR)) != ERR);
+	wattrset(w,NCSTYLE_BOLD | COLOR_PAIR(IFACE_COLOR));
 	// FIXME broken if bps domain ever != fps domain. need unite those
 	// into one FTD stat by letting it take an object...
 	// FIXME this leads to a "ramp-up" period where we approach steady state
 	usecdomain = i->bps.usec * i->bps.total;
-	assert(mvwprintw(w,!topp,0,"%u node%s. Last %lus: %7sb/s (%sp)",
+	ncplane_printf_yx(w,!topp,0,"%u node%s. Last %lus: %7sb/s (%sp)",
 		is->nodes,is->nodes == 1 ? "" : "s",
 		usecdomain / 1000000,
 		qprefix(timestat_val(&i->bps) * CHAR_BIT * 1000000 * 100 / usecdomain, 100, buf,  0),
-		qprefix(timestat_val(&i->fps), 1, buf2,  1)) != ERR);
+		qprefix(timestat_val(&i->fps), 1, buf2,  1));
 	mvwaddstr(w,1,cols - PREFIXCOLUMNS * 2 - 1,"TotSrc  TotDst");
 	draw_right_vline(i,active,w);
 }
@@ -765,20 +765,17 @@ int redraw_iface(const reelbox *rb, int active){
 	int rows,cols,scrrows;
 	unsigned topp,endp;
 
-	if(panel_hidden(rb->panel)){
-		return 0;
-	}
-	scrrows = getmaxy(stdscr);
+	scrrows = ncplane_dim_y(stdscr);
 	if(iface_wholly_visible_p(scrrows,rb) || active){ // completely visible
 		topp = endp = 0;
 	}else if(getbegy(rb->subwin) == 0){ // no top
-		topp = iface_lines_unbounded(is) - getmaxy(rb->subwin);
+		topp = iface_lines_unbounded(is) - ncplane_dim_y(rb->subwin);
 		endp = 0;
 	}else{
 		topp = 0;
 		endp = 1; // no bottom FIXME
 	}
-	getmaxyx(rb->subwin,rows,cols);
+	ncplane_dim_yx(rb->subwin,rows,cols);
 	werase(rb->subwin);
 	iface_box(i,is,rb->subwin,active,topp,endp);
 	print_iface_hosts(i,is,rb,rb->subwin,rows,cols,topp,endp,active);
@@ -787,66 +784,7 @@ int redraw_iface(const reelbox *rb, int active){
 	}
 	return 0;
 }
-
-// Move this interface, possibly hiding it. Negative delta indicates movement
-// up, positive delta moves down. rows and cols describe the containing window.
-void move_interface(reelbox *rb,int targ,int rows,int cols,int delta,int active){
-	const iface_state *is;
-	int nlines,rr;
-       
-	is = rb->is;
-	//fprintf(stderr,"  moving %s (%d) from %d to %d (%d)\n",is->iface->name,
-	//		iface_lines_bounded(is,rows),getbegy(rb->subwin),targ,delta);
-	assert(rb->is);
-	assert(rb->is->rb == rb);
-	werase(rb->subwin);
-	screen_update();
-	if(iface_wholly_visible_p(rows,rb)){
-		move_panel(rb->panel,targ,1);
-		if(getmaxy(rb->subwin) != iface_lines_bounded(is,rows)){
-			wresize(rb->subwin,iface_lines_bounded(is,rows),PAD_COLS(cols));
-			if(panel_hidden(rb->panel)){
-				show_panel(rb->panel);
-			}
-		}
-		redraw_iface(rb,active);
-		return;
-	}
-	rr = getmaxy(rb->subwin);
-	if(delta > 0){ // moving down
-		if(targ >= rows - 1){
-			hide_panel(rb->panel);
-			return;
-		}
-		nlines = rows - targ - 1; // sans-bottom partial
-	}else{
-		if((rr + getbegy(rb->subwin)) <= -delta){
-			hide_panel(rb->panel);
-			return;
-		}
-		if(targ < 0){
-			nlines = rr + targ;
-			targ = 0;
-		}else{
-			nlines = iface_lines_bounded(is,rows - targ + 1);
-		}
-	}
-	if(nlines < 1){
-		hide_panel(rb->panel);
-		return;
-	}else if(nlines > rr){
-		move_panel(rb->panel,targ,1);
-		wresize(rb->subwin,nlines,PAD_COLS(cols));
-	}else if(nlines < rr){
-		wresize(rb->subwin,nlines,PAD_COLS(cols));
-		move_panel(rb->panel,targ,1);
-	}else{
-		move_panel(rb->panel,targ,1);
-	}
-	redraw_iface(rb,active);
-	show_panel(rb->panel);
-	return;
-}
+*/
 
 // This is the number of lines we'd have in an optimal world; we might have
 // fewer available to us on this screen at this time.
@@ -876,12 +814,12 @@ int lines_for_interface(const iface_state *is){
 int iface_wholly_visible_p(int rows,const reelbox *rb){
 	const iface_state *is = rb->is;
 
-	// return iface_lines_bounded(is,rows) <= getmaxy(rb->subwin);
+	// return iface_lines_bounded(is,rows) <= ncplane_dim_y(rb->subwin);
 	if(rb->scrline + iface_lines_bounded(is,rows) >= rows){
 		return 0;
 	}else if(rb->scrline < 0){
 		return 0;
-	}else if(rb->scrline == 0 && iface_lines_bounded(is,rows) != getmaxy(rb->subwin)){
+	}else if(rb->scrline == 0 && iface_lines_bounded(is,rows) != ncplane_dim_y(rb->subwin)){
 		return 0;
 	}
 	return 1;
@@ -945,22 +883,22 @@ void recompute_selection(iface_state *is,int oldsel,int oldrows,int newrows){
 		newsel = bef;
 	}
 	/*wstatus_locked(stdscr,"newsel: %d bef: %d aft: %d oldsel: %d maxy: %d",
-			newsel,bef,aft,oldsel,getmaxy(is->rb->subwin));
+			newsel,bef,aft,oldsel,ncplane_dim_y(is->rb->subwin));
 	update_panels();
 	doupdate();*/
-	if(newsel + aft <= getmaxy(is->rb->subwin) - 2 - !!interface_up_p(is->iface)){
-		newsel = getmaxy(is->rb->subwin) - aft - 2 - !!interface_up_p(is->iface);
+	if(newsel + aft <= ncplane_dim_y(is->rb->subwin) - 2 - !!interface_up_p(is->iface)){
+		newsel = ncplane_dim_y(is->rb->subwin) - aft - 2 - !!interface_up_p(is->iface);
 	}
-	if(newsel + (int)node_lines(is->expansion,is->rb->selected) >= getmaxy(is->rb->subwin) - 2){
-		newsel = getmaxy(is->rb->subwin) - 2 - node_lines(is->expansion,is->rb->selected);
+	if(newsel + (int)node_lines(is->expansion,is->rb->selected) >= ncplane_dim_y(is->rb->subwin) - 2){
+		newsel = ncplane_dim_y(is->rb->subwin) - 2 - node_lines(is->expansion,is->rb->selected);
 	}
 	/*wstatus_locked(stdscr,"newsel: %d bef: %d aft: %d oldsel: %d maxy: %d",
-			newsel,bef,aft,oldsel,getmaxy(is->rb->subwin));
+			newsel,bef,aft,oldsel,ncplane_dim_y(is->rb->subwin));
 	update_panels();
 	doupdate();*/
 	if(newsel){
 		is->rb->selline = newsel;
 	}
 	assert(is->rb->selline >= 1);
-	assert(is->rb->selline < getmaxy(is->rb->subwin) - 1 || !is->expansion);
+	assert(is->rb->selline < ncplane_dim_y(is->rb->subwin) - 1 || !is->expansion);
 }

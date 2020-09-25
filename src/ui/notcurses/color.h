@@ -24,7 +24,6 @@ extern "C" {
 #define RESERVED_COLORS 16
 
 #define COLOR_MODBLUE	39
-#define COLOR_MODCYAN	45
 #define COLOR_MODGREY   234
 #define COLOR_MODGREEN  47
 #define COLOR_MODLIGHTBLUE	28
@@ -53,7 +52,6 @@ extern "C" {
 #define	COLOR_BONE_75		250
 #define	COLOR_BONE_50		249
 #define	COLOR_PALEALUMINIUM	231
-#define	COLOR_ALUMINIUM		229
 #define COLOR_ORANGE		208
 #define	COLOR_VIOLET_75		99
 #define	COLOR_VIOLET_50		105
@@ -63,9 +61,7 @@ enum {
 	BORDER_COLOR = 1,		// main window
 	HEADER_COLOR,
 	FOOTER_COLOR,
-	DBORDER_COLOR,			// down interfaces
 	DHEADING_COLOR,
-	UBORDER_COLOR,			// up interfaces
 	UHEADING_COLOR,
 	PBORDER_COLOR,			// popups
 	PHEADING_COLOR,
@@ -102,8 +98,6 @@ enum {
 	BSELECTED_COLOR,
 	FIRST_FREE_COLOR
 };
-
-#define OUR_BOLD (A_BOLD)
 
 #ifdef __cplusplus
 }

@@ -422,9 +422,7 @@ ncurses_setup(void){
     assert(init_pair(BORDER_COLOR,COLOR_GREEN,-1) == OK);
     assert(init_pair(HEADER_COLOR,COLOR_BLUE,-1) == OK);
     assert(init_pair(FOOTER_COLOR,COLOR_YELLOW,-1) == OK);
-    assert(init_pair(DBORDER_COLOR,COLOR_WHITE,-1) == OK);
     assert(init_pair(DHEADING_COLOR,COLOR_WHITE,-1) == OK);
-    assert(init_pair(UBORDER_COLOR,COLOR_CYAN,-1) == OK);
     assert(init_pair(UHEADING_COLOR,COLOR_BLUE,-1) == OK);
     assert(init_pair(PBORDER_COLOR,COLOR_YELLOW,-1) == OK);
     assert(init_pair(PHEADING_COLOR,COLOR_RED,-1) == OK);
@@ -465,9 +463,7 @@ ncurses_setup(void){
     assert(init_pair(BORDER_COLOR,COLOR_ALUMINIUM,-1) == OK);
     assert(init_pair(HEADER_COLOR,COLOR_MODBLUE,-1) == OK);
     assert(init_pair(FOOTER_COLOR,COLOR_MODYELLOW,-1) == OK);
-    assert(init_pair(DBORDER_COLOR,COLOR_ALUMINIUM,-1) == OK);
     assert(init_pair(DHEADING_COLOR,COLOR_MODWHITE,-1) == OK);
-    assert(init_pair(UBORDER_COLOR,COLOR_MODCYAN,-1) == OK);
     assert(init_pair(UHEADING_COLOR,COLOR_ORANGE,-1) == OK);
     assert(init_pair(PBORDER_COLOR,COLOR_MODBLUE,-1) == OK);
     assert(init_pair(PHEADING_COLOR,COLOR_MODRED,-1) == OK);
