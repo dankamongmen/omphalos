@@ -76,7 +76,7 @@ bottom_space_p(int rows){
   return (rows - 1) - (getmaxy(last_reelbox->subwin) + getbegy(last_reelbox->subwin));
 }
 
-int wvstatus_locked(WINDOW *w,const char *fmt,va_list va){
+int wvstatus_locked(struct ncplane *n, const char *fmt,va_list va){
   assert(statuschars > 0);
   if(fmt == NULL){
     memset(statusmsg,' ',statuschars - 1);
@@ -92,7 +92,7 @@ int wvstatus_locked(WINDOW *w,const char *fmt,va_list va){
 }
 
 // NULL fmt clears the status bar
-int wstatus_locked(WINDOW *w,const char *fmt,...){
+int wstatus_locked(struct ncplane *n, const char *fmt,...){
   va_list va;
   int ret;
 
@@ -114,7 +114,7 @@ move_interface_generic(reelbox *rb,int rows,int cols,int delta){
 }
 
 static int
-offload_details(WINDOW *w,const interface *i,int row,int col,const char *name,
+offload_details(struct ncplane *n, const interface *i,int row,int col,const char *name,
             unsigned val){
   int r;
 
@@ -127,7 +127,7 @@ offload_details(WINDOW *w,const interface *i,int row,int col,const char *name,
 // Create a panel at the bottom of the window, referred to as the "subdisplay".
 // Only one can currently be active at a time. Window decoration and placement
 // is managed here; only the rows needed for display ought be provided.
-int new_display_panel(WINDOW *w,struct panel_state *ps,int rows,int cols,const wchar_t *hstr){
+int new_display_panel(struct ncplane *n, struct panel_state *ps,int rows,int cols,const wchar_t *hstr){
   const wchar_t crightstr[] = L"https://nick-black.com/dankwiki/index.php/Omphalos";
   const int crightlen = wcslen(crightstr);
   WINDOW *psw;
@@ -978,12 +978,12 @@ err:
 }
 
 static void
-reset_interface_stats(WINDOW *w,const interface *i __attribute__ ((unused))){
+reset_interface_stats(struct ncplane *n, const interface *i __attribute__ ((unused))){
   unimplemented(w);
 }
 
 static void
-resolve_interface(WINDOW *w,reelbox *rb __attribute__ ((unused))){
+resolve_interface(struct ncplane *n, reelbox *rb __attribute__ ((unused))){
   unimplemented(w);
 }
 
@@ -1016,7 +1016,7 @@ void reset_current_interface_stats(WINDOW *w){
 //  2. There's a screen's worth, but not much more than that. An interface might
 //     be split across the top/bottom boundaries. Interfaces can be caused to
 //     lose or gain visibility.
-void use_next_iface_locked(WINDOW *w,struct panel_state *ps){
+void use_next_iface_locked(struct ncplane *n, struct panel_state *ps){
   int rows,cols,delta;
   reelbox *oldrb;
   reelbox *rb;
@@ -1137,7 +1137,7 @@ void use_next_iface_locked(WINDOW *w,struct panel_state *ps){
   }
 }
 
-void use_prev_iface_locked(WINDOW *w,struct panel_state *ps){
+void use_prev_iface_locked(struct ncplane *n, struct panel_state *ps){
   reelbox *oldrb;
   int rows,cols;
   reelbox *rb;

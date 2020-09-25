@@ -9,6 +9,9 @@ extern "C" {
 #include <stdarg.h>
 #include <notcurses/notcurses.h>
 
+// FIXME  ncurses->notcurses conversion scaffolding
+typedef struct ncplane WINDOW;
+
 struct l4srv;
 struct l2obj;
 struct l2host;
@@ -59,14 +62,11 @@ typedef struct reelbox {
 	struct reelbox *next,*prev;	// circular list
 	struct iface_state *is;		// backing interface state
 	struct l2obj *selected;		// selected subentry
-	int selline;			// line where the selection starts
-					//  within the subwindow (if != NULL)
+	int selline; // line where the selection starts within the subwindow (if selected != NULL)
 } reelbox;
 
-// FIXME we ought precreate the subwindows, and show/hide them rather than
-// creating and destroying them every time.
 struct panel_state {
-	PANEL *p;
+  struct ncplane* n;
 	int ysize;			// number of lines of *text* (not win)
 };
 
