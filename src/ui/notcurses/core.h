@@ -69,6 +69,8 @@ struct panel_state {
 	int ysize;			// number of lines of *text* (not win)
 };
 
+extern struct notcurses* NC;
+
 // These functions may only be called while the notcurses lock is held. They
 // themselves will not attempt to do any locking. Furthermore, they will not
 // call screen_update() -- that is the caller's responsibility (in this way,
