@@ -40,11 +40,11 @@
 #include <ui/notcurses/network.h>
 #include <ui/notcurses/channels.h>
 
-#define KEY_ESC 27
+#define NCKEY_ESC 27
 
-#define ERREXIT endwin() ; fprintf(stderr,"ncurses failure|%s|%d\n",__func__,__LINE__); abort() ; goto err
+#define ERREXIT endwin() ; fprintf(stderr, "ncurses failure|%s|%d\n", __func__, __LINE__); abort() ; goto err
 
-#define PANEL_STATE_INITIALIZER { .p = NULL, .ysize = -1, }
+#define PANEL_STATE_INITIALIZER { .n = NULL, .ysize = -1, }
 
 static struct panel_state help = PANEL_STATE_INITIALIZER;
 static struct panel_state diags = PANEL_STATE_INITIALIZER;
@@ -72,29 +72,29 @@ static struct utsname sysuts; // Currently unused
 
 static inline void
 lock_ncurses(void){
-  assert(pthread_mutex_lock(&bfl) == 0);
+  pthread_mutex_lock(&bfl);
   check_consistency();
 }
 
 static inline void
 unlock_ncurses(void){
   if(active){
-    assert(top_panel(active->p) != ERR);
+    top_panel(active->n);
   }
   screen_update();
   check_consistency();
-  assert(pthread_mutex_unlock(&bfl) == 0);
+  pthread_mutex_unlock(&bfl);
 }
 
 // NULL fmt clears the status bar. wvstatus is an unlocked entry point, and
 // thus calls screen_update() on exit.
 static int
-wvstatus(WINDOW *w,const char *fmt,va_list va){
+wvstatus(WINDOW *w, const char *fmt, va_list va){
   int ret;
 
   lock_ncurses();
-  ret = wvstatus_locked(w,fmt,va);
-  if(diags.p && fmt){
+  ret = wvstatus_locked(w, fmt, va);
+  if(diags.n && fmt){
     ret |= update_diags_locked(&diags);
   }
   unlock_ncurses();
@@ -104,22 +104,22 @@ wvstatus(WINDOW *w,const char *fmt,va_list va){
 // NULL fmt clears the status bar. wstatus is an unlocked entry point, and thus
 // calls screen_update() on exit.
 static int
-wstatus(WINDOW *w,const char *fmt,...){
+wstatus(WINDOW *w, const char *fmt, ...){
   va_list va;
   int ret;
 
-  va_start(va,fmt);
-  ret = wvstatus(w,fmt,va); // calls screen_update()
+  va_start(va, fmt);
+  ret = wvstatus(w, fmt, va); // calls screen_update()
   va_end(va);
   return ret;
 }
 
 static void
-resize_screen_locked(WINDOW *w){
-  /*int rows,cols;
+resize_screen_locked(struct notcurses *nc){
+  /*int rows, cols;
 
-  getmaxyx(w,rows,cols);*/
-  draw_main_window(w);
+  getmaxyx(w, rows, cols);*/
+  draw_main_window(notcurses_stdplane(nc));
 }
 
 // Completely redraw the screen, for instance after a corruption (see wrefresh
@@ -130,20 +130,20 @@ redraw_screen_locked(void){
   wrefresh(curscr);
 }
 
-struct ncurses_input_marshal {
-  WINDOW *w;
+struct fs_input_marshal {
+  struct notcurses *nc;
   pthread_t maintid;
 };
 
 
 static void
-toggle_panel(WINDOW *w,struct panel_state *ps,int (*psfxn)(WINDOW *,struct panel_state *)){
-  if(ps->p){
+toggle_panel(WINDOW *w, struct panel_state *ps, int (*psfxn)(WINDOW *, struct panel_state *)){
+  if(ps->n){
     hide_panel_locked(ps);
     active = NULL;
   }else{
     hide_panel_locked(active);
-    active = ((psfxn(w,ps) == OK) ? ps : NULL);
+    active = ((psfxn(w, ps) == 0) ? ps : NULL);
   }
 }
 
@@ -158,63 +158,63 @@ toggle_subwindow_pinning(void){
 }
 
 static void *
-ncurses_input_thread(void *unsafe_marsh){
-  struct ncurses_input_marshal *nim = unsafe_marsh;
-  WINDOW *w = nim->w;
+input_thread(void *unsafe_marsh){
+  struct fs_input_marshal *nim = unsafe_marsh;
+  struct notcurses *nc = nim->nc;
   int ch;
 
   active = NULL; // No subpanels initially
   while((ch = getch()) != 'q' && ch != 'Q'){
   switch(ch){
-    case KEY_HOME:
+    case NCKEY_HOME:
       lock_ncurses();
       if(selecting()){
         use_first_node_locked();
       }
       unlock_ncurses();
       break;
-    case KEY_END:
+    case NCKEY_END:
       lock_ncurses();
       if(selecting()){
         use_last_node_locked();
       }
       unlock_ncurses();
       break;
-    case KEY_PPAGE:
+    case NCKEY_PGUP:
       lock_ncurses();
       if(selecting()){
         use_prev_nodepage_locked();
       }
       unlock_ncurses();
       break;
-    case KEY_NPAGE:
+    case NCKEY_PGDOWN:
       lock_ncurses();
       if(selecting()){
         use_next_nodepage_locked();
       }
       unlock_ncurses();
       break;
-    case KEY_UP: case 'k':
+    case NCKEY_UP: case 'k':
       lock_ncurses();
       if(!selecting()){
-        use_prev_iface_locked(w,&details);
+        use_prev_iface_locked(nc, &details);
       }else{
         use_prev_node_locked();
       }
       unlock_ncurses();
       break;
-    case KEY_DOWN: case 'j':
+    case NCKEY_DOWN: case 'j':
       lock_ncurses();
       if(!selecting()){
-        use_next_iface_locked(w,&details);
+        use_next_iface_locked(nc, &details);
       }else{
         use_next_node_locked();
       }
       unlock_ncurses();
       break;
-    case KEY_RESIZE:
+    case NCKEY_RESIZE:
       lock_ncurses();{
-        resize_screen_locked(w);
+        resize_screen_locked(nc);
       }unlock_ncurses();
       break;
     case 9: // Tab FIXME
@@ -227,24 +227,24 @@ ncurses_input_thread(void *unsafe_marsh){
         redraw_screen_locked();
       }unlock_ncurses();
       break;
-    case '\r': case '\n': case KEY_ENTER:
+    case '\r': case '\n': case NCKEY_ENTER:
       lock_ncurses();{
         select_iface_locked();
       }unlock_ncurses();
       break;
-    case KEY_ESC: case KEY_BACKSPACE:
+    case NCKEY_ESC: case NCKEY_BACKSPACE:
       lock_ncurses();{
         deselect_iface_locked();
       }unlock_ncurses();
       break;
     case 'l':
       lock_ncurses();
-        toggle_panel(w,&diags,display_diags_locked);
+        toggle_panel(nc, &diags, display_diags_locked);
       unlock_ncurses();
       break;
     case 'D':
       lock_ncurses();
-        resolve_selection(w);
+        resolve_selection(notcurses_stdplane(nc));
       unlock_ncurses();
       break;
     case 'r':
@@ -273,13 +273,13 @@ ncurses_input_thread(void *unsafe_marsh){
       unlock_ncurses();
       break;
     case '+':
-    case KEY_RIGHT:
+    case NCKEY_RIGHT:
       lock_ncurses();
         expand_iface_locked();
       unlock_ncurses();
       break;
     case '-':
-    case KEY_LEFT:
+    case NCKEY_LEFT:
       lock_ncurses();
         collapse_iface_locked();
       unlock_ncurses();
@@ -336,198 +336,97 @@ ncurses_input_thread(void *unsafe_marsh){
 // Cleanup which ought be performed even if we had a failure elsewhere, or
 // indeed never started.
 static int
-mandatory_cleanup(WINDOW *w){
+mandatory_cleanup(struct notcurses *nc){
   int ret = 0;
 
   pthread_mutex_lock(&bfl);
-  if(w){
-    if(delwin(w) != OK){
-      ret = -1;
-    }
-  }
-  if(stdscr){
-    if(delwin(stdscr) != OK){
-      ret = -2;
-    }
-  }
-  if(endwin() != OK){
-    ret = -3;
-  }
+  ret = notcurses_stop(nc);
   pthread_mutex_unlock(&bfl);
-  switch(ret){
-  case -3: fprintf(stderr,"Couldn't end main window\n"); break;
-  case -2: fprintf(stderr,"Couldn't delete main window\n"); break;
-  case -1: fprintf(stderr,"Couldn't delete main pad\n"); break;
-  case 0: break;
-  default: fprintf(stderr,"Couldn't cleanup ncurses\n"); break;
-  }
   return ret;
 }
 
-static WINDOW *
-ncurses_setup(void){
-  struct ncurses_input_marshal *nim;
+static struct notcurses*
+notcurses_setup(void){
+  struct fs_input_marshal *nim;
+  struct notcurses *nc = NULL;
   const char *errstr = NULL;
-  WINDOW *w = NULL;
 
-  fprintf(stderr,"Entering ncurses mode...\n");
-  if(initscr() == NULL){
-    fprintf(stderr,"Couldn't initialize ncurses\n");
+  fprintf(stderr, "Entering fullscreen mode...\n");
+  if((nc = notcurses_init(NULL, NULL)) == NULL){
+    fprintf(stderr,"Couldn't initialize notcurses\n");
     return NULL;
-  }
-  if(cbreak() != OK){
-    errstr = "Couldn't disable input buffering\n";
-    goto err;
-  }
-  if(noecho() != OK){
-    errstr = "Couldn't disable input echoing\n";
-    goto err;
-  }
-  if(intrflush(stdscr,TRUE) != OK){
-    errstr = "Couldn't set flush-on-interrupt\n";
-    goto err;
-  }
-  leaveok(stdscr, TRUE); // just an optimization
-  if(scrollok(stdscr,FALSE) != OK){
-    errstr = "Couldn't disable scrolling\n";
-    goto err;
-  }
-  if(nonl() != OK){
-    errstr = "Couldn't disable nl translation\n";
-    goto err;
-  }
-  if(start_color() != OK){
-    errstr = "Couldn't initialize ncurses color\n";
-    goto err;
-  }
-  if(use_default_colors()){
-    errstr = "Couldn't initialize ncurses colordefs\n";
-    goto err;
-  }
-  w = stdscr;
-  keypad(stdscr,TRUE);
-  if(nodelay(stdscr,FALSE) != OK){
-    errstr = "Couldn't set blocking input\n";
-    goto err;
-  }
-  if(curs_set(0) == ERR){
-    errstr = "Couldn't disable cursor\n";
-    goto err;
   }
   if(setup_statusbar(COLS)){
     errstr = "Couldn't setup status bar\n";
     goto err;
   }
-  if(COLORS < 16){
-    assert(init_pair(BORDER_COLOR,COLOR_GREEN,-1) == OK);
-    assert(init_pair(HEADER_COLOR,COLOR_BLUE,-1) == OK);
-    assert(init_pair(FOOTER_COLOR,COLOR_YELLOW,-1) == OK);
-    assert(init_pair(DHEADING_COLOR,COLOR_WHITE,-1) == OK);
-    assert(init_pair(UHEADING_COLOR,COLOR_BLUE,-1) == OK);
-    assert(init_pair(PBORDER_COLOR,COLOR_YELLOW,-1) == OK);
-    assert(init_pair(PHEADING_COLOR,COLOR_RED,-1) == OK);
-    assert(init_pair(BULKTEXT_COLOR,COLOR_WHITE,-1) == OK);
-    assert(init_pair(BULKTEXT_ALTROW_COLOR,COLOR_WHITE,-1) == OK);
-    assert(init_pair(IFACE_COLOR,COLOR_WHITE,-1) == OK);
-    assert(init_pair(LCAST_COLOR,COLOR_CYAN,-1) == OK); // will use A_BOLD via OUR_BOLD
-    assert(init_pair(UCAST_COLOR,COLOR_CYAN,-1) == OK);
-    assert(init_pair(MCAST_COLOR,COLOR_BLUE,-1) == OK);
-    assert(init_pair(BCAST_COLOR,COLOR_MAGENTA,-1) == OK);
-    assert(init_pair(LSELECTED_COLOR,-1,COLOR_CYAN) == OK);
-    assert(init_pair(USELECTED_COLOR,-1,COLOR_CYAN) == OK);
-    assert(init_pair(MSELECTED_COLOR,-1,COLOR_BLUE) == OK);
-    assert(init_pair(BSELECTED_COLOR,-1,COLOR_MAGENTA) == OK);
-    assert(init_pair(LCAST_L3_COLOR,COLOR_CYAN,-1) == OK);
-    assert(init_pair(UCAST_L3_COLOR,COLOR_CYAN,-1) == OK);
-    assert(init_pair(MCAST_L3_COLOR,COLOR_BLUE,-1) == OK);
-    assert(init_pair(BCAST_L3_COLOR,COLOR_MAGENTA,-1) == OK);
-    assert(init_pair(LCAST_RES_COLOR,COLOR_CYAN,-1) == OK);
-    assert(init_pair(UCAST_RES_COLOR,COLOR_CYAN,-1) == OK);
-    assert(init_pair(MCAST_RES_COLOR,COLOR_BLUE,-1) == OK);
-    assert(init_pair(BCAST_RES_COLOR,COLOR_MAGENTA,-1) == OK);
-    assert(init_pair(LCAST_ALTROW_COLOR,COLOR_CYAN,-1) == OK);
-    assert(init_pair(UCAST_ALTROW_COLOR,COLOR_CYAN,-1) == OK);
-    assert(init_pair(MCAST_ALTROW_COLOR,COLOR_BLUE,-1) == OK);
-    assert(init_pair(BCAST_ALTROW_COLOR,COLOR_MAGENTA,-1) == OK);
-    assert(init_pair(LCAST_ALTROW_L3_COLOR,COLOR_CYAN,-1) == OK);
-    assert(init_pair(UCAST_ALTROW_L3_COLOR,COLOR_CYAN,-1) == OK);
-    assert(init_pair(MCAST_ALTROW_L3_COLOR,COLOR_BLUE,-1) == OK);
-    assert(init_pair(BCAST_ALTROW_L3_COLOR,COLOR_MAGENTA,-1) == OK);
-    assert(init_pair(LCAST_ALTROW_RES_COLOR,COLOR_CYAN,-1) == OK);
-    assert(init_pair(UCAST_ALTROW_RES_COLOR,COLOR_CYAN,-1) == OK);
-    assert(init_pair(MCAST_ALTROW_RES_COLOR,COLOR_BLUE,-1) == OK);
-    assert(init_pair(BCAST_ALTROW_RES_COLOR,COLOR_MAGENTA,-1) == OK);
-  }else{
-    int z;
+  /*
+  int z;
 
-    assert(init_pair(BORDER_COLOR,COLOR_ALUMINIUM,-1) == OK);
-    assert(init_pair(HEADER_COLOR,COLOR_MODBLUE,-1) == OK);
-    assert(init_pair(FOOTER_COLOR,COLOR_MODYELLOW,-1) == OK);
-    assert(init_pair(DHEADING_COLOR,COLOR_MODWHITE,-1) == OK);
-    assert(init_pair(UHEADING_COLOR,COLOR_ORANGE,-1) == OK);
-    assert(init_pair(PBORDER_COLOR,COLOR_MODBLUE,-1) == OK);
-    assert(init_pair(PHEADING_COLOR,COLOR_MODRED,-1) == OK);
-    assert(init_pair(BULKTEXT_COLOR,COLOR_MODWHITE,-1) == OK);
-    assert(init_pair(BULKTEXT_ALTROW_COLOR,COLOR_MODWHITE,COLOR_PALEALUMINIUM) == OK);
-    assert(init_pair(IFACE_COLOR,COLOR_MODWHITE,-1) == OK);
-    assert(init_pair(LCAST_COLOR,COLOR_CHAMELEON,-1) == OK);
-    assert(init_pair(UCAST_COLOR,COLOR_MODBLUE,-1) == OK);
-    assert(init_pair(MCAST_COLOR,COLOR_SKYBLUE,-1) == OK);
-    assert(init_pair(BCAST_COLOR,COLOR_MODVIOLET,-1) == OK);
-    assert(init_pair(LSELECTED_COLOR,COLOR_MODWHITE,COLOR_CHAMELEON_50) == OK);
-    assert(init_pair(USELECTED_COLOR,COLOR_MODWHITE,COLOR_BLUE_50) == OK);
-    assert(init_pair(MSELECTED_COLOR,COLOR_MODWHITE,COLOR_SKYBLUE_50) == OK);
-    assert(init_pair(BSELECTED_COLOR,COLOR_MODWHITE,COLOR_VIOLET_50) == OK);
-    assert(init_pair(LCAST_L3_COLOR,COLOR_CHAMELEON_75,-1) == OK);
-    assert(init_pair(UCAST_L3_COLOR,COLOR_BLUE_75,-1) == OK);
-    assert(init_pair(MCAST_L3_COLOR,COLOR_SKYBLUE_75,-1) == OK);
-    assert(init_pair(BCAST_L3_COLOR,COLOR_VIOLET_75,-1) == OK);
-    assert(init_pair(LCAST_RES_COLOR,COLOR_CHAMELEON_50,-1) == OK);
-    assert(init_pair(UCAST_RES_COLOR,COLOR_BLUE_50,-1) == OK);
-    assert(init_pair(MCAST_RES_COLOR,COLOR_SKYBLUE_50,-1) == OK);
-    assert(init_pair(BCAST_RES_COLOR,COLOR_VIOLET_50,-1) == OK);
+  assert(init_pair(BORDER_COLOR,COLOR_ALUMINIUM,-1) == 0);
+  assert(init_pair(HEADER_COLOR,COLOR_MODBLUE,-1) == 0);
+  assert(init_pair(FOOTER_COLOR,COLOR_MODYELLOW,-1) == 0);
+  assert(init_pair(DHEADING_COLOR,COLOR_MODWHITE,-1) == 0);
+  assert(init_pair(UHEADING_COLOR,COLOR_ORANGE,-1) == 0);
+  assert(init_pair(PBORDER_COLOR,COLOR_MODBLUE,-1) == 0);
+  assert(init_pair(PHEADING_COLOR,COLOR_MODRED,-1) == 0);
+  assert(init_pair(BULKTEXT_COLOR,COLOR_MODWHITE,-1) == 0);
+  assert(init_pair(BULKTEXT_ALTROW_COLOR,COLOR_MODWHITE,COLOR_PALEALUMINIUM) == 0);
+  assert(init_pair(IFACE_COLOR,COLOR_MODWHITE,-1) == 0);
+  assert(init_pair(LCAST_COLOR,COLOR_CHAMELEON,-1) == 0);
+  assert(init_pair(UCAST_COLOR,COLOR_MODBLUE,-1) == 0);
+  assert(init_pair(MCAST_COLOR,COLOR_SKYBLUE,-1) == 0);
+  assert(init_pair(BCAST_COLOR,COLOR_MODVIOLET,-1) == 0);
+  assert(init_pair(LSELECTED_COLOR,COLOR_MODWHITE,COLOR_CHAMELEON_50) == 0);
+  assert(init_pair(USELECTED_COLOR,COLOR_MODWHITE,COLOR_BLUE_50) == 0);
+  assert(init_pair(MSELECTED_COLOR,COLOR_MODWHITE,COLOR_SKYBLUE_50) == 0);
+  assert(init_pair(BSELECTED_COLOR,COLOR_MODWHITE,COLOR_VIOLET_50) == 0);
+  assert(init_pair(LCAST_L3_COLOR,COLOR_CHAMELEON_75,-1) == 0);
+  assert(init_pair(UCAST_L3_COLOR,COLOR_BLUE_75,-1) == 0);
+  assert(init_pair(MCAST_L3_COLOR,COLOR_SKYBLUE_75,-1) == 0);
+  assert(init_pair(BCAST_L3_COLOR,COLOR_VIOLET_75,-1) == 0);
+  assert(init_pair(LCAST_RES_COLOR,COLOR_CHAMELEON_50,-1) == 0);
+  assert(init_pair(UCAST_RES_COLOR,COLOR_BLUE_50,-1) == 0);
+  assert(init_pair(MCAST_RES_COLOR,COLOR_SKYBLUE_50,-1) == 0);
+  assert(init_pair(BCAST_RES_COLOR,COLOR_VIOLET_50,-1) == 0);
 
-    // Disable altrow stuff for now. It's hard to read and ugly.
-    assert(init_pair(LCAST_ALTROW_COLOR,COLOR_CHAMELEON,-1) == OK);
-    assert(init_pair(UCAST_ALTROW_COLOR,COLOR_MODBLUE,-1) == OK);
-    assert(init_pair(MCAST_ALTROW_COLOR,COLOR_SKYBLUE,-1) == OK);
-    assert(init_pair(BCAST_ALTROW_COLOR,COLOR_MODVIOLET,-1) == OK);
-    assert(init_pair(LCAST_ALTROW_L3_COLOR,COLOR_CHAMELEON_75,-1) == OK);
-    assert(init_pair(UCAST_ALTROW_L3_COLOR,COLOR_BLUE_75,-1) == OK);
-    assert(init_pair(MCAST_ALTROW_L3_COLOR,COLOR_SKYBLUE_75,-1) == OK);
-    assert(init_pair(BCAST_ALTROW_L3_COLOR,COLOR_VIOLET_75,-1) == OK);
-    assert(init_pair(LCAST_ALTROW_RES_COLOR,COLOR_CHAMELEON_50,-1) == OK);
-    assert(init_pair(UCAST_ALTROW_RES_COLOR,COLOR_BLUE_50,-1) == OK);
-    assert(init_pair(MCAST_ALTROW_RES_COLOR,COLOR_SKYBLUE_50,-1) == OK);
-    assert(init_pair(BCAST_ALTROW_RES_COLOR,COLOR_VIOLET_50,-1) == OK);
+  // Disable altrow stuff for now. It's hard to read and ugly.
+  assert(init_pair(LCAST_ALTROW_COLOR,COLOR_CHAMELEON,-1) == 0);
+  assert(init_pair(UCAST_ALTROW_COLOR,COLOR_MODBLUE,-1) == 0);
+  assert(init_pair(MCAST_ALTROW_COLOR,COLOR_SKYBLUE,-1) == 0);
+  assert(init_pair(BCAST_ALTROW_COLOR,COLOR_MODVIOLET,-1) == 0);
+  assert(init_pair(LCAST_ALTROW_L3_COLOR,COLOR_CHAMELEON_75,-1) == 0);
+  assert(init_pair(UCAST_ALTROW_L3_COLOR,COLOR_BLUE_75,-1) == 0);
+  assert(init_pair(MCAST_ALTROW_L3_COLOR,COLOR_SKYBLUE_75,-1) == 0);
+  assert(init_pair(BCAST_ALTROW_L3_COLOR,COLOR_VIOLET_75,-1) == 0);
+  assert(init_pair(LCAST_ALTROW_RES_COLOR,COLOR_CHAMELEON_50,-1) == 0);
+  assert(init_pair(UCAST_ALTROW_RES_COLOR,COLOR_BLUE_50,-1) == 0);
+  assert(init_pair(MCAST_ALTROW_RES_COLOR,COLOR_SKYBLUE_50,-1) == 0);
+  assert(init_pair(BCAST_ALTROW_RES_COLOR,COLOR_VIOLET_50,-1) == 0);
 
-    for(z = FIRST_FREE_COLOR ; z < 256 && z < COLORS && z < COLOR_PAIRS ; ++z){
-      assert(init_pair(z,z,-1) == OK);
-    }
+  for(z = FIRST_FREE_COLOR ; z < 256 && z < COLORS && z < COLOR_PAIRS ; ++z){
+    assert(init_pair(z,z,-1) == 0);
   }
-  if(draw_main_window(w)){
-    errstr = "Couldn't use ncurses\n";
+  */
+  if(draw_main_window(notcurses_stdplane(nc))){
+    errstr = "Couldn't use notcurses\n";
     goto err;
   }
   if((nim = malloc(sizeof(*nim))) == NULL){
     goto err;
   }
-  nim->w = w;
+  nim->nc = nc;
   nim->maintid = pthread_self();
-  // Panels aren't yet being used, so we need call refresh() to
-  // paint the main window.
-  refresh();
-  if(pthread_create(&inputtid,NULL,ncurses_input_thread,nim)){
+  if(pthread_create(&inputtid, NULL, input_thread, nim)){
     errstr = "Couldn't create UI thread\n";
     free(nim);
     goto err;
   }
-  // FIXME install SIGWINCH() handler...?
-  return w;
+  return nc;
 
 err:
-  mandatory_cleanup(w);
-  fprintf(stderr,"%s",errstr);
+  mandatory_cleanup(nc);
+  fprintf(stderr, "%s", errstr);
   return NULL;
 }
 
@@ -536,7 +435,7 @@ packet_callback(omphalos_packet *op){
   pthread_mutex_lock(&bfl); // don't always want screen_update()
   if(packet_cb_locked(op->i,op,&details)){
     if(active){
-      assert(top_panel(active->p) != ERR);
+      top_panel(active->n);
     }
     screen_update();
   }
@@ -571,7 +470,7 @@ service_callback(const interface *i,struct l2host *l2,struct l3host *l3,
   pthread_mutex_lock(&bfl);
   if( (ret = service_callback_locked(i,l2,l3,l4)) ){
     if(active){
-      assert(top_panel(active->p) != ERR);
+      top_panel(active->n);
     }
     screen_update();
   }
@@ -586,7 +485,7 @@ host_callback(const interface *i,struct l2host *l2,struct l3host *l3){
   pthread_mutex_lock(&bfl);
   if( (ret = host_callback_locked(i,l2,l3)) ){
     if(active){
-      assert(top_panel(active->p) != ERR);
+      top_panel(active->n);
     }
     screen_update();
   }
@@ -601,7 +500,7 @@ neighbor_callback(const interface *i,struct l2host *l2){
   pthread_mutex_lock(&bfl);
   if( (ret = neighbor_callback_locked(i,l2)) ){
     if(active){
-      assert(top_panel(active->p) != ERR);
+      top_panel(active->n);
     }
     screen_update();
   }
@@ -618,39 +517,33 @@ interface_removed_callback(const interface *i __attribute__ ((unused)),void *uns
 
 static void
 vdiag_callback(const char *fmt,va_list v){
-  wvstatus(stdscr,fmt,v);
+  wvstatus(notcurses_stdplane(NC), fmt, v);
 }
 
 static void
 network_callback(void){
   lock_ncurses();
     if(active == &network){
-      assert(update_network_details(panel_window(network.p)) == OK);
+      update_network_details(network.n);
     }
   unlock_ncurses();
 }
 
-int main(int argc,char * const *argv){
+int main(int argc, char * const *argv){
   const char *codeset;
   omphalos_ctx pctx;
 
-  assert(fwide(stdout,-1) < 0);
-  assert(fwide(stderr,-1) < 0);
-  if(setlocale(LC_ALL,"") == NULL || ((codeset = nl_langinfo(CODESET)) == NULL)){
-    fprintf(stderr,"Couldn't initialize locale (%s?)\n",strerror(errno));
-    return EXIT_FAILURE;
-  }
-  if(strcmp(codeset,"UTF-8")){
-    fprintf(stderr,"Only UTF-8 is supported; got %s\n",codeset);
+  if(setlocale(LC_ALL, "") == NULL || ((codeset = nl_langinfo(CODESET)) == NULL)){
+    fprintf(stderr, "Couldn't initialize locale (%s?)\n", strerror(errno));
     return EXIT_FAILURE;
   }
   if(uname(&sysuts)){
-    fprintf(stderr,"Couldn't get OS info (%s?)\n",strerror(errno));
+    fprintf(stderr,"Couldn't get OS info (%s?)\n", strerror(errno));
     return EXIT_FAILURE;
   }
   glibc_version = gnu_get_libc_version();
   glibc_release = gnu_get_libc_release();
-  if(omphalos_setup(argc,argv,&pctx)){
+  if(omphalos_setup(argc, argv, &pctx)){
     return EXIT_FAILURE;
   }
   pctx.iface.packet_read = packet_callback;
@@ -662,18 +555,18 @@ int main(int argc,char * const *argv){
   pctx.iface.neigh_event = neighbor_callback;
   pctx.iface.host_event = host_callback;
   pctx.iface.network_event = network_callback;
-  if(ncurses_setup() == NULL){
+  if((NC = notcurses_setup()) == NULL){
     return EXIT_FAILURE;
   }
   if(omphalos_init(&pctx)){
     int err = errno;
 
-    mandatory_cleanup(stdscr);
+    mandatory_cleanup(NC);
     fprintf(stderr,"Error in omphalos_init() (%s?)\n",strerror(err));
     return EXIT_FAILURE;
   }
   omphalos_cleanup(&pctx);
-  if(mandatory_cleanup(stdscr)){
+  if(mandatory_cleanup(NC)){
     return EXIT_FAILURE;
   }
   return EXIT_SUCCESS;

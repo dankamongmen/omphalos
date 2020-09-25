@@ -18,6 +18,8 @@ static unsigned count_interface;
 // dequeue + single selection
 static reelbox *current_iface,*top_reelbox,*last_reelbox;
 
+struct notcurses *NC = NULL;
+
 // Status bar at the bottom of the screen. Must be reallocated upon screen
 // resize and allocated based on initial screen at startup. Don't shrink
 // it; widening the window again should show the full message.
@@ -25,6 +27,10 @@ static char *statusmsg;
 static int statuschars;  // True size, not necessarily what's available
 
 static int resize_iface(reelbox *);
+
+int screen_update(void){
+  return notcurses_render(NC);
+}
 
 // Caller needs set up: next, prev
 static reelbox *
