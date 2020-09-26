@@ -68,10 +68,6 @@ enum {
 	BULKTEXT_COLOR,			// bulk text
 	BULKTEXT_ALTROW_COLOR,
 	IFACE_COLOR,			// interface summary text
-	UCAST_COLOR,			// unicast addresses
-	MCAST_COLOR,			// multicast addresses
-	LCAST_COLOR,			// local addresses
-	BCAST_COLOR,			// broadcast addresses
 	UCAST_L3_COLOR,			// unicast l3
 	UCAST_RES_COLOR,		// unicast name
 	UCAST_ALTROW_COLOR,

@@ -10,7 +10,7 @@ extern "C" {
 struct iface_state;
 struct panel_state;
 
-int display_channels_locked(WINDOW *,struct panel_state *);
+int display_channels_locked(struct ncplane *, struct panel_state *);
 
 // Whenever a wireless device is added or removed, call these from the main
 // callbacks.

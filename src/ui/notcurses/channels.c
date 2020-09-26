@@ -23,7 +23,7 @@ static const char iface_chars[COLSPERFREQ] = { '*',  '#',  '&',  '@',  };
 static const struct iface_state *ifaces[COLSPERFREQ];
 
 static int
-channel_row(WINDOW *w, unsigned freqrow, int srow, int scol){
+channel_row(struct ncplane *w, unsigned freqrow, int srow, int scol){
   unsigned f;
 
   assert(wmove(w, srow, scol + IFNAMSIZ + 2) == OK);
@@ -47,7 +47,7 @@ iface_supports_freq(const struct iface_state *is, unsigned idx){
 }
 
 static int
-iface_row(WINDOW *w, unsigned freqrow, int srow, int scol){
+iface_row(struct ncplane *w, unsigned freqrow, int srow, int scol){
   unsigned f;
 
   if(freqrow < sizeof(ifaces) / sizeof(*ifaces) && ifaces[freqrow]){
@@ -73,7 +73,7 @@ iface_row(WINDOW *w, unsigned freqrow, int srow, int scol){
 }
 
 static int
-channel_details(WINDOW *w){
+channel_details(struct ncplane *w){
   unsigned freqs, freqrows;
   const int row = 1;
   int r, c, col,  z;
@@ -101,7 +101,7 @@ channel_details(WINDOW *w){
   return OK;
 }
 
-int display_channels_locked(WINDOW *w, struct panel_state *ps){
+int display_channels_locked(struct ncplane *w, struct panel_state *ps){
   memset(ps, 0, sizeof(*ps));
   const int count = wireless_freq_count();
   int rows = count / FREQSPERROW;
@@ -117,13 +117,7 @@ int display_channels_locked(WINDOW *w, struct panel_state *ps){
   return OK;
 
 err:
-  if(ps->p){
-    WINDOW *psw = panel_window(ps->p);
-
-    hide_panel(ps->p);
-    del_panel(ps->p);
-    delwin(psw);
-  }
+  ncplane_destroy(ps->n);
   memset(ps, 0, sizeof(*ps));
   return ERR;
 }

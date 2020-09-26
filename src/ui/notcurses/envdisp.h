@@ -9,7 +9,7 @@ extern "C" {
 
 struct panel_state;
 
-int display_env_locked(WINDOW *,struct panel_state *);
+int display_env_locked(struct ncplane *,struct panel_state *);
 
 #ifdef __cplusplus
 }
