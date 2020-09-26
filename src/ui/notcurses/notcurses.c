@@ -59,6 +59,10 @@ static struct panel_state environment = PANEL_STATE_INITIALIZER;
 extern int wprintw(WINDOW *,const char *,...) __attribute__ ((format (printf,2,3)));
 extern int mvwprintw(WINDOW *,int,int,const char *,...) __attribute__ ((format (printf,4,5)));
 
+static int rows = -1;
+static int cols = -1;
+static struct ncplane* stdn;
+
 static struct panel_state *active;
 
 // FIXME granularize things, make packet handler iret-like
@@ -79,7 +83,7 @@ lock_ncurses(void){
 static inline void
 unlock_ncurses(void){
   if(active){
-    top_panel(active->n);
+    ncplane_move_top(active->n);
   }
   screen_update();
   check_consistency();
@@ -119,15 +123,7 @@ resize_screen_locked(struct notcurses *nc){
   /*int rows, cols;
 
   getmaxyx(w, rows, cols);*/
-  draw_main_window(notcurses_stdplane(nc));
-}
-
-// Completely redraw the screen, for instance after a corruption (see wrefresh
-// man page: "If the argument to wrefresh is curscr, the screen is immediately
-// cleared and repainted from scratch."
-static void
-redraw_screen_locked(void){
-  wrefresh(curscr);
+  draw_main_window(stdn);
 }
 
 struct fs_input_marshal {
@@ -224,7 +220,7 @@ input_thread(void *unsafe_marsh){
       break;
     case 12: // Ctrl-L FIXME
       lock_ncurses();{
-        redraw_screen_locked();
+        notcurses_refresh(NC, &rows, &cols);
       }unlock_ncurses();
       break;
     case '\r': case '\n': case NCKEY_ENTER:
@@ -244,12 +240,12 @@ input_thread(void *unsafe_marsh){
       break;
     case 'D':
       lock_ncurses();
-        resolve_selection(notcurses_stdplane(nc));
+        resolve_selection(stdn);
       unlock_ncurses();
       break;
     case 'r':
       lock_ncurses();
-        reset_current_interface_stats(w);
+        reset_current_interface_stats(stdn);
       unlock_ncurses();
       break;
     case 'P':
@@ -259,17 +255,17 @@ input_thread(void *unsafe_marsh){
       break;
     case 'p':
       lock_ncurses();
-        toggle_promisc_locked(w);
+        toggle_promisc_locked(stdn);
       unlock_ncurses();
       break;
     case 'd':
       lock_ncurses();
-        down_interface_locked(w);
+        down_interface_locked(stdn);
       unlock_ncurses();
       break;
     case 's':
       lock_ncurses();
-        sniff_interface_locked(w);
+        sniff_interface_locked(stdn);
       unlock_ncurses();
       break;
     case '+':
@@ -286,47 +282,47 @@ input_thread(void *unsafe_marsh){
       break;
     case 'v':{
       lock_ncurses();
-        toggle_panel(w,&details,display_details_locked);
+        toggle_panel(stdn, &details,display_details_locked);
       unlock_ncurses();
       break;
     }case 'n':{
       lock_ncurses();
-        toggle_panel(w,&network,display_network_locked);
+        toggle_panel(stdn, &network,display_network_locked);
       unlock_ncurses();
       break;
     }case 'e':{
       lock_ncurses();
-        toggle_panel(w,&environment,display_env_locked);
+        toggle_panel(stdn, &environment,display_env_locked);
       unlock_ncurses();
       break;
     }case 'w':{
       lock_ncurses();
-        toggle_panel(w,&channels,display_channels_locked);
+        toggle_panel(stdn, &channels,display_channels_locked);
       unlock_ncurses();
       break;
     }case 'b':{
       lock_ncurses();
-        toggle_panel(w,&bridging,display_bridging_locked);
+        toggle_panel(stdn, &bridging,display_bridging_locked);
       unlock_ncurses();
       break;
     }case 'h':{
       lock_ncurses();
-        toggle_panel(w,&help,display_help_locked);
+        toggle_panel(stdn, &help,display_help_locked);
       unlock_ncurses();
       break;
     }default:{
-      const char *hstr = !help.p ? " ('h' for help)" : "";
+      const char *hstr = !help.n ? " ('h' for help)" : "";
       // wstatus() locks/unlocks, and calls screen_update()
       if(isprint(ch)){
-        wstatus(w,"unknown command '%c'%s",ch,hstr);
+        wstatus(stdn, "unknown command '%c'%s", ch, hstr);
       }else{
-        wstatus(w,"unknown scancode %d%s",ch,hstr);
+        wstatus(stdn, "unknown scancode %d%s", ch, hstr);
       }
       break;
     }
   }
   }
-  wstatus(w,"%s","shutting down");
+  wstatus(stdn, "%s", "shutting down");
   // we can't use raise() here, as that sends the signal only
   // to ourselves, and we have it masked.
   pthread_kill(nim->maintid,SIGINT);
@@ -356,7 +352,8 @@ notcurses_setup(void){
     fprintf(stderr,"Couldn't initialize notcurses\n");
     return NULL;
   }
-  if(setup_statusbar(COLS)){
+  stdn = notcurses_stddim_yx(nc, &rows, &cols);
+  if(setup_statusbar(cols)){
     errstr = "Couldn't setup status bar\n";
     goto err;
   }
@@ -408,7 +405,7 @@ notcurses_setup(void){
     assert(init_pair(z,z,-1) == 0);
   }
   */
-  if(draw_main_window(notcurses_stdplane(nc))){
+  if(draw_main_window(stdn)){
     errstr = "Couldn't use notcurses\n";
     goto err;
   }
@@ -435,7 +432,7 @@ packet_callback(omphalos_packet *op){
   pthread_mutex_lock(&bfl); // don't always want screen_update()
   if(packet_cb_locked(op->i,op,&details)){
     if(active){
-      top_panel(active->n);
+      ncplane_move_top(active->n);
     }
     screen_update();
   }
@@ -470,7 +467,7 @@ service_callback(const interface *i,struct l2host *l2,struct l3host *l3,
   pthread_mutex_lock(&bfl);
   if( (ret = service_callback_locked(i,l2,l3,l4)) ){
     if(active){
-      top_panel(active->n);
+      ncplane_move_top(active->n);
     }
     screen_update();
   }
@@ -485,7 +482,7 @@ host_callback(const interface *i,struct l2host *l2,struct l3host *l3){
   pthread_mutex_lock(&bfl);
   if( (ret = host_callback_locked(i,l2,l3)) ){
     if(active){
-      top_panel(active->n);
+      ncplane_move_top(active->n);
     }
     screen_update();
   }
@@ -500,7 +497,7 @@ neighbor_callback(const interface *i,struct l2host *l2){
   pthread_mutex_lock(&bfl);
   if( (ret = neighbor_callback_locked(i,l2)) ){
     if(active){
-      top_panel(active->n);
+      ncplane_move_top(active->n);
     }
     screen_update();
   }
@@ -509,15 +506,15 @@ neighbor_callback(const interface *i,struct l2host *l2){
 }
 
 static void
-interface_removed_callback(const interface *i __attribute__ ((unused)),void *unsafe){
+interface_removed_callback(const interface *i __attribute__ ((unused)), void *unsafe){
   lock_ncurses();
-    interface_removed_locked(unsafe,details.p ? &active : NULL);
+    interface_removed_locked(unsafe, details.n ? &active : NULL);
   unlock_ncurses();
 }
 
 static void
-vdiag_callback(const char *fmt,va_list v){
-  wvstatus(notcurses_stdplane(NC), fmt, v);
+vdiag_callback(const char *fmt, va_list v){
+  wvstatus(stdn, fmt, v);
 }
 
 static void

@@ -139,45 +139,44 @@ int new_display_panel(struct ncplane *n, struct panel_state *ps,int rows,int col
   WINDOW *psw;
   int x,y;
 
-  getmaxyx(w,y,x);
+  getmaxyx(w, y, x);
   if(cols == 0){
     cols = x - START_COL * 2; // indent 2 on the left, 0 on the right
   }else{
     if(x < cols + START_COL * 2){
-      wstatus_locked(w,"Screen too small for subdisplay");
-      return ERR;
+      wstatus_locked(w, "Screen too small for subdisplay");
+      return -1;
     }
   }
   if(y < rows + 3){
-    wstatus_locked(w,"Screen too small for subdisplay");
-    return ERR;
+    wstatus_locked(w, "Screen too small for subdisplay");
+    return -1;
   }
   if(x < crightlen + START_COL * 2){
-    wstatus_locked(w,"Screen too small for subdisplay");
-    return ERR;
+    wstatus_locked(w, "Screen too small for subdisplay");
+    return -1;
   }
   assert((x >= crightlen + START_COL * 2));
   // Keep it one line up from the last display line, so that you get
   // iface summaries (unless you've got a bottom-partial).
-  assert( (psw = newwin(rows + 2,cols,y - (rows + 4),x - cols)) );
+  assert( (psw = newwin(rows + 2, cols, y - (rows + 4), x - cols)) );
   if(psw == NULL){
-    return ERR;
+    return -1;
   }
   assert((ps->p = new_panel(psw)));
   if(ps->p == NULL){
     delwin(psw);
-    return ERR;
+    return -1;
   }
   ps->ysize = rows;
-  // memory leaks follow if we're compiled with NDEBUG! FIXME
-  assert(wattron(psw,A_BOLD) != ERR);
-  assert(wcolor_set(psw,PBORDER_COLOR,NULL) == OK);
-  assert(bevel(psw) == OK);
-  assert(wattroff(psw,A_BOLD) != ERR);
-  assert(wcolor_set(psw,PHEADING_COLOR,NULL) == OK);
-  assert(mvwaddwstr(psw,0,START_COL * 2,hstr) != ERR);
-  assert(mvwaddwstr(psw,rows + 1,cols - (crightlen + START_COL * 2),crightstr) != ERR);
-  return OK;
+  wattron(psw, A_BOLD);
+  wcolor_set(psw, PBORDER_COLOR, NULL);
+  bevel(psw);
+  wattroff(psw, A_BOLD);
+  wcolor_set(psw, PHEADING_COLOR, NULL);
+  mvwaddwstr(psw, 0, START_COL * 2, hstr);
+  mvwaddwstr(psw, rows + 1, cols - (crightlen + START_COL * 2), crightstr);
+  return 0;
 }
 
 #define DETAILROWS 9
@@ -189,7 +188,7 @@ iface_details(WINDOW *hw,const interface *i,int rows){
   const int row = 1;
   int z;
 
-  assert(wattrset(hw,SUBDISPLAY_ATTR) == OK);
+  wattrset(hw,SUBDISPLAY_ATTR);
   getmaxyx(hw,scrrows,scrcols);
   assert(scrrows); // FIXME
   if((z = rows) >= DETAILROWS){
@@ -197,36 +196,36 @@ iface_details(WINDOW *hw,const interface *i,int rows){
   }
   switch(z){ // Intentional fallthroughs all the way to 0
   case (DETAILROWS - 1):{
-    assert(mvwprintw(hw,row + z,col,"drops: "U64FMT" truncs: "U64FMT" (%ju recov)%-*s",
+    mvwprintw(hw,row + z,col,"drops: "U64FMT" truncs: "U64FMT" (%ju recov)%-*s",
           i->drops,i->truncated,i->truncated_recovered,
-          scrcols - 2 - 72,"") != ERR);
+          scrcols - 2 - 72,"");
     --z;
   } /* intentional fallthrough */
   case 7:{
-    assert(mvwprintw(hw,row + z,col,"mform: "U64FMT" noprot: "U64FMT,
-          i->malformed,i->noprotocol) != ERR);
+    mvwprintw(hw,row + z,col,"mform: "U64FMT" noprot: "U64FMT,
+          i->malformed,i->noprotocol);
     --z;
   } /* intentional fallthrough */
   case 6:{
-    assert(mvwprintw(hw,row + z,col,"Rbyte: "U64FMT" frames: "U64FMT,
-          i->bytes,i->frames) != ERR);
+    mvwprintw(hw,row + z,col,"Rbyte: "U64FMT" frames: "U64FMT,
+          i->bytes,i->frames);
     --z;
   } /* intentional fallthrough */
   case 5:{
     char b[PREFIXSTRLEN];
     char fb[PREFIXSTRLEN];
     char buf[U64STRLEN];
-    assert(mvwprintw(hw,row + z,col,"RXfd: %-4d flen: %-6u fnum: %-4s blen: %-5s bnum: %-5u rxr: %5sB",
+    mvwprintw(hw,row + z,col,"RXfd: %-4d flen: %-6u fnum: %-4s blen: %-5s bnum: %-5u rxr: %5sB",
           i->rfd, i->rtpr.tp_frame_size,
           bprefix(i->rtpr.tp_frame_nr, 1, fb,  1),
           bprefix(i->rtpr.tp_block_size, 1, buf, 1),
           i->rtpr.tp_block_nr,
-          bprefix(i->rs, 1, b, 1)) != ERR);
+          bprefix(i->rs, 1, b, 1));
     --z;
   } /* intentional fallthrough */
   case 4:{
-    assert(mvwprintw(hw,row + z,col,"Tbyte: "U64FMT" frames: "U64FMT" aborts: %llu",
-          i->txbytes,i->txframes, (long long unsigned)i->txaborts) != ERR);
+    mvwprintw(hw,row + z,col,"Tbyte: "U64FMT" frames: "U64FMT" aborts: %llu",
+              i->txbytes,i->txframes, (long long unsigned)i->txaborts);
     --z;
   } /* intentional fallthrough */
   case 3:{
@@ -273,9 +272,9 @@ iface_details(WINDOW *hw,const interface *i,int rows){
     --z;
     break;
   }default:{
-    return ERR;
+    return -1;
   } }
-  return OK;
+  return 0;
 }
 
 static void
@@ -285,8 +284,8 @@ free_reelbox(reelbox *rb){
     assert(rb->is->rb == rb);
 
     rb->is->rb = NULL;
-    assert(del_panel(rb->panel) == OK);
-    assert(delwin(rb->subwin) == OK);
+    del_panel(rb->panel);
+    delwin(rb->subwin);
     free(rb);
   }
 }
@@ -565,10 +564,10 @@ resize_iface(reelbox *rb){
       rb->scrline += delta;
       push_interfaces_above(rb,rows,cols,delta);
       // assert(move_interface_generic(is,rows,cols,-delta) == OK);
-      assert(move_panel(rb->panel,rb->scrline,1) != ERR);
+      move_panel(rb->panel,rb->scrline,1);
     }
-    assert(wresize(rb->subwin,nlines,PAD_COLS(cols)) != ERR);
-    assert(replace_panel(rb->panel,rb->subwin) != ERR);
+    wresize(rb->subwin,nlines,PAD_COLS(cols));
+    replace_panel(rb->panel,rb->subwin);
   }else{ // we're not the current interface
     int delta;
 
@@ -619,11 +618,11 @@ resize_iface(reelbox *rb){
       }
     }
     if(subrows != getmaxy(rb->subwin)){
-      assert(wresize(rb->subwin,subrows,PAD_COLS(cols)) != ERR);
-      assert(replace_panel(rb->panel,rb->subwin) != ERR);
+      wresize(rb->subwin,subrows,PAD_COLS(cols));
+      replace_panel(rb->panel,rb->subwin);
     }
   }
-  return OK;
+  return 0;
 }
 
 // Pass current number of columns
@@ -1105,23 +1104,23 @@ void use_next_iface_locked(struct ncplane *n, struct panel_state *ps){
       int delta = getmaxy(rb->subwin) - iface_lines_bounded(is,rows);
 
       rb->scrline = rows - (iface_lines_bounded(is,rows) + 1);
-      push_interfaces_above(rb,rows,cols,delta);
-      move_interface_generic(rb,rows,cols,getbegy(rb->subwin) - rb->scrline);
-      assert(wresize(rb->subwin,iface_lines_bounded(rb->is,rows),PAD_COLS(cols)) == OK);
-      assert(replace_panel(rb->panel,rb->subwin) != ERR);
-      assert(redraw_iface_generic(rb) == OK);
+      push_interfaces_above(rb, rows, cols, delta);
+      move_interface_generic(rb, rows, cols, getbegy(rb->subwin) - rb->scrline);
+      wresize(rb->subwin, iface_lines_bounded(rb->is, rows), PAD_COLS(cols));
+      replace_panel(rb->panel, rb->subwin);
+      redraw_iface_generic(rb);
     }else{ // ...at the top (rotate)
       int delta;
 
       assert(top_reelbox == rb);
-      rb->scrline = rows - 1 - iface_lines_bounded(rb->is,rows);
+      rb->scrline = rows - 1 - iface_lines_bounded(rb->is, rows);
       top_reelbox->next->prev = NULL;
       top_reelbox = top_reelbox->next;
-      delta = -iface_lines_bounded(rb->is,rows);
+      delta = -iface_lines_bounded(rb->is, rows);
       if(getbegy(last_reelbox->subwin) + getmaxy(last_reelbox->subwin) >= (rows - 1)){
         --delta;
       }
-      push_interfaces_above(NULL,rows,cols,delta);
+      push_interfaces_above(NULL, rows, cols, delta);
       rb->next = NULL;
       if( (rb->prev = last_reelbox) ){
         last_reelbox->next = rb;
@@ -1130,22 +1129,22 @@ void use_next_iface_locked(struct ncplane *n, struct panel_state *ps){
       }
       last_reelbox = rb;
       move_interface_generic(rb,rows,cols,rb->scrline);
-      assert(wresize(rb->subwin,iface_lines_bounded(rb->is,rows),PAD_COLS(cols)) == OK);
-      assert(replace_panel(rb->panel,rb->subwin) != ERR);
-      assert(redraw_iface_generic(rb) == OK);
+      wresize(rb->subwin,iface_lines_bounded(rb->is,rows),PAD_COLS(cols));
+      replace_panel(rb->panel,rb->subwin);
+      redraw_iface_generic(rb);
     }
   }
   if( (delta = top_space_p(rows)) ){
-    pull_interfaces_up(NULL,rows,cols,delta);
+    pull_interfaces_up(NULL, rows, cols, delta);
   }
   if(ps->p){
-    iface_details(panel_window(ps->p),rb->is->iface,ps->ysize);
+    iface_details(ps->n, rb->is->iface, ps->ysize);
   }
 }
 
 void use_prev_iface_locked(struct ncplane *n, struct panel_state *ps){
   reelbox *oldrb;
-  int rows,cols;
+  int rows, cols;
   reelbox *rb;
 
   if(!current_iface || current_iface->is->next == current_iface->is){
@@ -1153,7 +1152,7 @@ void use_prev_iface_locked(struct ncplane *n, struct panel_state *ps){
   }
   //fprintf(stderr,"Want previous interface (%s->%s)\n",current_iface->is->iface->name,
   //    current_iface->is->prev->iface->name);
-  getmaxyx(w,rows,cols);
+  getmaxyx(w, rows, cols);
   oldrb = current_iface;
   deselect_iface_locked();
   // Don't redraw the old interface yet; it might have been moved/hidden
@@ -1165,11 +1164,11 @@ void use_prev_iface_locked(struct ncplane *n, struct panel_state *ps){
     if(is->rb){
       current_iface = is->rb;
     }else{
-      if((is->rb = create_reelbox(is,rows,0,cols)) == NULL){
+      if((is->rb = create_reelbox(is, rows, 0, cols)) == NULL){
         return; // FIXME
       }
       current_iface = is->rb;
-      push_interfaces_below(NULL,rows,cols,iface_lines_bounded(is,rows) + 1);
+      push_interfaces_below(NULL, rows, cols, iface_lines_bounded(is,rows) + 1);
       if((current_iface->next = top_reelbox) == NULL){
         last_reelbox = current_iface;
       }else{
@@ -1179,7 +1178,7 @@ void use_prev_iface_locked(struct ncplane *n, struct panel_state *ps){
       top_reelbox = current_iface;
       redraw_iface_generic(current_iface);
       if(ps->p){
-        iface_details(panel_window(ps->p),is->iface,ps->ysize);
+        iface_details(ps->n, is->iface, ps->ysize);
       }
       return;
     }
@@ -1189,10 +1188,10 @@ void use_prev_iface_locked(struct ncplane *n, struct panel_state *ps){
   // change visibility of any interfaces. If it's below us, we'll need
   // rotate the interfaces 1 unit, moving all. Otherwise, none need change
   // position. Redraw all affected interfaces.
-  if(iface_wholly_visible_p(rows,rb)){
+  if(iface_wholly_visible_p(rows, rb)){
     if(rb->scrline < oldrb->scrline){ // new is above old
-      assert(redraw_iface_generic(oldrb) == OK);
-      assert(redraw_iface_generic(rb) == OK);
+      redraw_iface_generic(oldrb);
+      redraw_iface_generic(rb);
     }else{ // we were at the top
       // Selecting the previous interface is simpler -- we
       // take one from the bottom, and stick it in row 1.
@@ -1202,7 +1201,7 @@ void use_prev_iface_locked(struct ncplane *n, struct panel_state *ps){
       }else{
         last_reelbox = top_reelbox;
       }
-      pull_interfaces_down(rb,rows,cols,getmaxy(rb->subwin) + 1);
+      pull_interfaces_down(rb, rows, cols, getmaxy(rb->subwin) + 1);
       rb->scrline = 0;
       if( (rb->next = top_reelbox) ){
         top_reelbox->prev = rb;
@@ -1211,17 +1210,17 @@ void use_prev_iface_locked(struct ncplane *n, struct panel_state *ps){
       }
       rb->prev = NULL;
       top_reelbox = rb;
-      move_interface_generic(rb,rows,cols,getbegy(rb->subwin) - rb->scrline);
+      move_interface_generic(rb, rows, cols, getbegy(rb->subwin) - rb->scrline);
     }
   }else{ // partially visible...
     iface_state *is = current_iface->is;
 
     if(rb->scrline < oldrb->scrline){ // ... at the top
       rb->scrline = 0;
-      push_interfaces_below(rb,rows,cols,-(getmaxy(rb->subwin) - iface_lines_bounded(is,rows)));
-      assert(wresize(rb->subwin,iface_lines_bounded(rb->is,rows),PAD_COLS(cols)) == OK);
-      assert(replace_panel(rb->panel,rb->subwin) != ERR);
-      assert(redraw_iface_generic(rb) == OK);
+      push_interfaces_below(rb, rows, cols, -(getmaxy(rb->subwin) - iface_lines_bounded(is, rows)));
+      wresize(rb->subwin, iface_lines_bounded(rb->is, rows), PAD_COLS(cols));
+      replace_panel(rb->panel, rb->subwin);
+      redraw_iface_generic(rb);
     }else{ // at the bottom
       if(last_reelbox->prev){
         last_reelbox->prev->next = NULL;
@@ -1229,7 +1228,7 @@ void use_prev_iface_locked(struct ncplane *n, struct panel_state *ps){
       }else{
         last_reelbox = top_reelbox;
       }
-      push_interfaces_below(NULL,rows,cols,iface_lines_bounded(is,rows) + 1);
+      push_interfaces_below(NULL, rows, cols, iface_lines_bounded(is, rows) + 1);
       rb->scrline = 0;
       if( (rb->next = top_reelbox) ){
         top_reelbox->prev = rb;
@@ -1238,19 +1237,19 @@ void use_prev_iface_locked(struct ncplane *n, struct panel_state *ps){
       }
       rb->prev = NULL;
       top_reelbox = rb;
-      move_interface_generic(rb,rows,cols,getbegy(rb->subwin) - rb->scrline);
-      assert(wresize(rb->subwin,iface_lines_bounded(rb->is,rows),PAD_COLS(cols)) == OK);
-      assert(replace_panel(rb->panel,rb->subwin) != ERR);
-      assert(redraw_iface_generic(rb) == OK);
+      move_interface_generic(rb, rows, cols, getbegy(rb->subwin) - rb->scrline);
+      wresize(rb->subwin, iface_lines_bounded(rb->is, rows), PAD_COLS(cols));
+      replace_panel(rb->panel, rb->subwin);
+      redraw_iface_generic(rb);
     }
   }
   if(ps->p){
-    iface_details(panel_window(ps->p),rb->is->iface,ps->ysize);
+    iface_details(ps->n, rb->is->iface, ps->ysize);
   }
 }
 
 int expand_iface_locked(void){
-  int old,oldrows;
+  int old, oldrows;
   iface_state *is;
 
   if(!current_iface){
@@ -1263,8 +1262,8 @@ int expand_iface_locked(void){
   ++is->expansion;
   old = current_iface->selline;
   oldrows = getmaxy(current_iface->subwin);
-  assert(resize_iface(current_iface) == OK);
-  recompute_selection(is,old,oldrows,getmaxy(current_iface->subwin));
+  resize_iface(current_iface);
+  recompute_selection(is, old, oldrows, getmaxy(current_iface->subwin));
   redraw_iface_generic(current_iface);
   return 0;
 }
@@ -1283,8 +1282,8 @@ int collapse_iface_locked(void){
   --is->expansion;
   old = current_iface->selline;
   oldrows = getmaxy(current_iface->subwin);
-  assert(resize_iface(current_iface) == OK);
-  recompute_selection(is,old,oldrows,getmaxy(current_iface->subwin));
+  resize_iface(current_iface);
+  recompute_selection(is, old, oldrows, getmaxy(current_iface->subwin));
   redraw_iface_generic(current_iface);
   return 0;
 }
@@ -1334,14 +1333,14 @@ void check_consistency(void){
 // Positive delta moves down, negative delta moves up, except for l2 == NULL
 // where we always move to -1 (and delta is ignored).
 static int
-select_interface_node(reelbox *rb,struct l2obj *l2,int delta){
+select_interface_node(reelbox *rb, struct l2obj *l2, int delta){
   assert(l2 != rb->selected);
   if((rb->selected = l2) == NULL){
     rb->selline = -1;
   }else{
     rb->selline += delta;
   }
-  return redraw_iface(rb,1);
+  return redraw_iface(rb, 1);
 }
 
 int select_iface_locked(void){
@@ -1357,7 +1356,7 @@ int select_iface_locked(void){
     return -1;
   }
   assert(rb->selline == -1);
-  return select_interface_node(rb,rb->is->l2objs,2);
+  return select_interface_node(rb, rb->is->l2objs, 2);
 }
 
 int deselect_iface_locked(void){
@@ -1369,31 +1368,25 @@ int deselect_iface_locked(void){
   if(rb->selected == NULL){
     return 0;
   }
-  return select_interface_node(rb,NULL,0);
+  return select_interface_node(rb, NULL, 0);
 }
 
-int display_details_locked(WINDOW *mainw,struct panel_state *ps){
-  memset(ps,0,sizeof(*ps));
-  if(new_display_panel(mainw,ps,DETAILROWS,76,L"press 'v' to dismiss details")){
+int display_details_locked(WINDOW *mainw, struct panel_state *ps){
+  memset(ps, 0, sizeof(*ps));
+  if(new_display_panel(mainw, ps, DETAILROWS, 76, L"press 'v' to dismiss details")){
     goto err;
   }
   if(current_iface){
-    if(iface_details(panel_window(ps->p),current_iface->is->iface,ps->ysize)){
+    if(iface_details(ps->n, current_iface->is->iface, ps->ysize)){
       goto err;
     }
   }
   return 0;
 
 err:
-  if(ps->p){
-    WINDOW *psw = panel_window(ps->p);
-
-    hide_panel(ps->p);
-    del_panel(ps->p);
-    delwin(psw);
-  }
-  memset(ps,0,sizeof(*ps));
-  return ERR;
+  ncplane_destroy(ps->n);
+  memset(ps, 0, sizeof(*ps));
+  return -1;
 }
 
 // When this text is being displayed, the help window is the active subwindow.
@@ -1465,10 +1458,10 @@ int update_diags_locked(struct panel_state *ps){
   logent l[DIAGROWS];
   int y,x,r;
 
-  assert(wattrset(w,SUBDISPLAY_ATTR) == OK);
-  getmaxyx(w,y,x);
+  wattrset(w, SUBDISPLAY_ATTR);
+  getmaxyx(w, y, x);
   assert(x > 26 + START_COL * 2);
-  if(get_logs(y - 1,l)){
+  if(get_logs(y - 1, l)){
     return -1;
   }
   for(r = 1 ; r < y - 1 ; ++r){
@@ -1477,10 +1470,10 @@ int update_diags_locked(struct panel_state *ps){
     if(l[r - 1].msg == NULL){
       break;
     }
-    assert(ctime_r(&l[r - 1].when,tbuf));
+    ctime_r(&l[r - 1].when,tbuf);
     tbuf[strlen(tbuf) - 1] = ' '; // kill newline
-    assert(mvwprintw(w,y - r - 1,START_COL,"%-*.*s%-*.*s",25,25,tbuf,
-      x - 25 - START_COL * 2,x - 25 - START_COL * 2,l[r - 1].msg) != ERR);
+    mvwprintw(w,y - r - 1,START_COL,"%-*.*s%-*.*s",25,25,tbuf,
+      x - 25 - START_COL * 2,x - 25 - START_COL * 2,l[r - 1].msg);
     free(l[r - 1].msg);
   }
   return 0;
@@ -1498,43 +1491,31 @@ int display_diags_locked(WINDOW *mainw,struct panel_state *ps){
   if(update_diags_locked(ps)){
     goto err;
   }
-  return OK;
+  return 0;
 
 err:
-  if(ps->p){
-    WINDOW *psw = panel_window(ps->p);
-
-    hide_panel(ps->p);
-    del_panel(ps->p);
-    delwin(psw);
-  }
-  memset(ps,0,sizeof(*ps));
-  return ERR;
+  ncplane_destroy(ps->n);
+  memset(ps, 0, sizeof(*ps));
+  return -1;
 }
 
 int display_help_locked(WINDOW *mainw,struct panel_state *ps){
   static const int helprows = sizeof(helps) / sizeof(*helps) - 1; // NULL != row
   const int helpcols = max_helpstr_len(helps) + 4; // spacing + borders
 
-  memset(ps,0,sizeof(*ps));
-  if(new_display_panel(mainw,ps,helprows,helpcols,L"press 'h' to dismiss help")){
+  memset(ps, 0, sizeof(*ps));
+  if(new_display_panel(mainw, ps, helprows, helpcols, L"press 'h' to dismiss help")){
     goto err;
   }
-  if(helpstrs(panel_window(ps->p),1,ps->ysize)){
+  if(helpstrs(ps->n, 1, ps->ysize)){
     goto err;
   }
-  return OK;
+  return 0;
 
 err:
-  if(ps->p){
-    WINDOW *psw = panel_window(ps->p);
-
-    hide_panel(ps->p);
-    del_panel(ps->p);
-    delwin(psw);
-  }
-  memset(ps,0,sizeof(*ps));
-  return ERR;
+  ncplane_destroy(ps->n);
+  memset(ps, 0, sizeof(*ps));
+  return -1;
 }
 
 void use_next_node_locked(void){
