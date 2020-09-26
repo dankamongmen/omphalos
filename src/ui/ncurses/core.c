@@ -220,7 +220,7 @@ iface_details(WINDOW *hw,const interface *i,int rows){
   } /* intentional fallthrough */
   case 4:{
     assert(mvwprintw(hw,row + z,col,"Tbyte: "U64FMT" frames: "U64FMT" aborts: %llu",
-          i->txbytes,i->txframes,i->txaborts) != ERR);
+          i->txbytes,i->txframes, (long long unsigned)i->txaborts) != ERR);
     --z;
   } /* intentional fallthrough */
   case 3:{
