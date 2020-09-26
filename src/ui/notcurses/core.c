@@ -28,28 +28,6 @@ int screen_update(void){
   return notcurses_render(NC);
 }
 
-// Caller needs set up: next, prev
-static reelbox *
-create_reelbox(iface_state *is, int rows, int scrline, int cols){
-  reelbox *ret;
-  int lnes;
-
-  lnes = iface_lines_bounded(is,rows);
-  if(lnes >= rows - scrline){
-    lnes = rows - scrline - 1;
-  }
-  if( (ret = malloc(sizeof(*ret))) ){
-    ret->n = newwin(lnes, PAD_COLS(cols), scrline, START_COL);
-    ret->panel = new_panel(ret->n);
-    ret->scrline = scrline;
-    ret->selected = NULL;
-    ret->selline = -1;
-    ret->is = is;
-    is->rb = ret;
-  }
-  return ret;
-}
-
 static const interface *
 get_current_iface(void){
   if(current_iface){
@@ -70,7 +48,7 @@ int wvstatus_locked(struct ncplane *n, const char *fmt, va_list va){
       statusmsg[statuschars - 1] = '\0';
     }
   }
-  return draw_main_window(w);
+  return draw_main_window(n);
 }
 
 // NULL fmt clears the status bar
@@ -78,7 +56,7 @@ int wstatus_locked(struct ncplane *n, const char *fmt,...){
   va_list va;
   int ret;
   va_start(va, fmt);
-  ret = wvstatus_locked(w, fmt, va);
+  ret = wvstatus_locked(n, fmt, va);
   va_end(va);
   return ret;
 }
@@ -88,19 +66,13 @@ redraw_iface_generic(const reelbox *rb){
   return redraw_iface(rb, rb == current_iface);
 }
 
-static inline void
-move_interface_generic(reelbox *rb, int rows, int cols, int delta){
-  move_interface(rb, rb->scrline, rows, cols, delta, rb == current_iface);
-  rb->scrline = getbegy(rb->n);
-}
-
 static int
 offload_details(struct ncplane *n, const interface *i, int row, int col,
                 const char *name, unsigned val){
-  int r = iface_offloaded_p(i,val);
+  int r = iface_offloaded_p(i, val);
   // these checkboxes don't really look that great at small size
   //return ncplane_printf_yx(w,row,col,"%lc%s",r > 0 ? L'☑' : r < 0 ? L'?' : L'☐',name);
-  return ncplane_printf_yx(w, row, col, "%s%c", name,
+  return ncplane_printf_yx(n, row, col, "%s%c", name,
                            r > 0 ? '+' : r < 0 ? '?' : '-');
 }
 
@@ -113,27 +85,35 @@ int new_display_panel(struct ncplane *n, struct panel_state *ps,int rows,int col
   struct ncplane *psw;
   int x,y;
 
-  ncplane_dim_yx(w, y, x);
+  ncplane_dim_yx(n, &y, &x);
   if(cols == 0){
     cols = x - START_COL * 2; // indent 2 on the left, 0 on the right
   }else{
     if(x < cols + START_COL * 2){
-      wstatus_locked(w, "Screen too small for subdisplay");
+      wstatus_locked(n, "Screen too small for subdisplay");
       return -1;
     }
   }
   if(y < rows + 3){
-    wstatus_locked(w, "Screen too small for subdisplay");
+    wstatus_locked(n, "Screen too small for subdisplay");
     return -1;
   }
   if(x < crightlen + START_COL * 2){
-    wstatus_locked(w, "Screen too small for subdisplay");
+    wstatus_locked(n, "Screen too small for subdisplay");
     return -1;
   }
   assert((x >= crightlen + START_COL * 2));
   // Keep it one line up from the last display line, so that you get
   // iface summaries (unless you've got a bottom-partial).
-  psw = newwin(rows + 2, cols, y - (rows + 4), x - cols);
+  ncplane_options nopts = {
+    .y = y - (rows + 4),
+    .horiz = {
+      .x = x - cols,
+    },
+    .rows = rows + 2,
+    .cols = cols,
+  };
+  psw = ncplane_create(n, &nopts);
   if(psw == NULL){
     return -1;
   }
@@ -143,27 +123,28 @@ int new_display_panel(struct ncplane *n, struct panel_state *ps,int rows,int col
     return -1;
   }
   ps->ysize = rows;
-  wattron(psw, A_BOLD);
+  ncplane_styles_on(psw, NCSTYLE_BOLD);
   wcolor_set(psw, PBORDER_COLOR, NULL);
   bevel(psw);
-  wattroff(psw, A_BOLD);
+  ncplane_styles_off(psw, NCSTYLE_BOLD);
   wcolor_set(psw, PHEADING_COLOR, NULL);
-  mvwaddwstr(psw, 0, START_COL * 2, hstr);
-  mvwaddwstr(psw, rows + 1, cols - (crightlen + START_COL * 2), crightstr);
+  ncplane_putwstr_yx(psw, 0, START_COL * 2, hstr);
+  ncplane_putwstr_yx(psw, rows + 1, cols - (crightlen + START_COL * 2), crightstr);
   return 0;
 }
 
 #define DETAILROWS 9
 
 static int
-iface_details(struct ncplane *hw,const interface *i,int rows){
+iface_details(struct ncplane *hw, const interface *i, int rows){
   const int col = START_COL;
   int scrcols,scrrows;
   const int row = 1;
   int z;
 
-  wattrset(hw,SUBDISPLAY_ATTR);
-  ncplane_dim_yx(hw,scrrows,scrcols);
+  ncplane_set_fg_rgb(hw, 0xd0d0d0);
+  ncplane_styles_set(hw, NCSTYLE_BOLD);
+  ncplane_dim_yx(hw, &scrrows, &scrcols);
   assert(scrrows); // FIXME
   if((z = rows) >= DETAILROWS){
     z = DETAILROWS - 1;
@@ -257,8 +238,7 @@ free_reelbox(reelbox *rb){
     assert(rb->is->rb == rb);
 
     rb->is->rb = NULL;
-    del_panel(rb->panel);
-    delwin(rb->n);
+    ncplane_destroy(rb->n);
     free(rb);
   }
 }
@@ -338,12 +318,7 @@ void down_interface_locked(struct ncplane *w){
 
 void hide_panel_locked(struct panel_state *ps){
   if(ps){
-    struct ncplane *psw = ps->n;
-    hide_panel(ps->n);
-    del_panel(ps->n);
-    ps->n = NULL;
-    delwin(psw);
-    ps->ysize = -1;
+    ncplane_move_bottom(ps->n);
   }
 }
 
