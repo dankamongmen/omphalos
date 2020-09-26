@@ -38,7 +38,7 @@ env_details(struct ncplane *hw, int rows){
 	return 0;
 }
 
-int display_env_locked(WINDOW *mainw, struct panel_state *ps){
+int display_env_locked(struct ncplane *mainw, struct panel_state *ps){
 	memset(ps, 0, sizeof(*ps));
 	if(new_display_panel(mainw, ps, ENVROWS, 76, L"press 'e' to dismiss display")){
 		goto err;

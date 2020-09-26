@@ -31,15 +31,15 @@ set_subdisplay_attr(struct ncplane* n){
 
 // FIXME eliminate all callers!
 static inline void
-unimplemented(WINDOW *w){
-	wstatus_locked(w,"Sorry bro; that ain't implemented yet!");
+unimplemented(struct ncplane *n){
+	wstatus_locked(n, "Sorry bro; that ain't implemented yet!");
 }
 
 int screen_update(void);
 
-int bevel(WINDOW *);
-int bevel_top(WINDOW *);
-int bevel_bottom(WINDOW *);
+int bevel(struct ncplane *);
+int bevel_top(struct ncplane *);
+int bevel_bottom(struct ncplane *);
 
 #ifdef __cplusplus
 }

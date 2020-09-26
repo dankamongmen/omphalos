@@ -56,8 +56,8 @@ static struct panel_state environment = PANEL_STATE_INITIALIZER;
 
 // Add ((format (printf))) attributes to ncurses functions, which sadly
 // lack them (at least as of Debian's 5.9-1).
-extern int wprintw(WINDOW *,const char *,...) __attribute__ ((format (printf,2,3)));
-extern int mvwprintw(WINDOW *,int,int,const char *,...) __attribute__ ((format (printf,4,5)));
+extern int wprintw(struct ncplane *,const char *,...) __attribute__ ((format (printf,2,3)));
+extern int mvwprintw(struct ncplane *,int,int,const char *,...) __attribute__ ((format (printf,4,5)));
 
 static int rows = -1;
 static int cols = -1;
@@ -93,7 +93,7 @@ unlock_ncurses(void){
 // NULL fmt clears the status bar. wvstatus is an unlocked entry point, and
 // thus calls screen_update() on exit.
 static int
-wvstatus(WINDOW *w, const char *fmt, va_list va){
+wvstatus(struct ncplane *w, const char *fmt, va_list va){
   int ret;
 
   lock_ncurses();
@@ -108,7 +108,7 @@ wvstatus(WINDOW *w, const char *fmt, va_list va){
 // NULL fmt clears the status bar. wstatus is an unlocked entry point, and thus
 // calls screen_update() on exit.
 static int
-wstatus(WINDOW *w, const char *fmt, ...){
+wstatus(struct ncplane *w, const char *fmt, ...){
   va_list va;
   int ret;
 
@@ -133,7 +133,7 @@ struct fs_input_marshal {
 
 
 static void
-toggle_panel(WINDOW *w, struct panel_state *ps, int (*psfxn)(WINDOW *, struct panel_state *)){
+toggle_panel(struct ncplane *w, struct panel_state *ps, int (*psfxn)(struct ncplane *, struct panel_state *)){
   if(ps->n){
     hide_panel_locked(ps);
     active = NULL;

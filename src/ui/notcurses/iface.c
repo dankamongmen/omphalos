@@ -284,7 +284,7 @@ l4obj *add_service_to_iface(iface_state *is,struct l2obj *l2,struct l3obj *l3,
 static void
 print_host_services(struct ncplane *nc, const interface *i, const l3obj *l,
                     int *line, int rows, int cols, wchar_t selectchar,
-                    int attrs, int minline, int active){
+                    uint32_t rgb, unsigned styles, int minline, int active){
 	const struct l4obj *l4;
 	const wchar_t *srv;
 	int n;
@@ -299,11 +299,8 @@ print_host_services(struct ncplane *nc, const interface *i, const l3obj *l,
 	--cols;
 	n = 0;
 	for(l4 = l->l4objs ; l4 ; l4 = l4->next){
-		if(l4->emph){
-      ncplane_styles_set(nc, attrs | NCSTYLE_BOLD);
-		}else{
-      ncplane_styles_set(nc, attrs);
-		}
+    ncplane_set_fg_rgb(nc, rgb);
+    ncplane_styles_set(nc, styles | (l4->emph ? NCSTYLE_BOLD : 0));
 		srv = l4srvstr(l4->l4);
 		if(n){
 			if((unsigned)cols < 1 + wcslen(srv)){ // one for space
@@ -328,12 +325,30 @@ print_host_services(struct ncplane *nc, const interface *i, const l3obj *l,
 	draw_right_vline(i, active, nc);
 }
 
-// line: line on which this node starts, within the WINDOW w of {rows x cols}
+#define UCAST_COLOR 0x00afff
+#define MCAST_COLOR 0x0087ff
+#define LCAST_COLOR 0x00ff87
+#define BCAST_COLOR 0x8700ff
+
+// line: line on which this node starts, within the struct ncplane w of {rows x cols}
 static void
-print_iface_host(const interface *i,const iface_state *is,WINDOW *w,
+print_iface_host(const interface *i,const iface_state *is,struct ncplane *w,
 		const l2obj *l,int line,int rows,int cols,int selected,
 		int minline,unsigned endp,int active){
-	int aattrs,al3attrs,arattrs,attrs,l3attrs,rattrs,sattrs;
+  uint16_t sty = NCSTYLE_NONE;
+  uint16_t asty = NCSTYLE_NONE;
+  uint16_t al3sty = NCSTYLE_NONE;
+  uint16_t arsty = NCSTYLE_NONE;
+  uint16_t l3sty = NCSTYLE_NONE;
+  uint16_t rsty = NCSTYLE_NONE;
+  uint16_t ssty = NCSTYLE_NONE;
+  uint32_t rgb = 0xffffff;
+  uint32_t argb = 0xffffff;
+  uint32_t al3rgb = 0xffffff;
+  uint32_t arrgb = 0xffffff;
+  uint32_t l3rgb = 0xffffff;
+  uint32_t rrgb = 0xffffff;
+  uint32_t srgb = 0xffffff;
 	const wchar_t *devname;
 	wchar_t selectchar;
 	char legend;
@@ -351,24 +366,30 @@ print_iface_host(const interface *i,const iface_state *is,WINDOW *w,
 	}
 	switch(l->cat){
 		case RTN_UNICAST:
-			attrs = COLOR_PAIR(UCAST_COLOR);
-			l3attrs = COLOR_PAIR(UCAST_L3_COLOR);
-			rattrs = COLOR_PAIR(UCAST_RES_COLOR);
-			sattrs = COLOR_PAIR(USELECTED_COLOR);
-			aattrs = COLOR_PAIR(UCAST_ALTROW_COLOR);
-			al3attrs = COLOR_PAIR(UCAST_ALTROW_L3_COLOR);
-			arattrs = COLOR_PAIR(UCAST_ALTROW_RES_COLOR);
+			rgb = UCAST_COLOR;
+			argb = UCAST_ALTROW_COLOR;
+			l3rgb = UCAST_L3_COLOR;
+			rrgb = UCAST_RES_COLOR;
+			srgb = USELECTED_COLOR;
+			arrgb = UCAST_ALTROW_RES_COLOR;
+			al3rgb = UCAST_ALTROW_L3_COLOR;
 			devname = get_devname(l->l2);
 			legend = 'U';
 			break;
 		case RTN_LOCAL:
-			attrs = COLOR_PAIR(LCAST_COLOR) | NCSTYLE_BOLD;
-			l3attrs = COLOR_PAIR(LCAST_L3_COLOR) | NCSTYLE_BOLD;
-			rattrs = COLOR_PAIR(LCAST_RES_COLOR) | NCSTYLE_BOLD;
-			sattrs = COLOR_PAIR(LSELECTED_COLOR);
-			aattrs = COLOR_PAIR(LCAST_ALTROW_COLOR) | NCSTYLE_BOLD;
-			al3attrs = COLOR_PAIR(LCAST_ALTROW_L3_COLOR) | NCSTYLE_BOLD;
-			arattrs = COLOR_PAIR(LCAST_ALTROW_RES_COLOR) | NCSTYLE_BOLD;
+			rgb = LCAST_COLOR;
+			argb = LCAST_ALTROW_COLOR;
+      sty = NCSTYLE_BOLD;
+      asty = NCSTYLE_BOLD;
+			l3rgb = LCAST_L3_COLOR;
+      l3sty = NCSTYLE_BOLD;
+			rrgb = LCAST_RES_COLOR;
+      rsty = NCSTYLE_BOLD;
+			srgb = LSELECTED_COLOR;
+			arrgb = LCAST_ALTROW_RES_COLOR;
+      arsty = NCSTYLE_BOLD;
+			al3rgb = LCAST_ALTROW_L3_COLOR;
+      al3sty = NCSTYLE_BOLD;
 			if(interface_virtual_p(i) ||
 				(devname = get_devname(l->l2)) == NULL){
 				devname = i->topinfo.devname;
@@ -376,24 +397,24 @@ print_iface_host(const interface *i,const iface_state *is,WINDOW *w,
 			legend = 'L';
 			break;
 		case RTN_MULTICAST:
-			attrs = COLOR_PAIR(MCAST_COLOR);
-			l3attrs = COLOR_PAIR(MCAST_L3_COLOR);
-			rattrs = COLOR_PAIR(MCAST_RES_COLOR);
-			sattrs = COLOR_PAIR(MSELECTED_COLOR);
-			aattrs = COLOR_PAIR(MCAST_ALTROW_COLOR);
-			al3attrs = COLOR_PAIR(MCAST_ALTROW_L3_COLOR);
-			arattrs = COLOR_PAIR(MCAST_ALTROW_RES_COLOR);
+			rgb = MCAST_COLOR;
+			argb = MCAST_ALTROW_COLOR;
+			l3rgb = MCAST_L3_COLOR;
+			rrgb = MCAST_RES_COLOR;
+			srgb = MSELECTED_COLOR;
+			arrgb = MCAST_ALTROW_RES_COLOR;
+			al3rgb = MCAST_ALTROW_L3_COLOR;
 			devname = get_devname(l->l2);
 			legend = 'M';
 			break;
 		case RTN_BROADCAST:
-			attrs = COLOR_PAIR(BCAST_COLOR);
-			l3attrs = COLOR_PAIR(BCAST_L3_COLOR);
-			rattrs = COLOR_PAIR(BCAST_RES_COLOR);
-			sattrs = COLOR_PAIR(BSELECTED_COLOR);
-			aattrs = COLOR_PAIR(BCAST_ALTROW_COLOR);
-			al3attrs = COLOR_PAIR(BCAST_ALTROW_L3_COLOR);
-			arattrs = COLOR_PAIR(BCAST_ALTROW_RES_COLOR);
+			rgb = BCAST_COLOR;
+			argb = BCAST_ALTROW_COLOR;
+			l3rgb = BCAST_L3_COLOR;
+			rrgb = BCAST_RES_COLOR;
+			srgb = BSELECTED_COLOR;
+			arrgb = BCAST_ALTROW_RES_COLOR;
+			al3rgb = BCAST_ALTROW_L3_COLOR;
 			devname = get_devname(l->l2);
 			legend = 'B';
 			break;
@@ -402,23 +423,37 @@ print_iface_host(const interface *i,const iface_state *is,WINDOW *w,
 			break;
 	}
 	if(selected){
-		aattrs = attrs = sattrs;
-		al3attrs = l3attrs = sattrs;
-		arattrs = rattrs = sattrs;
+		argb = rgb = srgb;
+		al3rgb = l3rgb = srgb;
+		arrgb = rrgb = srgb;
 		selectchar = l->l3objs && is->expansion >= EXPANSION_HOSTS
 				? L'⎧' : L'⎨';
 	}else{
 		selectchar = L' ';
 	}
 	if(!interface_up_p(i)){
-		attrs = (attrs & NCSTYLE_BOLD) | COLOR_PAIR(BULKTEXT_COLOR);
-		l3attrs = (l3attrs & NCSTYLE_BOLD) | COLOR_PAIR(BULKTEXT_COLOR);
-		rattrs = (rattrs & NCSTYLE_BOLD) | COLOR_PAIR(BULKTEXT_COLOR);
-		aattrs = (aattrs & NCSTYLE_BOLD) | COLOR_PAIR(BULKTEXT_ALTROW_COLOR);
-		al3attrs = (al3attrs & NCSTYLE_BOLD) | COLOR_PAIR(BULKTEXT_ALTROW_COLOR);
-		arattrs = (arattrs & NCSTYLE_BOLD) | COLOR_PAIR(BULKTEXT_ALTROW_COLOR);
+    sty = sty & NCSTYLE_BOLD;
+		rgb = BULKTEXT_COLOR;
+		asty = arsty & NCSTYLE_BOLD;
+    argb =  BULKTEXT_ALTROW_COLOR;
+		l3sty = l3sty & NCSTYLE_BOLD;
+    l3rgb = BULKTEXT_COLOR;
+		rsty = rsty & NCSTYLE_BOLD;
+    rrgb = BULKTEXT_COLOR;
+		ssty = ssty & NCSTYLE_BOLD;
+    srgb =  BULKTEXT_ALTROW_COLOR;
+		al3sty = al3sty & NCSTYLE_BOLD;
+    al3rgb =  BULKTEXT_ALTROW_COLOR;
+		arsty = rsty & NCSTYLE_BOLD;
+    arrgb =  BULKTEXT_ALTROW_COLOR;
 	}
-	wattrset(w,!(line % 2) ? attrs : aattrs);
+  if(!(line % 2)){
+    ncplane_set_fg_rgb(w, rgb);
+    ncplane_styles_set(w, sty);
+  }else{
+    ncplane_set_fg_rgb(w, argb);
+    ncplane_styles_set(w, asty);
+  }
 	if(line >= minline){
 		char hw[HWADDRSTRLEN(i->addrlen)];
 		int len;
@@ -474,20 +509,38 @@ print_iface_host(const interface *i,const iface_state *is,WINDOW *w,
 			if(line >= minline){
 				int len,wlen;
 
-				wattrset(w,!(line % 2) ? l3attrs : al3attrs);
+        if(!(line % 2)){
+          ncplane_set_fg_rgb(w, l3rgb);
+          ncplane_styles_set(w, l3sty);
+        }else{
+          ncplane_set_fg_rgb(w, al3rgb);
+          ncplane_styles_set(w, al3sty);
+        }
 				l3ntop(l3->l3,nw,sizeof(nw));
 				if((name = get_l3name(l3->l3)) == NULL){
 					name = L"";
 				}
 				ncplane_printf_yx(w,line,0,"%lc   %s ", selectchar,nw);
-				wattrset(w,!(line % 2) ? rattrs : arattrs);
+        if(!(line % 2)){
+          ncplane_set_fg_rgb(w, rrgb);
+          ncplane_styles_set(w, rsty);
+        }else{
+          ncplane_set_fg_rgb(w, arrgb);
+          ncplane_styles_set(w, arsty);
+        }
 				len = cols - PREFIXCOLUMNS * 2 - 7 - strlen(nw);
-				wlen = len - wcswidth(name,wcslen(name));
+				wlen = len - wcswidth(name, wcslen(name));
 				if(wlen < 0){
 					wlen = 0;
 				}
-				ncplane_printf(w,"%.*ls%*.*s",len,name,wlen,wlen,"");
-				wattrset(w,!(line % 2) ? l3attrs : al3attrs);
+				ncplane_printf(w, "%.*ls%*.*s", len, name, wlen, wlen, "");
+        if(!(line % 2)){
+          ncplane_set_fg_rgb(w, l3rgb);
+          ncplane_styles_set(w, l3sty);
+        }else{
+          ncplane_set_fg_rgb(w, al3rgb);
+          ncplane_styles_set(w, al3sty);
+        }
 				{
 					char sbuf[PREFIXSTRLEN + 1];
 					char dbuf[PREFIXSTRLEN + 1];
@@ -508,10 +561,9 @@ print_iface_host(const interface *i,const iface_state *is,WINDOW *w,
 				if(selectchar != L' ' && !l3->next){
 					selectchar = L'⎩';
 				}
-				print_host_services(w,i,l3,&line,rows - !endp,
-					cols,selectchar,
-					!(line % 2) ? attrs : aattrs,
-					minline,active);
+				print_host_services(w, i, l3, &line, rows - !endp, cols, selectchar,
+					                  !(line % 2) ? rgb : argb, !(line % 2) ? sty : asty,
+                            minline, active);
 			}
 		}
 	}
@@ -520,7 +572,7 @@ print_iface_host(const interface *i,const iface_state *is,WINDOW *w,
 // FIXME all these casts! :/ appalling
 static void
 print_iface_hosts(const interface *i,const iface_state *is,const reelbox *rb,
-				WINDOW *w,int rows,int cols,
+				struct ncplane *w,int rows,int cols,
 				unsigned topp,unsigned endp,int active){
 	// If the interface is down, we don't lead with the summary line
 	const int sumline = !!interface_up_p(i);
@@ -584,7 +636,7 @@ duplexstr(unsigned dplx){
 // Abovetop: lines hidden at the top of the screen
 // Belowend: lines hidden at the bottom of the screen
 static void
-iface_box(const interface *i,const iface_state *is,WINDOW *w,int active,
+iface_box(const interface *i,const iface_state *is,struct ncplane *w,int active,
 				unsigned abovetop,unsigned belowend){
 	int bcolor,hcolor,rows,cols;
 	size_t buslen;
@@ -727,7 +779,7 @@ iface_box(const interface *i,const iface_state *is,WINDOW *w,int active,
 }
 
 static void
-print_iface_state(const interface *i,const iface_state *is,WINDOW *w,
+print_iface_state(const interface *i,const iface_state *is,struct ncplane *w,
 			int rows,int cols,unsigned topp,int active){
 	char buf[U64STRLEN + 1],buf2[U64STRLEN + 1];
 	unsigned long usecdomain;
@@ -768,19 +820,19 @@ int redraw_iface(const reelbox *rb, int active){
 	scrrows = ncplane_dim_y(stdscr);
 	if(iface_wholly_visible_p(scrrows,rb) || active){ // completely visible
 		topp = endp = 0;
-	}else if(getbegy(rb->subwin) == 0){ // no top
-		topp = iface_lines_unbounded(is) - ncplane_dim_y(rb->subwin);
+	}else if(getbegy(rb->n) == 0){ // no top
+		topp = iface_lines_unbounded(is) - ncplane_dim_y(rb->n);
 		endp = 0;
 	}else{
 		topp = 0;
 		endp = 1; // no bottom FIXME
 	}
-	ncplane_dim_yx(rb->subwin,rows,cols);
-	werase(rb->subwin);
-	iface_box(i,is,rb->subwin,active,topp,endp);
-	print_iface_hosts(i,is,rb,rb->subwin,rows,cols,topp,endp,active);
+	ncplane_dim_yx(rb->n,rows,cols);
+	werase(rb->n);
+	iface_box(i,is,rb->n,active,topp,endp);
+	print_iface_hosts(i,is,rb,rb->n,rows,cols,topp,endp,active);
 	if(interface_up_p(i)){
-		print_iface_state(i,is,rb->subwin,rows,cols,topp,active);
+		print_iface_state(i,is,rb->n,rows,cols,topp,active);
 	}
 	return 0;
 }
@@ -807,22 +859,6 @@ int lines_for_interface(const iface_state *is){
 	}
 	assert(0);
 	return -1;
-}
-
-// Is the interface window entirely visible? We can't draw it otherwise, as it
-// will obliterate the global bounding box.
-int iface_wholly_visible_p(int rows,const reelbox *rb){
-	const iface_state *is = rb->is;
-
-	// return iface_lines_bounded(is,rows) <= ncplane_dim_y(rb->subwin);
-	if(rb->scrline + iface_lines_bounded(is,rows) >= rows){
-		return 0;
-	}else if(rb->scrline < 0){
-		return 0;
-	}else if(rb->scrline == 0 && iface_lines_bounded(is,rows) != ncplane_dim_y(rb->subwin)){
-		return 0;
-	}
-	return 1;
 }
 
 // Recompute ->lnes values for all nodes, and return the number of lines of
@@ -883,22 +919,22 @@ void recompute_selection(iface_state *is,int oldsel,int oldrows,int newrows){
 		newsel = bef;
 	}
 	/*wstatus_locked(stdscr,"newsel: %d bef: %d aft: %d oldsel: %d maxy: %d",
-			newsel,bef,aft,oldsel,ncplane_dim_y(is->rb->subwin));
+			newsel,bef,aft,oldsel,ncplane_dim_y(is->rb->n));
 	update_panels();
 	doupdate();*/
-	if(newsel + aft <= ncplane_dim_y(is->rb->subwin) - 2 - !!interface_up_p(is->iface)){
-		newsel = ncplane_dim_y(is->rb->subwin) - aft - 2 - !!interface_up_p(is->iface);
+	if(newsel + aft <= ncplane_dim_y(is->rb->n) - 2 - !!interface_up_p(is->iface)){
+		newsel = ncplane_dim_y(is->rb->n) - aft - 2 - !!interface_up_p(is->iface);
 	}
-	if(newsel + (int)node_lines(is->expansion,is->rb->selected) >= ncplane_dim_y(is->rb->subwin) - 2){
-		newsel = ncplane_dim_y(is->rb->subwin) - 2 - node_lines(is->expansion,is->rb->selected);
+	if(newsel + (int)node_lines(is->expansion,is->rb->selected) >= ncplane_dim_y(is->rb->n) - 2){
+		newsel = ncplane_dim_y(is->rb->n) - 2 - node_lines(is->expansion,is->rb->selected);
 	}
 	/*wstatus_locked(stdscr,"newsel: %d bef: %d aft: %d oldsel: %d maxy: %d",
-			newsel,bef,aft,oldsel,ncplane_dim_y(is->rb->subwin));
+			newsel,bef,aft,oldsel,ncplane_dim_y(is->rb->n));
 	update_panels();
 	doupdate();*/
 	if(newsel){
 		is->rb->selline = newsel;
 	}
 	assert(is->rb->selline >= 1);
-	assert(is->rb->selline < ncplane_dim_y(is->rb->subwin) - 1 || !is->expansion);
+	assert(is->rb->selline < ncplane_dim_y(is->rb->n) - 1 || !is->expansion);
 }
