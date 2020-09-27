@@ -76,7 +76,7 @@ void *get_tx_frame(interface *i,size_t *fsize){
 	struct tpacket_hdr *thdr;
 	void *ret;
 
-	assert(pthread_mutex_lock(&i->lock) == 0);
+	pthread_mutex_lock(&i->lock);
 	thdr = i->curtxm;
 	if(thdr == NULL){
 		pthread_mutex_unlock(&i->lock);

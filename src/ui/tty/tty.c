@@ -228,7 +228,7 @@ packet_cb(omphalos_packet *op){
 
 static inline void
 clear_for_output(FILE *fp){
-	assert(fputc('\r',fp) != EOF);
+	fputc('\r',fp);
 }
 
 #define PROMPTDELIM "> "
@@ -260,7 +260,7 @@ static void *
 neigh_event(const struct interface *i,struct l2host *l2){
 	pthread_mutex_lock(&promptlock);
 	clear_for_output(stdout);
-	assert(print_neigh(i,l2) >= 0);
+	print_neigh(i,l2);
 	wake_input_thread();
 	return NULL;
 }
@@ -269,7 +269,7 @@ static void *
 host_event(const struct interface *i,struct l2host *l2,struct l3host *l3){
 	pthread_mutex_lock(&promptlock);
 	clear_for_output(stdout);
-	assert(print_host(i,l2,l3) >= 0);
+	print_host(i,l2,l3);
 	wake_input_thread();
 	return NULL;
 }
@@ -279,7 +279,7 @@ service_event(const struct interface *i,struct l2host *l2,struct l3host *l3,
 					struct l4srv *l4){
 	pthread_mutex_lock(&promptlock);
 	clear_for_output(stdout);
-	assert(print_service(i,l2,l3,l4) >= 0);
+	print_service(i,l2,l3,l4);
 	wake_input_thread();
 	return NULL;
 }
@@ -288,7 +288,7 @@ static void *
 wireless_event(interface *i,unsigned cmd,void *unsafe __attribute__ ((unused))){
 	pthread_mutex_lock(&promptlock);
 	clear_for_output(stdout);
-	assert(print_wireless_event(stdout,i,cmd) >= 0);
+	print_wireless_event(stdout,i,cmd);
 	wake_input_thread();
 	return NULL;
 }
@@ -407,17 +407,15 @@ int main(int argc,char * const *argv){
 	omphalos_ctx pctx;
 	pthread_t tid;
 
-	assert(fwide(stdout,-1) < 0);
-	assert(fwide(stderr,-1) < 0);
 	if(setlocale(LC_ALL,"") == NULL || ((codeset = nl_langinfo(CODESET)) == NULL)){
-		fprintf(stderr,"Couldn't initialize locale (%s?)\n",strerror(errno));
+		fprintf(stderr, "Couldn't initialize locale (%s?)\n", strerror(errno));
 		return EXIT_FAILURE;
 	}
-	if(strcmp(codeset,"UTF-8")){
-		fprintf(stderr,"Only UTF-8 is supported; got %s\n",codeset);
+	if(strcmp(codeset, "UTF-8")){
+		fprintf(stderr, "Only UTF-8 is supported; got %s\n", codeset);
 		return EXIT_FAILURE;
 	}
-	if(omphalos_setup(argc,argv,&pctx)){
+	if(omphalos_setup(argc, argv, &pctx)){
 		return EXIT_FAILURE;
 	}
 	pctx.iface.iface_event = iface_event;
@@ -440,7 +438,7 @@ int main(int argc,char * const *argv){
 	}
 	if(dump_output(stdout) < 0){
 		if(errno != ENOMEM){
-			fprintf(stderr,"Couldn't write output (%s?)\n",strerror(errno));
+			fprintf(stderr, "Couldn't write output (%s?)\n", strerror(errno));
 		}
 		return EXIT_FAILURE;
 	}

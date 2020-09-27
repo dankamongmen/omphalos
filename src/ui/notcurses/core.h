@@ -13,59 +13,17 @@ struct l4srv;
 struct l2obj;
 struct l2host;
 struct l3host;
-struct reelbox;
 struct interface;
+struct iface_state;
 struct panel_state;
 struct omphalos_packet;
-
-// A box on the display reel. A box might be wholly visible, partially visible  endif
-// but missing its bottom portion (bottom of the screen only), partially
-// visible but missing its top portion (top of the screen only), wholly
-// visible but split across the top/bottom sides, partially visible split across
-// the top/bottom, and wholly invisible. A box is never drawn as larger than
-// the main screen (ie, it will not appear partial while occupying the entirety
-// of the main screen, even if it is logically larger).
-//
-// We never allow more than one line of blank space at the top of the screen,
-// assuming there is data to be displayed. Blank space can never be at the top
-// of the screen if there is less than one total screen of information.
-//
-// scrline is the logical location of the box's topmost line (border with name)
-// on the containing pad (reel), taking positive values only. values larger
-// than the screen's number of rows are meaningless for comparison purposes;
-// ordering is then defined by the next and prev pointers alone (thus a
-// possibly large number of offscreen interfaces needn't all be updated
-// whenever locations change onscreen).
-//
-// If the first visible (lowest 'scrline' value) box has a scrline value
-// greater than 1, then:
-//
-//  - if the value is 2 and the screen is full, things are fine.
-//  - otherwise, make invisible boxes from the list visible in the blank space.
-//  - if there is still space, use any invisible portions of the last box in
-//     the list. if there is *still* space...
-//  - there is less than a screen's worth of info. move all boxes up.
-//
-// Then display the boxes until scrline exceeds the number of rows in the
-// containing screen, or we reach the end of the list.
-//
-// Get a reelbox's dimensions by calling getmaxyx() on its subwin member. These
-// are the dimensions on the real screen, not the desirable dimensions on an
-// infinitely large screen.
-typedef struct reelbox {
-	int scrline; // FIXME eliminate this; use getbegy()
-	struct ncplane *n; // drawing surface
-	struct reelbox *next,*prev;	// circular list
-	struct iface_state *is;		// backing interface state
-	struct l2obj *selected;		// selected subentry
-	int selline; // line where the selection starts within the subwindow (if selected != NULL)
-} reelbox;
 
 struct panel_state {
   struct ncplane* n;
 	int ysize;			// number of lines of *text* (not win)
 };
 
+extern struct ncreel *reel;
 extern struct notcurses* NC;
 
 // These functions may only be called while the notcurses lock is held. They
@@ -84,8 +42,8 @@ struct l4obj *service_callback_locked(const struct interface *, struct l2host *,
 struct l3obj *host_callback_locked(const struct interface *, struct l2host *,
 					struct l3host *);
 struct l2obj *neighbor_callback_locked(const struct interface *, struct l2host *);
-void interface_removed_locked(struct iface_state *, struct panel_state **);
-void *interface_cb_locked(struct interface *, struct iface_state *, struct panel_state *);
+void interface_removed_locked(struct ncreel *, struct iface_state *, struct panel_state **);
+void *interface_cb_locked(struct ncreel *, struct interface *, struct iface_state *, struct panel_state *);
 int packet_cb_locked(const struct interface *, struct omphalos_packet *, struct panel_state *);
 void toggle_promisc_locked(struct ncplane *w);
 void sniff_interface_locked(struct ncplane *w);
@@ -118,8 +76,6 @@ int display_help_locked(struct ncplane *, struct panel_state *);
 int display_diags_locked(struct ncplane *, struct panel_state *);
 int display_details_locked(struct ncplane *, struct panel_state *);
 int new_display_panel(struct ncplane *, struct panel_state *,int,int,const wchar_t *);
-
-void check_consistency(void); // Debugging -- all assert()s
 
 #ifdef __cplusplus
 }

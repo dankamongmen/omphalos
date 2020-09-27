@@ -9,13 +9,13 @@
 #include <linux/nl80211.h>
 #include <linux/netlink.h>
 #include <omphalos/util.h>
-#include <linux/rtnetlink.h>
-#include <omphalos/nl80211.h>
-#include <omphalos/interface.h>
 #include <netlink/socket.h>
+#include <linux/rtnetlink.h>
 #include <netlink/netlink.h>
+#include <omphalos/nl80211.h>
 #include <netlink/genl/genl.h>
 #include <netlink/genl/ctrl.h>
+#include <omphalos/interface.h>
 #include <netlink/genl/family.h>
 
 // Marshal for command-specific structs
@@ -791,7 +791,7 @@ err:
 }
 
 int open_nl80211(void){
-	assert(pthread_mutex_lock(&nllock) == 0);
+	pthread_mutex_lock(&nllock);
 	if(nl){ // already initialized
 		pthread_mutex_unlock(&nllock);
 		return 0;
@@ -817,7 +817,7 @@ int open_nl80211(void){
 	/*nl_get_multicast_id(nl,"nl80211","mlme");
 	nl_socket_add_membership(
 	nl_get_multicast_id(nl,"nl80211","config");*/
-	assert(pthread_mutex_unlock(&nllock) == 0);
+	pthread_mutex_unlock(&nllock);
 	return 0;
 
 err:
@@ -829,19 +829,19 @@ err:
 		nl_socket_free(nl);
 		nl = NULL;
 	}
-	assert(pthread_mutex_unlock(&nllock) == 0);
+	pthread_mutex_unlock(&nllock);
 	return -1;
 }
 
 int close_nl80211(void){
-	assert(pthread_mutex_lock(&nllock) == 0);
+	pthread_mutex_lock(&nllock);
 	if(!nl){ // never constructed, or already destroyed
-		assert(pthread_mutex_unlock(&nllock) == 0);
+		pthread_mutex_unlock(&nllock);
 		return 0;
 	}
 	nl_cache_free(nlc);
 	nl_socket_free(nl);
-	assert(pthread_mutex_unlock(&nllock) == 0);
+	pthread_mutex_unlock(&nllock);
 	return 0;
 }
 
