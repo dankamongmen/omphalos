@@ -672,7 +672,7 @@ int update_diags_locked(struct panel_state *ps){
 
   ncplane_styles_set(ps->n, NCSTYLE_BOLD);
   ncplane_set_fg_rgb(ps->n, 0xd0d0d0);
-  notcurses_stddim_yx(NC, &y, &x);
+  ncplane_dim_yx(ps->n, &y, &x);
   assert(x > 26 + START_COL * 2);
   if(get_logs(y - 1, l)){
     return -1;
