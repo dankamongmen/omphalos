@@ -61,11 +61,6 @@ int wstatus_locked(struct ncplane *n, const char *fmt,...){
   return ret;
 }
 
-static inline int
-redraw_iface_generic(const reelbox *rb){
-  return redraw_iface(rb, rb == current_iface);
-}
-
 static int
 offload_details(struct ncplane *n, const interface *i, int row, int col,
                 const char *name, unsigned val){
@@ -339,14 +334,12 @@ int packet_cb_locked(const interface *i, omphalos_packet *op, struct panel_state
   if(rb == current_iface && ps->n){
     iface_details(ps->n, i, ps->ysize);
   }
-  redraw_iface_generic(rb);
   return 1;
 }
 
 struct l2obj *neighbor_callback_locked(const interface *i,struct l2host *l2){
   struct l2obj *ret;
   iface_state *is;
-  reelbox *rb;
 
   // Guaranteed by callback properties -- we don't get neighbor callbacks
   // until there's been a successful device callback.
@@ -360,10 +353,6 @@ struct l2obj *neighbor_callback_locked(const interface *i,struct l2host *l2){
       return NULL;
     }
   }
-  if( (rb = is->rb) ){
-    resize_iface(rb);
-    redraw_iface_generic(rb);
-  }
   return ret;
 }
 
@@ -373,7 +362,6 @@ struct l4obj *service_callback_locked(const struct interface *i,struct l2host *l
   struct l3obj *l3o;
   struct l4obj *ret;
   iface_state *is;
-  reelbox *rb;
 
   if(((is = i->opaque) == NULL) || !l2){
     return NULL;
@@ -397,10 +385,6 @@ struct l4obj *service_callback_locked(const struct interface *i,struct l2host *l
       return NULL;
     }
   }
-  if( (rb = is->rb) ){
-    resize_iface(rb);
-    redraw_iface_generic(rb);
-  }
   return ret;
 }
 
@@ -409,7 +393,6 @@ struct l3obj *host_callback_locked(const interface *i,struct l2host *l2,
   struct l2obj *l2o;
   struct l3obj *ret;
   iface_state *is;
-  reelbox *rb;
 
   if(((is = i->opaque) == NULL) || !l2){
     return NULL;
@@ -421,10 +404,6 @@ struct l3obj *host_callback_locked(const interface *i,struct l2host *l2,
     if((ret = add_l3_to_iface(is,l2o,l3)) == NULL){
       return NULL;
     }
-  }
-  if( (rb = is->rb) ){
-    resize_iface(rb);
-    redraw_iface_generic(rb);
   }
   return ret;
 }
@@ -494,9 +473,7 @@ int expand_iface_locked(void){
   ++is->expansion;
   old = current_iface->selline;
   oldrows = ncplane_dim_y(current_iface->n);
-  resize_iface(current_iface);
   recompute_selection(is, old, oldrows, ncplane_dim_y(current_iface->n));
-  redraw_iface_generic(current_iface);
   return 0;
 }
 
@@ -514,9 +491,7 @@ int collapse_iface_locked(void){
   --is->expansion;
   old = current_iface->selline;
   oldrows = ncplane_dim_y(current_iface->n);
-  resize_iface(current_iface);
   recompute_selection(is, old, oldrows, ncplane_dim_y(current_iface->n));
-  redraw_iface_generic(current_iface);
   return 0;
 }
 
@@ -572,7 +547,7 @@ select_interface_node(reelbox *rb, struct l2obj *l2, int delta){
   }else{
     rb->selline += delta;
   }
-  return redraw_iface(rb, 1);
+  return 0;
 }
 
 int select_iface_locked(void){
@@ -692,7 +667,7 @@ int update_diags_locked(struct panel_state *ps){
 
   ncplane_styles_set(ps->n, NCSTYLE_BOLD);
   ncplane_set_fg_rgb(ps->n, 0xd0d0d0);
-  ncplane_stddim_yx(NC, &y, &x);
+  notcurses_stddim_yx(NC, &y, &x);
   assert(x > 26 + START_COL * 2);
   if(get_logs(y - 1, l)){
     return -1;

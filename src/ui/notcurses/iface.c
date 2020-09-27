@@ -810,32 +810,6 @@ void free_iface_state(iface_state *is){
 		l2 = tmp;
 	}
 }
-
-int redraw_iface(const reelbox *rb, int active){
-	const iface_state *is = rb->is;
-	const interface *i = is->iface;
-	int rows,cols,scrrows;
-	unsigned topp,endp;
-
-	scrrows = ncplane_dim_y(stdscr);
-	if(iface_wholly_visible_p(scrrows,rb) || active){ // completely visible
-		topp = endp = 0;
-	}else if(getbegy(rb->n) == 0){ // no top
-		topp = iface_lines_unbounded(is) - ncplane_dim_y(rb->n);
-		endp = 0;
-	}else{
-		topp = 0;
-		endp = 1; // no bottom FIXME
-	}
-	ncplane_dim_yx(rb->n,rows,cols);
-	werase(rb->n);
-	iface_box(i,is,rb->n,active,topp,endp);
-	print_iface_hosts(i,is,rb,rb->n,rows,cols,topp,endp,active);
-	if(interface_up_p(i)){
-		print_iface_state(i,is,rb->n,rows,cols,topp,active);
-	}
-	return 0;
-}
 */
 
 // This is the number of lines we'd have in an optimal world; we might have
