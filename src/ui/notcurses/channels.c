@@ -26,13 +26,13 @@ static int
 channel_row(struct ncplane *w, unsigned freqrow, int srow, int scol){
   unsigned f;
 
-  assert(wmove(w, srow, scol + IFNAMSIZ + 2) == OK);
+  ncplane_cursor_move_yx(w, srow, scol + IFNAMSIZ + 2);
   for(f = freqrow * FREQSPERROW ; f < (freqrow + 1) * FREQSPERROW ; ++f){
     unsigned chan = wireless_chan_byidx(f);
 
     assert(chan < 1000);
     if(chan){
-      assert(wprintw(w, " %3u", chan) == OK);
+      ncplane_printf(w, " %3u", chan);
     }
   }
   return 0;
@@ -51,10 +51,10 @@ iface_row(struct ncplane *w, unsigned freqrow, int srow, int scol){
   unsigned f;
 
   if(freqrow < sizeof(ifaces) / sizeof(*ifaces) && ifaces[freqrow]){
-    assert(mvwprintw(w, srow, scol, "%c%-*.*s ", iface_chars[freqrow],
-      IFNAMSIZ, IFNAMSIZ, ifaces[freqrow]->iface->name) == OK);
+    ncplane_printf_yx(w, srow, scol, "%c%-*.*s ", iface_chars[freqrow],
+                      IFNAMSIZ, IFNAMSIZ, ifaces[freqrow]->iface->name);
   }else{
-    assert(wmove(w, srow, scol + 1 + IFNAMSIZ + 1) == OK);
+    ncplane_cursor_move_yx(w, srow, scol + 1 + IFNAMSIZ + 1);
   }
   for(f = freqrow * FREQSPERROW ; f < (freqrow + 1) * FREQSPERROW ; ++f){
     char str[COLSPERFREQ + 1], *s;
@@ -67,7 +67,7 @@ iface_row(struct ncplane *w, unsigned freqrow, int srow, int scol){
       }
     }
     *s = '\0';
-    assert(wprintw(w, "%*.*s", COLSPERFREQ, COLSPERFREQ, str) == OK);
+    ncplane_printf(w, "%*.*s", COLSPERFREQ, COLSPERFREQ, str);
   }
   return 0;
 }
@@ -78,12 +78,13 @@ channel_details(struct ncplane *w){
   const int row = 1;
   int r, c, col,  z;
 
-  getmaxyx(w, r, c);
+  ncplane_dim_yx(w, &r, &c);
   --r;
   --c;
   col = c - (START_COL + FREQSPERROW * 4 + IFNAMSIZ + 1);
   assert(col >= 0);
-  assert(wattrset(w, SUBDISPLAY_ATTR) == OK);
+  ncplane_set_fg_rgb(w, 0xd0d0d0);
+  ncplane_styles_set(w, NCSTYLE_BOLD);
   freqs = wireless_freq_count();
   freqrows = freqs / FREQSPERROW;
   if(freqs % FREQSPERROW){
@@ -98,7 +99,7 @@ channel_details(struct ncplane *w){
     --z;
     ++y;
   }
-  return OK;
+  return 0;
 }
 
 int display_channels_locked(struct ncplane *w, struct panel_state *ps){
@@ -111,15 +112,15 @@ int display_channels_locked(struct ncplane *w, struct panel_state *ps){
   if(new_display_panel(w, ps, rows + 7, 76, L"press 'w' to dismiss display")){
     goto err;
   }
-  if(channel_details(panel_window(ps->p))){
+  if(channel_details(ps->n)){
     goto err;
   }
-  return OK;
+  return 0;
 
 err:
   ncplane_destroy(ps->n);
   memset(ps, 0, sizeof(*ps));
-  return ERR;
+  return -1;
 }
 
 int add_channel_support(struct iface_state *is){
