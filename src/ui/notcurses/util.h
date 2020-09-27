@@ -38,8 +38,6 @@ unimplemented(struct ncplane *n){
 int screen_update(void);
 
 int bevel(struct ncplane *);
-int bevel_top(struct ncplane *);
-int bevel_bottom(struct ncplane *);
 
 #ifdef __cplusplus
 }
