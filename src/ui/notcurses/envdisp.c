@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ui/notcurses/util.h>
-#include <ui/notcurses/color.h>
 #include <ui/notcurses/envdisp.h>
 
 #define ENVROWS 10

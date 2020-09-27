@@ -8,11 +8,16 @@
 #include <ui/notcurses/util.h>
 #include <omphalos/netaddrs.h>
 #include <omphalos/omphalos.h>
-#include <ui/notcurses/color.h>
 #include <ui/notcurses/iface.h>
 #include <omphalos/interface.h>
 #include <notcurses/notcurses.h>
 #include <ui/notcurses/channels.h>
+
+#define BORDER_COLOR 0x9e9e9e
+#define HEADER_COLOR 0xd75fff
+#define FOOTER_COLOR 0xffffaf
+#define PBORDER_COLOR 0xd787ff
+#define PHEADING_COLOR 0xff005f
 
 static reelbox *current_iface;
 
