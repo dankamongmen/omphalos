@@ -41,7 +41,7 @@
 
 #define NCKEY_ESC 27
 
-#define ERREXIT endwin() ; fprintf(stderr, "ncurses failure|%s|%d\n", __func__, __LINE__); abort() ; goto err
+#define ERREXIT endwin() ; fprintf(stderr, "notcurses failure|%s|%d\n", __func__, __LINE__); abort() ; goto err
 
 #define PANEL_STATE_INITIALIZER { .n = NULL, .ysize = -1, }
 
@@ -53,15 +53,11 @@ static struct panel_state bridging = PANEL_STATE_INITIALIZER;
 static struct panel_state channels = PANEL_STATE_INITIALIZER;
 static struct panel_state environment = PANEL_STATE_INITIALIZER;
 
-// Add ((format (printf))) attributes to ncurses functions, which sadly
-// lack them (at least as of Debian's 5.9-1).
-extern int wprintw(struct ncplane *,const char *,...) __attribute__ ((format (printf,2,3)));
-extern int mvwprintw(struct ncplane *,int,int,const char *,...) __attribute__ ((format (printf,4,5)));
+struct ncreel *reel = NULL;
 
 static int rows = -1;
 static int cols = -1;
 static struct ncplane* stdn;
-
 static struct panel_state *active;
 
 // FIXME granularize things, make packet handler iret-like
@@ -74,18 +70,16 @@ static const char *glibc_version,*glibc_release; // Currently unused
 static struct utsname sysuts; // Currently unused
 
 static inline void
-lock_ncurses(void){
+lock_notcurses(void){
   pthread_mutex_lock(&bfl);
-  check_consistency();
 }
 
 static inline void
-unlock_ncurses(void){
+unlock_notcurses(void){
   if(active){
     ncplane_move_top(active->n);
   }
   screen_update();
-  check_consistency();
   pthread_mutex_unlock(&bfl);
 }
 
@@ -95,12 +89,12 @@ static int
 wvstatus(struct ncplane *w, const char *fmt, va_list va){
   int ret;
 
-  lock_ncurses();
+  lock_notcurses();
   ret = wvstatus_locked(w, fmt, va);
   if(diags.n && fmt){
     ret |= update_diags_locked(&diags);
   }
-  unlock_ncurses();
+  unlock_notcurses();
   return ret;
 }
 
@@ -163,152 +157,152 @@ input_thread(void *unsafe_marsh){
   while((ch = notcurses_getc_blocking(nc, &ni)) != 'q' && ch != 'Q'){
   switch(ch){
     case NCKEY_HOME:
-      lock_ncurses();
+      lock_notcurses();
       if(selecting()){
         use_first_node_locked();
       }
-      unlock_ncurses();
+      unlock_notcurses();
       break;
     case NCKEY_END:
-      lock_ncurses();
+      lock_notcurses();
       if(selecting()){
         use_last_node_locked();
       }
-      unlock_ncurses();
+      unlock_notcurses();
       break;
     case NCKEY_PGUP:
-      lock_ncurses();
+      lock_notcurses();
       if(selecting()){
         use_prev_nodepage_locked();
       }
-      unlock_ncurses();
+      unlock_notcurses();
       break;
     case NCKEY_PGDOWN:
-      lock_ncurses();
+      lock_notcurses();
       if(selecting()){
         use_next_nodepage_locked();
       }
-      unlock_ncurses();
+      unlock_notcurses();
       break;
     case NCKEY_UP: case 'k':
-      lock_ncurses();
+      lock_notcurses();
       if(!selecting()){
-        //use_prev_iface_locked(nc, &details);
+        ncreel_prev(reel);
       }else{
         use_prev_node_locked();
       }
-      unlock_ncurses();
+      unlock_notcurses();
       break;
     case NCKEY_DOWN: case 'j':
-      lock_ncurses();
+      lock_notcurses();
       if(!selecting()){
-        //use_next_iface_locked(nc, &details);
+        ncreel_next(reel);
       }else{
         use_next_node_locked();
       }
-      unlock_ncurses();
+      unlock_notcurses();
       break;
     case NCKEY_RESIZE:
-      lock_ncurses();{
+      lock_notcurses();{
         resize_screen_locked();
-      }unlock_ncurses();
+      }unlock_notcurses();
       break;
     case 9: // Tab FIXME
-      lock_ncurses();
+      lock_notcurses();
         toggle_focus();
-      unlock_ncurses();
+      unlock_notcurses();
       break;
     case 12: // Ctrl-L FIXME
-      lock_ncurses();{
+      lock_notcurses();{
         notcurses_refresh(NC, &rows, &cols);
-      }unlock_ncurses();
+      }unlock_notcurses();
       break;
     case '\r': case '\n': case NCKEY_ENTER:
-      lock_ncurses();{
+      lock_notcurses();{
         select_iface_locked();
-      }unlock_ncurses();
+      }unlock_notcurses();
       break;
     case NCKEY_ESC: case NCKEY_BACKSPACE:
-      lock_ncurses();{
+      lock_notcurses();{
         deselect_iface_locked();
-      }unlock_ncurses();
+      }unlock_notcurses();
       break;
     case 'l':
-      lock_ncurses();
+      lock_notcurses();
         toggle_panel(stdn, &diags, display_diags_locked);
-      unlock_ncurses();
+      unlock_notcurses();
       break;
     case 'D':
-      lock_ncurses();
+      lock_notcurses();
         resolve_selection(stdn);
-      unlock_ncurses();
+      unlock_notcurses();
       break;
     case 'r':
-      lock_ncurses();
+      lock_notcurses();
         reset_current_interface_stats(stdn);
-      unlock_ncurses();
+      unlock_notcurses();
       break;
     case 'P':
-      lock_ncurses();
+      lock_notcurses();
         toggle_subwindow_pinning();
-      unlock_ncurses();
+      unlock_notcurses();
       break;
     case 'p':
-      lock_ncurses();
+      lock_notcurses();
         toggle_promisc_locked(stdn);
-      unlock_ncurses();
+      unlock_notcurses();
       break;
     case 'd':
-      lock_ncurses();
+      lock_notcurses();
         down_interface_locked(stdn);
-      unlock_ncurses();
+      unlock_notcurses();
       break;
     case 's':
-      lock_ncurses();
+      lock_notcurses();
         sniff_interface_locked(stdn);
-      unlock_ncurses();
+      unlock_notcurses();
       break;
     case '+':
     case NCKEY_RIGHT:
-      lock_ncurses();
+      lock_notcurses();
         expand_iface_locked();
-      unlock_ncurses();
+      unlock_notcurses();
       break;
     case '-':
     case NCKEY_LEFT:
-      lock_ncurses();
+      lock_notcurses();
         collapse_iface_locked();
-      unlock_ncurses();
+      unlock_notcurses();
       break;
     case 'v':{
-      lock_ncurses();
-        toggle_panel(stdn, &details,display_details_locked);
-      unlock_ncurses();
+      lock_notcurses();
+        toggle_panel(stdn, &details, display_details_locked);
+      unlock_notcurses();
       break;
     }case 'n':{
-      lock_ncurses();
-        toggle_panel(stdn, &network,display_network_locked);
-      unlock_ncurses();
+      lock_notcurses();
+        toggle_panel(stdn, &network, display_network_locked);
+      unlock_notcurses();
       break;
     }case 'e':{
-      lock_ncurses();
-        toggle_panel(stdn, &environment,display_env_locked);
-      unlock_ncurses();
+      lock_notcurses();
+        toggle_panel(stdn, &environment, display_env_locked);
+      unlock_notcurses();
       break;
     }case 'w':{
-      lock_ncurses();
-        toggle_panel(stdn, &channels,display_channels_locked);
-      unlock_ncurses();
+      lock_notcurses();
+        toggle_panel(stdn, &channels, display_channels_locked);
+      unlock_notcurses();
       break;
     }case 'b':{
-      lock_ncurses();
-        toggle_panel(stdn, &bridging,display_bridging_locked);
-      unlock_ncurses();
+      lock_notcurses();
+        toggle_panel(stdn, &bridging, display_bridging_locked);
+      unlock_notcurses();
       break;
     }case 'h':{
-      lock_ncurses();
-        toggle_panel(stdn, &help,display_help_locked);
-      unlock_ncurses();
+      lock_notcurses();
+        toggle_panel(stdn, &help, display_help_locked);
+      unlock_notcurses();
       break;
     }default:{
       const char *hstr = !help.n ? " ('h' for help)" : "";
@@ -325,7 +319,7 @@ input_thread(void *unsafe_marsh){
   wstatus(stdn, "%s", "shutting down");
   // we can't use raise() here, as that sends the signal only
   // to ourselves, and we have it masked.
-  pthread_kill(nim->maintid,SIGINT);
+  pthread_kill(nim->maintid, SIGINT);
   pthread_exit(NULL);
 }
 
@@ -347,12 +341,13 @@ notcurses_setup(void){
   struct notcurses *nc = NULL;
   const char *errstr = NULL;
   struct notcurses_options nopts = {
+    //.loglevel = NCLOGLEVEL_TRACE,
     .flags = NCOPTION_INHIBIT_SETLOCALE,
   };
 
   fprintf(stderr, "Entering fullscreen mode...\n");
   if((nc = notcurses_init(&nopts, NULL)) == NULL){
-    fprintf(stderr,"Couldn't initialize notcurses\n");
+    fprintf(stderr, "Couldn't initialize notcurses\n");
     return NULL;
   }
   stdn = notcurses_stddim_yx(nc, &rows, &cols);
@@ -360,13 +355,30 @@ notcurses_setup(void){
     errstr = "Couldn't setup status bar\n";
     goto err;
   }
-  /*
-  int z;
-
-  for(z = FIRST_FREE_COLOR ; z < 256 && z < COLORS && z < COLOR_PAIRS ; ++z){
-    assert(init_pair(z,z,-1) == 0);
+  ncplane_options rnopts = {
+    .horiz = {
+      .align = NCALIGN_CENTER,
+    },
+    .rows = rows - 1,
+    .cols = cols,
+    .name = "reel",
+    .flags = NCPLANE_OPTION_HORALIGNED,
+  };
+  struct ncplane *reelncp = ncplane_create(stdn, &rnopts);
+  if(reelncp == NULL){
+    errstr = "Couldn't create main reel plane\n";
+    goto err;
   }
-  */
+  ncreel_options ropts = {
+    .bordermask = 0xf,
+    .tabletmask = 0xf,
+    .flags = NCREEL_OPTION_INFINITESCROLL | NCREEL_OPTION_CIRCULAR,
+  };
+  reel = ncreel_create(reelncp, &ropts);
+  if(reel == NULL){
+    errstr = "Couldn't create main reel\n";
+    goto err;
+  }
   if(draw_main_window(stdn)){
     errstr = "Couldn't use notcurses\n";
     goto err;
@@ -392,7 +404,7 @@ err:
 static void
 packet_callback(omphalos_packet *op){
   pthread_mutex_lock(&bfl); // don't always want screen_update()
-  if(packet_cb_locked(op->i,op,&details)){
+  if(packet_cb_locked(op->i, op, &details)){
     if(active){
       ncplane_move_top(active->n);
     }
@@ -405,9 +417,9 @@ static void *
 interface_callback(interface *i, void *unsafe){
   void *r;
 
-  lock_ncurses();
-    //r = interface_cb_locked(i, unsafe, &details);
-  unlock_ncurses();
+  lock_notcurses();
+    r = interface_cb_locked(reel, i, unsafe, &details);
+  unlock_notcurses();
   return r;
 }
 
@@ -415,9 +427,9 @@ static void *
 wireless_callback(interface *i, unsigned wcmd __attribute__ ((unused)), void *unsafe){
   void *r;
 
-  lock_ncurses();
-    //r = interface_cb_locked(i, unsafe, &details);
-  unlock_ncurses();
+  lock_notcurses();
+    r = interface_cb_locked(reel, i, unsafe, &details);
+  unlock_notcurses();
   return r;
 }
 
@@ -468,9 +480,9 @@ neighbor_callback(const interface *i, struct l2host *l2){
 
 static void
 interface_removed_callback(const interface *i __attribute__ ((unused)), void *unsafe){
-  lock_ncurses();
-    //interface_removed_locked(unsafe, details.n ? &active : NULL);
-  unlock_ncurses();
+  lock_notcurses();
+    interface_removed_locked(reel, unsafe, details.n ? &active : NULL);
+  unlock_notcurses();
 }
 
 static void
@@ -480,11 +492,11 @@ vdiag_callback(const char *fmt, va_list v){
 
 static void
 network_callback(void){
-  lock_ncurses();
+  lock_notcurses();
     if(active == &network){
       update_network_details(network.n);
     }
-  unlock_ncurses();
+  unlock_notcurses();
 }
 
 int main(int argc, char * const *argv){
@@ -496,7 +508,7 @@ int main(int argc, char * const *argv){
     return EXIT_FAILURE;
   }
   if(uname(&sysuts)){
-    fprintf(stderr,"Couldn't get OS info (%s?)\n", strerror(errno));
+    fprintf(stderr, "Couldn't get OS info (%s?)\n", strerror(errno));
     return EXIT_FAILURE;
   }
   glibc_version = gnu_get_libc_version();
@@ -520,7 +532,7 @@ int main(int argc, char * const *argv){
     int err = errno;
 
     mandatory_cleanup(NC);
-    fprintf(stderr,"Error in omphalos_init() (%s?)\n",strerror(err));
+    fprintf(stderr, "Error in omphalos_init() (%s?)\n", strerror(err));
     return EXIT_FAILURE;
   }
   omphalos_cleanup(&pctx);

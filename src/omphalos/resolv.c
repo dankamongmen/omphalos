@@ -298,7 +298,7 @@ char *stringize_resolvers(void){
 
 	pthread_mutex_lock(&resolver_lock);
 	for(r = resolvers ; r ; r = r->next){
-		assert(inet_ntop(AF_INET,&r->addr.ip4,buf,sizeof(buf)));
+		inet_ntop(AF_INET,&r->addr.ip4,buf,sizeof(buf));
 		if((tmp = realloc(ret,s + strlen(buf) + 1)) == NULL){
 			goto err;
 		}
@@ -310,7 +310,7 @@ char *stringize_resolvers(void){
 		s += strlen(buf) + 1;
 	}
 	for(r = resolvers6 ; r ; r = r->next){
-		assert(inet_ntop(AF_INET6,&r->addr.ip6,buf,sizeof(buf)));
+		inet_ntop(AF_INET6,&r->addr.ip6,buf,sizeof(buf));
 		if((tmp = realloc(ret,s + strlen(buf) + 1)) == NULL){
 			goto err;
 		}

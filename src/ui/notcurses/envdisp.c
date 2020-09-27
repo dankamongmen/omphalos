@@ -12,7 +12,7 @@ env_details(struct ncplane *hw, int rows){
 	const int row = 1;
 	int z, srows, scols;
 
-	//wattrset(hw,SUBDISPLAY_ATTR);
+	//wattrset(hw, SUBDISPLAY_ATTR);
 	ncplane_dim_yx(notcurses_stdplane(NC), &srows, &scols);
 	if((z = rows) >= ENVROWS){
 		z = ENVROWS - 1;

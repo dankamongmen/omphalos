@@ -19,7 +19,7 @@
 #define PBORDER_COLOR 0xd787ff
 #define PHEADING_COLOR 0xff005f
 
-static reelbox *current_iface;
+static iface_state *current_iface;
 
 struct notcurses *NC = NULL;
 
@@ -36,7 +36,7 @@ int screen_update(void){
 static const interface *
 get_current_iface(void){
   if(current_iface){
-    return current_iface->is->iface;
+    return current_iface->iface;
   }
   return NULL;
 }
@@ -57,7 +57,7 @@ int wvstatus_locked(struct ncplane *n, const char *fmt, va_list va){
 }
 
 // NULL fmt clears the status bar
-int wstatus_locked(struct ncplane *n, const char *fmt,...){
+int wstatus_locked(struct ncplane *n, const char *fmt, ...){
   va_list va;
   int ret;
   va_start(va, fmt);
@@ -71,7 +71,7 @@ offload_details(struct ncplane *n, const interface *i, int row, int col,
                 const char *name, unsigned val){
   int r = iface_offloaded_p(i, val);
   // these checkboxes don't really look that great at small size
-  //return ncplane_printf_yx(w,row,col,"%lc%s",r > 0 ? L'☑' : r < 0 ? L'?' : L'☐',name);
+  //return ncplane_printf_yx(w, row, col, "%lc%s", r > 0 ? L'☑' : r < 0 ? L'?' : L'☐', name);
   return ncplane_printf_yx(n, row, col, "%s%c", name,
                            r > 0 ? '+' : r < 0 ? '?' : '-');
 }
@@ -79,11 +79,11 @@ offload_details(struct ncplane *n, const interface *i, int row, int col,
 // Create a panel at the bottom of the window, referred to as the "subdisplay".
 // Only one can currently be active at a time. Window decoration and placement
 // is managed here; only the rows needed for display ought be provided.
-int new_display_panel(struct ncplane *n, struct panel_state *ps,int rows,int cols,const wchar_t *hstr){
+int new_display_panel(struct ncplane *n, struct panel_state *ps, int rows, int cols, const wchar_t *hstr){
   const wchar_t crightstr[] = L"https://nick-black.com/dankwiki/index.php/Omphalos";
   const int crightlen = wcslen(crightstr);
   struct ncplane *psw;
-  int x,y;
+  int x, y;
 
   ncplane_dim_yx(n, &y, &x);
   if(cols == 0){
@@ -134,10 +134,9 @@ int new_display_panel(struct ncplane *n, struct panel_state *ps,int rows,int col
 static int
 iface_details(struct ncplane *hw, const interface *i, int rows){
   const int col = START_COL;
-  int scrcols,scrrows;
+  int scrcols, scrrows;
   const int row = 1;
   int z;
-
   ncplane_set_fg_rgb(hw, 0xd0d0d0);
   ncplane_styles_set(hw, NCSTYLE_BOLD);
   ncplane_dim_yx(hw, &scrrows, &scrcols);
@@ -147,19 +146,19 @@ iface_details(struct ncplane *hw, const interface *i, int rows){
   }
   switch(z){ // Intentional fallthroughs all the way to 0
   case (DETAILROWS - 1):{
-    ncplane_printf_yx(hw,row + z,col,"drops: "U64FMT" truncs: "U64FMT" (%ju recov)%-*s",
-          i->drops,i->truncated,i->truncated_recovered,
-          scrcols - 2 - 72,"");
+    ncplane_printf_yx(hw, row + z, col, "drops: "U64FMT" truncs: "U64FMT" (%ju recov)%-*s",
+                      i->drops, i->truncated, i->truncated_recovered,
+                      scrcols - 2 - 72, "");
     --z;
   } /* intentional fallthrough */
   case 7:{
-    ncplane_printf_yx(hw,row + z,col,"mform: "U64FMT" noprot: "U64FMT,
-          i->malformed,i->noprotocol);
+    ncplane_printf_yx(hw, row + z, col, "mform: "U64FMT" noprot: "U64FMT,
+                      i->malformed, i->noprotocol);
     --z;
   } /* intentional fallthrough */
   case 6:{
-    ncplane_printf_yx(hw,row + z,col,"Rbyte: "U64FMT" frames: "U64FMT,
-          i->bytes,i->frames);
+    ncplane_printf_yx(hw, row + z, col, "Rbyte: "U64FMT" frames: "U64FMT,
+                      i->bytes, i->frames);
     --z;
   } /* intentional fallthrough */
   case 5:{
@@ -174,8 +173,8 @@ iface_details(struct ncplane *hw, const interface *i, int rows){
     --z;
   } /* intentional fallthrough */
   case 4:{
-    ncplane_printf_yx(hw,row + z,col,"Tbyte: "U64FMT" frames: "U64FMT" aborts: %llu",
-                      i->txbytes,i->txframes, (long long unsigned)i->txaborts);
+    ncplane_printf_yx(hw, row + z, col, "Tbyte: "U64FMT" frames: "U64FMT" aborts: %llu",
+                      i->txbytes, i->txframes, (long long unsigned)i->txaborts);
     --z;
   } /* intentional fallthrough */
   case 3:{
@@ -192,21 +191,21 @@ iface_details(struct ncplane *hw, const interface *i, int rows){
     --z;
   } /* intentional fallthrough */
   case 2:{
-    offload_details(hw,i,row + z,col,"TSO",TCP_SEG_OFFLOAD);
-    offload_details(hw,i,row + z,col + 5,"S/G",ETH_SCATTER_GATHER);
-    offload_details(hw,i,row + z,col + 10,"UFO",UDP_FRAG_OFFLOAD);
-    offload_details(hw,i,row + z,col + 15,"GSO",GEN_SEG_OFFLOAD);
-    offload_details(hw,i,row + z,col + 20,"GRO",GENRX_OFFLOAD);
-    offload_details(hw,i,row + z,col + 25,"LRO",LARGERX_OFFLOAD);
-    offload_details(hw,i,row + z,col + 30,"TCsm",TX_CSUM_OFFLOAD);
-    offload_details(hw,i,row + z,col + 36,"RCsm",RX_CSUM_OFFLOAD);
-    offload_details(hw,i,row + z,col + 42,"TVln",TXVLAN_OFFLOAD);
-    offload_details(hw,i,row + z,col + 48,"RVln",RXVLAN_OFFLOAD);
-    ncplane_printf_yx(hw,row + z,col + 53," MTU: %-6d",i->mtu);
+    offload_details(hw, i, row + z, col, "TSO", TCP_SEG_OFFLOAD);
+    offload_details(hw, i, row + z, col + 5, "S/G", ETH_SCATTER_GATHER);
+    offload_details(hw, i, row + z, col + 10, "UFO", UDP_FRAG_OFFLOAD);
+    offload_details(hw, i, row + z, col + 15, "GSO", GEN_SEG_OFFLOAD);
+    offload_details(hw, i, row + z, col + 20, "GRO", GENRX_OFFLOAD);
+    offload_details(hw, i, row + z, col + 25, "LRO", LARGERX_OFFLOAD);
+    offload_details(hw, i, row + z, col + 30, "TCsm", TX_CSUM_OFFLOAD);
+    offload_details(hw, i, row + z, col + 36, "RCsm", RX_CSUM_OFFLOAD);
+    offload_details(hw, i, row + z, col + 42, "TVln", TXVLAN_OFFLOAD);
+    offload_details(hw, i, row + z, col + 48, "RVln", RXVLAN_OFFLOAD);
+    ncplane_printf_yx(hw, row + z, col + 53, " MTU: %-6d", i->mtu);
     --z;
   } /* intentional fallthrough */
   case 1:{
-    ncplane_printf_yx(hw,row + z,col,"%-*ls",scrcols - 2,i->topinfo.devname ?
+    ncplane_printf_yx(hw, row + z, col, "%-*ls", scrcols - 2, i->topinfo.devname ?
                       i->topinfo.devname : L"Unknown device");
     --z;
   } /* intentional fallthrough */
@@ -214,10 +213,10 @@ iface_details(struct ncplane *hw, const interface *i, int rows){
     if(i->addr){
       char mac[i->addrlen * 3];
 
-      l2ntop(i->addr,i->addrlen,mac);
-      ncplane_printf_yx(hw,row + z,col,"%-16s %-*s",i->name,scrcols - (START_COL * 4 + IFNAMSIZ + 1),mac);
+      l2ntop(i->addr, i->addrlen, mac);
+      ncplane_printf_yx(hw, row + z, col, "%-16s %-*s", i->name, scrcols - (START_COL * 4 + IFNAMSIZ + 1), mac);
     }else{
-      ncplane_printf_yx(hw,row + z,col,"%-16s %-*s",i->name,scrcols - (START_COL * 4 + IFNAMSIZ + 1),"");
+      ncplane_printf_yx(hw, row + z, col, "%-16s %-*s", i->name, scrcols - (START_COL * 4 + IFNAMSIZ + 1), "");
     }
     --z;
     break;
@@ -225,18 +224,6 @@ iface_details(struct ncplane *hw, const interface *i, int rows){
     return -1;
   } }
   return 0;
-}
-
-static void
-free_reelbox(reelbox *rb){
-  if(rb){
-    assert(rb->is);
-    assert(rb->is->rb == rb);
-
-    rb->is->rb = NULL;
-    ncplane_destroy(rb->n);
-    free(rb);
-  }
 }
 
 // Pass current number of columns
@@ -248,7 +235,7 @@ int setup_statusbar(int cols){
     const size_t s = cols + 1;
     char *sm;
 
-    if((sm = realloc(statusmsg,s * sizeof(*sm))) == NULL){
+    if((sm = realloc(statusmsg, s * sizeof(*sm))) == NULL){
       return -1;
     }
     statuschars = s;
@@ -259,8 +246,8 @@ int setup_statusbar(int cols){
       // FIXME
       sm[0] = '\0';
       /*
-      if(localtime_r(&t,&tm)){
-        wcsftime(sm,s,L"launched at %T. 'h' toggles help.",&tm);
+      if(localtime_r(&t, &tm)){
+        wcsftime(sm, s, L"launched at %T. 'h' toggles help.", &tm);
       }else{
         sm[0] = '\0';
       }*/
@@ -275,10 +262,10 @@ void toggle_promisc_locked(struct ncplane *w){
 
   if(i){
     if(interface_promisc_p(i)){
-      wstatus_locked(w,"Disabling promiscuity on %s",i->name);
+      wstatus_locked(w, "Disabling promiscuity on %s", i->name);
       disable_promiscuity(i);
     }else{
-      wstatus_locked(w,"Enabling promiscuity on %s",i->name);
+      wstatus_locked(w, "Enabling promiscuity on %s", i->name);
       enable_promiscuity(i);
     }
   }
@@ -290,8 +277,8 @@ void sniff_interface_locked(struct ncplane *w){
   if(i){
     if(!interface_sniffing_p(i)){
       if(!interface_up_p(i)){
-        wstatus_locked(w,"Bringing up %s...",i->name);
-        current_iface->is->devaction = -1;
+        wstatus_locked(w, "Bringing up %s...", i->name);
+        current_iface->devaction = -1;
         up_interface(i);
       }
     }else{
@@ -305,8 +292,8 @@ void down_interface_locked(struct ncplane *w){
 
   if(i){
     if(interface_up_p(i)){
-      wstatus_locked(w,"Bringing down %s...",i->name);
-      current_iface->is->devaction = 1;
+      wstatus_locked(w, "Bringing down %s...", i->name);
+      current_iface->devaction = 1;
       down_interface(i);
     }
   }
@@ -314,7 +301,8 @@ void down_interface_locked(struct ncplane *w){
 
 void hide_panel_locked(struct panel_state *ps){
   if(ps){
-    ncplane_move_bottom(ps->n);
+    ncplane_destroy(ps->n);
+    ps->n = NULL;
   }
 }
 
@@ -322,30 +310,89 @@ int packet_cb_locked(const interface *i, omphalos_packet *op, struct panel_state
   iface_state *is = op->i->opaque;
   struct timeval tdiff;
   unsigned long udiff;
-  reelbox *rb;
 
   if(!is){
     return 0;
   }
-  if((rb = is->rb) == NULL){
-    return 0;
-  }
   timersub(&op->tv, &is->lastprinted, &tdiff);
   udiff = timerusec(&tdiff);
-  if(udiff < 500000){ // At most one update every 1/2s
+  if(udiff < 100000){ // At most one update every 1/10s
     return 0;
   }
   is->lastprinted = op->tv;
-  if(rb == current_iface && ps->n){
+  if(is->tab == ncreel_focused(reel) && ps->n){
     iface_details(ps->n, i, ps->ysize);
   }
+  ncreel_redraw(reel);
   return 1;
 }
 
-struct l2obj *neighbor_callback_locked(const interface *i,struct l2host *l2){
+static int
+redraw_iface(struct nctablet *tablet, bool drawfromtop){
+  const iface_state *is = nctablet_userptr(tablet);
+  int rows, cols;
+  ncplane_dim_yx(nctablet_ncplane(tablet), &rows, &cols);
+  print_iface_hosts(is->iface, is, nctablet_ncplane(tablet),
+                    rows, cols, drawfromtop, is == current_iface);
+  if(interface_up_p(is->iface)){
+    print_iface_state(is->iface, is, nctablet_ncplane(tablet), rows, cols,
+                      is == current_iface);
+  }
+  int lines = lines_for_interface(is);
+  iface_box(is->iface, is, nctablet_ncplane(tablet), is == current_iface, lines);
+  return lines;
+}
+
+void *interface_cb_locked(struct ncreel *nreel, interface *i, iface_state *ret,
+                          struct panel_state *ps){
+  if(ret == NULL){
+    if( (ret = create_interface_state(i)) ){
+      add_channel_support(ret);
+      ret->tab = ncreel_add(nreel, NULL, NULL, redraw_iface, ret);
+      if(ret->tab == NULL){
+        free_iface_state(ret);
+        return NULL;
+      }
+      // calls draw_main_window(), updating iface count
+      wstatus_locked(notcurses_stdplane(NC), "Set up new interface %s", i->name);
+    }else{
+      wstatus_locked(notcurses_stdplane(NC), "Error for new interface %s", i->name);
+      return NULL;
+    }
+  }
+  if(ret->tab == ncreel_focused(nreel) && ps->n){
+    iface_details(ps->n, i, ps->ysize);
+  }
+  ncreel_redraw(nreel);
+  if(interface_up_p(i)){
+    if(ret->devaction < 0){
+      wstatus_locked(notcurses_stdplane(NC), "%s", "");
+      ret->devaction = 0;
+    }
+  }else if(ret->devaction > 0){
+    wstatus_locked(notcurses_stdplane(NC), "%s", "");
+    ret->devaction = 0;
+  }
+  screen_update();
+  return ret;
+}
+
+void interface_removed_locked(struct ncreel *nreel, iface_state *is,
+                              struct panel_state **ps){
+  if(!is){
+    return;
+  }
+  ncreel_del(nreel, is->tab);
+  del_channel_support(is);
+  free_iface_state(is); // clears l2/l3 nodes
+  free(is);
+  draw_main_window(notcurses_stdplane(NC)); // Update the device count
+  (void)ps; // FIXME do what with it?
+}
+
+struct l2obj *neighbor_callback_locked(const interface *i, struct l2host *l2){
   struct l2obj *ret;
   iface_state *is;
-
   // Guaranteed by callback properties -- we don't get neighbor callbacks
   // until there's been a successful device callback.
   // FIXME experimental work on reordering callbacks
@@ -354,15 +401,15 @@ struct l2obj *neighbor_callback_locked(const interface *i,struct l2host *l2){
   }
   is = i->opaque;
   if((ret = l2host_get_opaque(l2)) == NULL){
-    if((ret = add_l2_to_iface(i,is,l2)) == NULL){
+    if((ret = add_l2_to_iface(i, is, l2)) == NULL){
       return NULL;
     }
   }
   return ret;
 }
 
-struct l4obj *service_callback_locked(const struct interface *i,struct l2host *l2,
-          struct l3host *l3,struct l4srv *l4){
+struct l4obj *service_callback_locked(const struct interface *i, struct l2host *l2,
+                                      struct l3host *l3, struct l4srv *l4){
   struct l2obj *l2o;
   struct l3obj *l3o;
   struct l4obj *ret;
@@ -382,19 +429,19 @@ struct l4obj *service_callback_locked(const struct interface *i,struct l2host *l
 
     // Want to emphasize "Router"
     if(l4_getproto(l4) == IPPROTO_IP){
-      if(wcscmp(l4srvstr(l4),L"LLTD")){
+      if(wcscmp(l4srvstr(l4), L"LLTD")){
         emph = 1;
       }
     }
-    if((ret = add_service_to_iface(is,l2o,l3o,l4,emph)) == NULL){
+    if((ret = add_service_to_iface(is, l2o, l3o, l4, emph)) == NULL){
       return NULL;
     }
   }
   return ret;
 }
 
-struct l3obj *host_callback_locked(const interface *i,struct l2host *l2,
-          struct l3host *l3){
+struct l3obj *host_callback_locked(const interface *i, struct l2host *l2,
+                                   struct l3host *l3){
   struct l2obj *l2o;
   struct l3obj *ret;
   iface_state *is;
@@ -406,7 +453,7 @@ struct l3obj *host_callback_locked(const interface *i,struct l2host *l2,
     return NULL;
   }
   if((ret = l3host_get_opaque(l3)) == NULL){
-    if((ret = add_l3_to_iface(is,l2o,l3)) == NULL){
+    if((ret = add_l3_to_iface(is, l2o, l3)) == NULL){
       return NULL;
     }
   }
@@ -415,7 +462,7 @@ struct l3obj *host_callback_locked(const interface *i,struct l2host *l2,
 
 // to be called only while ncurses lock is held
 int draw_main_window(struct ncplane *w){
-  int rows,cols;
+  int rows, cols;
   ncplane_dim_yx(w, &rows, &cols);
   if(setup_statusbar(cols)){
     goto err;
@@ -439,18 +486,17 @@ reset_interface_stats(struct ncplane *n, const interface *i __attribute__ ((unus
 }
 
 static void
-resolve_interface(struct ncplane *n, reelbox *rb __attribute__ ((unused))){
+resolve_interface(struct ncplane *n){
   unimplemented(n);
 }
 
 void resolve_selection(struct ncplane *w){
-  reelbox *rb;
-
-  if( (rb = current_iface) ){
+  struct iface_state *is;
+  if( (is = current_iface) ){
     // FIXME check for host selection...
-    resolve_interface(w,rb);
+    resolve_interface(w);
   }else{
-    wstatus_locked(w,"There is no active selection");
+    wstatus_locked(w, "There is no active selection");
   }
 }
 
@@ -458,9 +504,9 @@ void reset_current_interface_stats(struct ncplane *w){
   const interface *i;
 
   if( (i = get_current_iface()) ){
-    reset_interface_stats(w,i);
+    reset_interface_stats(w, i);
   }else{
-    wstatus_locked(w,"There is no active selection");
+    wstatus_locked(w, "There is no active selection");
   }
 }
 
@@ -468,119 +514,77 @@ int expand_iface_locked(void){
   int old, oldrows;
   iface_state *is;
 
-  if(!current_iface){
+  if((is = current_iface) == NULL){
     return 0;
   }
-  is = current_iface->is;
   if(is->expansion == EXPANSION_MAX){
     return 0;
   }
   ++is->expansion;
   old = current_iface->selline;
-  oldrows = ncplane_dim_y(current_iface->n);
-  recompute_selection(is, old, oldrows, ncplane_dim_y(current_iface->n));
+  const struct ncplane *n = nctablet_ncplane(current_iface->tab);
+  oldrows = ncplane_dim_y(n);
+  recompute_selection(is, old, oldrows, ncplane_dim_y(n));
   return 0;
 }
 
 int collapse_iface_locked(void){
-  int old,oldrows;
+  int old, oldrows;
   iface_state *is;
 
-  if(!current_iface){
+  if((is = current_iface) == NULL){
     return 0;
   }
-  is = current_iface->is;
   if(is->expansion == 0){
     return 0;
   }
   --is->expansion;
   old = current_iface->selline;
-  oldrows = ncplane_dim_y(current_iface->n);
-  recompute_selection(is, old, oldrows, ncplane_dim_y(current_iface->n));
+  const struct ncplane *n = nctablet_ncplane(current_iface->tab);
+  oldrows = ncplane_dim_y(n);
+  recompute_selection(is, old, oldrows, ncplane_dim_y(n));
   return 0;
-}
-
-void check_consistency(void){
-#if 0
-  const reelbox *rb,*prev = NULL;
-  int sawcur = 0,expect = 1;
-
-  if(top_reelbox){
-    assert(!top_reelbox->is->prev->rb || top_reelbox->is->prev->rb == last_reelbox);
-  }
-  for(rb = top_reelbox ; rb ; rb = rb->next){
-    assert(rb->is);
-    assert(rb->is->rb == rb);
-    assert(!sawcur || rb != current_iface);
-    /*fprintf(stderr,"\t%s: %d->%d (%d)\n",rb->is->iface->name,
-        getbegy(rb->n),ncplane_dim_y(rb->n) + getbegy(rb->n),
-        iface_lines_unbounded(rb->is));*/
-    if(rb == current_iface){
-      sawcur = 1;
-    }
-    assert(rb->n);
-    assert(getbegy(rb->n) == rb->scrline);
-    if(getbegy(rb->n) != expect){
-      if(expect == 1){
-        expect = 2;
-      }
-    }
-    /*if(getbegy(rb->n) != expect){
-      fprintf(stderr,"\n\n\n\n UH-OH had %d/%d wanted %d\n",
-          getbegy(rb->n),rb->scrline,expect);
-    }*/
-    assert(getbegy(rb->n) == expect);
-    expect += ncplane_dim_y(rb->n) + 1;
-    assert(!panel_hidden(rb->panel));
-    assert(prev == rb->prev);
-    prev = rb;
-  }
-  assert(prev == last_reelbox);
-  assert((top_reelbox && last_reelbox && current_iface) ||
-      (!top_reelbox && !last_reelbox && !current_iface));
-  //fprintf(stderr,"CONSISTENT\n");
-#endif
 }
 
 // Positive delta moves down, negative delta moves up, except for l2 == NULL
 // where we always move to -1 (and delta is ignored).
 static int
-select_interface_node(reelbox *rb, struct l2obj *l2, int delta){
-  assert(l2 != rb->selected);
-  if((rb->selected = l2) == NULL){
-    rb->selline = -1;
+select_interface_node(struct iface_state *is, struct l2obj *l2, int delta){
+  assert(l2 != is->selected);
+  if((is->selected = l2) == NULL){
+    is->selline = -1;
   }else{
-    rb->selline += delta;
+    is->selline += delta;
   }
   return 0;
 }
 
 int select_iface_locked(void){
-  reelbox *rb;
+  struct iface_state *is;
 
-  if((rb = current_iface) == NULL){
+  if((is = current_iface) == NULL){
     return -1;
   }
-  if(rb->selected){
+  if(is->selected){
     return 0;
   }
-  if(rb->is->l2objs == NULL){
+  if(is->l2objs == NULL){
     return -1;
   }
-  assert(rb->selline == -1);
-  return select_interface_node(rb, rb->is->l2objs, 2);
+  assert(is->selline == -1);
+  return select_interface_node(is, is->l2objs, 2);
 }
 
 int deselect_iface_locked(void){
-  reelbox *rb;
+  struct iface_state *is;
 
-  if((rb = current_iface) == NULL){
+  if((is = current_iface) == NULL){
     return 0;
   }
-  if(rb->selected == NULL){
+  if(is->selected == NULL){
     return 0;
   }
-  return select_interface_node(rb, NULL, 0);
+  return select_interface_node(is, NULL, 0);
 }
 
 int display_details_locked(struct ncplane *mainw, struct panel_state *ps){
@@ -589,7 +593,7 @@ int display_details_locked(struct ncplane *mainw, struct panel_state *ps){
     goto err;
   }
   if(current_iface){
-    if(iface_details(ps->n, current_iface->is->iface, ps->ysize)){
+    if(iface_details(ps->n, current_iface->iface, ps->ysize)){
       goto err;
     }
   }
@@ -626,7 +630,7 @@ static const wchar_t *helps[] = {
   L"'v': view interface details   'n': view network stack details",
   L"'w': view wireless info       'b': view bridging info",
   L"'a': attack configuration     'l': view recent diagnostics",
-  L"'⏎Enter': browse interface    '⌫BkSpc': leave interface browser",
+  L"'⏎Enter': browse interface    'BkSpc': leave interface browser",
   L"'k'/'↑': previous selection   'j'/'↓': next selection",
   L"PageUp: previous page         PageDown: next page",
   L"'↖Home': first selection      '↘End': last selection",
@@ -683,7 +687,7 @@ int update_diags_locked(struct panel_state *ps){
     if(l[r - 1].msg == NULL){
       break;
     }
-    ctime_r(&l[r - 1].when,tbuf);
+    ctime_r(&l[r - 1].when, tbuf);
     tbuf[strlen(tbuf) - 1] = ' '; // kill newline
     ncplane_printf_yx(ps->n, y - r - 1, START_COL, "%-*.*s%-*.*s", 25, 25, tbuf,
                       x - 25 - START_COL * 2, x - 25 - START_COL * 2,
@@ -733,97 +737,98 @@ err:
 }
 
 void use_next_node_locked(void){
-  reelbox *rb;
+  struct iface_state *is;
   int delta;
 
-  if((rb = current_iface) == NULL){
+  if((is = current_iface) == NULL){
     return;
   }
-  if(rb->selected == NULL || l2obj_next(rb->selected) == NULL){
+  if(is->selected == NULL || l2obj_next(is->selected) == NULL){
     return;
   }
-  delta = l2obj_lines(rb->selected);
-  if(rb->selline + delta + l2obj_lines(l2obj_next(rb->selected)) >= ncplane_dim_y(rb->n) - 1){
-    delta = (ncplane_dim_y(rb->n) - 1 - l2obj_lines(l2obj_next(rb->selected)))
-       - rb->selline;
+  delta = l2obj_lines(is->selected);
+  const struct ncplane *n = nctablet_ncplane(is->tab);
+  if(is->selline + delta + l2obj_lines(l2obj_next(is->selected)) >= ncplane_dim_y(n) - 1){
+    delta = (ncplane_dim_y(n) - 1 - l2obj_lines(l2obj_next(is->selected)))
+       - is->selline;
   }
-  select_interface_node(rb,l2obj_next(rb->selected),delta);
+  select_interface_node(is, l2obj_next(is->selected), delta);
 }
 
 void use_prev_node_locked(void){
-  reelbox *rb;
+  struct iface_state *is;
   int delta;
 
-  if((rb = current_iface) == NULL){
+  if((is = current_iface) == NULL){
     return;
   }
-  if(rb->selected == NULL || l2obj_prev(rb->selected) == NULL){
+  if(is->selected == NULL || l2obj_prev(is->selected) == NULL){
     return;
   }
-  delta = -l2obj_lines(l2obj_prev(rb->selected));
-  if(rb->selline + delta <= !!interface_up_p(rb->is->iface)){
-    delta = !!interface_up_p(rb->is->iface) - rb->selline;
+  delta = -l2obj_lines(l2obj_prev(is->selected));
+  if(is->selline + delta <= !!interface_up_p(is->iface)){
+    delta = !!interface_up_p(is->iface) - is->selline;
   }
-  select_interface_node(rb,l2obj_prev(rb->selected),delta);
+  select_interface_node(is, l2obj_prev(is->selected), delta);
 }
 
 void use_next_nodepage_locked(void){
+  struct iface_state *is;
   struct l2obj *l2;
-  reelbox *rb;
   int delta;
 
-  if((rb = current_iface) == NULL){
+  if((is = current_iface) == NULL){
     return;
   }
-  if((l2 = rb->selected) == NULL || l2obj_next(l2) == NULL){
+  if((l2 = is->selected) == NULL || l2obj_next(l2) == NULL){
     return;
   }
   delta = 0;
-  while(l2obj_next(l2) && delta <= ncplane_dim_y(rb->n)){
+  const struct ncplane *n = nctablet_ncplane(is->tab);
+  while(l2obj_next(l2) && delta <= ncplane_dim_y(n)){
     delta += l2obj_lines(l2);
     l2 = l2obj_next(l2);
   }
   if(delta == 0){
     return;
   }
-  if(rb->selline + delta + l2obj_lines(l2) >= ncplane_dim_y(rb->n) - 1){
-    delta = (ncplane_dim_y(rb->n) - 2 - l2obj_lines(l2))
-       - rb->selline;
+  if(is->selline + delta + l2obj_lines(l2) >= ncplane_dim_y(n) - 1){
+    delta = (ncplane_dim_y(n) - 2 - l2obj_lines(l2)) - is->selline;
   }
-  select_interface_node(rb,l2,delta);
+  select_interface_node(is, l2, delta);
 }
 
 void use_prev_nodepage_locked(void){
+  struct iface_state *is;
   struct l2obj *l2;
-  reelbox *rb;
   int delta;
 
-  if((rb = current_iface) == NULL){
+  if((is = current_iface) == NULL){
     return;
   }
-  if((l2 = rb->selected) == NULL || l2obj_prev(l2) == NULL){
+  if((l2 = is->selected) == NULL || l2obj_prev(l2) == NULL){
     return;
   }
   delta = 0;
   do{
     l2 = l2obj_prev(l2);
     delta -= l2obj_lines(l2);
-  }while(l2obj_prev(l2) && delta >= -ncplane_dim_y(rb->n));
-  if(rb->selline + delta <= !!interface_up_p(rb->is->iface)){
-    delta = !!interface_up_p(rb->is->iface) - rb->selline;
+  }while(l2obj_prev(l2) && delta >= -ncplane_dim_y(nctablet_ncplane(is->tab)));
+  if(is->selline + delta <= !!interface_up_p(is->iface)){
+    delta = !!interface_up_p(is->iface) - is->selline;
   }
-  select_interface_node(rb,l2,delta);
+  select_interface_node(is, l2, delta);
 }
 
 void use_first_node_locked(void){
+  struct iface_state *is;
   struct l2obj *l2;
-  reelbox *rb;
   int delta;
 
-  if((rb = current_iface) == NULL){
+  if((is = current_iface) == NULL){
     return;
   }
-  if((l2 = rb->selected) == NULL || l2obj_prev(l2) == NULL){
+  if((l2 = is->selected) == NULL || l2obj_prev(l2) == NULL){
     return;
   }
   delta = 0;
@@ -831,21 +836,21 @@ void use_first_node_locked(void){
     l2 = l2obj_prev(l2);
     delta -= l2obj_lines(l2);
   }while(l2obj_prev(l2));
-  if(rb->selline + delta <= !!interface_up_p(rb->is->iface)){
-    delta = !!interface_up_p(rb->is->iface) - rb->selline;
+  if(is->selline + delta <= !!interface_up_p(is->iface)){
+    delta = !!interface_up_p(is->iface) - is->selline;
   }
-  select_interface_node(rb,l2,delta);
+  select_interface_node(is, l2, delta);
 }
 
 void use_last_node_locked(void){
+  struct iface_state *is;
   struct l2obj *l2;
-  reelbox *rb;
   int delta;
 
-  if((rb = current_iface) == NULL){
+  if((is = current_iface) == NULL){
     return;
   }
-  if((l2 = rb->selected) == NULL || l2obj_next(l2) == NULL){
+  if((l2 = is->selected) == NULL || l2obj_next(l2) == NULL){
     return;
   }
   delta = 0;
@@ -856,11 +861,11 @@ void use_last_node_locked(void){
   if(delta == 0){
     return;
   }
-  if(rb->selline + delta + l2obj_lines(l2) >= ncplane_dim_y(rb->n) - 1){
-    delta = (ncplane_dim_y(rb->n) - 2 - l2obj_lines(l2))
-       - rb->selline;
+  const struct ncplane *n = nctablet_ncplane(is->tab);
+  if(is->selline + delta + l2obj_lines(l2) >= ncplane_dim_y(n) - 1){
+    delta = (ncplane_dim_y(n) - 2 - l2obj_lines(l2)) - is->selline;
   }
-  select_interface_node(rb,l2,delta);
+  select_interface_node(is, l2, delta);
 }
 
 // Whether we've entered an interface, and are browsing selected nodes within.

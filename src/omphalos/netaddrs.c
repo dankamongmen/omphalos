@@ -449,7 +449,7 @@ char *l3addrstr(const struct l3host *l3){
 	char *buf;
 
 	if( (buf = Malloc(len)) ){
-		assert(l3ntop(l3,buf,len) == 0);
+		l3ntop(l3,buf,len);
 	}
 	return buf;
 }
