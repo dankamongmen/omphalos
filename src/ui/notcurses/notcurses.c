@@ -34,7 +34,6 @@
 #include <omphalos/omphalos.h>
 #include <ui/notcurses/util.h>
 #include <ui/notcurses/core.h>
-#include <ui/notcurses/color.h>
 #include <ui/notcurses/iface.h>
 #include <omphalos/interface.h>
 #include <ui/notcurses/network.h>
@@ -360,47 +359,6 @@ notcurses_setup(void){
   }
   /*
   int z;
-
-  assert(init_pair(BORDER_COLOR,COLOR_ALUMINIUM,-1) == 0);
-  assert(init_pair(HEADER_COLOR,COLOR_MODBLUE,-1) == 0);
-  assert(init_pair(FOOTER_COLOR,COLOR_MODYELLOW,-1) == 0);
-  assert(init_pair(DHEADING_COLOR,COLOR_MODWHITE,-1) == 0);
-  assert(init_pair(UHEADING_COLOR,COLOR_ORANGE,-1) == 0);
-  assert(init_pair(PBORDER_COLOR,COLOR_MODBLUE,-1) == 0);
-  assert(init_pair(PHEADING_COLOR,COLOR_MODRED,-1) == 0);
-  assert(init_pair(BULKTEXT_COLOR,COLOR_MODWHITE,-1) == 0);
-  assert(init_pair(BULKTEXT_ALTROW_COLOR,COLOR_MODWHITE,COLOR_PALEALUMINIUM) == 0);
-  assert(init_pair(IFACE_COLOR,COLOR_MODWHITE,-1) == 0);
-  assert(init_pair(LCAST_COLOR,COLOR_CHAMELEON,-1) == 0);
-  assert(init_pair(UCAST_COLOR,COLOR_MODBLUE,-1) == 0);
-  assert(init_pair(MCAST_COLOR,COLOR_SKYBLUE,-1) == 0);
-  assert(init_pair(BCAST_COLOR,COLOR_MODVIOLET,-1) == 0);
-  assert(init_pair(LSELECTED_COLOR,COLOR_MODWHITE,COLOR_CHAMELEON_50) == 0);
-  assert(init_pair(USELECTED_COLOR,COLOR_MODWHITE,COLOR_BLUE_50) == 0);
-  assert(init_pair(MSELECTED_COLOR,COLOR_MODWHITE,COLOR_SKYBLUE_50) == 0);
-  assert(init_pair(BSELECTED_COLOR,COLOR_MODWHITE,COLOR_VIOLET_50) == 0);
-  assert(init_pair(LCAST_L3_COLOR,COLOR_CHAMELEON_75,-1) == 0);
-  assert(init_pair(UCAST_L3_COLOR,COLOR_BLUE_75,-1) == 0);
-  assert(init_pair(MCAST_L3_COLOR,COLOR_SKYBLUE_75,-1) == 0);
-  assert(init_pair(BCAST_L3_COLOR,COLOR_VIOLET_75,-1) == 0);
-  assert(init_pair(LCAST_RES_COLOR,COLOR_CHAMELEON_50,-1) == 0);
-  assert(init_pair(UCAST_RES_COLOR,COLOR_BLUE_50,-1) == 0);
-  assert(init_pair(MCAST_RES_COLOR,COLOR_SKYBLUE_50,-1) == 0);
-  assert(init_pair(BCAST_RES_COLOR,COLOR_VIOLET_50,-1) == 0);
-
-  // Disable altrow stuff for now. It's hard to read and ugly.
-  assert(init_pair(LCAST_ALTROW_COLOR,COLOR_CHAMELEON,-1) == 0);
-  assert(init_pair(UCAST_ALTROW_COLOR,COLOR_MODBLUE,-1) == 0);
-  assert(init_pair(MCAST_ALTROW_COLOR,COLOR_SKYBLUE,-1) == 0);
-  assert(init_pair(BCAST_ALTROW_COLOR,COLOR_MODVIOLET,-1) == 0);
-  assert(init_pair(LCAST_ALTROW_L3_COLOR,COLOR_CHAMELEON_75,-1) == 0);
-  assert(init_pair(UCAST_ALTROW_L3_COLOR,COLOR_BLUE_75,-1) == 0);
-  assert(init_pair(MCAST_ALTROW_L3_COLOR,COLOR_SKYBLUE_75,-1) == 0);
-  assert(init_pair(BCAST_ALTROW_L3_COLOR,COLOR_VIOLET_75,-1) == 0);
-  assert(init_pair(LCAST_ALTROW_RES_COLOR,COLOR_CHAMELEON_50,-1) == 0);
-  assert(init_pair(UCAST_ALTROW_RES_COLOR,COLOR_BLUE_50,-1) == 0);
-  assert(init_pair(MCAST_ALTROW_RES_COLOR,COLOR_SKYBLUE_50,-1) == 0);
-  assert(init_pair(BCAST_ALTROW_RES_COLOR,COLOR_VIOLET_50,-1) == 0);
 
   for(z = FIRST_FREE_COLOR ; z < 256 && z < COLORS && z < COLOR_PAIRS ; ++z){
     assert(init_pair(z,z,-1) == 0);

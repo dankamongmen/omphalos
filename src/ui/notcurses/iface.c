@@ -13,7 +13,6 @@
 #include <ui/notcurses/util.h>
 #include <omphalos/netaddrs.h>
 #include <omphalos/wireless.h>
-#include <ui/notcurses/color.h>
 #include <ui/notcurses/iface.h>
 #include <omphalos/interface.h>
 #include <notcurses/notcurses.h>
@@ -329,6 +328,35 @@ print_host_services(struct ncplane *nc, const interface *i, const l3obj *l,
 #define MCAST_COLOR 0x0087ff
 #define LCAST_COLOR 0x00ff87
 #define BCAST_COLOR 0x8700ff
+#define DHEADING_COLOR 0xd0d0d0
+#define UHEADING_COLOR 0xff8700
+#define BULKTEXT_COLOR 0xd0d0d0
+#define BULKTEXT_ALTROW_COLOR 0xffff5f
+#define IFACE_COLOR 0xd0d0d0
+#define LSELECTED_COLOR 0x87ffd7
+#define USELECTED_COLOR 0x0087d7
+#define MSELECTED_COLOR 0x00afff
+#define BSELECTED_COLOR 0xff87af
+#define LCAST_L3_COLOR 0x5fd7af
+#define UCAST_L3_COLOR 0xd787ff
+#define MCAST_L3_COLOR 0x0087d7
+#define BCAST_L3_COLOR 0x5f87d7
+#define LCAST_RES_COLOR 0x5fa55f
+#define UCAST_RES_COLOR 0x5fd7ff
+#define MCAST_RES_COLOR 0xafd7ff
+#define BCAST_RES_COLOR 0xaf87d7
+#define LCAST_ALTROW_COLOR 0xafff5f
+#define UCAST_ALTROW_COLOR 0xafd7ff
+#define MCAST_ALTROW_COLOR 0xd7ffff
+#define BCAST_ALTROW_COLOR 0xff00d7
+#define LCAST_ALTROW_L3_COLOR 0xd7fff8
+#define UCAST_ALTROW_L3_COLOR 0xd7d7ff
+#define MCAST_ALTROW_L3_COLOR 0xd7afff
+#define BCAST_ALTROW_L3_COLOR 0xff00af
+#define LCAST_ALTROW_RES_COLOR 0xd7ff00
+#define UCAST_ALTROW_RES_COLOR 0xd7afd7
+#define MCAST_ALTROW_RES_COLOR 0x5f5fff
+#define BCAST_ALTROW_RES_COLOR 0x5f005f
 
 // line: line on which this node starts, within the struct ncplane w of {rows x cols}
 static void

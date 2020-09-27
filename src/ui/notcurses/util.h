@@ -8,7 +8,6 @@ extern "C" {
 #include <assert.h>
 #include <stdint.h>
 #include <ui/notcurses/core.h>
-#include <ui/notcurses/color.h>
 
 #define PAD_LINES 3
 #define START_COL 1
