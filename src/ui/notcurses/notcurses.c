@@ -119,7 +119,7 @@ wstatus(struct ncplane *w, const char *fmt, ...){
 }
 
 static void
-resize_screen_locked(struct notcurses *nc){
+resize_screen_locked(void){
   /*int rows, cols;
 
   getmaxyx(w, rows, cols);*/
@@ -161,7 +161,7 @@ input_thread(void *unsafe_marsh){
   ncinput ni;
 
   active = NULL; // No subpanels initially
-  while((ch = notcurses_getc_blocking(NC, &ni)) != 'q' && ch != 'Q'){
+  while((ch = notcurses_getc_blocking(nc, &ni)) != 'q' && ch != 'Q'){
   switch(ch){
     case NCKEY_HOME:
       lock_ncurses();
@@ -194,7 +194,7 @@ input_thread(void *unsafe_marsh){
     case NCKEY_UP: case 'k':
       lock_ncurses();
       if(!selecting()){
-        use_prev_iface_locked(nc, &details);
+        //use_prev_iface_locked(nc, &details);
       }else{
         use_prev_node_locked();
       }
@@ -203,7 +203,7 @@ input_thread(void *unsafe_marsh){
     case NCKEY_DOWN: case 'j':
       lock_ncurses();
       if(!selecting()){
-        use_next_iface_locked(nc, &details);
+        //use_next_iface_locked(nc, &details);
       }else{
         use_next_node_locked();
       }
@@ -211,7 +211,7 @@ input_thread(void *unsafe_marsh){
       break;
     case NCKEY_RESIZE:
       lock_ncurses();{
-        resize_screen_locked(nc);
+        resize_screen_locked();
       }unlock_ncurses();
       break;
     case 9: // Tab FIXME
@@ -236,7 +236,7 @@ input_thread(void *unsafe_marsh){
       break;
     case 'l':
       lock_ncurses();
-        toggle_panel(nc, &diags, display_diags_locked);
+        toggle_panel(stdn, &diags, display_diags_locked);
       unlock_ncurses();
       break;
     case 'D':
@@ -441,32 +441,31 @@ packet_callback(omphalos_packet *op){
 }
 
 static void *
-interface_callback(interface *i,void *unsafe){
+interface_callback(interface *i, void *unsafe){
   void *r;
 
   lock_ncurses();
-    r = interface_cb_locked(i,unsafe,&details);
+    //r = interface_cb_locked(i, unsafe, &details);
   unlock_ncurses();
   return r;
 }
 
 static void *
-wireless_callback(interface *i,unsigned wcmd __attribute__ ((unused)),void *unsafe){
+wireless_callback(interface *i, unsigned wcmd __attribute__ ((unused)), void *unsafe){
   void *r;
 
   lock_ncurses();
-    r = interface_cb_locked(i,unsafe,&details);
+    //r = interface_cb_locked(i, unsafe, &details);
   unlock_ncurses();
   return r;
 }
 
 static void *
-service_callback(const interface *i,struct l2host *l2,struct l3host *l3,
-        struct l4srv *l4){
+service_callback(const interface *i, struct l2host *l2, struct l3host *l3, struct l4srv *l4){
   void *ret;
 
   pthread_mutex_lock(&bfl);
-  if( (ret = service_callback_locked(i,l2,l3,l4)) ){
+  if( (ret = service_callback_locked(i, l2, l3, l4)) ){
     if(active){
       ncplane_move_top(active->n);
     }
@@ -477,11 +476,11 @@ service_callback(const interface *i,struct l2host *l2,struct l3host *l3,
 }
 
 static void *
-host_callback(const interface *i,struct l2host *l2,struct l3host *l3){
+host_callback(const interface *i, struct l2host *l2, struct l3host *l3){
   void *ret;
 
   pthread_mutex_lock(&bfl);
-  if( (ret = host_callback_locked(i,l2,l3)) ){
+  if( (ret = host_callback_locked(i, l2, l3)) ){
     if(active){
       ncplane_move_top(active->n);
     }
@@ -492,11 +491,11 @@ host_callback(const interface *i,struct l2host *l2,struct l3host *l3){
 }
 
 static void *
-neighbor_callback(const interface *i,struct l2host *l2){
+neighbor_callback(const interface *i, struct l2host *l2){
   void *ret;
 
   pthread_mutex_lock(&bfl);
-  if( (ret = neighbor_callback_locked(i,l2)) ){
+  if( (ret = neighbor_callback_locked(i, l2)) ){
     if(active){
       ncplane_move_top(active->n);
     }
@@ -509,7 +508,7 @@ neighbor_callback(const interface *i,struct l2host *l2){
 static void
 interface_removed_callback(const interface *i __attribute__ ((unused)), void *unsafe){
   lock_ncurses();
-    interface_removed_locked(unsafe, details.n ? &active : NULL);
+    //interface_removed_locked(unsafe, details.n ? &active : NULL);
   unlock_ncurses();
 }
 
