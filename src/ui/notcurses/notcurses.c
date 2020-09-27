@@ -157,10 +157,11 @@ static void *
 input_thread(void *unsafe_marsh){
   struct fs_input_marshal *nim = unsafe_marsh;
   struct notcurses *nc = nim->nc;
-  int ch;
+  char32_t ch;
+  ncinput ni;
 
   active = NULL; // No subpanels initially
-  while((ch = getch()) != 'q' && ch != 'Q'){
+  while((ch = notcurses_getc_blocking(NC, &ni)) != 'q' && ch != 'Q'){
   switch(ch){
     case NCKEY_HOME:
       lock_ncurses();
