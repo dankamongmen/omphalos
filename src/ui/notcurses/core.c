@@ -117,17 +117,13 @@ int new_display_panel(struct ncplane *n, struct panel_state *ps,int rows,int col
   if(psw == NULL){
     return -1;
   }
-  ps->n = new_panel(psw);
-  if(ps->n == NULL){
-    delwin(psw);
-    return -1;
-  }
+  ps->n = psw;
   ps->ysize = rows;
   ncplane_styles_on(psw, NCSTYLE_BOLD);
-  wcolor_set(psw, PBORDER_COLOR, NULL);
+  ncplane_set_fg_rgb(psw, PBORDER_COLOR);
   bevel(psw);
   ncplane_styles_off(psw, NCSTYLE_BOLD);
-  wcolor_set(psw, PHEADING_COLOR, NULL);
+  ncplane_set_fg_rgb(psw, PHEADING_COLOR);
   ncplane_putwstr_yx(psw, 0, START_COL * 2, hstr);
   ncplane_putwstr_yx(psw, rows + 1, cols - (crightlen + START_COL * 2), crightstr);
   return 0;
