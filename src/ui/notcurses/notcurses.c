@@ -346,9 +346,12 @@ notcurses_setup(void){
   struct fs_input_marshal *nim;
   struct notcurses *nc = NULL;
   const char *errstr = NULL;
+  struct notcurses_options nopts = {
+    .flags = NCOPTION_INHIBIT_SETLOCALE,
+  };
 
   fprintf(stderr, "Entering fullscreen mode...\n");
-  if((nc = notcurses_init(NULL, NULL)) == NULL){
+  if((nc = notcurses_init(&nopts, NULL)) == NULL){
     fprintf(stderr,"Couldn't initialize notcurses\n");
     return NULL;
   }
