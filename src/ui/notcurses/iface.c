@@ -677,6 +677,13 @@ void iface_box(const interface *i, const iface_state *is, struct ncplane *n,
   attrs = active ? NCSTYLE_REVERSE : NCSTYLE_BOLD;
   ncplane_styles_set(n, attrs);
   ncplane_set_fg_rgb(n, bcolor);
+  ncplane_cursor_move_yx(n, 0, 1);
+  cell c = CELL_TRIVIAL_INITIALIZER;
+  cell_load(n, &c, "─");
+  cell_set_fg_rgb(&c, bcolor);
+  cell_styles_set(&c, attrs);
+  ncplane_hline(n, &c, cols - 2);
+  // FIXME bevel top
   ncplane_styles_off(n, NCSTYLE_REVERSE);
   if(active){
     ncplane_styles_on(n, NCSTYLE_BOLD);
@@ -719,6 +726,11 @@ void iface_box(const interface *i, const iface_state *is, struct ncplane *n,
   if(active){
     ncplane_styles_on(n, NCSTYLE_BOLD);
   }
+  ncplane_cursor_move_yx(n, rows - 1, 2);
+  cell_set_fg_rgb(&c, bcolor);
+  cell_styles_set(&c, attrs);
+  ncplane_hline(n, &c, cols - 2);
+  cell_release(n, &c);
   ncplane_printf_yx(n, rows - 1, 2, "[");
   ncplane_set_fg_rgb(n, hcolor);
   if(active){
