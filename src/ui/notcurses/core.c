@@ -331,15 +331,15 @@ static int
 redraw_iface(struct nctablet *tablet, bool drawfromtop){
   const iface_state *is = nctablet_userptr(tablet);
   int rows, cols;
-  ncplane_dim_yx(nctablet_ncplane(tablet), &rows, &cols);
-  print_iface_hosts(is->iface, is, nctablet_ncplane(tablet),
+  ncplane_dim_yx(nctablet_plane(tablet), &rows, &cols);
+  print_iface_hosts(is->iface, is, nctablet_plane(tablet),
                     rows, cols, drawfromtop, is == current_iface);
   if(interface_up_p(is->iface)){
-    print_iface_state(is->iface, is, nctablet_ncplane(tablet), rows, cols,
+    print_iface_state(is->iface, is, nctablet_plane(tablet), rows, cols,
                       is == current_iface);
   }
   int lines = lines_for_interface(is);
-  iface_box(is->iface, is, nctablet_ncplane(tablet), is == current_iface, lines);
+  iface_box(is->iface, is, nctablet_plane(tablet), is == current_iface, lines);
   return lines;
 }
 
@@ -522,7 +522,7 @@ int expand_iface_locked(void){
   }
   ++is->expansion;
   old = current_iface->selline;
-  const struct ncplane *n = nctablet_ncplane(current_iface->tab);
+  const struct ncplane *n = nctablet_plane(current_iface->tab);
   oldrows = ncplane_dim_y(n);
   recompute_selection(is, old, oldrows, ncplane_dim_y(n));
   return 0;
@@ -540,7 +540,7 @@ int collapse_iface_locked(void){
   }
   --is->expansion;
   old = current_iface->selline;
-  const struct ncplane *n = nctablet_ncplane(current_iface->tab);
+  const struct ncplane *n = nctablet_plane(current_iface->tab);
   oldrows = ncplane_dim_y(n);
   recompute_selection(is, old, oldrows, ncplane_dim_y(n));
   return 0;
@@ -747,7 +747,7 @@ void use_next_node_locked(void){
     return;
   }
   delta = l2obj_lines(is->selected);
-  const struct ncplane *n = nctablet_ncplane(is->tab);
+  const struct ncplane *n = nctablet_plane(is->tab);
   if(is->selline + delta + l2obj_lines(l2obj_next(is->selected)) >= ncplane_dim_y(n) - 1){
     delta = (ncplane_dim_y(n) - 1 - l2obj_lines(l2obj_next(is->selected)))
        - is->selline;
@@ -784,7 +784,7 @@ void use_next_nodepage_locked(void){
     return;
   }
   delta = 0;
-  const struct ncplane *n = nctablet_ncplane(is->tab);
+  const struct ncplane *n = nctablet_plane(is->tab);
   while(l2obj_next(l2) && delta <= ncplane_dim_y(n)){
     delta += l2obj_lines(l2);
     l2 = l2obj_next(l2);
@@ -813,7 +813,7 @@ void use_prev_nodepage_locked(void){
   do{
     l2 = l2obj_prev(l2);
     delta -= l2obj_lines(l2);
-  }while(l2obj_prev(l2) && delta >= -ncplane_dim_y(nctablet_ncplane(is->tab)));
+  }while(l2obj_prev(l2) && delta >= -ncplane_dim_y(nctablet_plane(is->tab)));
   if(is->selline + delta <= !!interface_up_p(is->iface)){
     delta = !!interface_up_p(is->iface) - is->selline;
   }
@@ -861,7 +861,7 @@ void use_last_node_locked(void){
   if(delta == 0){
     return;
   }
-  const struct ncplane *n = nctablet_ncplane(is->tab);
+  const struct ncplane *n = nctablet_plane(is->tab);
   if(is->selline + delta + l2obj_lines(l2) >= ncplane_dim_y(n) - 1){
     delta = (ncplane_dim_y(n) - 2 - l2obj_lines(l2)) - is->selline;
   }

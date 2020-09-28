@@ -672,7 +672,6 @@ void iface_box(const interface *i, const iface_state *is, struct ncplane *n,
   int attrs;
 
   cols = ncplane_dim_x(n);
-fprintf(stderr, "ROWS: %d COLS: %d\n", rows, cols);
   bcolor = interface_up_p(i) ? UBORDER_FG : DBORDER_FG;
   hcolor = interface_up_p(i) ? UHEADING_COLOR : DHEADING_COLOR;
   attrs = active ? NCSTYLE_REVERSE : NCSTYLE_BOLD;
@@ -921,7 +920,7 @@ void recompute_selection(iface_state *is, int oldsel, int oldrows, int newrows){
       newsel, bef, aft, oldsel, ncplane_dim_y(is->tab));
   update_panels();
   doupdate();*/
-  const struct ncplane *n = nctablet_ncplane(is->tab);
+  const struct ncplane *n = nctablet_plane(is->tab);
   if(newsel + aft <= ncplane_dim_y(n) - 2 - !!interface_up_p(is->iface)){
     newsel = ncplane_dim_y(n) - aft - 2 - !!interface_up_p(is->iface);
   }
