@@ -126,6 +126,7 @@ int new_display_panel(struct ncplane *n, struct panel_state *ps, int rows, int c
   ncplane_set_fg_rgb(psw, PHEADING_COLOR);
   ncplane_putwstr_yx(psw, 0, START_COL * 2, hstr);
   ncplane_putwstr_yx(psw, rows + 1, cols - (crightlen + START_COL * 2), crightstr);
+  ncplane_set_base(psw, " ", 0, 0);
   return 0;
 }
 
