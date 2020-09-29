@@ -49,7 +49,7 @@ PKG_CHECK_MODULES(LIBNL3, libnl-3.0 >= 3.0, [have_libnl3=yes])
 PKG_CHECK_MODULES(LIBNL3GEN, libnl-genl-3.0 >= 3.0, [have_libnl3gen=yes] )
 	CFLAGS+=" $LIBNL3GEN_CFLAGS"
 	LIBS+=" $LIBNL3GEN_LIBS"
-PKG_CHECK_MODULES([notcurses], [notcurses >= 1.4.3], [have_notcurses=yes],
+PKG_CHECK_MODULES([notcurses], [notcurses >= 1.7.4], [have_notcurses=yes],
 	  AC_MSG_WARN([Cannot find Notcurses. Will not build the fullscreen client.]))
   CFLAGS+=" $notcurses_CFLAGS"
   LIBS+=" $notcurses_LIBS"
