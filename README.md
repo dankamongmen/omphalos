@@ -36,7 +36,7 @@ sockets. Packet transmission requires at least a 2.6.29 kernel.
 
 The TTY UI requires GNU Readline.
 
-The fullscreen UI requires Notcurses.
+The fullscreen UI requires Notcurses 1.7.4+.
 
 arp-scan's `get-oui` program is used to build the IANA OUI file.
 
