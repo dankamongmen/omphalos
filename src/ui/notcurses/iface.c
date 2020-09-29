@@ -46,7 +46,7 @@ typedef struct l2obj {
 static void
 draw_right_vline(const interface *i, int active, struct ncplane *n){
   //assert(i && w && (active || !active));
-  ncplane_styles_set(n, active ? NCSTYLE_REVERSE : NCSTYLE_BOLD);
+  ncplane_set_styles(n, active ? NCSTYLE_REVERSE : NCSTYLE_BOLD);
   ncplane_set_fg_rgb(n, interface_up_p(i) ? UBORDER_FG : DBORDER_FG);
   ncplane_set_bg_rgb(n, interface_up_p(i) ? UBORDER_BG : DBORDER_BG);
   ncplane_putwc(n,  L'│');
@@ -304,7 +304,7 @@ print_host_services(struct ncplane *nc, const interface *i, const l3obj *l,
   n = 0;
   for(l4 = l->l4objs ; l4 ; l4 = l4->next){
     ncplane_set_fg_rgb(nc, rgb);
-    ncplane_styles_set(nc, styles | (l4->emph ? NCSTYLE_BOLD : 0));
+    ncplane_set_styles(nc, styles | (l4->emph ? NCSTYLE_BOLD : 0));
     srv = l4srvstr(l4->l4);
     if(n){
       if((unsigned)cols < 1 + wcslen(srv)){ // one for space
@@ -481,10 +481,10 @@ print_iface_host(const interface *i, const iface_state *is, struct ncplane *w,
   }
   if(!(line % 2)){
     ncplane_set_fg_rgb(w, rgb);
-    ncplane_styles_set(w, sty);
+    ncplane_set_styles(w, sty);
   }else{
     ncplane_set_fg_rgb(w, argb);
-    ncplane_styles_set(w, asty);
+    ncplane_set_styles(w, asty);
   }
   if(line >= minline){
     char hw[HWADDRSTRLEN(i->addrlen)];
@@ -543,10 +543,10 @@ print_iface_host(const interface *i, const iface_state *is, struct ncplane *w,
 
         if(!(line % 2)){
           ncplane_set_fg_rgb(w, l3rgb);
-          ncplane_styles_set(w, l3sty);
+          ncplane_set_styles(w, l3sty);
         }else{
           ncplane_set_fg_rgb(w, al3rgb);
-          ncplane_styles_set(w, al3sty);
+          ncplane_set_styles(w, al3sty);
         }
         l3ntop(l3->l3, nw, sizeof(nw));
         if((name = get_l3name(l3->l3)) == NULL){
@@ -555,10 +555,10 @@ print_iface_host(const interface *i, const iface_state *is, struct ncplane *w,
         ncplane_printf_yx(w, line, 0, "%lc   %s ", selectchar, nw);
         if(!(line % 2)){
           ncplane_set_fg_rgb(w, rrgb);
-          ncplane_styles_set(w, rsty);
+          ncplane_set_styles(w, rsty);
         }else{
           ncplane_set_fg_rgb(w, arrgb);
-          ncplane_styles_set(w, arsty);
+          ncplane_set_styles(w, arsty);
         }
         len = cols - PREFIXCOLUMNS * 2 - 7 - strlen(nw);
         wlen = len - wcswidth(name, wcslen(name));
@@ -568,10 +568,10 @@ print_iface_host(const interface *i, const iface_state *is, struct ncplane *w,
         ncplane_printf(w, "%.*ls%*.*s", len, name, wlen, wlen, "");
         if(!(line % 2)){
           ncplane_set_fg_rgb(w, l3rgb);
-          ncplane_styles_set(w, l3sty);
+          ncplane_set_styles(w, l3sty);
         }else{
           ncplane_set_fg_rgb(w, al3rgb);
-          ncplane_styles_set(w, al3sty);
+          ncplane_set_styles(w, al3sty);
         }
         {
           char sbuf[PREFIXSTRLEN + 1];
@@ -675,25 +675,25 @@ void iface_box(const interface *i, const iface_state *is, struct ncplane *n,
   bcolor = interface_up_p(i) ? UBORDER_FG : DBORDER_FG;
   hcolor = interface_up_p(i) ? UHEADING_COLOR : DHEADING_COLOR;
   attrs = active ? NCSTYLE_REVERSE : NCSTYLE_BOLD;
-  ncplane_styles_set(n, attrs);
+  ncplane_set_styles(n, attrs);
   ncplane_set_fg_rgb(n, bcolor);
   ncplane_cursor_move_yx(n, 0, 1);
   cell c = CELL_TRIVIAL_INITIALIZER;
   cell_load(n, &c, "─");
   cell_set_fg_rgb(&c, bcolor);
-  cell_styles_set(&c, attrs);
+  cell_set_styles(&c, attrs);
   ncplane_hline(n, &c, cols - 3);
   ncplane_putegc_yx(n, 0, cols - 1, "╮", NULL);
-  ncplane_styles_off(n, NCSTYLE_REVERSE);
+  ncplane_off_styles(n, NCSTYLE_REVERSE);
   if(active){
-    ncplane_styles_on(n, NCSTYLE_BOLD);
+    ncplane_on_styles(n, NCSTYLE_BOLD);
   }
   ncplane_printf_yx(n, 0, 0, "[");
   ncplane_set_fg_rgb(n, hcolor);
   if(active){
-    ncplane_styles_on(n, NCSTYLE_BOLD);
+    ncplane_on_styles(n, NCSTYLE_BOLD);
   }else{
-    ncplane_styles_off(n, NCSTYLE_BOLD);
+    ncplane_off_styles(n, NCSTYLE_BOLD);
   }
   ncplane_putstr(n, i->name);
   ncplane_printf(n, " (%s", is->typestr);
@@ -710,34 +710,34 @@ void iface_box(const interface *i, const iface_state *is, struct ncplane *n,
   ncplane_putchar(n, ')');
   ncplane_set_fg_rgb(n, bcolor);
   if(active){
-    ncplane_styles_on(n, NCSTYLE_BOLD);
+    ncplane_on_styles(n, NCSTYLE_BOLD);
   }
   ncplane_printf(n, "]");
   ncplane_cursor_move_yx(n, 0, cols - 4);
-  ncplane_styles_on(n, NCSTYLE_BOLD);
+  ncplane_on_styles(n, NCSTYLE_BOLD);
   ncplane_putstr(n, is->expansion == EXPANSION_MAX ? "[-]" :
                   is->expansion == 0 ? "[+]" : "[±]");
-  ncplane_styles_on(n,  attrs);
-  ncplane_styles_off(n,  NCSTYLE_REVERSE);
+  ncplane_on_styles(n,  attrs);
+  ncplane_off_styles(n,  NCSTYLE_REVERSE);
   attrs = active ? NCSTYLE_REVERSE : NCSTYLE_BOLD;
-  ncplane_styles_set(n, attrs);
+  ncplane_set_styles(n, attrs);
   ncplane_set_fg_rgb(n, bcolor);
-  ncplane_styles_off(n, NCSTYLE_REVERSE);
+  ncplane_off_styles(n, NCSTYLE_REVERSE);
   if(active){
-    ncplane_styles_on(n, NCSTYLE_BOLD);
+    ncplane_on_styles(n, NCSTYLE_BOLD);
   }
   ncplane_cursor_move_yx(n, rows - 1, 2);
   cell_set_fg_rgb(&c, bcolor);
-  cell_styles_set(&c, attrs);
+  cell_set_styles(&c, attrs);
   ncplane_hline(n, &c, cols - 3);
   cell_release(n, &c);
   ncplane_putegc_yx(n, rows - 1, cols - 1, "╯", NULL);
   ncplane_printf_yx(n, rows - 1, 2, "[");
   ncplane_set_fg_rgb(n, hcolor);
   if(active){
-    ncplane_styles_on(n, NCSTYLE_BOLD);
+    ncplane_on_styles(n, NCSTYLE_BOLD);
   }else{
-    ncplane_styles_off(n, NCSTYLE_BOLD);
+    ncplane_off_styles(n, NCSTYLE_BOLD);
   }
   ncplane_printf(n, "mtu %d", i->mtu);
   if(interface_up_p(i)){
@@ -795,16 +795,16 @@ void iface_box(const interface *i, const iface_state *is, struct ncplane *n,
   }
   ncplane_set_fg_rgb(n, bcolor);
   if(active){
-    ncplane_styles_on(n, NCSTYLE_BOLD);
+    ncplane_on_styles(n, NCSTYLE_BOLD);
   }
   ncplane_printf(n, "]");
   if( (buslen = strlen(i->drv.bus_info)) ){
     if(active){
       // FIXME Want the text to be bold -- currently unreadable
-      ncplane_styles_set(n, NCSTYLE_REVERSE);
+      ncplane_set_styles(n, NCSTYLE_REVERSE);
       ncplane_set_fg_rgb(n, bcolor);
     }else{
-      ncplane_styles_set(n, NCSTYLE_BOLD);
+      ncplane_set_styles(n, NCSTYLE_BOLD);
       ncplane_set_fg_rgb(n, bcolor);
     }
     if(i->busname){
@@ -824,7 +824,7 @@ void print_iface_state(const interface *i, const iface_state *is, struct ncplane
   if(rows < 2){
     return;
   }
-  ncplane_styles_set(w, NCSTYLE_BOLD);
+  ncplane_set_styles(w, NCSTYLE_BOLD);
   ncplane_set_fg_rgb(w, IFACE_COLOR);
   // FIXME broken if bps domain ever != fps domain. need unite those
   // into one FTD stat by letting it take an object...

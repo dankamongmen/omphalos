@@ -84,7 +84,7 @@ channel_details(struct ncplane *w){
   col = c - (START_COL + FREQSPERROW * 4 + IFNAMSIZ + 1);
   assert(col >= 0);
   ncplane_set_fg_rgb(w, 0xd0d0d0);
-  ncplane_styles_set(w, NCSTYLE_BOLD);
+  ncplane_set_styles(w, NCSTYLE_BOLD);
   freqs = wireless_freq_count();
   freqrows = freqs / FREQSPERROW;
   if(freqs % FREQSPERROW){

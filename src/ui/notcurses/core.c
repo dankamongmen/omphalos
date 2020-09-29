@@ -139,7 +139,7 @@ iface_details(struct ncplane *hw, const interface *i, int rows){
   const int row = 1;
   int z;
   ncplane_set_fg_rgb(hw, 0xd0d0d0);
-  ncplane_styles_set(hw, NCSTYLE_BOLD);
+  ncplane_set_styles(hw, NCSTYLE_BOLD);
   ncplane_dim_yx(hw, &scrrows, &scrcols);
   assert(scrrows); // FIXME
   if((z = rows) >= DETAILROWS){
@@ -661,7 +661,7 @@ helpstrs(struct ncplane *hw, int row, int rows){
   const wchar_t *hs;
   int z;
 
-  ncplane_styles_set(hw, NCSTYLE_BOLD);
+  ncplane_set_styles(hw, NCSTYLE_BOLD);
   ncplane_set_fg_rgb(hw, 0xd0d0d0);
   for(z = 0 ; (hs = helps[z]) && z < rows ; ++z){
     ncplane_putwstr_yx(hw, row + z, 1, hs);
@@ -675,7 +675,7 @@ int update_diags_locked(struct panel_state *ps){
   logent l[DIAGROWS];
   int y, x, r;
 
-  ncplane_styles_set(ps->n, NCSTYLE_BOLD);
+  ncplane_set_styles(ps->n, NCSTYLE_BOLD);
   ncplane_set_fg_rgb(ps->n, 0xd0d0d0);
   ncplane_dim_yx(ps->n, &y, &x);
   assert(x > 26 + START_COL * 2);

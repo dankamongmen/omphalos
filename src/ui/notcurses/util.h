@@ -22,7 +22,7 @@ static inline int
 set_subdisplay_attr(struct ncplane* n){
   int ret = ncplane_set_fg_rgb(n, 0xd0d0d0);
   ret |= ncplane_set_bg_rgb(n, 0x0);
-  ncplane_styles_set(n, NCSTYLE_BOLD);
+  ncplane_set_styles(n, NCSTYLE_BOLD);
   return ret;
 }
 
