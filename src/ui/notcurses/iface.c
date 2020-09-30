@@ -84,7 +84,7 @@ iface_state *create_interface_state(interface *i){
     ret->expansion = EXPANSION_MAX;
     ret->scrline = -1;
     ret->selected = NULL;
-    ret->selline = 0;
+    ret->selline = -1;
     ret->tab = NULL;
   }
   return ret;
