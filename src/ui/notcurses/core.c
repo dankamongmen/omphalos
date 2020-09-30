@@ -332,15 +332,16 @@ static int
 redraw_iface(struct nctablet *tablet, bool drawfromtop){
   const iface_state *is = nctablet_userptr(tablet);
   int rows, cols;
+  struct ncplane *tn = nctablet_plane(tablet);
   ncplane_dim_yx(nctablet_plane(tablet), &rows, &cols);
-  print_iface_hosts(is->iface, is, nctablet_plane(tablet),
+  ncplane_set_base(tn, " ", 0, CHANNELS_RGB_INITIALIZER(0, 0, 0, 0, 0, 0));
+  print_iface_hosts(is->iface, is, tn,
                     rows, cols, drawfromtop, is == current_iface);
   if(interface_up_p(is->iface)){
-    print_iface_state(is->iface, is, nctablet_plane(tablet), rows, cols,
-                      is == current_iface);
+    print_iface_state(is->iface, is, tn, rows, cols, is == current_iface);
   }
   int lines = lines_for_interface(is);
-  iface_box(is->iface, is, nctablet_plane(tablet), is == current_iface, lines);
+  iface_box(is->iface, is, tn, is == current_iface, lines);
   return lines;
 }
 
