@@ -19,8 +19,6 @@
 #define PBORDER_COLOR 0xd787ff
 #define PHEADING_COLOR 0xff005f
 
-static iface_state *current_iface;
-
 struct notcurses *NC = NULL;
 
 // Status bar at the bottom of the screen. Must be reallocated upon screen
@@ -33,12 +31,22 @@ int screen_update(void){
   return notcurses_render(NC);
 }
 
-static const interface *
-get_current_iface(void){
-  if(current_iface){
-    return current_iface->iface;
+static iface_state *
+get_current_iface_state(struct ncreel *nreel){
+  struct nctablet *tab = ncreel_focused(nreel);
+  if(tab == NULL){
+    return NULL;
   }
-  return NULL;
+  return nctablet_userptr(tab);
+}
+
+static interface *
+get_current_iface(struct ncreel *nreel){
+  iface_state *is = get_current_iface_state(nreel);
+  if(is == NULL){
+    return NULL;
+  }
+  return is->iface;
 }
 
 int wvstatus_locked(struct ncplane *n, const char *fmt, va_list va){
@@ -259,7 +267,7 @@ int setup_statusbar(int cols){
 }
 
 void toggle_promisc_locked(struct ncplane *w){
-  const interface *i = get_current_iface();
+  const interface *i = get_current_iface(reel);
 
   if(i){
     if(interface_promisc_p(i)){
@@ -273,13 +281,13 @@ void toggle_promisc_locked(struct ncplane *w){
 }
 
 void sniff_interface_locked(struct ncplane *w){
-  const interface *i = get_current_iface();
+  const interface *i = get_current_iface(reel);
 
   if(i){
     if(!interface_sniffing_p(i)){
       if(!interface_up_p(i)){
         wstatus_locked(w, "Bringing up %s...", i->name);
-        current_iface->devaction = -1;
+        get_current_iface_state(reel)->devaction = -1;
         up_interface(i);
       }
     }else{
@@ -289,12 +297,11 @@ void sniff_interface_locked(struct ncplane *w){
 }
 
 void down_interface_locked(struct ncplane *w){
-  const interface *i = get_current_iface();
-
+  const interface *i = get_current_iface(reel);
   if(i){
     if(interface_up_p(i)){
       wstatus_locked(w, "Bringing down %s...", i->name);
-      current_iface->devaction = 1;
+      get_current_iface_state(reel)->devaction = 1;
       down_interface(i);
     }
   }
@@ -335,13 +342,16 @@ redraw_iface(struct nctablet *tablet, bool drawfromtop){
   struct ncplane *tn = nctablet_plane(tablet);
   ncplane_dim_yx(nctablet_plane(tablet), &rows, &cols);
   ncplane_set_base(tn, " ", 0, CHANNELS_RGB_INITIALIZER(0, 0, 0, 0, 0, 0));
-  print_iface_hosts(is->iface, is, tn,
-                    rows, cols, drawfromtop, is == current_iface);
+  print_iface_hosts(is->iface, is, tn, rows, cols, drawfromtop,
+                    is == get_current_iface_state(reel));
   if(interface_up_p(is->iface)){
-    print_iface_state(is->iface, is, tn, rows, cols, is == current_iface);
+    print_iface_state(is->iface, is, tn, rows, cols, is == get_current_iface_state(reel));
   }
   int lines = lines_for_interface(is);
-  iface_box(is->iface, is, tn, is == current_iface, lines);
+  if(lines > rows){
+    lines = rows;
+  }
+  iface_box(is->iface, is, tn, is == get_current_iface_state(reel), lines);
   return lines;
 }
 
@@ -494,7 +504,7 @@ resolve_interface(struct ncplane *n){
 
 void resolve_selection(struct ncplane *w){
   struct iface_state *is;
-  if( (is = current_iface) ){
+  if( (is = get_current_iface_state(reel)) ){
     // FIXME check for host selection...
     resolve_interface(w);
   }else{
@@ -505,7 +515,7 @@ void resolve_selection(struct ncplane *w){
 void reset_current_interface_stats(struct ncplane *w){
   const interface *i;
 
-  if( (i = get_current_iface()) ){
+  if( (i = get_current_iface(reel)) ){
     reset_interface_stats(w, i);
   }else{
     wstatus_locked(w, "There is no active selection");
@@ -516,15 +526,15 @@ int expand_iface_locked(void){
   int old, oldrows;
   iface_state *is;
 
-  if((is = current_iface) == NULL){
+  if((is = get_current_iface_state(reel)) == NULL){
     return 0;
   }
   if(is->expansion == EXPANSION_MAX){
     return 0;
   }
   ++is->expansion;
-  old = current_iface->selline;
-  const struct ncplane *n = nctablet_plane(current_iface->tab);
+  old = get_current_iface_state(reel)->selline;
+  const struct ncplane *n = nctablet_plane(get_current_iface_state(reel)->tab);
   oldrows = ncplane_dim_y(n);
   recompute_selection(is, old, oldrows, ncplane_dim_y(n));
   return 0;
@@ -534,15 +544,15 @@ int collapse_iface_locked(void){
   int old, oldrows;
   iface_state *is;
 
-  if((is = current_iface) == NULL){
+  if((is = get_current_iface_state(reel)) == NULL){
     return 0;
   }
   if(is->expansion == 0){
     return 0;
   }
   --is->expansion;
-  old = current_iface->selline;
-  const struct ncplane *n = nctablet_plane(current_iface->tab);
+  old = get_current_iface_state(reel)->selline;
+  const struct ncplane *n = nctablet_plane(get_current_iface_state(reel)->tab);
   oldrows = ncplane_dim_y(n);
   recompute_selection(is, old, oldrows, ncplane_dim_y(n));
   return 0;
@@ -564,7 +574,7 @@ select_interface_node(struct iface_state *is, struct l2obj *l2, int delta){
 int select_iface_locked(void){
   struct iface_state *is;
 
-  if((is = current_iface) == NULL){
+  if((is = get_current_iface_state(reel)) == NULL){
     return -1;
   }
   if(is->selected){
@@ -580,7 +590,7 @@ int select_iface_locked(void){
 int deselect_iface_locked(void){
   struct iface_state *is;
 
-  if((is = current_iface) == NULL){
+  if((is = get_current_iface_state(reel)) == NULL){
     return 0;
   }
   if(is->selected == NULL){
@@ -594,8 +604,8 @@ int display_details_locked(struct ncplane *mainw, struct panel_state *ps){
   if(new_display_panel(mainw, ps, DETAILROWS, 76, L"press 'v' to dismiss details")){
     goto err;
   }
-  if(current_iface){
-    if(iface_details(ps->n, current_iface->iface, ps->ysize)){
+  if(get_current_iface_state(reel)){
+    if(iface_details(ps->n, get_current_iface_state(reel)->iface, ps->ysize)){
       goto err;
     }
   }
@@ -742,7 +752,7 @@ void use_next_node_locked(void){
   struct iface_state *is;
   int delta;
 
-  if((is = current_iface) == NULL){
+  if((is = get_current_iface_state(reel)) == NULL){
     return;
   }
   if(is->selected == NULL || l2obj_next(is->selected) == NULL){
@@ -761,7 +771,7 @@ void use_prev_node_locked(void){
   struct iface_state *is;
   int delta;
 
-  if((is = current_iface) == NULL){
+  if((is = get_current_iface_state(reel)) == NULL){
     return;
   }
   if(is->selected == NULL || l2obj_prev(is->selected) == NULL){
@@ -779,7 +789,7 @@ void use_next_nodepage_locked(void){
   struct l2obj *l2;
   int delta;
 
-  if((is = current_iface) == NULL){
+  if((is = get_current_iface_state(reel)) == NULL){
     return;
   }
   if((l2 = is->selected) == NULL || l2obj_next(l2) == NULL){
@@ -805,7 +815,7 @@ void use_prev_nodepage_locked(void){
   struct l2obj *l2;
   int delta;
 
-  if((is = current_iface) == NULL){
+  if((is = get_current_iface_state(reel)) == NULL){
     return;
   }
   if((l2 = is->selected) == NULL || l2obj_prev(l2) == NULL){
@@ -827,7 +837,7 @@ void use_first_node_locked(void){
   struct l2obj *l2;
   int delta;
 
-  if((is = current_iface) == NULL){
+  if((is = get_current_iface_state(reel)) == NULL){
     return;
   }
   if((l2 = is->selected) == NULL || l2obj_prev(l2) == NULL){
@@ -849,7 +859,7 @@ void use_last_node_locked(void){
   struct l2obj *l2;
   int delta;
 
-  if((is = current_iface) == NULL){
+  if((is = get_current_iface_state(reel)) == NULL){
     return;
   }
   if((l2 = is->selected) == NULL || l2obj_next(l2) == NULL){
@@ -872,10 +882,10 @@ void use_last_node_locked(void){
 
 // Whether we've entered an interface, and are browsing selected nodes within.
 int selecting(void){
-  if(!current_iface){
+  if(!get_current_iface_state(reel)){
     return 0;
   }
-  if(!current_iface->selected){
+  if(!get_current_iface_state(reel)->selected){
     return 0;
   }
   return 1;
