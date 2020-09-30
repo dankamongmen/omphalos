@@ -583,7 +583,6 @@ int select_iface_locked(void){
   if(is->l2objs == NULL){
     return -1;
   }
-  assert(is->selline == -1);
   return select_interface_node(is, is->l2objs, 2);
 }
 
