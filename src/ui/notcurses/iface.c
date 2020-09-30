@@ -43,13 +43,16 @@ typedef struct l2obj {
 #define DBORDER_FG 0x848789
 #define DBORDER_BG 0x0
 
-static void
+static int
 draw_right_vline(const interface *i, int active, struct ncplane *n){
   //assert(i && w && (active || !active));
   ncplane_set_styles(n, active ? NCSTYLE_REVERSE : NCSTYLE_BOLD);
   ncplane_set_fg_rgb(n, interface_up_p(i) ? UBORDER_FG : DBORDER_FG);
   ncplane_set_bg_rgb(n, interface_up_p(i) ? UBORDER_BG : DBORDER_BG);
-  ncplane_putwc(n,  L'│');
+  if(ncplane_putwc(n,  L'│') <= 0){
+    return -1;
+  }
+  return 0;
 }
 
 l2obj *l2obj_next(l2obj *l2){
@@ -300,7 +303,6 @@ print_host_services(struct ncplane *nc, const interface *i, const l3obj *l,
     *line += !!l->l4objs;
     return;
   }
-  --cols;
   n = 0;
   for(l4 = l->l4objs ; l4 ; l4 = l4->next){
     ncplane_set_fg_rgb(nc, rgb);
@@ -310,23 +312,23 @@ print_host_services(struct ncplane *nc, const interface *i, const l3obj *l,
       if((unsigned)cols < 1 + wcslen(srv)){ // one for space
         break;
       }
-      cols -= 1 + wcslen(srv);
       n += 1 + wcslen(srv);
       ncplane_printf(nc, " %ls", srv);
     }else{
       if((unsigned)cols < 2 + 5 + wcslen(srv)){ // two for borders
         break;
       }
-      cols -= 5 + wcslen(srv);
       n += 5 + wcslen(srv);
       ncplane_printf_yx(nc, *line, 0, "%lc    %ls", selectchar, srv);
       ++*line;
     }
   }
-  if(n && cols > 0){
-    ncplane_printf(nc, "%-*.*s", cols, cols, "");
+  int cy, cx;
+  ncplane_cursor_yx(nc, &cy, &cx);
+  if(n && n < cols - 1){
+    ncplane_cursor_move_yx(nc, cy, cols - 1);
+    draw_right_vline(i, active, nc);
   }
-  draw_right_vline(i, active, nc);
 }
 
 #define UCAST_COLOR 0x00afff
