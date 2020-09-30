@@ -119,10 +119,10 @@ int new_display_panel(struct ncplane *n, struct panel_state *ps, int rows, int c
   }
   ps->n = psw;
   ps->ysize = rows;
-  ncplane_styles_on(psw, NCSTYLE_BOLD);
+  ncplane_on_styles(psw, NCSTYLE_BOLD);
   ncplane_set_fg_rgb(psw, PBORDER_COLOR);
   bevel(psw);
-  ncplane_styles_off(psw, NCSTYLE_BOLD);
+  ncplane_off_styles(psw, NCSTYLE_BOLD);
   ncplane_set_fg_rgb(psw, PHEADING_COLOR);
   ncplane_putwstr_yx(psw, 0, START_COL * 2, hstr);
   ncplane_putwstr_yx(psw, rows + 1, cols - (crightlen + START_COL * 2), crightstr);
@@ -468,13 +468,13 @@ int draw_main_window(struct ncplane *w){
   if(setup_statusbar(cols)){
     goto err;
   }
-  ncplane_styles_on(w, NCSTYLE_BOLD);
+  ncplane_on_styles(w, NCSTYLE_BOLD);
   ncplane_set_fg_rgb(w, FOOTER_COLOR);
   // addstr() doesn't interpret format strings, so this is safe. It will
   // fail, however, if the string can't fit on the window, which will for
   // instance happen if there's an embedded newline.
   ncplane_putstr_yx(w, rows - 1, 0, statusmsg);
-  ncplane_styles_off(w, NCSTYLE_BOLD);
+  ncplane_off_styles(w, NCSTYLE_BOLD);
   return 0;
 
 err:
