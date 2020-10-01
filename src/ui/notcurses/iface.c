@@ -615,11 +615,11 @@ void print_iface_hosts(const interface *i, const iface_state *is,
   if(is->expansion < EXPANSION_NODES){
     return;
   }
-  // First, print the selected interface (if there is one)
+  // First, print the selected interface (if there is one), and those above
   cur = is->selected;
   line = is->selline + sumline;
   while(cur && line + (long)cur->lnes >= sumline){
-    print_iface_host(i, is, w, cur, line, rows, cols, active,
+    print_iface_host(i, is, w, cur, line, rows, cols, cur == is->selected,
                      sumline, active);
     // here we traverse, then account...
     if( (cur = cur->prev) ){
