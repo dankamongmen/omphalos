@@ -461,7 +461,7 @@ print_iface_host(const interface *i, const iface_state *is, struct ncplane *w,
     argb = rgb = srgb;
     al3rgb = l3rgb = srgb;
     arrgb = rrgb = srgb;
-    selectchar = l->l3objs && is->expansion >= EXPANSION_HOSTS ? L'⎧' : L'⎨';
+    selectchar = l->l3objs && is->expansion >= EXPANSION_HOSTS ? L'╭' : L'⎨';
   }else{
     selectchar = L' ';
   }
@@ -532,9 +532,9 @@ print_iface_host(const interface *i, const iface_state *is, struct ncplane *w,
 
       if(selectchar != L' '){
         if(l3->next || (l3->l4objs && is->expansion >= EXPANSION_SERVICES)){
-          selectchar = L'⎪';
+          selectchar = L'│';
         }else{
-          selectchar = L'⎩';
+          selectchar = L'╰';
         }
       }
       if(line >= rows){
@@ -593,7 +593,7 @@ print_iface_host(const interface *i, const iface_state *is, struct ncplane *w,
       ++line;
       if(is->expansion >= EXPANSION_SERVICES){
         if(selectchar != L' ' && !l3->next){
-          selectchar = L'⎩';
+          selectchar = L'╰';
         }
         print_host_services(w, i, l3, &line, rows, cols, selectchar,
                             !(line % 2) ? rgb : argb, !(line % 2) ? sty : asty,
