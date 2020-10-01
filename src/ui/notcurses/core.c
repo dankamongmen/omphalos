@@ -84,6 +84,20 @@ offload_details(struct ncplane *n, const interface *i, int row, int col,
                            r > 0 ? '+' : r < 0 ? '?' : '-');
 }
 
+static int
+draw_subpanel(struct panel_state* ps, int cols, const wchar_t *hstr, const wchar_t *crightstr){
+  const int crightlen = wcslen(crightstr);
+  ncplane_on_styles(ps->n, NCSTYLE_BOLD);
+  ncplane_set_fg_rgb(ps->n, PBORDER_COLOR);
+  bevel(ps->n);
+  ncplane_off_styles(ps->n, NCSTYLE_BOLD);
+  ncplane_set_fg_rgb(ps->n, PHEADING_COLOR);
+  ncplane_putwstr_yx(ps->n, 0, START_COL * 2, hstr);
+  ncplane_putwstr_yx(ps->n, ps->ysize + 1, cols - (crightlen + START_COL * 2), crightstr);
+  ncplane_set_base(ps->n, " ", 0, 0);
+  return 0;
+}
+
 // Create a panel at the bottom of the window, referred to as the "subdisplay".
 // Only one can currently be active at a time. Window decoration and placement
 // is managed here; only the rows needed for display ought be provided.
@@ -127,14 +141,7 @@ int new_display_panel(struct ncplane *n, struct panel_state *ps, int rows, int c
   }
   ps->n = psw;
   ps->ysize = rows;
-  ncplane_on_styles(psw, NCSTYLE_BOLD);
-  ncplane_set_fg_rgb(psw, PBORDER_COLOR);
-  bevel(psw);
-  ncplane_off_styles(psw, NCSTYLE_BOLD);
-  ncplane_set_fg_rgb(psw, PHEADING_COLOR);
-  ncplane_putwstr_yx(psw, 0, START_COL * 2, hstr);
-  ncplane_putwstr_yx(psw, rows + 1, cols - (crightlen + START_COL * 2), crightstr);
-  ncplane_set_base(psw, " ", 0, 0);
+  draw_subpanel(ps, cols, hstr, crightstr);
   return 0;
 }
 
