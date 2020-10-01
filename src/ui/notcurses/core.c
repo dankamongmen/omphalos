@@ -221,8 +221,8 @@ iface_details(struct ncplane *hw, const interface *i, int rows){
     --z;
   } /* intentional fallthrough */
   case 1:{
-    ncplane_printf_yx(hw, row + z, col, "%-*ls", scrcols - 2, i->topinfo.devname ?
-                      i->topinfo.devname : L"Unknown device");
+    ncplane_printf_yx(hw, row + z, col, "%-*.*ls", scrcols - 2, scrcols - 2,
+                      i->topinfo.devname ? i->topinfo.devname : L"Unknown device");
     --z;
   } /* intentional fallthrough */
   case 0:{
