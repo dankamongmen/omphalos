@@ -344,7 +344,7 @@ redraw_iface(struct nctablet *tablet, bool drawfromtop){
   ncplane_set_base(tn, " ", 0, CHANNELS_RGB_INITIALIZER(0, 0, 0, 0, 0, 0));
   print_iface_hosts(is->iface, is, tn, rows, cols, drawfromtop,
                     is == get_current_iface_state(reel));
-  // FIXME this is being printed over the first line sometimes
+  // FIXME this is being printed over the first host line sometimes
   if(interface_up_p(is->iface)){
     print_iface_state(is->iface, is, tn, rows, cols, is == get_current_iface_state(reel));
   }

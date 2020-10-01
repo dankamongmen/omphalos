@@ -719,15 +719,12 @@ void iface_box(const interface *i, const iface_state *is, struct ncplane *n,
   ncplane_on_styles(n, NCSTYLE_BOLD);
   ncplane_putstr(n, is->expansion == EXPANSION_MAX ? "[-]" :
                   is->expansion == 0 ? "[+]" : "[±]");
+  // now we do the bottom
+  ncplane_set_fg_rgb(n, bcolor);
   ncplane_on_styles(n,  attrs);
   ncplane_off_styles(n,  NCSTYLE_REVERSE);
-  attrs = active ? NCSTYLE_REVERSE : NCSTYLE_BOLD;
+  attrs = NCSTYLE_BOLD | (active ? NCSTYLE_REVERSE : 0);
   ncplane_set_styles(n, attrs);
-  ncplane_set_fg_rgb(n, bcolor);
-  ncplane_off_styles(n, NCSTYLE_REVERSE);
-  if(active){
-    ncplane_on_styles(n, NCSTYLE_BOLD);
-  }
   ncplane_cursor_move_yx(n, rows - 1, 2);
   cell_set_fg_rgb(&c, bcolor);
   cell_set_styles(&c, attrs);
