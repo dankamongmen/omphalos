@@ -40,8 +40,6 @@ The fullscreen UI requires Notcurses 1.7.5+.
 
 arp-scan's `get-oui` program is used to build the IANA OUI file.
 
-wget is used to download the USB ID file.
-
 GnuPG is used to verify signed tarballs.
 
 Manpages and XHTML documentation require xsltproc and docbook-xsl.

@@ -31,8 +31,6 @@
 #define DEFAULT_MODESTRING "active"
 // arp-scan's 'get-oui'
 #define DEFAULT_IANA_FILENAME OMPHALOS_DATADIR "/" PACKAGE_NAME "/" "ieee-oui.txt"
-// usbutils' 'update-usbids'
-#define DEFAULT_USBIDS_FILENAME OMPHALOS_DATADIR "/" PACKAGE_NAME "/" "usb.ids"
 #define DEFAULT_RESOLVCONF_FILENAME "/etc/resolv.conf"
 
 pthread_key_t omphalos_ctx_key;
@@ -66,8 +64,6 @@ usage(const char *arg0, int ret){
 	fprintf(fp, "-u username: user name to take after creating packet socket.\n");
 	fprintf(fp, " '%s' by default, empty string to disable.\n", DEFAULT_USERNAME);
 	fprintf(fp, "-f filename: libpcap-format save file for input.\n");
-	fprintf(fp, "--usbids=filename: USB ID Repository (http://www.linux-usb.org/usb-ids.html).\n");
-	fprintf(fp, " '%s' by default, empty string to disable.\n", DEFAULT_USBIDS_FILENAME);
 	fprintf(fp, "--ouis=filename: IANA's OUI mapping in get-oui(1) format.\n");
 	fprintf(fp, " '%s' by default, empty string to disable.\n", DEFAULT_IANA_FILENAME);
 	fprintf(fp, "--resolv=filename: resolv.conf-format nameserver list.\n");
@@ -108,7 +104,6 @@ default_vdiagnostic(const char *fmt, va_list v){
 
 enum {
 	OPT_OUIS = 'z' + 1,
-	OPT_USBIDS,
 	OPT_VERSION,
 	OPT_PLOG,
 	OPT_RESOLV,
@@ -122,11 +117,6 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 			.has_arg = 2,
 			.flag = NULL,
 			.val = OPT_OUIS,
-		},{
-			.name = "usbids",
-			.has_arg = 2,
-			.flag = NULL,
-			.val = OPT_USBIDS,
 		},{
 			.name = "version",
 			.has_arg = 0,
@@ -162,7 +152,7 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 	
 	memset(pctx,0,sizeof(*pctx));
 	opterr = 0; // disallow getopt() diagnostic to stderr
-	while((opt = getopt_long(argc,argv,":hf:u:p",ops,&longidx)) >= 0){
+	while((opt = getopt_long(argc,argv,":hu:f:p",ops,&longidx)) >= 0){
 		switch(opt){
 		case 'h':{
 			usage(argv[0],EXIT_SUCCESS);
@@ -180,17 +170,6 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 				usage(argv[0],EXIT_FAILURE);
 			}
 			pctx->ianafn = optarg;
-			break;
-		}case OPT_USBIDS:{
-			if(pctx->usbidsfn){
-				fprintf(stderr,"Provided --usbids twice\n");
-				usage(argv[0],EXIT_FAILURE);
-			}
-			if(!optarg){
-				fprintf(stderr,"Option requires parameter: '%s'\n",ops[longidx].name);
-				usage(argv[0],EXIT_FAILURE);
-			}
-			pctx->usbidsfn = optarg;
 			break;
 		}case OPT_RESOLV:{
 			if(pctx->resolvconf){
@@ -277,9 +256,6 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 	if(pctx->ianafn == NULL){
 		pctx->ianafn = DEFAULT_IANA_FILENAME;
 	}
-	if(pctx->usbidsfn == NULL){
-		pctx->usbidsfn = DEFAULT_USBIDS_FILENAME;
-	}
 	if(pctx->resolvconf == NULL){
 		pctx->resolvconf = DEFAULT_RESOLVCONF_FILENAME;
 	}
@@ -319,11 +295,9 @@ int omphalos_setup(int argc,char * const *argv,omphalos_ctx *pctx){
 	if(init_procfs(DEFAULT_PROCROOT)){
 		return -1;
 	}
-	if(strcmp(pctx->usbidsfn,"")){
-		if(init_udev_support(pctx->usbidsfn)){
-			return -1;
-		}
-	}
+  if(init_udev_support()){
+    return -1;
+  }
 	if(strcmp(pctx->ianafn,"")){
 		if(init_iana_naming(pctx->ianafn)){
 			return -1;
