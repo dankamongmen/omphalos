@@ -91,9 +91,12 @@ void iface_box(const struct interface *i, const struct iface_state *is,
                struct ncplane *n, int active, int rows);
 void print_iface_state(const struct interface *i, const struct iface_state *is,
                        struct ncplane *w, int rows, int cols, int active);
-void print_iface_hosts(const struct interface *i, const iface_state *is,
-                       struct ncplane *n, int rows, int cols,
-                       bool drawfromtop, int active);
+void print_active_iface_hosts(const struct interface *i, const iface_state *is,
+                              struct ncplane *n, int rows, int cols,
+                              bool drawfromtop);
+void print_inactive_iface_hosts(const struct interface *i, const iface_state *is,
+                                struct ncplane *w, int rows, int cols,
+                                bool drawfromtop);
 int lines_for_interface(const struct iface_state *);
 
 struct l2obj *add_l2_to_iface(const struct interface *,struct iface_state *,struct l2host *);

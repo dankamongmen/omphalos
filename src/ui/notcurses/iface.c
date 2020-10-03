@@ -603,10 +603,9 @@ print_iface_host(const interface *i, const iface_state *is, struct ncplane *w,
   }
 }
 
-// FIXME all these casts! :/ appalling
-void print_iface_hosts(const interface *i, const iface_state *is,
-                       struct ncplane *w, int rows, int cols,
-                       bool drawfromtop, int active){
+void print_active_iface_hosts(const interface *i, const iface_state *is,
+                              struct ncplane *w, int rows, int cols,
+                              bool drawfromtop){
   // If the interface is down, we don't lead with the summary line
   const int sumline = !!interface_up_p(i);
   const struct l2obj *cur;
@@ -620,7 +619,7 @@ void print_iface_hosts(const interface *i, const iface_state *is,
   line = is->selline + sumline;
   while(cur && line + (long)cur->lnes >= sumline){
     print_iface_host(i, is, w, cur, line, rows, cols, cur == is->selected,
-                     sumline, active);
+                     sumline, true);
     // here we traverse, then account...
     if( (cur = cur->prev) ){
       line -= cur->lnes;
@@ -630,7 +629,40 @@ void print_iface_hosts(const interface *i, const iface_state *is,
   line += sumline;
   cur = (is->selected ? is->selected->next : is->l2objs);
   while(cur && line < rows){
-    print_iface_host(i, is, w, cur, line, rows, cols, 0, 0, active);
+    print_iface_host(i, is, w, cur, line, rows, cols, 0, 0, true);
+    // here, we account before we traverse. this is correct.
+    line += cur->lnes;
+    cur = cur->next;
+  }
+}
+
+void print_inactive_iface_hosts(const interface *i, const iface_state *is,
+                                struct ncplane *w, int rows, int cols,
+                                bool drawfromtop){
+  // If the interface is down, we don't lead with the summary line
+  const int sumline = !!interface_up_p(i);
+  const struct l2obj *cur;
+  long line;
+
+  if(is->expansion < EXPANSION_NODES){
+    return;
+  }
+  // First, print the selected interface (if there is one), and those above
+  cur = is->selected;
+  line = is->selline + sumline;
+  while(cur && line + (long)cur->lnes >= sumline){
+    print_iface_host(i, is, w, cur, line, rows, cols, cur == is->selected,
+                     sumline, false);
+    // here we traverse, then account...
+    if( (cur = cur->prev) ){
+      line -= cur->lnes;
+    }
+  }
+  line = is->selected ? (is->selline + (long)is->selected->lnes) : 1;
+  line += sumline;
+  cur = (is->selected ? is->selected->next : is->l2objs);
+  while(cur && line < rows){
+    print_iface_host(i, is, w, cur, line, rows, cols, 0, 0, false);
     // here, we account before we traverse. this is correct.
     line += cur->lnes;
     cur = cur->next;
@@ -720,12 +752,15 @@ void iface_box(const interface *i, const iface_state *is, struct ncplane *n,
   ncplane_putstr(n, is->expansion == EXPANSION_MAX ? "[-]" :
                   is->expansion == 0 ? "[+]" : "[±]");
   // now we do the bottom
+  ncplane_cursor_move_yx(n, rows - 1, 0);
+  ncplane_set_fg_rgb(n, 0);
+  ncplane_set_bg_rgb(n, 0);
+  ncplane_putstr(n, "  ");
   ncplane_set_fg_rgb(n, bcolor);
   ncplane_on_styles(n,  attrs);
   ncplane_off_styles(n,  NCSTYLE_REVERSE);
   attrs = NCSTYLE_BOLD | (active ? NCSTYLE_REVERSE : 0);
   ncplane_set_styles(n, attrs);
-  ncplane_cursor_move_yx(n, rows - 1, 2);
   cell_set_fg_rgb(&c, bcolor);
   cell_set_styles(&c, attrs);
   ncplane_hline(n, &c, cols - 3);
