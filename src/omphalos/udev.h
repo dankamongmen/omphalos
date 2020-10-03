@@ -7,11 +7,9 @@ extern "C" {
 
 struct topdev_info;
 
-// This manages use of a usb.ids file to map vendor/device IDs to strings.
-// These are generally much better names than those available through sysfs.
 // Manufacturer and Product id's from sysfs will be used as a fallback for
-// entries absent from the USB ID database. We talk to sysfs via libudev.
-int init_udev_support(const char *fn);
+// entries absent from the udev ID database. We talk to sysfs via libudev.
+int init_udev_support(void);
 int stop_udev_support(void);
 
 // Consults udev's database, followed by USB/PCI IDs. Returns NULL,

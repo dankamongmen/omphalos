@@ -39,9 +39,8 @@ DOCS:=$(MAN1OBJ) $(XHTML)
 DOCMANXSL:=http://docbook.sourceforge.net/release/xsl/current/manpages/docbook.xsl
 DOCXHTMLXSL:=http://docbook.sourceforge.net/release/xsl/current/xhtml/docbook.xsl
 
-USBIDS:=usb.ids
 IANAOUI:=ieee-oui.txt
-SUPPORT:=$(USBIDS) $(IANAOUI)
+SUPPORT:=$(IANAOUI)
 
 all: bin doc #$(SUPPORT)
 
@@ -71,23 +70,19 @@ XOBJS:=$(filter $(OUT)/$(SRC)/ui/x/%.o,$(COBJS))
 
 # Requires CAP_NET_ADMIN privileges bestowed upon the binary
 livetest: sudobless $(SUPPORT)
-	$(OMPHALOS)-notcurses -u '' --plog=$(OUTCAP) --usbids=$(USBIDS) --ouis=$(IANAOUI)
+	$(OMPHALOS)-notcurses -u '' --plog=$(OUTCAP) --ouis=$(IANAOUI)
 
 silenttest: sudobless $(SUPPORT)
-	$(OMPHALOS)-notcurses -u '' --mode=silent --plog=$(OUTCAP) --usbids=$(USBIDS) --ouis=$(IANAOUI)
+	$(OMPHALOS)-notcurses -u '' --mode=silent --plog=$(OUTCAP) --ouis=$(IANAOUI)
 
 coretest: sudobless $(SUPPORT)
-	$(OMPHALOS)-coretest -u '' --plog=$(OUTCAP) --usbids=$(USBIDS) --ouis=$(IANAOUI)
+	$(OMPHALOS)-coretest -u '' --plog=$(OUTCAP) --ouis=$(IANAOUI)
 
 test: all $(TESTPCAPS) $(SUPPORT)
-	for i in $(TESTPCAPS) ; do $(OMPHALOS)-tty --mode=silent --plog=$(OUTCAP) -f $$i -u "" --usbids=$(USBIDS) --ouis=$(IANAOUI) || exit 1 ; done
+	for i in $(TESTPCAPS) ; do $(OMPHALOS)-tty --mode=silent --plog=$(OUTCAP) -f $$i -u "" --ouis=$(IANAOUI) || exit 1 ; done
 
 valgrind: all $(TESTPCAPS) $(SUPPORT)
-	for i in $(TESTPCAPS) ; do valgrind --tool=memcheck --leak-check=full $(OMPHALOS)-tty -f $$i -u "" --usbids=$(USBIDS) --ouis=$(IANAOUI) || exit 1 ; done
-
-# Even with --header='Accept-Charset: utf-8', we get served up ISO-8859-1, yuck
-$(USBIDS):
-	wget http://www.linux-usb.org/usb.ids -O - | iconv -f iso-8859-1 -t utf-8 -o $@
+	for i in $(TESTPCAPS) ; do valgrind --tool=memcheck --leak-check=full $(OMPHALOS)-tty -f $$i -u "" --ouis=$(IANAOUI) || exit 1 ; done
 
 # IEEE recently added a wholly useless second column consisting of a string in
 # parens. Filter this column out, but don't touch further parens (no /g). 
@@ -167,5 +162,5 @@ uninstall-local:
 	rm -f $(addprefix ${mandir}/man1/,$(notdir $(MAN1OBJ)))
 	rm -f $(addprefix $(DESTDIR)${docdir}/,$(notdir $(XHTML)))
 
-EXTRA_DIST=$(CSRCS) $(CINCS) usb.ids ieee-oui.txt $(MAN1SRC) $(ADDCAPS) \
+EXTRA_DIST=$(CSRCS) $(CINCS) ieee-oui.txt $(MAN1SRC) $(ADDCAPS) \
 	   $(SETUPCORE) $(TESTPCAPS)
