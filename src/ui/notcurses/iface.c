@@ -604,8 +604,7 @@ print_iface_host(const interface *i, const iface_state *is, struct ncplane *w,
 }
 
 void print_active_iface_hosts(const interface *i, const iface_state *is,
-                              struct ncplane *w, int rows, int cols,
-                              bool drawfromtop){
+                              struct ncplane *w, int rows, int cols){
   // If the interface is down, we don't lead with the summary line
   const int sumline = !!interface_up_p(i);
   const struct l2obj *cur;
@@ -636,35 +635,42 @@ void print_active_iface_hosts(const interface *i, const iface_state *is,
   }
 }
 
+// rather than pivoting around the selected line, we simply dump from either
+// the top or bottom, going in the other direction.
 void print_inactive_iface_hosts(const interface *i, const iface_state *is,
                                 struct ncplane *w, int rows, int cols,
                                 bool drawfromtop){
   // If the interface is down, we don't lead with the summary line
   const int sumline = !!interface_up_p(i);
   const struct l2obj *cur;
-  long line;
 
   if(is->expansion < EXPANSION_NODES){
     return;
   }
-  // First, print the selected interface (if there is one), and those above
-  cur = is->selected;
-  line = is->selline + sumline;
-  while(cur && line + (long)cur->lnes >= sumline){
-    print_iface_host(i, is, w, cur, line, rows, cols, cur == is->selected,
-                     sumline, false);
-    // here we traverse, then account...
-    if( (cur = cur->prev) ){
-      line -= cur->lnes;
+  if((cur = is->l2objs) == NULL){
+    return;
+  }
+  long line = 1 + sumline;
+  int skiprows = 0;
+  if(!drawfromtop){
+    int datarows = lines_for_interface(is); // FIXME o(n)
+    if(datarows > rows){
+      skiprows = datarows - rows;
     }
   }
-  line = is->selected ? (is->selline + (long)is->selected->lnes) : 1;
-  line += sumline;
-  cur = (is->selected ? is->selected->next : is->l2objs);
-  while(cur && line < rows){
-    print_iface_host(i, is, w, cur, line, rows, cols, 0, 0, false);
-    // here, we account before we traverse. this is correct.
-    line += cur->lnes;
+  while(cur && line + (long)cur->lnes <= rows){
+    print_iface_host(i, is, w, cur, line, rows, cols, false, 0, false);
+    int curlines = cur->lnes;
+    if(skiprows){
+      if(skiprows <= curlines){
+        skiprows = 0;
+        curlines -= skiprows;
+      }else{
+        skiprows -= curlines;
+        curlines = 0;
+      }
+    }
+    line += curlines;
     cur = cur->next;
   }
 }
