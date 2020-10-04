@@ -376,7 +376,6 @@ print_iface_host(const interface *i, const iface_state *is, struct ncplane *w,
   uint16_t arsty = NCSTYLE_NONE;
   uint16_t l3sty = NCSTYLE_NONE;
   uint16_t rsty = NCSTYLE_NONE;
-  uint16_t ssty = NCSTYLE_NONE;
   uint32_t rgb = 0xffffff;
   uint32_t argb = 0xffffff;
   uint32_t al3rgb = 0xffffff;
@@ -457,15 +456,8 @@ print_iface_host(const interface *i, const iface_state *is, struct ncplane *w,
       assert(0 && "Unknown l2 category");
       break;
   }
-  if(selected){
-    argb = rgb = srgb;
-    al3rgb = l3rgb = srgb;
-    arrgb = rrgb = srgb;
-    selectchar = l->l3objs && is->expansion >= EXPANSION_HOSTS ? L'╭' : L'⎨';
-  }else{
-    selectchar = L' ';
-  }
   if(!interface_up_p(i)){
+    srgb =  BULKTEXT_ALTROW_COLOR;
     sty = sty & NCSTYLE_BOLD;
     rgb = BULKTEXT_COLOR;
     asty = arsty & NCSTYLE_BOLD;
@@ -474,12 +466,18 @@ print_iface_host(const interface *i, const iface_state *is, struct ncplane *w,
     l3rgb = BULKTEXT_COLOR;
     rsty = rsty & NCSTYLE_BOLD;
     rrgb = BULKTEXT_COLOR;
-    ssty = ssty & NCSTYLE_BOLD;
-    srgb =  BULKTEXT_ALTROW_COLOR;
     al3sty = al3sty & NCSTYLE_BOLD;
     al3rgb =  BULKTEXT_ALTROW_COLOR;
     arsty = rsty & NCSTYLE_BOLD;
     arrgb =  BULKTEXT_ALTROW_COLOR;
+  }
+  if(selected){
+    argb = rgb = srgb;
+    al3rgb = l3rgb = srgb;
+    arrgb = rrgb = srgb;
+    selectchar = l->l3objs && is->expansion >= EXPANSION_HOSTS ? L'┌' : L'[';
+  }else{
+    selectchar = L' ';
   }
   if(!(line % 2)){
     ncplane_set_fg_rgb(w, rgb);
@@ -534,7 +532,7 @@ print_iface_host(const interface *i, const iface_state *is, struct ncplane *w,
         if(l3->next || (l3->l4objs && is->expansion >= EXPANSION_SERVICES)){
           selectchar = L'│';
         }else{
-          selectchar = L'╰';
+          selectchar = L'└';
         }
       }
       if(line >= rows){
@@ -593,7 +591,7 @@ print_iface_host(const interface *i, const iface_state *is, struct ncplane *w,
       ++line;
       if(is->expansion >= EXPANSION_SERVICES){
         if(selectchar != L' ' && !l3->next){
-          selectchar = L'╰';
+          selectchar = L'└';
         }
         print_host_services(w, i, l3, &line, rows, cols, selectchar,
                             !(line % 2) ? rgb : argb, !(line % 2) ? sty : asty,
