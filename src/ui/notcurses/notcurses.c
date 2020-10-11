@@ -113,9 +113,10 @@ wstatus(struct ncplane *w, const char *fmt, ...){
 
 static void
 resize_screen_locked(void){
-  /*int rows, cols;
-
-  getmaxyx(w, rows, cols);*/
+  int dimy, dimx;
+  notcurses_refresh(NC, &dimy, &dimx);
+  ncplane_resize_simple(ncreel_plane(reel), dimy - 1, dimx);
+  ncreel_redraw(reel);
   draw_main_window(stdn);
 }
 
@@ -507,12 +508,18 @@ int main(int argc, char * const *argv){
     fprintf(stderr, "Couldn't initialize locale (%s?)\n", strerror(errno));
     return EXIT_FAILURE;
   }
+  sigset_t sigmask;
+  // ensure SIGWINCH is delivered only to a thread doing input
+  sigemptyset(&sigmask);
+  sigaddset(&sigmask, SIGWINCH);
+  pthread_sigmask(SIG_SETMASK, &sigmask, NULL);
   if(uname(&sysuts)){
     fprintf(stderr, "Couldn't get OS info (%s?)\n", strerror(errno));
     return EXIT_FAILURE;
   }
   glibc_version = gnu_get_libc_version();
   glibc_release = gnu_get_libc_release();
+
   if(omphalos_setup(argc, argv, &pctx)){
     return EXIT_FAILURE;
   }
