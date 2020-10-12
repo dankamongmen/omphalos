@@ -224,10 +224,11 @@ void free_iface(interface *i){
   i->addr = NULL;
   free(i->bcast);
   i->bcast = NULL;
-  cleanup_l3hosts(&i->cells);
+	// it's unsafe to pull these off the global list
+  /*cleanup_l3hosts(&i->cells);
   cleanup_l3hosts(&i->ip6hosts);
   cleanup_l3hosts(&i->ip4hosts);
-  cleanup_l2hosts(&i->l2hosts);
+  cleanup_l2hosts(&i->l2hosts);*/
   Pthread_mutex_unlock(&i->lock);
 
   // Mark it unused

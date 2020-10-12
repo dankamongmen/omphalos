@@ -27,7 +27,7 @@ typedef struct l3host {
 		uint128_t ip6;
 		char mac[ETH_ALEN];
 	} addr;		// FIXME sigh
-	uintmax_t srcpkts,dstpkts;
+	uintmax_t srcpkts, dstpkts;
 	namelevel nlevel;
 	unsigned nosrvs;	// FIXME kill oughtn't be necessary
 	// FIXME use usec-based ticks taken from the omphalos_packet *!
@@ -36,8 +36,8 @@ typedef struct l3host {
 	struct l4srv *services;	// services observed providing
 	struct l3host *next;	// next within the interface
 	struct l2host *l2;	// FIXME we only keep the most recent l2host
-				// seen with this address. ought keep all, or
-				// at the very least one per interface...
+                      // seen with this address. ought keep all, or
+                      // at the very least one per interface...
 	void *opaque;		// UI state
 	struct l3host *gnext;	// next globally
 	pthread_mutex_t nlock;	// naming lock
@@ -57,7 +57,7 @@ static struct globalhosts {
 	.head = NULL,
 	.lock = PTHREAD_MUTEX_INITIALIZER,
 	.addrlen = 4,
-},ipv6hosts = {
+}, ipv6hosts = {
 	.head = NULL,
 	.lock = PTHREAD_MUTEX_INITIALIZER,
 	.addrlen = 16,
@@ -102,7 +102,7 @@ get_global_hosts(int fam){
 
 // FIXME like the l2addrs, need do this in constant space via LRU or something
 static l3host *
-create_l3host(int fam,const void *addr,size_t len){
+create_l3host(int fam, const void *addr, size_t len){
 	l3host *r;
 
 	assert(len <= sizeof(r->addr));
@@ -110,9 +110,9 @@ create_l3host(int fam,const void *addr,size_t len){
 		struct globalhosts *gh;
 		int ret;
 
-		if( (ret = pthread_mutex_init(&r->nlock,NULL)) ){
+		if( (ret = pthread_mutex_init(&r->nlock, NULL)) ){
 			diagnostic("%s couldn't initialize mutex (%s?)",
-					__func__,strerror(ret));
+					__func__, strerror(ret));
 			free(r);
 			return NULL;
 		}
@@ -126,7 +126,7 @@ create_l3host(int fam,const void *addr,size_t len){
 		r->nosrvs = 0;
 		r->nextnametry = 0;
 		r->nametries = 0;
-		memcpy(&r->addr,addr,len);
+		memcpy(&r->addr, addr, len);
 		if( (gh = get_global_hosts(fam)) ){
 			r->gnext = gh->head;
 			gh->head = r;
@@ -138,32 +138,32 @@ create_l3host(int fam,const void *addr,size_t len){
 	return r;
 }
 
-void name_l3host_absolute(const interface *i,struct l2host *l2,l3host *l3,
-				const char *name,namelevel nlevel){
+void name_l3host_absolute(const interface *i, struct l2host *l2, l3host *l3,
+				const char *name, namelevel nlevel){
 	wchar_t *wname;
 	size_t wlen;
 
-	if((wlen = mbstowcs(NULL,name,0)) == (size_t)-1){
-		diagnostic("Couldn't normalize [%s]",name);
+	if((wlen = mbstowcs(NULL, name, 0)) == (size_t)-1){
+		diagnostic("Couldn't normalize [%s]", name);
 	}else if( (wname = Malloc((wlen + 1) * sizeof(*wname))) ){
 		size_t r;
 
-		r = mbstowcs(wname,name,wlen + 1);
+		r = mbstowcs(wname, name, wlen + 1);
 		if(r == (size_t)-1){
-			diagnostic("Invalid name: [%s]",name);
+			diagnostic("Invalid name: [%s]", name);
 			free(wname);
 			return;
 		}
 		if(r != wlen){
 			assert(r == wlen + 1);
 		}
-		wname_l3host_absolute(i,l2,l3,wname,nlevel);
+		wname_l3host_absolute(i, l2, l3, wname, nlevel);
 		free(wname);
 	}
 }
 
-void wname_l3host_absolute(const interface *i,struct l2host *l2,l3host *l3,
-				const wchar_t *name,namelevel nlevel){
+void wname_l3host_absolute(const interface *i, struct l2host *l2, l3host *l3,
+				const wchar_t *name, namelevel nlevel){
 	pthread_mutex_lock(&l3->nlock);
 	if(l3->nlevel < nlevel){
 		wchar_t *tmp;
@@ -175,7 +175,7 @@ void wname_l3host_absolute(const interface *i,struct l2host *l2,l3host *l3,
 			l3->name = tmp;
 			l3->nlevel = nlevel;
 			if(octx->iface.host_event){
-				l3->opaque = octx->iface.host_event(i,l2,l3);
+				l3->opaque = octx->iface.host_event(i, l2, l3);
 			}
 		}
 	}
@@ -184,8 +184,8 @@ void wname_l3host_absolute(const interface *i,struct l2host *l2,l3host *l3,
 
 // An interface-scoped lookup without lower-level information. It doesn't
 // create a new entry if none exists. No support for BSSID lookup.
-struct l3host *find_l3host(interface *i,int fam,const void *addr){
-        l3host *l3;
+struct l3host *find_l3host(interface *i, int fam, const void *addr){
+  l3host *l3;
 	typeof(l3->addr) cmp;
 	size_t len;
 
@@ -202,9 +202,9 @@ struct l3host *find_l3host(interface *i,int fam,const void *addr){
 			return NULL; // FIXME
 	}
 	assert(len <= sizeof(cmp));
-	memcpy(&cmp,addr,sizeof(cmp));
+	memcpy(&cmp, addr, sizeof(cmp));
 	while(l3){
-		if(memcmp(&l3->addr,&cmp,len) == 0){
+		if(memcmp(&l3->addr, &cmp, len) == 0){
 			return l3;
 		}
 		l3 = l3->next;
@@ -213,9 +213,9 @@ struct l3host *find_l3host(interface *i,int fam,const void *addr){
 }
 
 static inline void
-update_l3name(const struct timeval *tv,struct l2host *l2,l3host *l3,
-		dnstxfxn dnsfxn,char *(*revstrfxn)(const void *),int cat,
-		const void *addr,interface *i,int fam){
+update_l3name(const struct timeval *tv, struct l2host *l2, l3host *l3,
+	            dnstxfxn dnsfxn, char *(*revstrfxn)(const void *), int cat,
+		          const void *addr, interface *i, int fam){
 	char *rev;
 
 	// Multicast and broadcast addresses are statically named only
@@ -239,18 +239,18 @@ update_l3name(const struct timeval *tv,struct l2host *l2,l3host *l3,
 	// FIXME add a random factor to avoid thundering herds!
 	l3->nextnametry = tv->tv_sec + (1u << (l3->nametries > MAX_BACKOFF_EXP ?
 					MAX_BACKOFF_EXP : l3->nametries));
-	if(queue_for_naming(i,l3,dnsfxn,rev,fam,addr)){
-		wname_l3host_absolute(i,l2,l3,L"Resolution failed",NAMING_LEVEL_FAIL);
+	if(queue_for_naming(i, l3, dnsfxn, rev, fam, addr)){
+		wname_l3host_absolute(i, l2, l3, L"Resolution failed", NAMING_LEVEL_FAIL);
 	}
 	free(rev);
 }
 
 // Interface lock needs be held upon entry
 static l3host *
-lookup_l3host_common(const struct timeval *tv,interface *i,struct l2host *l2,
-			int fam,const void *addr,int knownlocal){
+lookup_l3host_common(const struct timeval *tv, interface *i, struct l2host *l2,
+			              int fam, const void *addr, int knownlocal){
 	char *(*revstrfxn)(const void *);
-        l3host *l3,**prev,**orig;
+  l3host *l3, **prev, **orig;
 	typeof(l3->addr) cmp;
 	dnstxfxn dnsfxn;
 	size_t len;
@@ -264,7 +264,7 @@ lookup_l3host_common(const struct timeval *tv,interface *i,struct l2host *l2,
 			orig = &i->ip4hosts;
 			dnsfxn = tx_dns_ptr;
 			revstrfxn = rev_dns_a;
-			if(memcmp(addr,&zaddr,len) == 0){
+			if(memcmp(addr, &zaddr, len) == 0){
 				return &unspecified_ipv4;
 			}
 			break;
@@ -275,7 +275,7 @@ lookup_l3host_common(const struct timeval *tv,interface *i,struct l2host *l2,
 			orig = &i->ip6hosts;
 			dnsfxn = tx_dns_ptr;
 			revstrfxn = rev_dns_aaaa;
-			if(memcmp(addr,&zaddr,len) == 0){
+			if(memcmp(addr, &zaddr, len) == 0){
 				return &unspecified_ipv6;
 			}
 			break;
@@ -286,22 +286,22 @@ lookup_l3host_common(const struct timeval *tv,interface *i,struct l2host *l2,
 			revstrfxn = NULL;
 			break;
 		}default:{
-			diagnostic("Don't support l3 type %d",fam);
+			diagnostic("Don't support l3 type %d", fam);
 			return NULL; // FIXME
 		}
 	}
-	cat = l2categorize(i,l2);
+	cat = l2categorize(i, l2);
 	// FIXME probably want to make this per-node
 	assert(len <= sizeof(cmp));
-	memcpy(&cmp,addr,len);
+	memcpy(&cmp, addr, len);
 	for(prev = orig ; (l3 = *prev) ; prev = &l3->next){
-		if(memcmp(&l3->addr,&cmp,len) == 0){
+		if(memcmp(&l3->addr, &cmp, len) == 0){
 			// Move it to the front of the list, splicing it out
 			*prev = l3->next;
 			l3->next = *orig;
 			*orig = l3;
 			l3->l2 = l2; // FIXME ought indicate a change!
-			update_l3name(tv,l2,l3,dnsfxn,revstrfxn,cat,addr,i,fam);
+			update_l3name(tv, l2, l3, dnsfxn, revstrfxn, cat, addr, i, fam);
 			return l3;
 		}
 	}
@@ -310,21 +310,21 @@ lookup_l3host_common(const struct timeval *tv,interface *i,struct l2host *l2,
 			struct sockaddr_storage ss;
 
 			// Determine whether there's a known route
-			if(get_unicast_address(i,fam,addr,&ss) == NULL){
+			if(get_unicast_address(i, fam, addr, &ss) == NULL){
 				if(fam == AF_INET){
 					// Issue a non-destructive ARP probe
 					// FIXME need rate-limiting!
-					//send_arp_probe(i,addr);
+					//send_arp_probe(i, addr);
 				}
 				return &external_l3;
 			}
 			// It's routed, not local
-			if(memcmp(&ss,addr,len)){
+			if(memcmp(&ss, addr, len)){
 				return &external_l3;
 			}
 		}
 	}
-        if( (l3 = create_l3host(fam,addr,len)) ){
+  if( (l3 = create_l3host(fam, addr, len)) ){
 		char *rev;
 
                 l3->next = *orig;
@@ -334,50 +334,50 @@ lookup_l3host_common(const struct timeval *tv,interface *i,struct l2host *l2,
 		// addresses otherwise. multicast and broadcast are only named
 		// via special case static lookups.
 		if(cat == RTN_MULTICAST){
-			const wchar_t *mname = ietf_multicast_lookup(fam,addr);
+			const wchar_t *mname = ietf_multicast_lookup(fam, addr);
 			if(mname){
-				wname_l3host_absolute(i,l2,l3,mname,NAMING_LEVEL_GLOBAL);
+				wname_l3host_absolute(i, l2, l3, mname, NAMING_LEVEL_GLOBAL);
 			}
 			return l3; // static multicast naming only
 		}else if(cat == RTN_BROADCAST){
-			const wchar_t *bname = ietf_bcast_lookup(fam,addr);
+			const wchar_t *bname = ietf_bcast_lookup(fam, addr);
 			if(bname){
-				wname_l3host_absolute(i,l2,l3,bname,NAMING_LEVEL_GLOBAL);
+				wname_l3host_absolute(i, l2, l3, bname, NAMING_LEVEL_GLOBAL);
 			}
 			return l3; // static broadcast naming only
 		}else{
 			const wchar_t *uname;
 
 			if(cat == RTN_LOCAL){
-				uname = ietf_local_lookup(fam,addr);
+				uname = ietf_local_lookup(fam, addr);
 				if(uname){
-					wname_l3host_absolute(i,l2,l3,uname,NAMING_LEVEL_GLOBAL);
+					wname_l3host_absolute(i, l2, l3, uname, NAMING_LEVEL_GLOBAL);
 					return l3;
 				}
 			} // fallthrough: look locals up if they're not special cases
-		       	uname = ietf_unicast_lookup(fam,addr);
+		       	uname = ietf_unicast_lookup(fam, addr);
 			if(dnsfxn && revstrfxn && (rev = revstrfxn(addr))){
 				// Calls the host event if necessary
-				wname_l3host_absolute(i,l2,l3,L"Resolving...",NAMING_LEVEL_RESOLVING);
+				wname_l3host_absolute(i, l2, l3, L"Resolving...", NAMING_LEVEL_RESOLVING);
 				++l3->nextnametry;
 				l3->nextnametry = tv->tv_sec + 1;
-				if(queue_for_naming(i,l3,dnsfxn,rev,fam,addr)){
-					wname_l3host_absolute(i,l2,l3,L"Resolution failed",NAMING_LEVEL_FAIL);
+				if(queue_for_naming(i, l3, dnsfxn, rev, fam, addr)){
+					wname_l3host_absolute(i, l2, l3, L"Resolution failed", NAMING_LEVEL_FAIL);
 				}
 				free(rev);
 			}
-			if(is_router(fam,addr)){
-				observe_service(i,l2,l3,IPPROTO_IP,4,L"Router",NULL);
+			if(is_router(fam, addr)){
+				observe_service(i, l2, l3, IPPROTO_IP, 4, L"Router", NULL);
 			}
 		}
-        }
-        return l3;
+  }
+  return l3;
 }
 
 // Browse the global list. Don't create the host if it doesn't exist. Since
 // references are handed out without a lock held, we cannot destroy an l3host
 // which is on the global list! This is fundamentally unsafe, really FIXME.
-struct l3host *lookup_global_l3host(int fam,const void *addr){
+struct l3host *lookup_global_l3host(int fam, const void *addr){
 	struct globalhosts *gh;
 	l3host *l3;
 	typeof(l3->addr) cmp;
@@ -387,7 +387,7 @@ struct l3host *lookup_global_l3host(int fam,const void *addr){
 		return NULL;
 	}
 	assert(gh->addrlen <= sizeof(cmp));
-	memcpy(&cmp,addr,gh->addrlen);
+	memcpy(&cmp, addr, gh->addrlen);
 	// FIXME sometimes we have an invalid l3:
 	// #0  __memcmp_sse4_1 () at ../sysdeps/x86_64/multiarch/memcmp-sse4.S:793
 	// #1  0x000055fc15638398 in lookup_global_l3host (fam=fam@entry=10,
@@ -396,7 +396,7 @@ struct l3host *lookup_global_l3host(int fam,const void *addr){
 	//         cmp = {ip4 = 2155545894, ip6 = {2155545894, 2986349824, 20329236,
 	//             1718821246}, mac = "&\005{\200\000\025"}
 	for(l3 = gh->head ; l3 ; l3 = l3->gnext){
-		if(memcmp(&l3->addr,&cmp,gh->addrlen) == 0){
+		if(memcmp(&l3->addr, &cmp, gh->addrlen) == 0){
 			break;
 		}
 	}
@@ -411,36 +411,36 @@ struct l3host *lookup_global_l3host(int fam,const void *addr){
 // returned is different from the wire address, an ARP probe is directed to the
 // link-layer address (this is all handled by get_route()). ARP replies are
 // link-layer only, and thus processed directly (name_l2host_local()).
-l3host *lookup_l3host(const struct timeval *tv,interface *i,struct l2host *l2,
-				int fam,const void *addr){
+l3host *lookup_l3host(const struct timeval *tv, interface *i, struct l2host *l2,
+				int fam, const void *addr){
 	struct timeval t;
 
 	if(tv){
 		t = *tv;
 	}else{
-		gettimeofday(&t,NULL);
+		gettimeofday(&t, NULL);
 	}
-	return lookup_l3host_common(&t,i,l2,fam,addr,0);
+	return lookup_l3host_common(&t, i, l2, fam, addr, 0);
 }
 
-l3host *lookup_local_l3host(const struct timeval *tv,interface *i,
-			struct l2host *l2,int fam,const void *addr){
+l3host *lookup_local_l3host(const struct timeval *tv, interface *i,
+	                          struct l2host *l2, int fam, const void *addr){
 	struct timeval t;
 
 	if(tv){
 		t = *tv;
 	}else{
-		gettimeofday(&t,NULL);
+		gettimeofday(&t, NULL);
 	}
-	return lookup_l3host_common(&t,i,l2,fam,addr,1);
+	return lookup_l3host_common(&t, i, l2, fam, addr, 1);
 }
 
-void name_l3host_local(const interface *i,struct l2host *l2,l3host *l3,int family,const void *name,
-		namelevel nlevel){
+void name_l3host_local(const interface *i, struct l2host *l2, l3host *l3,
+		                   int family, const void *name, namelevel nlevel){
 	char b[INET6_ADDRSTRLEN];
 
-	if(inet_ntop(family,name,b,sizeof(b)) == b){
-		name_l3host_absolute(i,l2,l3,b,nlevel);
+	if(inet_ntop(family, name, b, sizeof(b)) == b){
+		name_l3host_absolute(i, l2, l3, b, nlevel);
 	}
 }
 
@@ -449,17 +449,17 @@ char *l3addrstr(const struct l3host *l3){
 	char *buf;
 
 	if( (buf = Malloc(len)) ){
-		l3ntop(l3,buf,len);
+		l3ntop(l3, buf, len);
 	}
 	return buf;
 }
 
-char *netaddrstr(int fam,const void *addr){
+char *netaddrstr(int fam, const void *addr){
 	const size_t len = INET6_ADDRSTRLEN + 1;
 	char *buf;
 
 	if( (buf = Malloc(len)) ){
-		if(inet_ntop(fam,addr,buf,len) != buf){
+		if(inet_ntop(fam, addr, buf, len) != buf){
 			free(buf);
 			buf = NULL;
 		}
@@ -467,13 +467,13 @@ char *netaddrstr(int fam,const void *addr){
 	return buf;
 }
 
-int l3addr_eq_p(const l3host *l3,int fam,const void *addr){
+int l3addr_eq_p(const l3host *l3, int fam, const void *addr){
 	if(l3->fam != fam){
 		return 0;
 	}else if(fam == AF_INET){
-		return !memcmp(&l3->addr.ip4,addr,4);
+		return !memcmp(&l3->addr.ip4, addr, 4);
 	}else if(fam == AF_INET6){
-		return !memcmp(&l3->addr.ip6,addr,16);
+		return !memcmp(&l3->addr.ip6, addr, 16);
 	}
 	return 0;
 }
@@ -498,20 +498,20 @@ void *l3host_get_opaque(l3host *l3){
 	return l3->opaque;
 }
 
-int l3ntop(const l3host *l3,char *buf,size_t buflen){
+int l3ntop(const l3host *l3, char *buf, size_t buflen){
 	if(l3->fam > AF_MAX){
 		if(buflen < HWADDRSTRLEN(ETH_ALEN)){
 			errno = ENOSPC;
 			return -1;
 		}
-		hwntop(l3->addr.mac,ETH_ALEN,buf);
+		hwntop(l3->addr.mac, ETH_ALEN, buf);
 		return 0;
 	}
-	return inet_ntop(l3->fam,&l3->addr,buf,buflen) != buf;
+	return inet_ntop(l3->fam, &l3->addr, buf, buflen) != buf;
 }
 
 void cleanup_l3hosts(l3host **list){
-	l3host *l3,*tmp;
+	l3host *l3, *tmp;
 
 	for(l3 = *list ; l3 ; l3 = tmp){
 		tmp = l3->next;
@@ -552,7 +552,7 @@ const struct l4srv *l3_getconstservices(const l3host *l3){
 	return l3->services;
 }
 
-int l3_setservices(l3host *l3,struct l4srv *l4){
+int l3_setservices(l3host *l3, struct l4srv *l4){
 	if(!l3->nosrvs){
 		l3->services = l4;
 		return 0;
