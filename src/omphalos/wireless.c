@@ -124,7 +124,12 @@ int handle_wireless_event(const omphalos_iface *octx,interface *i,
         i->settings.wext.freq = iwfreq_defreak(iwf);
       }
     }
-  break;}case IWEVASSOCRESPIE:{
+  break;}case IWEVREGISTERED:{
+    // FIXME handle new node discovered (ap mode)
+  break;}case IWEVEXPIRED:{
+    // FIXME handle node expired (ap mode)
+  break;}case IWEVASSOCREQIE:
+         case IWEVASSOCRESPIE:{
     // FIXME handle IE reassociation results
   break;}case SIOCSIWESSID:{
     // FIXME handle ESSID change
