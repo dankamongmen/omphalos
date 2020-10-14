@@ -5,11 +5,9 @@ name: debian-unstable
 
 steps:
 - name: debian-build
-  image: dankamongmen/unstable_builder:2020-10-10a
+  image: dankamongmen/unstable_builder:2020-10-13a
   commands:
     - export LANG=en_US.UTF-8
-    - apt-get -y update
-    - apt-get -y upgrade
     - autoreconf -fis
     - ./configure
     - make
