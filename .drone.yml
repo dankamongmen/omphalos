@@ -9,7 +9,7 @@ steps:
   commands:
     - export LANG=en_US.UTF-8
     - apt-get -y update
-    - apt-get upgrade
+    - apt-get -y upgrade
     - autoreconf -fis
     - ./configure
     - make
