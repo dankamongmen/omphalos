@@ -10,36 +10,36 @@
 #include <omphalos/interface.h>
 
 static inline int
-get_wireless_extension(const char *name,int cmd,struct iwreq *req){
+get_wireless_extension(const char *name, int cmd, struct iwreq *req){
   int fd;
 
   if(strlen(name) >= sizeof(req->ifr_name)){
-    diagnostic("Name too long: %s",name);
+    diagnostic("Name too long: %s", name);
     return -1;
   }
-  if((fd = socket(AF_INET,SOCK_DGRAM,0)) < 0){
-    diagnostic("Couldn't get a socket (%s?)",strerror(errno));
+  if((fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0){
+    diagnostic("Couldn't get a socket (%s?)", strerror(errno));
     return -1;
   }
-  strcpy(req->ifr_name,name);
-  if(ioctl(fd,cmd,req)){
-    //diagnostic("ioctl() failed (%s?)",strerror(errno));
+  strcpy(req->ifr_name, name);
+  if(ioctl(fd, cmd, req)){
+    //diagnostic("ioctl() failed (%s?)", strerror(errno));
     close(fd);
     return -1;
   }
   if(close(fd)){
-    diagnostic("Couldn't close socket (%s?)",strerror(errno));
+    diagnostic("Couldn't close socket (%s?)", strerror(errno));
     return -1;
   }
   return 0;
 }
 
 static int
-wireless_rate_info(const char *name,wless_info *wi){
+wireless_rate_info(const char *name, wless_info *wi){
   const struct iw_param *ip;
   struct iwreq req;
 
-  if(get_wireless_extension(name,SIOCGIWRATE,&req)){
+  if(get_wireless_extension(name, SIOCGIWRATE, &req)){
     return -1;
   }
   ip = &req.u.bitrate;
@@ -59,18 +59,18 @@ iwfreq_defreak(const struct iw_freq *iwf){
 }
 
 static int
-wireless_freq_info(const char *name,wless_info *wi){
+wireless_freq_info(const char *name, wless_info *wi){
   struct iw_range range;
   unsigned f;
   int fd;
 
   assert(wi);
-  if((fd = socket(AF_INET,SOCK_DGRAM,0)) < 0){
-    diagnostic("Couldn't get a socket (%s?)",strerror(errno));
+  if((fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0){
+    diagnostic("Couldn't get a socket (%s?)", strerror(errno));
     return -1;
   }
-  if(iw_get_range_info(fd,name,&range)){
-    diagnostic("Couldn't get range info on %s (%s)",name,strerror(errno));
+  if(iw_get_range_info(fd, name, &range)){
+    diagnostic("Couldn't get range info on %s (%s)", name, strerror(errno));
     close(fd);
     return -1;
   }
@@ -80,7 +80,7 @@ wireless_freq_info(const char *name,wless_info *wi){
     int idx = wireless_idx_byfreq(freq);
 
     if(idx < 0){
-      diagnostic("Unknown wext frequency: %ju",freq);
+      diagnostic("Unknown wext frequency: %ju", freq);
       return -1;
     }
     wi->dBm[idx] = 1.0; // FIXME get real maxstrength
@@ -88,17 +88,17 @@ wireless_freq_info(const char *name,wless_info *wi){
   return 0;
 }
 
-int handle_wireless_event(const omphalos_iface *octx,interface *i,
-        const struct iw_event *iw,size_t len){
+int handle_wireless_event(const omphalos_iface *octx, interface *i,
+        const struct iw_event *iw, size_t len){
   const union iwreq_data *u;
 
   if(i->settings_valid != SETTINGS_VALID_NL80211 &&
       i->settings_valid != SETTINGS_VALID_WEXT){
-    diagnostic("No wireless info for %s (%d)",i->name,i->settings_valid);
+    diagnostic("No wireless info for %s (%d)", i->name, i->settings_valid);
     return -1;
   }
   if(len < IW_EV_LCP_LEN){
-    diagnostic("Wireless msg too short on %s (%zu)",i->name,len);
+    diagnostic("Wireless msg too short on %s (%zu)", i->name, len);
     return -1;
   }
   // IW_EV_*_LEN have IW_EV_LCP_LEN built in, so don't subtract it
@@ -114,7 +114,7 @@ int handle_wireless_event(const omphalos_iface *octx,interface *i,
     // FIXME handle wireless mode change
   break;}case SIOCSIWFREQ:{
     if(len != IW_EV_FREQ_LEN){
-      diagnostic("Malformed freq msg for %s (%zu)",i->name,len);
+      diagnostic("Malformed freq msg for %s (%zu)", i->name, len);
     }else{
       const struct iw_freq *iwf = &u->freq;
 
@@ -136,38 +136,38 @@ int handle_wireless_event(const omphalos_iface *octx,interface *i,
   break;}case SIOCSIWRATE:{
     // FIXME doesn't this come as part of the netlink message? this
     // is an extra 3 system calls...
-    wireless_rate_info(i->name,&i->settings.wext);
+    wireless_rate_info(i->name, &i->settings.wext);
   break;}case SIOCSIWTXPOW:{
     // FIXME handle TX power change
   break;}default:{
-    diagnostic("Unknown wireless event on %s: 0x%x",i->name,iw->cmd);
+    diagnostic("Unknown wireless event on %s: 0x%x", i->name, iw->cmd);
     return -1;
   } }
   if(octx->wireless_event){
-    i->opaque = octx->wireless_event(i,iw->cmd,i->opaque);
+    i->opaque = octx->wireless_event(i, iw->cmd, i->opaque);
   }
   return 0;
 }
 
-int iface_wireless_info(const char *name,wless_info *wi){
+int iface_wireless_info(const char *name, wless_info *wi){
   struct iwreq req;
 
-  memset(wi,0,sizeof(*wi));
-  memset(&req,0,sizeof(req));
-  if(get_wireless_extension(name,SIOCGIWNAME,&req)){
+  memset(wi, 0, sizeof(*wi));
+  memset(&req, 0, sizeof(req));
+  if(get_wireless_extension(name, SIOCGIWNAME, &req)){
     return -1;
   }
-  if(wireless_rate_info(name,wi)){
+  if(wireless_rate_info(name, wi)){
     wi->bitrate = 0; // no bitrate for eg monitor mode
   }
-  if(wireless_freq_info(name,wi)){
+  if(wireless_freq_info(name, wi)){
     return -1;
   }
-  if(get_wireless_extension(name,SIOCGIWMODE,&req)){
+  if(get_wireless_extension(name, SIOCGIWMODE, &req)){
     return -1;
   }
   wi->mode = req.u.mode;
-  if(get_wireless_extension(name,SIOCGIWFREQ,&req)){
+  if(get_wireless_extension(name, SIOCGIWFREQ, &req)){
     wi->freq = 0; // no frequency for eg unassociated managed mode
   }else{
     wi->freq = iwfreq_defreak(&req.u.freq);
@@ -292,7 +292,7 @@ unsigned wireless_freq_count(void){
   return sizeof(freqtable) / sizeof(*freqtable);
 }
 
-float wireless_freq_supported_byidx(const interface *i,unsigned idx){
+float wireless_freq_supported_byidx(const interface *i, unsigned idx){
   if(idx >= wireless_freq_count()){
     return 0;
   }
@@ -315,7 +315,7 @@ unsigned wireless_freq_byidx(unsigned idx){
 }
 
 int wireless_idx_byfreq(uint64_t freq){
-  int idx,lb,ub;
+  int idx, lb, ub;
 
   lb = 0;
   ub = sizeof(freqtable) / sizeof(*freqtable) - 1;
