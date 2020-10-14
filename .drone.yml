@@ -5,23 +5,11 @@ name: debian-unstable
 
 steps:
 - name: debian-build
-  image: dankamongmen/unstable_builder:2020-09-29a
+  image: dankamongmen/unstable_builder:2020-10-10a
   commands:
     - export LANG=en_US.UTF-8
-    - autoreconf -fis
-    - ./configure
-    - make
-    - make test
----
-kind: pipeline
-type: docker
-name: ubuntu-focal
-
-steps:
-- name: ubuntu-build
-  image: dankamongmen/focal:2020-09-22a
-  commands:
-    - export LANG=en_US.UTF-8
+    - apt-get -y update
+    - apt-get upgrade
     - autoreconf -fis
     - ./configure
     - make
