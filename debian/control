@@ -6,8 +6,7 @@ Build-Depends:
  arp-scan,
  autoconf-archive,
  ctags,
- debhelper (>= 12),
- debhelper-compat (= 12),
+ debhelper-compat (= 13),
  docbook-xml,
  docbook-xsl,
  libbluetooth-dev,
@@ -15,14 +14,15 @@ Build-Depends:
  libiw-dev,
  libnl-3-dev,
  libnl-genl-3-dev,
- libnotcurses-dev (>= 1.7.4),
+ libnotcurses-dev (>= 2.0.1),
  libpcap-dev,
  libreadline-dev,
  libsysfs-dev,
  libwww-perl,
  pkg-config,
  xsltproc,
-Standards-Version: 4.5.0.2
+Standards-Version: 4.5.0
+Rules-Requires-Root: no
 Homepage: https://nick-black.com/dankwiki/index.php/Omphalos
 Vcs-Git: git://github.com/dankamongmen/omphalos.git
 Vcs-Browser: https://github.com/dankamongmen/omphalos/tree
