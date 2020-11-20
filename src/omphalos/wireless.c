@@ -303,7 +303,8 @@ float wireless_freq_supported_byidx(const interface *i, unsigned idx){
       return i->settings.wext.dBm[idx];
     // shouldn't see anything but wireless here
     case SETTINGS_VALID_ETHTOOL: default:
-      assert(0);
+      diagnostic("Unknown settings validity %d", i->settings_valid);
+      return 0;
   }
 }
 
