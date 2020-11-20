@@ -454,7 +454,7 @@ print_iface_host(const interface *i, const iface_state *is, struct ncplane *w,
       break;
     default:
       assert(0 && "Unknown l2 category");
-      break;
+      return;
   }
   if(!interface_up_p(i)){
     srgb =  BULKTEXT_ALTROW_COLOR;
