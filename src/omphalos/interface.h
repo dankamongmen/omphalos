@@ -209,14 +209,12 @@ interface_virtual_p(const interface *i){
 
 static inline void
 lock_interface(interface *i){
-	int r = pthread_mutex_lock(&i->lock);
-	assert(r == 0);
+  pthread_mutex_lock(&i->lock);
 }
 
 static inline void
 unlock_interface(interface *i){
-	int r = pthread_mutex_unlock(&i->lock);
-	assert(r == 0);
+	pthread_mutex_unlock(&i->lock);
 }
 
 #ifdef __cplusplus
