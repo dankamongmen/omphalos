@@ -185,7 +185,6 @@ static void print_mcs_index(const __u8 *mcs)
 
 	if (prev_cont)
 		diagnostic("%d", prev_bit);
-	diagnostic("");
 }
 
 
@@ -337,27 +336,27 @@ void print_ht_mcs(const __u8 *mcs)
 
 static int
 error_handler(struct sockaddr_nl *nla __attribute__ ((unused)),
-				struct nlmsgerr *err,void *arg){
-	nlstate *nl = arg;
+			       	struct nlmsgerr *err, void *arg){
+	nlstate *onl = arg;
 
-	nl->err = err->error;
+	onl->err = err->error;
 	assert(0);
 	return NL_STOP;
 }
 
 static int
 finish_handler(struct nl_msg *msg __attribute__ ((unused)),void *arg){
-	nlstate *nl = arg;
+	nlstate *onl = arg;
 
-	nl->err = 1;
+	onl->err = 1;
 	return NL_SKIP;
 }
 
 static int
 ack_handler(struct nl_msg *msg __attribute__ ((unused)),void *arg){
-	nlstate *nl = arg;
+	nlstate *onl = arg;
 
-	nl->err = 0;
+	onl->err = 0;
 	return NL_STOP;
 }
 
