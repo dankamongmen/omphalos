@@ -52,28 +52,28 @@ free_ouitries(ouitrie **tries){
 
 static int
 parse_file(const char *fn){
-  unsigned allocerr,count = 0;
-  struct timeval t0,t1,t2;
+  unsigned allocerr, count = 0;
+  struct timeval t0, t1, t2;
   const char *line;
-  int l,ret = -1;
+  int l, ret = -1;
   FILE *fp;
   char *b;
 
-  gettimeofday(&t0,NULL);
-  if((fp = fopen(fn,"r")) == NULL){
-    diagnostic("Couldn't open %s (%s?)",fn,strerror(errno));
+  gettimeofday(&t0, NULL);
+  if((fp = fopen(fn, "r")) == NULL){
+    diagnostic("Couldn't open %s (%s?)", fn, strerror(errno));
     return -1;
   }
   clearerr(fp);
   allocerr = 0;
   b = NULL;
   l = 0;
-  while( (line = fgetl(&b,&l,fp)) ){
+  while( (line = fgetl(&b, &l, fp)) ){
     const char *hexstart;
     unsigned long hex;
-    unsigned char b;
-    ouitrie *cur,*c;
-    char *end,*nl;
+    unsigned char key;
+    ouitrie *cur, *c;
+    char *end, *nl;
 
     hexstart = line;
     while(isspace(*hexstart)){
@@ -82,7 +82,7 @@ parse_file(const char *fn){
     if(!isxdigit(*hexstart)){
       continue;
     }
-    if((hex = strtoul(hexstart,&end,16)) > ((1u << 24u) - 1)){
+    if((hex = strtoul(hexstart, &end, 16)) > ((1u << 24u) - 1)){
       continue;
     }
     if(!isspace(*end) || end == hexstart){
@@ -108,46 +108,46 @@ parse_file(const char *fn){
     if(nl == end){
       continue;
     }
-    b = (hex & (0xffu << 16u)) >> 16u;
+    key = (hex & (0xffu << 16u)) >> 16u;
     allocerr = 1;
-    if((cur = trie[b]) == NULL){
-      if((cur = trie[b] = malloc(sizeof(ouitrie))) == NULL){
+    if((cur = trie[key]) == NULL){
+      if((cur = trie[key] = malloc(sizeof(ouitrie))) == NULL){
         break; // FIXME
       }
-      memset(cur,0,sizeof(*cur));
+      memset(cur, 0, sizeof(*cur));
     }
-    b = (hex & (0xffu << 8u)) >> 8u;
-    if((c = cur->next[b]) == NULL){
-      if((c = cur->next[b] = malloc(sizeof(ouitrie))) == NULL){
+    key = (hex & (0xffu << 8u)) >> 8u;
+    if((c = cur->next[key]) == NULL){
+      if((c = cur->next[key] = malloc(sizeof(ouitrie))) == NULL){
         break; // FIXME
       }
-      memset(c,0,sizeof(*c));
+      memset(c, 0, sizeof(*c));
     }
-    b = hex & 0xff;
+    key = hex & 0xff;
     // We can't invalidate the previous entry, to which any number
     // of existing l2hosts might have pointers.
-    if(c->next[b] == NULL){
-      if((c->next[b] = malloc(sizeof(wchar_t) * (strlen(end) + 1))) == NULL){
+    if(c->next[key] == NULL){
+      if((c->next[key] = malloc(sizeof(wchar_t) * (strlen(end) + 1))) == NULL){
         break; // FIXME
       }
-      mbstowcs(c->next[b],end,strlen(end) + 1);
+      mbstowcs(c->next[key], end, strlen(end) + 1);
     }
     ++count;
     allocerr = 0;
   }
   free(b);
   if(allocerr){
-    diagnostic("Couldn't allocate for %s",fn);
+    diagnostic("Couldn't allocate for %s", fn);
   }else if(ferror(fp)){
-    diagnostic("Error reading %s",fn);
+    diagnostic("Error reading %s", fn);
   }else{
     ret = 0;
   }
   fclose(fp);
-  gettimeofday(&t1,NULL);
-  timersub(&t1,&t0,&t2);
-  diagnostic("Reloaded %u OUI%s from %s in %ld.%06lds",count,
-    count == 1 ? "" : "s",fn,t2.tv_sec,t2.tv_usec);
+  gettimeofday(&t1, NULL);
+  timersub(&t1, &t0, &t2);
+  diagnostic("Reloaded %u OUI%s from %s in %ld.%06lds", count, 
+    count == 1 ? "" : "s", fn, t2.tv_sec, t2.tv_usec);
   return ret;
 }
 
@@ -305,11 +305,14 @@ name_ethmcastaddr(const void *mac){
 }
 
 // Look up the 24-bit OUI against IANA specifications.
-const wchar_t *iana_lookup(const void *unsafe_oui,size_t addrlen){
+const wchar_t *iana_lookup(const void *unsafe_oui, size_t addrlen){
   const unsigned char *oui = unsafe_oui;
   const ouitrie *t;
 
-  assert(addrlen == ETH_ALEN);
+  if(addrlen != ETH_ALEN){
+    diagnostic("%s Bad length %zu", __func__, addrlen);
+    return NULL;
+  }
   // FIXME identify subrange 000D3A (Microsoft) D7F140::FFFFFF (LLTD)
   if( (t = trie[oui[0]]) ){
     if( (t = t->next[oui[1]]) ){
