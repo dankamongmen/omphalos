@@ -12,9 +12,11 @@ OMPHALOS:=$(OUT)/$(PROJ)/$(PROJ)
 ADDCAPS:=tools/addcaps
 SETUPCORE:=tools/setupcores
 
+.PHONY: $(OMPHALOS)-notcurses
+
 UI:=coretest @CONFIGURED_UIS@
 BIN:=$(addsuffix $(EXEEXT),$(addprefix $(OMPHALOS)-,$(UI)))
-
+BIN:=$(subst -notcurses,,$(BIN))
 DFLAGS=-D_XOPEN_SOURCE_EXTENDED -include config.h #-finput-charset=UTF-8
 DFLAGS+=-D_FORTIFY_SOURCE=2
 AM_CPPFLAGS:=-DOMPHALOS_DATADIR=\"$(datadir)\"
@@ -70,10 +72,10 @@ XOBJS:=$(filter $(OUT)/$(SRC)/ui/x/%.o,$(COBJS))
 
 # Requires CAP_NET_ADMIN privileges bestowed upon the binary
 livetest: sudobless $(SUPPORT)
-	$(OMPHALOS)-notcurses -u '' --plog=$(OUTCAP) --ouis=$(IANAOUI)
+	$(OMPHALOS) -u '' --plog=$(OUTCAP) --ouis=$(IANAOUI)
 
 silenttest: sudobless $(SUPPORT)
-	$(OMPHALOS)-notcurses -u '' --mode=silent --plog=$(OUTCAP) --ouis=$(IANAOUI)
+	$(OMPHALOS) -u '' --mode=silent --plog=$(OUTCAP) --ouis=$(IANAOUI)
 
 coretest: sudobless $(SUPPORT)
 	$(OMPHALOS)-coretest -u '' --plog=$(OUTCAP) --ouis=$(IANAOUI)
@@ -94,7 +96,9 @@ $(OMPHALOS)-coretest: $(COREOBJS) $(CORETESTOBJS)
 	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -o $@ $^ $(LFLAGS)
 
-$(OMPHALOS)-notcurses: $(COREOBJS) $(NOTCURSESOBJS)
+$(OMPHALOS)-notcurses: $(OMPHALOS)
+
+$(OMPHALOS): $(COREOBJS) $(NOTCURSESOBJS)
 	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) -o $@ $^ $(LFLAGS) $(NOTCURSES_LIBS)
 
