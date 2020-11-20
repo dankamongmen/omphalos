@@ -55,9 +55,9 @@ int wvstatus_locked(struct ncplane *n, const char *fmt, va_list va){
     memset(statusmsg, ' ', statuschars - 1);
     statusmsg[statuschars - 1] = '\0';
   }else{
-    int n = vsnprintf(statusmsg, statuschars, fmt, va);
-    if(n < statuschars){
-      memset(statusmsg + n, ' ', statuschars - n - 1);
+    int r = vsnprintf(statusmsg, statuschars, fmt, va);
+    if(r < statuschars){
+      memset(statusmsg + r, ' ', statuschars - r - 1);
       statusmsg[statuschars - 1] = '\0';
     }
   }
@@ -664,14 +664,14 @@ static const wchar_t *helps[] = {
 };
 
 static size_t
-max_helpstr_len(const wchar_t **helps){
+max_helpstr_len(const wchar_t **help){
   size_t max = 0;
 
-  while(*helps){
-    if(wcslen(*helps) > max){
-      max = wcslen(*helps);
+  while(*help){
+    if(wcslen(*help) > max){
+      max = wcslen(*help);
     }
-    ++helps;
+    ++help;
   }
   return max;
 }
