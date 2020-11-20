@@ -118,7 +118,7 @@ int handle_rtm_newroute(const struct nlmsghdr *nl){
 	memset(&r->ssg,0,sizeof(r->ssg));
 	memset(&r->ssd,0,sizeof(r->ssd));
 	memset(&r->sss,0,sizeof(r->sss));
-	while(RTA_OK(ra,rlen)){
+	while(RTA_OK(ra, rlen)){
 		switch(ra->rta_type){
 		case RTA_DST:{
 			if(RTA_PAYLOAD(ra) != flen){
@@ -314,8 +314,8 @@ err:
 	return -1;
 }
 
-int is_router(int fam,const void *addr){
-	size_t gwoffset,len;
+int is_router(int fam, const void *addr){
+	size_t gwoffset, len;
 	route *rt;
 
 	// FIXME we will want an actual cross-interface routing table rather
@@ -323,19 +323,20 @@ int is_router(int fam,const void *addr){
 	if(fam == AF_INET){
 		rt = ip_table4;
 		len = 4;
-		gwoffset = offsetof(struct sockaddr_in,sin_addr);
+		gwoffset = offsetof(struct sockaddr_in, sin_addr);
 	}else if(fam == AF_INET6){
 		rt = ip_table6;
 		len = 16;
-		gwoffset = offsetof(struct sockaddr_in6,sin6_addr);
+		gwoffset = offsetof(struct sockaddr_in6, sin6_addr);
 	}else if(fam == AF_BSSID){
 		return 0;
 	}else{
-		assert(0);
+		diagnostic("Unknown protocol family %d", fam);
+		return 0;
 	}
 	pthread_mutex_lock(&route_lock);
 	while(rt){
-		if(memcmp((const char *)(&rt->ssg) + gwoffset,addr,len) == 0){
+		if(memcmp((const char *)(&rt->ssg) + gwoffset, addr, len) == 0){
 			break;
 		}
 		rt = rt->next;
@@ -408,15 +409,15 @@ int get_router(int fam,const void *addr,struct routepath *rp){
 
 // Call get_router() on the address, acquire a TX frame from the discovered
 // interface, Initialize it with proper L2 and L3 data.
-int get_routed_frame(int fam,const void *addr,struct routepath *rp,
-			void **frame,size_t *flen,size_t *hlen){
-	if(get_router(fam,addr,rp)){
+int get_routed_frame(int fam, const void *addr, struct routepath *rp,
+			               void **frame, size_t *flen, size_t *hlen){
+	if(get_router(fam, addr, rp)){
 		return -1;
 	}
-	if((*frame = get_tx_frame(rp->i,flen)) == NULL){
+	if((*frame = get_tx_frame(rp->i, flen)) == NULL){
 		return -1;
 	}
-	assert(hlen); // FIXME set up the l2/l3 headers
+	(void)hlen; // FIXME set up the l2/l3 headers
 	return -1;
 }
 
