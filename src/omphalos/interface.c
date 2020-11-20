@@ -666,14 +666,14 @@ get_route4(const interface *i,const uint32_t *ip){
 }
 
 static const ip6route *
-get_route6(const interface *i,const void *ip){
+get_route6(const interface *i, const void *ip){
   const ip6route *i6r;
 
   for(i6r = i->ip6r ; i6r ; i6r = i6r->next){
-    uint128_t i;
+    uint128_t i128;
 
-    assign128(i,ip);
-    if(ip6_in_route(i6r,i)){
+    assign128(i128, ip);
+    if(ip6_in_route(i6r, i128)){
       return i6r;
     }
   }
@@ -681,7 +681,7 @@ get_route6(const interface *i,const void *ip){
 }
 
 const void *
-get_source_address(interface *i,int fam,const void *addr,void *s){
+get_source_address(interface *i, int fam, const void *addr, void *s){
   switch(fam){
     case AF_INET:{
       const ip4route *i4r = addr ? get_route4(i,addr) : i->ip4r;

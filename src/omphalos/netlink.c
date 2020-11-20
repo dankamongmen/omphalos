@@ -386,7 +386,7 @@ handle_rtm_newaddr(const struct nlmsghdr *nl){
 		diagnostic("No address in ifaddrmsg");
 		return -1;
 	}
-	assert(inet_ntop(ia->ifa_family,as,astr,sizeof(astr)));
+	inet_ntop(ia->ifa_family,as,astr,sizeof(astr));
 	lock_interface(iface);
 	if(ia->ifa_family == AF_INET6){
 		set_default_ipv6src(iface,as);
@@ -574,8 +574,8 @@ prepare_rx_socket(interface *iface,int idx,int offload){
 }
 
 static int
-raw_socket(const interface *i,int fam,int protocol){
-	int sd,idx,slevel,sopt,type,loopopt,loop = 1;
+raw_socket(const interface *i, int fam, int protocol){
+	int sd, idx, slevel, sopt, type, loopopt, loop = 1;
 	struct ip_mreqn mr;
 	size_t slen;
 	void *sarg;
@@ -608,10 +608,12 @@ raw_socket(const interface *i,int fam,int protocol){
 			proto = IPPROTO_ICMPV6;
 			type = SOCK_RAW;
 		}else{
-			assert(0);
+			diagnostic("Unknown IPv6 protocol %d", protocol);
+			return -1;
 		}
 	}else{
-		assert(0);
+	  diagnostic("Unknown eth family %d", fam);
+		return -1;
 	}
 	sd = socket(fam,type,proto);
 	if(sd < 0){

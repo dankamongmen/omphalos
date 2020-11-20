@@ -114,7 +114,9 @@ prepare_arp_probe(const interface *i,void *frame,size_t *flen,
 	assert(hln == i->addrlen); // FIXME handle this case
 	// FIXME what about non-ethernet
 	ehdr = (struct ethhdr *)((char *)frame + thdr->tp_mac);
-	assert(prep_eth_header(ehdr,*flen - thdr->tp_mac,i,haddr,ETH_P_ARP) == sizeof(struct ethhdr));
+	if(prep_eth_header(ehdr,*flen - thdr->tp_mac,i,haddr,ETH_P_ARP) != sizeof(struct ethhdr)){
+		return;
+	}
 	thdr->tp_len = sizeof(struct ethhdr) + sizeof(struct arphdr)
 		+ hln * 2 + pln * 2;
 	ahdr = (struct arphdr *)((char *)ehdr + sizeof(*ehdr));

@@ -26,14 +26,14 @@ static pthread_mutex_t netlock = PTHREAD_MUTEX_INITIALIZER;
 
 static inline void
 lock_net(void){
-	assert(pthread_mutex_lock(&netlock) == 0);
+	pthread_mutex_lock(&netlock);
 }
 
 static inline void
 unlock_net(void){
 	const omphalos_ctx *ctx;
 
-	assert(pthread_mutex_unlock(&netlock) == 0);
+	pthread_mutex_unlock(&netlock);
 	if( (ctx = get_octx()) ){
 		if(ctx->iface.network_event){
 			ctx->iface.network_event();
@@ -95,22 +95,24 @@ lex_state(FILE *fp,unsigned n){
 }
 
 static int
-lex_unsigned_file(const char *fn,unsigned long n){
+lex_unsigned_file(const char *fn, unsigned long n){
 	FILE *fp;
 	int val;
 
-	assert(n <= INT_MAX);
-	if((fp = fopen(fn,"r")) == NULL){
-		diagnostic("Couldn't open %s (%s?)",fn,strerror(errno));
+	if(n > INT_MAX){
 		return -1;
 	}
-	if((val = lex_state(fp,n)) < 0){
-		diagnostic("Error parsing %s",fn);
+	if((fp = fopen(fn, "r")) == NULL){
+		diagnostic("Couldn't open %s (%s?)", fn, strerror(errno));
+		return -1;
+	}
+	if((val = lex_state(fp, n)) < 0){
+		diagnostic("Error parsing %s", fn);
 		fclose(fp);
 		return -1;
 	}
 	if(fclose(fp)){
-		diagnostic("Error closing %s (%s?)",fn,strerror(errno));
+		diagnostic("Error closing %s (%s?)", fn, strerror(errno));
 		return -1;
 	}
 	return val;
@@ -121,17 +123,17 @@ lex_string_file(const char *fn){
 	char *val;
 	FILE *fp;
 
-	if((fp = fopen(fn,"r")) == NULL){
-		diagnostic("Couldn't open %s (%s?)",fn,strerror(errno));
+	if((fp = fopen(fn, "r")) == NULL){
+		diagnostic("Couldn't open %s (%s?)", fn, strerror(errno));
 		return NULL;
 	}
 	if((val = lex_string(fp)) == NULL){
-		diagnostic("Error parsing %s",fn);
+		diagnostic("Error parsing %s", fn);
 		fclose(fp);
 		return NULL;
 	}
 	if(fclose(fp)){
-		diagnostic("Error closing %s (%s?)",fn,strerror(errno));
+		diagnostic("Error closing %s (%s?)", fn, strerror(errno));
 		free(val);
 		return NULL;
 	}

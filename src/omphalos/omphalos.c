@@ -7,6 +7,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <signal.h>
+#include <version.h>
 #include <pcap/pcap.h>
 #include <sys/socket.h>
 #include <omphalos/udev.h>
@@ -98,8 +99,8 @@ version(const char *arg0){
 
 static inline void
 default_vdiagnostic(const char *fmt, va_list v){
-	assert(vfprintf(stderr, fmt, v) >= 0);
-	assert(fputc('\n', stderr) != EOF);
+	vfprintf(stderr, fmt, v);
+	fputc('\n', stderr);
 }
 
 enum {
