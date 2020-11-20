@@ -1,0 +1,8 @@
+#define omphalos_VERSION_MAJOR "@omphalos_VERSION_MAJOR@"
+#define omphalos_VERSION_MINOR "@omphalos_VERSION_MINOR@"
+#define omphalos_VERSION_PATCH "@omphalos_VERSION_PATCH@"
+#define VERSION omphalos_VERSION_MAJOR  "."  omphalos_VERSION_MINOR  "."  omphalos_VERSION_PATCH
+#define PACKAGE "omphalos"
+#define OMPHALOS_DATADIR "@CMAKE_INSTALL_FULL_DATADIR@/omphalos"
+#define PACKAGE_NAME "@PROJECT@"
+#cmakedefine USE_NOTCURSES
