@@ -143,8 +143,8 @@ send_to_self(interface *i, void *frame){
 		case ARPHRD_NONE:
 			return -1;
 		default:
-			assert(0);
-			break;
+			diagnostic("Unknown ARPHRD type %u", i->arptype);
+			return -1;
 	}
 	if(l2proto == ntohs(ETH_P_IP)){
 		const struct iphdr *ip;
@@ -167,7 +167,8 @@ send_to_self(interface *i, void *frame){
 			sina.sin_port = 0;
 			plen = ntohs(ip->tot_len);
 		}else{
-			assert(0);
+			diagnostic("Unknown IPv4 protocol %u", ip->protocol);
+			return 0;
 		}
 		payload = ip;
 	}else if(l2proto == ntohs(ETH_P_IPV6)){
@@ -194,15 +195,16 @@ send_to_self(interface *i, void *frame){
 			payload = icmp;
 			sina6.sin6_port = htons(IPPROTO_ICMPV6);
 		}else{
-			assert(0);
+			diagnostic("Unknown IPv6 protocol %u", ip->ip6_ctlun.ip6_un1.ip6_un1_nxt);
+			return 0;
 		}
 		plen = ntohs(ip->ip6_ctlun.ip6_un1.ip6_un1_plen);
-		memcpy(&sina6.sin6_addr,&ip->ip6_dst,sizeof(ip->ip6_dst));
+		memcpy(&sina6.sin6_addr, &ip->ip6_dst, sizeof(ip->ip6_dst));
 	}else{
 		return -1;
 	}
-	if((r = sendto(fd,payload,plen,0,ss,slen)) < 0){
-		diagnostic("Error self-TXing %d on %s:%d (%s)",plen,i->name,fd,strerror(errno));
+	if((r = sendto(fd, payload, plen, 0, ss, slen)) < 0){
+		diagnostic("Error self-TXing %d on %s:%d (%s)", plen, i->name, fd, strerror(errno));
 	}
 	return r;
 }
