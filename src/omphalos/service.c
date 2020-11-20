@@ -43,17 +43,16 @@ free_service(l4srv *l){
 	}
 }
 
-void observe_proto(interface *i,struct l2host *l2,const wchar_t *proto){
-	assert(i && l2 && proto);
+void observe_proto(interface *i, struct l2host *l2, const wchar_t *proto){
 	diagnostic("[%s] observed protocol '%ls'", i->name, proto);
-	// FIXME
+	(void)l2; // FIXME
 }
 
-void observe_service(interface *i,struct l2host *l2,struct l3host *l3,
-			unsigned proto,unsigned port,
-			const wchar_t *srv,const wchar_t *srvver){
+void observe_service(interface *i, struct l2host *l2, struct l3host *l3, 
+                     unsigned proto, unsigned port, 
+                     const wchar_t *srv, const wchar_t *srvver){
 	const omphalos_ctx *octx = get_octx();
-	l4srv *services,**prev,*cur;
+	l4srv *services, **prev, *cur;
 
 	services = l3_getservices(l3);
 	for(prev = &services ; (cur = *prev) ; prev = &cur->next){
@@ -65,7 +64,7 @@ void observe_service(interface *i,struct l2host *l2,struct l3host *l3,
 			}else if(cur->port == port){
 				int r;
 
-				if((r = wcscmp(cur->srv,srv)) == 0){
+				if((r = wcscmp(cur->srv, srv)) == 0){
 					return;
 				}else if(r > 0){
 					break;
@@ -73,16 +72,16 @@ void observe_service(interface *i,struct l2host *l2,struct l3host *l3,
 			}
 		}
 	}
-	if((cur = new_service(proto,port,srv,srvver)) == NULL){
+	if((cur = new_service(proto, port, srv, srvver)) == NULL){
 		return;
 	}
 	cur->next = *prev;
 	*prev = cur;
-	if(l3_setservices(l3,services)){
+	if(l3_setservices(l3, services)){
 		*prev = cur->next;
 		free_service(cur);
 	}else if(octx->iface.srv_event){
-		cur->opaque = octx->iface.srv_event(i,l2,l3,cur);
+		cur->opaque = octx->iface.srv_event(i, l2, l3, cur);
 	}
 }
 
