@@ -39,8 +39,6 @@
 #include <ui/notcurses/network.h>
 #include <ui/notcurses/channels.h>
 
-#define NCKEY_ESC 27
-
 #define ERREXIT endwin() ; fprintf(stderr, "notcurses failure|%s|%d\n", __func__, __LINE__); abort() ; goto err
 
 #define PANEL_STATE_INITIALIZER { .n = NULL, .ysize = -1, }
