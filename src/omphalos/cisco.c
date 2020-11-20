@@ -24,13 +24,13 @@ typedef struct udldhdr {
 
 #define UDLD_TYPE_DEVID __constant_htons(0x1)
 
-void handle_udld_packet(omphalos_packet *op,const void *frame,size_t len){
+void handle_udld_packet(omphalos_packet *op, const void *frame, size_t len){
 	const udldhdr *udld = frame;
 	const udldattr *ua;
 
 	if(len < sizeof(*udld)){
 		op->malformed = 1;
-		diagnostic("%s packet too small (%zu) on %s",__func__,len,op->i->name);
+		diagnostic("%s packet too small (%zu) on %s", __func__, len, op->i->name);
 		return;
 	}
 	ua = (const udldattr *)((const char *)frame + sizeof(*udld));
@@ -38,12 +38,12 @@ void handle_udld_packet(omphalos_packet *op,const void *frame,size_t len){
 	while(len){
 		if(len < sizeof(*ua)){
 			op->malformed = 1;
-			diagnostic("%s attr too small (%zu) on %s",__func__,len,op->i->name);
+			diagnostic("%s attr too small (%zu) on %s", __func__, len, op->i->name);
 			return;
 		}
 		if(len < ntohs(ua->len)){
 			op->malformed = 1;
-			diagnostic("%s attr too large (%hu) on %s",__func__,ntohs(ua->len),op->i->name);
+			diagnostic("%s attr too large (%hu) on %s", __func__, ntohs(ua->len), op->i->name);
 			return;
 		}
 		// FIXME it'd be nice to use this name for some purpose
@@ -52,7 +52,7 @@ void handle_udld_packet(omphalos_packet *op,const void *frame,size_t len){
 				int devlen = ntohs(ua->len) - 4;
 				const char *name = (const char *)ua + 4;
 
-				diagnostic("UDLD device name: %*s",devlen,name);
+				diagnostic("UDLD device name: %*s", devlen, name);
 				break;
 			}
 		}*/
@@ -62,7 +62,9 @@ void handle_udld_packet(omphalos_packet *op,const void *frame,size_t len){
 }
 
 void handle_cld_packet(omphalos_packet *op,const void *frame,size_t len){
-	assert(op && frame && len); // FIXME
+	(void)op;
+	(void)frame;
+	(void)len; // FIXME
 }
 
 typedef struct eigrphdr {
@@ -85,5 +87,7 @@ void handle_eigrp_packet(omphalos_packet *op,const void *frame,size_t len){
 }
 
 void handle_dtp_packet(omphalos_packet *op,const void *frame,size_t len){
-	assert(op && frame && len); // FIXME
+	(void)op;
+	(void)frame;
+	(void)len; // FIXME
 }

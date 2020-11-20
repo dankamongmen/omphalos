@@ -12,13 +12,17 @@
 #include <omphalos/ethernet.h>
 #include <omphalos/interface.h>
 
-int handle_dhcp_packet(omphalos_packet *op,const void *frame,size_t fsize){
-	assert((op != frame) && fsize);
+int handle_dhcp_packet(omphalos_packet *op, const void *frame, size_t fsize){
+	(void)op;
+	(void)frame;
+	(void)fsize;
 	return 1; // FIXME
 }
 
-int handle_dhcp6_packet(omphalos_packet *op,const void *frame,size_t fsize){
-	assert((op != frame) && fsize);
+int handle_dhcp6_packet(omphalos_packet *op, const void *frame, size_t fsize){
+	(void)op;
+	(void)frame;
+	(void)fsize;
 	return 1; // FIXME
 }
 
