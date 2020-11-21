@@ -283,8 +283,8 @@ l4obj *add_service_to_iface(iface_state *is, struct l2obj *l2, struct l3obj *l3,
     l4->next = *prev;
     *prev = l4;
   }
-  assert(node_lines(is->expansion, l3->l2) == l3->l2->lnes);
-  assert(node_lines(is->expansion, l2) == l2->lnes);
+  node_lines(is->expansion, l3->l2);
+  node_lines(is->expansion, l2);
   return l4;
 }
 

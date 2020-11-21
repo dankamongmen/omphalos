@@ -158,14 +158,15 @@ endif()
 file(GLOB PCAPS CONFIGURE_DEPENDS test/*.pcap)
 enable_testing()
 foreach(p ${PCAPS})
+get_filename_component(pe ${p} NAME_WLE)
 add_test(
-  NAME coretest-${p}
-  COMMAND omphalos-readline -u "" -f ${p} --plog=plog.pcap --ouis=../ieee-oui.txt
+  NAME ${pe}
+  COMMAND omphalos-readline --mode=silent -u "" -f ${p} --plog=plog.pcap --ouis=../ieee-oui.txt
 )
 endforeach()
 
 add_custom_target(livetest
-  omphalos -u '' --plog=plog.pcap --ouis=../ieee-oui.txt
+  omphalos --mode=silent -u '' --plog=plog.pcap --ouis=../ieee-oui.txt
 )
 
 install(
