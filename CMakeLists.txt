@@ -26,8 +26,8 @@ find_package(Threads)
 set_package_properties(Threads PROPERTIES TYPE REQUIRED)
 feature_summary(WHAT ALL FATAL_ON_MISSING_REQUIRED_PACKAGES)
 pkg_check_modules(LIBCAP REQUIRED libcap>=2.24)
-pkg_check_modules(LIBNL REQUIRED libnl-3.0>=3.5.0)
-pkg_check_modules(LIBNLGENL REQUIRED libnl-genl-3.0>=3.5.0)
+pkg_check_modules(LIBNL REQUIRED libnl-3.0>=3.4.0)
+pkg_check_modules(LIBNLGENL REQUIRED libnl-genl-3.0>=3.4.0)
 pkg_check_modules(LIBPCAP REQUIRED libpcap>=1.9.1)
 pkg_check_modules(LIBPCIACCESS REQUIRED pciaccess>=0.13.1)
 pkg_check_modules(LIBREADLINE REQUIRED readline)
@@ -40,11 +40,15 @@ endif()
 
 # don't cache these, or installing them requires clearing the cache to be found.
 # this is going to be true for anything lacking pkg-config/CMake support.
+unset(HAVE_UNISTRING_H CACHE)
 check_include_file("iwlib.h" HAVE_LIBIW_H)
 if(NOT "${HAVE_LIBIW_H}")
   message(FATAL_ERROR "Couldn't find iwlib.h")
 endif()
 set_property(GLOBAL APPEND PROPERTY PACKAGES_FOUND libiw)
+set_package_properties(libiw PROPERTIES TYPE REQUIRED)
+
+feature_summary(WHAT ALL FATAL_ON_MISSING_REQUIRED_PACKAGES)
 
 include(CMakePackageConfigHelpers)
 configure_file(src/version.h.in include/version.h)
