@@ -38,7 +38,7 @@ arp-scan's `get-oui` program is used to build the IANA OUI file.
 
 GnuPG is used to verify signed tarballs.
 
-Manpages and XHTML documentation require xsltproc and docbook-xsl.
+Manual page and XHTML documentation require Pandoc.
 
 Your TERM and LOCALE/LANG environment variables need be correctly set to make
 full use of `omphalos`. Ensure that a UTF-8 locale is being used, and that your

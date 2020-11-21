@@ -4,11 +4,9 @@ Priority: optional
 Maintainer: Nick Black <dankamongmen@gmail.com>
 Build-Depends:
  arp-scan,
- autoconf-archive,
+ cmake,
  ctags,
  debhelper-compat (= 13),
- docbook-xml,
- docbook-xsl,
  libbluetooth-dev,
  libcap-dev,
  libiw-dev,
@@ -18,10 +16,8 @@ Build-Depends:
  libpcap-dev,
  libreadline-dev,
  libsysfs-dev,
- libwww-perl,
- pkg-config,
- xsltproc,
-Standards-Version: 4.5.0
+ pkg-config
+Standards-Version: 4.5.1
 Rules-Requires-Root: no
 Homepage: https://nick-black.com/dankwiki/index.php/Omphalos
 Vcs-Git: git://github.com/dankamongmen/omphalos.git
