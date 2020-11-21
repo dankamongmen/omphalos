@@ -2,6 +2,7 @@
 
 # Set up a binary to use netlink/packet sockets without being root.
 # Requires filesystem-based capabilities (Linux 2.6.24+)
+# Requires sudo access. Pass -DUSE_SUDO=1 to cmake.
 
 set -e
 set -o nounset
@@ -13,17 +14,17 @@ usage () { usageerr >&2 ; return 1 ; }
 
 if SETCAP="`which setcap`" ; then
 	for i in "$@" ; do
-		if ! "$SETCAP" "= cap_net_admin,cap_net_raw=ep" "$i" ; then
+		if ! sudo "$SETCAP" "= cap_net_admin,cap_net_raw=ep" "$i" ; then
 			echo "The 'setcap' binary failed, using setuid..." >&2
-			chown root:root "$i"
-			chmod +s "$i"
+			sudo chown root:root "$i"
+			sudo chmod +s "$i"
 		fi
 	done
 else
 	echo "Couldn't find the 'setcap' binary, using setuid..." >&2
 	for i in "$@" ; do
-		chown root:root "$i"
-		chmod +s "$i"
+		sudo chown root:root "$i"
+		sudo chmod +s "$i"
 	done
 fi
 
