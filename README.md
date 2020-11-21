@@ -23,18 +23,14 @@ attacks, omphalos is designed to "spray the area".
 -------------------------------------------------------------------
 ## Requirements
 
-GNU Autotools and the Autoconf Archive are used to build the configure script.
-They are not necessary when building from a release tarball. On Debian-based
-systems, install "automake" and "autoconf-archive".
-
-A C compiler is used at buildtime.
+CMake and a C compiler are used at buildtime.
 
 libnl3, libpcap, libz, libiw, and libcap are used at both build and runtime.
 
 Omphalos currently only builds or runs on a Linux kernel with `PACKET_MMAP`
 sockets. Packet transmission requires at least a 2.6.29 kernel.
 
-The TTY UI (`omphalos-tty`) requires GNU Readline.
+The line-based UI (`omphalos-readline`) requires GNU Readline.
 
 The fullscreen UI (`omphalos`) requires Notcurses 2.0.1+.
 
@@ -51,27 +47,32 @@ terminal definition supports 256 colors or RGB.
 -------------------------------------------------------------------
 ## Building and installation
 
-If compiling from checked-out source, run "autoreconf -fi -Wall,error" to build
-the initial configure script (a configure script will be present in release
-tarballs).
+* mkdir build
+* cd build
+* cmake ..
+* make
+* make test (requires `-DUSE_SUDO=1` or `sudo`)
+* make livetest (requires `-DUSE_SUDO=1` or `sudo`)
+* sudo make install
 
-"./configure && make && sudo make postinstall" ought be sufficient to build and
-install Omphalos. Run "./configure --help" to see supported build parameters.
+Supported build options include:
+
+`USE_NOTCURSES`: Use Notcurses to build a fullscreen version
+`USE_PANDOC`: Use Pandoc to build the manual pages
+`USE_READLINE`: Use libreadline to build a line-based version
+`USE_SUDO`: Use sudo to bless the binaries with necessary capabilities
 
 If filesystem-based capabilities are supported, it might be desirable to bestow
-CAP_SETUID privileges (this is *not* equivalent to a setuid binary). See
-"Usage" regarding switch to the "nobody" user when CAP_SETUID is possessed:
+`CAP_SETUID` privileges (this is *not* equivalent to a setuid binary). See
+"Usage" regarding switch to the "nobody" user when `CAP_SETUID` is possessed:
 this can help defend users from malicious files, even if they're not allowed to
 open packet sockets. If non-root users should be able to use network
 capabilities, add CAP_NET_ADMIN and CAP_NET_RAW to the binary. This can be
-accomplished by running "make sudobless" or running tools/addcaps.
+accomplished by building with `-DUSE_SUDO=1` or running `tools/addcaps`.
 
-If MADV_HUGEPAGE is available at compilation time, madvise() will be used to
+If `MADV_HUGEPAGE` is available at compilation time, `madvise()` will be used to
 advise hugepage backing for important, large data structures including the
 ringbuffers. This could improve performance.
-
-To restore an omphalos directory to its pristine form, ensure a Makefile has
-been generated via ./configure, and run "make maintainer-clean".
 
 -------------------------------------------------------------------
 ## Usage

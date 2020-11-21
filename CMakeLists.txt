@@ -5,6 +5,7 @@ project(omphalos VERSION 0.99.13
   LANGUAGES C)
 set(CMAKE_C_STANDARD 11)
 
+include(CTest)
 include(GNUInstallDirs)
 include(FeatureSummary)
 
@@ -12,6 +13,7 @@ include(FeatureSummary)
 option(USE_PANDOC "Use pandoc to write man pages" ON)
 option(USE_NOTCURSES "Use Notcurses to build fullscreen UI" ON)
 option(USE_READLINE "Use libreadline to build line-based UI" ON)
+option(USE_SUDO "Use sudo to bless binaries" OFF)
 #################### END USER-SELECTABLE OPTIONS #########################
 
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
@@ -93,6 +95,7 @@ file(GLOB SRCS CONFIGURE_DEPENDS src/omphalos/*.c)
 file(GLOB NCSRCS CONFIGURE_DEPENDS src/ui/notcurses/*.c)
 file(GLOB RLSRCS CONFIGURE_DEPENDS src/ui/tty/*.c)
 file(GLOB CTSRCS CONFIGURE_DEPENDS src/ui/coretest/*.c)
+file(GLOB ADDCAPS CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/tools/addcaps")
 add_executable(omphalos ${SRCS} ${NCSRCS})
 add_executable(omphalos-readline ${SRCS} ${RLSRCS})
 add_executable(omphalos-coretest ${SRCS} ${CTSRCS})
@@ -141,4 +144,34 @@ target_link_libraries(omphalos-coretest
 target_compile_definitions(omphalos-coretest
   PRIVATE
     _GNU_SOURCE _DEFAULT_SOURCE _XOPEN_SOURCE=600
+)
+
+if(${USE_SUDO})
+foreach(o omphalos omphalos-coretest omphalos-readline)
+  add_custom_command(TARGET ${o}
+    POST_BUILD COMMAND ${ADDCAPS} ${o}
+    COMMENT "Blessing ${o}"
+  )
+endforeach()
+endif()
+
+file(GLOB PCAPS CONFIGURE_DEPENDS test/*.pcap)
+enable_testing()
+foreach(p ${PCAPS})
+add_test(
+  NAME coretest-${p}
+  COMMAND omphalos-readline -u "" -f ${p} --plog=plog.pcap --ouis=../ieee-oui.txt
+)
+endforeach()
+
+add_custom_target(livetest
+  omphalos -u '' --plog=plog.pcap --ouis=../ieee-oui.txt
+)
+
+install(
+  TARGETS
+    omphalos
+    omphalos-readline
+  DESTINATION
+    bin
 )
