@@ -10,10 +10,11 @@
 #include <signal.h>
 #include <pthread.h>
 #include <net/if.h>
+#include <version.h>
+#include <wireless.h>
 #include <langinfo.h>
 #include <asm/types.h>
 #include <sys/socket.h>
-#include <wireless.h>
 #include <omphalos/diag.h>
 #include <omphalos/pcap.h>
 #include <readline/readline.h>
@@ -389,6 +390,9 @@ init_tty_ui(pthread_t *tid){
 	int err;
 
 	maintid = pthread_self(); // FIXME ugh
+	rl_outstream = stdout;
+	rl_instream = stdin;
+	rl_readline_name = PACKAGE;
 	rl_prep_terminal(1); // 1 == read eight-bit input
 	if( (err = pthread_create(tid,NULL,tty_handler,&maintid)) ){
 		fprintf(stderr,"Couldn't launch input thread (%s?)\n",strerror(err));
