@@ -129,9 +129,7 @@ int new_display_panel(struct ncplane *n, struct panel_state *ps, int rows, int c
   // iface summaries (unless you've got a bottom-partial).
   ncplane_options nopts = {
     .y = y - (rows + 4),
-    .horiz = {
-      .x = x - cols,
-    },
+    .x = x - cols,
     .rows = rows + 2,
     .cols = cols,
   };

@@ -355,9 +355,7 @@ notcurses_setup(void){
     goto err;
   }
   ncplane_options rnopts = {
-    .horiz = {
-      .align = NCALIGN_CENTER,
-    },
+    .x = NCALIGN_CENTER,
     .rows = rows - 1,
     .cols = cols,
     .name = "reel",

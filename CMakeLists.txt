@@ -36,7 +36,7 @@ pkg_check_modules(LIBREADLINE REQUIRED readline)
 pkg_check_modules(LIBUDEV REQUIRED libudev>=175)
 pkg_check_modules(LIBZ REQUIRED zlib>=1.2.11)
 if(${USE_NOTCURSES})
-  find_package(Notcurses 2.0.1 CONFIG)
+  find_package(Notcurses 2.0.7 CONFIG)
   set_package_properties(Notcurses PROPERTIES TYPE REQUIRED)
 endif()
 
@@ -166,7 +166,7 @@ add_test(
 endforeach()
 
 add_custom_target(livetest
-  omphalos --mode=silent -u '' --plog=plog.pcap --ouis=../ieee-oui.txt
+  omphalos -u '' --plog=plog.pcap --ouis=../ieee-oui.txt
 )
 
 install(
