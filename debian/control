@@ -15,7 +15,6 @@ Build-Depends:
  libnotcurses-dev (>= 2.0.1),
  libpcap-dev,
  libreadline-dev,
- libsysfs-dev,
  pkg-config
 Standards-Version: 4.5.1
 Rules-Requires-Root: no
