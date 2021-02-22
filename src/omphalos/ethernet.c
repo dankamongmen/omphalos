@@ -21,10 +21,11 @@
 #include <omphalos/omphalos.h>
 #include <omphalos/interface.h>
 
-#define ETH_P_ECTP 0x9000	// Ethernet Configuration Test Protocol
-#define ETH_P_UDLD 0x0111	// Unidirectional Link Detection Protocol
-#define ETH_P_CLD 0x2000  // Cisco Discovery Protocol
-#define ETH_P_WOL 0x0842  // Wake-on-Lan (can be sent on any transport)
+#define ETH_P_ECTP 0x9000	 // Ethernet Configuration Test Protocol
+#define ETH_P_UDLD 0x0111	 // Unidirectional Link Detection Protocol
+#define ETH_P_CLD 0x2000   // Cisco Discovery Protocol
+#define ETH_P_WOL 0x0842   // Wake-on-Lan (can be sent on any transport)
+#define ETH_P_P1905 0x893a // P1905.1 Home Networking Control Message Data Unit
 
 #define LLC_MAX_LEN	1536 // one more than maximum length of 802.2 LLC
 
@@ -130,8 +131,7 @@ handle_8021q(omphalos_packet *op,const void *frame,size_t len,int allowllc){
 			handle_8022(op,dgram,dlen);
 		}else{
 			op->noproto = 1;
-			diagnostic("%s %s noproto for 0x04%x",__func__,
-					op->i->name,op->l3proto);
+			diagnostic("%s %s noproto for 0x%04x", __func__, op->i->name, op->l3proto);
 		}
 	break;} }
 }
@@ -157,7 +157,7 @@ handle_snap(omphalos_packet *op,const void *frame,size_t len){
 	dlen = len - sizeof(*snap);
 	// FIXME need handle IEEE 802.1ad doubly-tagged frames (and likely do
 	// other crap involving OUI, etc)
-       	proto = ntohs(snap->ethertype);
+  proto = ntohs(snap->ethertype);
 	// FIXME also, things like Cisco ISL do an encapsulation and you don't
 	// know about it except by checking the dest address (01:00:0c:cc:cc:cc)
 	op->l3proto = proto;
@@ -172,8 +172,7 @@ handle_snap(omphalos_packet *op,const void *frame,size_t len){
 			handle_ipv6_packet(op,dgram,dlen);
 			break;
 		}case ETH_P_8021Q:{	// 802.1q on SNAP
-			handle_8021q(op,dgram - IEEE8021QHDRLEN,
-						dlen + IEEE8021QHDRLEN,0);
+			handle_8021q(op, dgram - IEEE8021QHDRLEN, dlen + IEEE8021QHDRLEN, 0);
 			break; // will modify op->l3proto
 		}case ETH_P_PAE:{
 			handle_eapol_packet(op,dgram,dlen);
@@ -285,15 +284,15 @@ handle_pppoe_packet(omphalos_packet *op,const void *frame,size_t len){
 	// FIXME
 }
 
-void handle_l2tun_packet(omphalos_packet *op,const void *frame,size_t len){
+void handle_l2tun_packet(omphalos_packet *op, const void *frame, size_t len){
 	(void)op;
 	(void)frame;
 	(void)len;
 	// FIXME not safe to hand this down without setting up op->l2s etc...
-	//handle_ipv4_packet(op,frame,len);
+	//handle_ipv4_packet(op, frame, len);
 }
 
-void handle_ethernet_packet(omphalos_packet *op,const void *frame,size_t len){
+void handle_ethernet_packet(omphalos_packet *op, const void *frame, size_t len){
 	const struct ethhdr *hdr = frame;
 	const void *dgram;
 	uint16_t proto;
@@ -301,64 +300,64 @@ void handle_ethernet_packet(omphalos_packet *op,const void *frame,size_t len){
 
 	if(len < sizeof(*hdr)){
 		op->malformed = 1;
-		diagnostic("%s %s malformed with %zu",op->i->name,__func__,len);
+		diagnostic("%s %s malformed with %zu", op->i->name, __func__, len);
 		return;
 	}
 	// Source and dest immediately follow the preamble in all frame types
-	op->l2s = lookup_l2host(op->i,hdr->h_source);
-	op->l2d = lookup_l2host(op->i,hdr->h_dest);
+	op->l2s = lookup_l2host(op->i, hdr->h_source);
+	op->l2d = lookup_l2host(op->i, hdr->h_dest);
 	dgram = (const char *)frame + sizeof(*hdr);
 	dlen = len - sizeof(*hdr);
-       	proto = ntohs(hdr->h_proto);
+  proto = ntohs(hdr->h_proto);
 	op->l3proto = proto;
 	op->pcap_ethproto = proto;
 	// FIXME need handle IEEE 802.1ad doubly-tagged frames
 	switch(proto){
 		case ETH_P_IP:{
-			handle_ipv4_packet(op,dgram,dlen);
+			handle_ipv4_packet(op, dgram, dlen);
 			break;
 		}case ETH_P_ARP:{
-			handle_arp_packet(op,dgram,dlen);
+			handle_arp_packet(op, dgram, dlen);
 			break;
 		}case ETH_P_IPV6:{
-			handle_ipv6_packet(op,dgram,dlen);
+			handle_ipv6_packet(op, dgram, dlen);
 			break;
 		}case ETH_P_8021Q:{// 802.1q on Ethernet II. Account for TPID.
-			handle_8021q(op,(const char *)dgram - 2,dlen + 2,1);
+			handle_8021q(op, (const char *)dgram - 2, dlen + 2, 1);
 			break; // will modify op->l3proto
 		}case ETH_P_PAE:{
-			handle_eapol_packet(op,dgram,dlen);
+			handle_eapol_packet(op, dgram, dlen);
 			break;
 		}case ETH_P_ECTP:{
-			handle_ectp_packet(op,dgram,dlen);
+			handle_ectp_packet(op, dgram, dlen);
 			break;
 		}case ETH_P_IPX:{
-			handle_ipx_packet(op,dgram,dlen);
+			handle_ipx_packet(op, dgram, dlen);
 			break;
 		}case ETH_P_LLTD:{
-			handle_lltd_packet(op,dgram,dlen);
+			handle_lltd_packet(op, dgram, dlen);
 			break;
 		}case ETH_P_LLDP:{
-			handle_lldp_packet(op,dgram,dlen);
+			handle_lldp_packet(op, dgram, dlen);
 			break;
 		}case ETH_P_UDLD:{
-			handle_udld_packet(op,dgram,dlen);
+			handle_udld_packet(op, dgram, dlen);
 			break;
 		}case ETH_P_DTP:{
-			handle_dtp_packet(op,dgram,dlen);
+			handle_dtp_packet(op, dgram, dlen);
 			break;
 		}case ETH_P_PPP_DISC:
 		 case ETH_P_PPP_SES:{
-			handle_pppoe_packet(op,dgram,dlen);
+			handle_pppoe_packet(op, dgram, dlen);
 			break;
 		}case ETH_P_MPLS_UC:{
-			handle_mpls_packet(op,dgram,dlen);
+			handle_mpls_packet(op, dgram, dlen);
 			break;
 		}case ETH_P_PAUSE:{
-			handle_mac_frame(op,dgram,dlen);
+			handle_mac_frame(op, dgram, dlen);
 			break;
 		}case ETH_P_WOL:{
-			handle_wol_frame(op,dgram,dlen);
+			handle_wol_frame(op, dgram, dlen);
 			break;
 		}case ETH_P_DEC: // 0x6000..0x6007 are all DEC jankware
 		case ETH_P_DNA_DL:
@@ -370,15 +369,16 @@ void handle_ethernet_packet(omphalos_packet *op,const void *frame,size_t len){
 		case ETH_P_SCA:{
 			//handle_dec_packet(op,dgram,dlen); FIXME
 			break;
+		}case ETH_P_P1905:{
+			break; // FIXME take a look at this!
 		}default:{
 			if(proto < LLC_MAX_LEN){ // 802.2 DSAP (and maybe SNAP/802.1q)
 				// FIXME check the proto (LLC length) field against framelen!
-				handle_8022(op,(const char *)dgram,dlen); // modifies op->l3proto
+				handle_8022(op, (const char *)dgram, dlen); // modifies op->l3proto
 				op->pcap_ethproto = 4;
 			}else{
 				op->noproto = 1;
-				diagnostic("%s %s noproto for 0x04%x",__func__,
-						op->i->name,proto);
+				diagnostic("%s %s noproto for 0x%04x", __func__, op->i->name, proto);
 			}
 			break;
 		}
