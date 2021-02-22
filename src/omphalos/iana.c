@@ -216,7 +216,6 @@ name_ethmcastaddr(const void *mac){
     const wchar_t *name;
     const char *mac;
     size_t mlen;
-    uint16_t eproto;  // host byte order
   } mcasts[] = {
     // We don't list eg mDNS because the 224.0.0.0/4 network
     // is larger than the 23 bits available for mapping, and
@@ -225,74 +224,64 @@ name_ethmcastaddr(const void *mac){
       .name = L"RFC 1112 IPv4 multicast",
       .mac = "\x01\x00\x5e",  // low order 23 bits of ip addresses from 224.0.0.0/4
       .mlen = 3,
-      .eproto = ETH_P_IP,
     },{
       .name = L"Inter-Switch Link", // https://www.cisco.com/c/en/us/support/docs/lan-switching/8021q/17056-741-4.html
       .mac = "\x01\x00\x5e\x00\x00",
       .mlen = 5,
-      .eproto = ETH_P_8021Q,
     },{
       .name = L"CDP/VTP/DTP/PAgP/UDLD",
       .mac = "\x01\x00\x0c\xcc\xcc\xcc",
       .mlen = 6,
-      .eproto = ETH_P_DTP, // FIXME it's more than this!
     },{
       .name = L"802.1s Shared Spanning Tree Protocol",
       .mac = "\x01\x00\x0c\xcc\xcc\xcd",
       .mlen = 6,
-      .eproto = ETH_P_STP, // FIXME verify
     },{
       .name = L"802.1d Spanning Tree Protocol",
       .mac = "\x01\x80\xc2\x00\x00\x00",
       .mlen = 6,
       // STP actually almost always goes over 802.2 with a
       // SAP value of 0x42, rather than Ethernet II.
-      .eproto = ETH_P_STP,
     },{
       .name = L"802.3 31B Ethernet PAUSE",
       .mac = "\x01\x80\xc2\x00\x00\x01",
       .mlen = 6,
-      .eproto = ETH_P_PAUSE,
     },{
       .name = L"802.3ah Ethernet OAM",
       .mac = "\x01\x80\xc2\x00\x00\x02",
       .mlen = 6,
-      .eproto = ETH_P_SLOW,
     },{
       .name = L"802.1ad Provider bridge STP",
       .mac = "\x01\x80\xc2\x00\x00\x08",
       .mlen = 6,
-      .eproto = ETH_P_LLDP,
     },{
       .name = L"802.1ab Link Layer Discovery",
       .mac = "\x01\x80\xc2\x00\x00\x0e",
       .mlen = 6,
-      .eproto = ETH_P_PAUSE,
+    },{
+      .name = L"1905.1 Discovery",
+      .mac = "\x01\x80\xc2\x00\x00\x13",
+      .mlen = 6,
     },{
       .name = L"FDDI RMT directed beacon",
       .mac = "\x01\x80\xc2\x00\x10\x00",
       .mlen = 6,
-      .eproto = ETH_P_STP,
     },{
       .name = L"FDDI status report frame",
       .mac = "\x01\x80\xc2\x00\x10\x10",
       .mlen = 6,
-      .eproto = ETH_P_STP,
     },{
       .name = L"Inter-Switch Link", // https://www.cisco.com/c/en/us/support/docs/lan-switching/8021q/17056-741-4.html
       .mac = "\x03\x00\x0c\x00\x00",
       .mlen = 5,
-      .eproto = ETH_P_8021Q,
     },{
       .name = L"DEC Maintenance Operation Protocol",
       .mac = "\xab\x00\x00\x02\x00\x00",
       .mlen = 6,
-      .eproto = ETH_P_DNA_RC,
     },{
       .name = L"Ethernet Configuration Test Protocol",
       .mac = "\xcf\x00\x00\x00\x00\x00",
       .mlen = 6,
-      .eproto = ETH_P_CTP,
     },{ .name = NULL, .mac = NULL, .mlen = 0, }
   },*mc;
 
