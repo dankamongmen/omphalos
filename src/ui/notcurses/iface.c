@@ -716,10 +716,10 @@ void iface_box(const interface *i, const iface_state *is, struct ncplane *n,
   ncplane_set_styles(n, attrs);
   ncplane_set_fg_rgb(n, bcolor);
   ncplane_cursor_move_yx(n, 0, 1);
-  cell c = CELL_TRIVIAL_INITIALIZER;
-  cell_load(n, &c, "─");
-  cell_set_fg_rgb(&c, bcolor);
-  cell_set_styles(&c, attrs);
+  nccell c = CELL_TRIVIAL_INITIALIZER;
+  nccell_load(n, &c, "─");
+  nccell_set_fg_rgb(&c, bcolor);
+  nccell_set_styles(&c, attrs);
   ncplane_hline(n, &c, cols - 3);
   ncplane_putegc_yx(n, 0, cols - 1, "╮", NULL);
   ncplane_off_styles(n, NCSTYLE_REVERSE);
@@ -765,10 +765,10 @@ void iface_box(const interface *i, const iface_state *is, struct ncplane *n,
   ncplane_off_styles(n,  NCSTYLE_REVERSE);
   attrs = NCSTYLE_BOLD | (active ? NCSTYLE_REVERSE : 0);
   ncplane_set_styles(n, attrs);
-  cell_set_fg_rgb(&c, bcolor);
-  cell_set_styles(&c, attrs);
+  nccell_set_fg_rgb(&c, bcolor);
+  nccell_set_styles(&c, attrs);
   ncplane_hline(n, &c, cols - 3);
-  cell_release(n, &c);
+  nccell_release(n, &c);
   ncplane_putegc_yx(n, rows - 1, cols - 1, "╯", NULL);
   ncplane_printf_yx(n, rows - 1, 2, "[");
   ncplane_set_fg_rgb(n, hcolor);
