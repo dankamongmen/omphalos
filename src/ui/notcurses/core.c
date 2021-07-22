@@ -346,7 +346,7 @@ redraw_iface(struct nctablet *tablet, bool drawfromtop){
   int rows, cols;
   struct ncplane *tn = nctablet_plane(tablet);
   ncplane_dim_yx(nctablet_plane(tablet), &rows, &cols);
-  ncplane_set_base(tn, " ", 0, CHANNELS_RGB_INITIALIZER(0, 0, 0, 0, 0, 0));
+  ncplane_set_base(tn, " ", 0, NCCHANNELS_INITIALIZER(0, 0, 0, 0, 0, 0));
   if(is == get_current_iface_state(reel)){
     print_active_iface_hosts(is->iface, is, tn, rows, cols);
   }else{

@@ -149,7 +149,7 @@ static void *
 input_thread(void *unsafe_marsh){
   struct fs_input_marshal *nim = unsafe_marsh;
   struct notcurses *nc = nim->nc;
-  char32_t ch;
+  uint32_t ch;
   ncinput ni;
 
   active = NULL; // No subpanels initially
