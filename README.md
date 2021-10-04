@@ -32,7 +32,7 @@ sockets. Packet transmission requires at least a 2.6.29 kernel.
 
 The line-based UI (`omphalos-readline`) requires GNU Readline.
 
-The fullscreen UI (`omphalos`) requires Notcurses 2.3.9+.
+The fullscreen UI (`omphalos`) requires Notcurses 2.4.4+.
 
 arp-scan's `get-oui` program is used to build the IANA OUI file.
 

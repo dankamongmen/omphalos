@@ -46,9 +46,14 @@ typedef struct l2obj {
 static int
 draw_right_vline(const interface *i, int active, struct ncplane *n){
   //assert(i && w && (active || !active));
-  ncplane_set_styles(n, active ? NCSTYLE_REVERSE : NCSTYLE_BOLD);
   ncplane_set_fg_rgb(n, interface_up_p(i) ? UBORDER_FG : DBORDER_FG);
   ncplane_set_bg_rgb(n, interface_up_p(i) ? UBORDER_BG : DBORDER_BG);
+  if(active){
+    //FIXME
+    //ncplane_set_channels(n, ncchannels_reverse(ncplane_channels(n)));
+  }else{
+    ncplane_set_styles(n, NCSTYLE_BOLD);
+  }
   if(ncplane_putwc(n,  L'│') <= 0){
     return -1;
   }
@@ -700,6 +705,16 @@ duplexstr(unsigned dplx){
   return "";
 }
 
+// if attrs is set, use it as a style. otherwise, reverse channels.
+static void
+effect_attrs(struct ncplane* n, int attrs){
+  if(attrs){
+    ncplane_set_styles(n, attrs);
+  }else{
+    ncplane_set_channels(n, ncchannels_reverse(ncplane_channels(n)));
+  }
+}
+
 // since we haven't been resized yet, we can't just use ncplane_dim_yx() to
 // get placement info for the bottom line. instead, we accept 'rows' as an
 // explicit parameter.
@@ -712,7 +727,8 @@ void iface_box(const interface *i, const iface_state *is, struct ncplane *n,
   cols = ncplane_dim_x(n);
   bcolor = interface_up_p(i) ? UBORDER_FG : DBORDER_FG;
   hcolor = interface_up_p(i) ? UHEADING_COLOR : DHEADING_COLOR;
-  attrs = active ? NCSTYLE_REVERSE : NCSTYLE_BOLD;
+  attrs = active ? 0 : NCSTYLE_BOLD;
+  effect_attrs(n, attrs);
   ncplane_set_styles(n, attrs);
   ncplane_set_fg_rgb(n, bcolor);
   ncplane_cursor_move_yx(n, 0, 1);
@@ -722,8 +738,9 @@ void iface_box(const interface *i, const iface_state *is, struct ncplane *n,
   nccell_set_styles(&c, attrs);
   ncplane_hline(n, &c, cols - 3);
   ncplane_putegc_yx(n, 0, cols - 1, "╮", NULL);
-  ncplane_off_styles(n, NCSTYLE_REVERSE);
-  if(active){
+  if(attrs == 0){
+    ncplane_set_channels(n, ncchannels_reverse(ncplane_channels(n)));
+  }else{
     ncplane_on_styles(n, NCSTYLE_BOLD);
   }
   ncplane_printf_yx(n, 0, 0, "[");
@@ -761,12 +778,16 @@ void iface_box(const interface *i, const iface_state *is, struct ncplane *n,
   ncplane_set_bg_rgb(n, 0);
   ncplane_putstr(n, "  ");
   ncplane_set_fg_rgb(n, bcolor);
-  ncplane_on_styles(n,  attrs);
-  ncplane_off_styles(n,  NCSTYLE_REVERSE);
-  attrs = NCSTYLE_BOLD | (active ? NCSTYLE_REVERSE : 0);
-  ncplane_set_styles(n, attrs);
+  if(attrs){
+    ncplane_on_styles(n,  attrs);
+  }else{
+    ncplane_set_channels(n, ncchannels_reverse(ncplane_channels(n)));
+  }
+  ncplane_set_styles(n, NCSTYLE_BOLD);
   nccell_set_fg_rgb(&c, bcolor);
-  nccell_set_styles(&c, attrs);
+  if(active){
+    ncplane_set_channels(n, ncchannels_reverse(ncplane_channels(n)));
+  }
   ncplane_hline(n, &c, cols - 3);
   nccell_release(n, &c);
   ncplane_putegc_yx(n, rows - 1, cols - 1, "╯", NULL);
@@ -837,12 +858,11 @@ void iface_box(const interface *i, const iface_state *is, struct ncplane *n,
   }
   ncplane_printf(n, "]");
   if( (buslen = strlen(i->drv.bus_info)) ){
+    ncplane_set_styles(n, NCSTYLE_BOLD);
     if(active){
-      // FIXME Want the text to be bold -- currently unreadable
-      ncplane_set_styles(n, NCSTYLE_REVERSE);
-      ncplane_set_fg_rgb(n, bcolor);
+      ncplane_set_bg_rgb(n, bcolor);
+      ncplane_set_channels(n, ncchannels_reverse(ncplane_channels(n)));
     }else{
-      ncplane_set_styles(n, NCSTYLE_BOLD);
       ncplane_set_fg_rgb(n, bcolor);
     }
     if(i->busname){
