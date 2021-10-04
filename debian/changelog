@@ -1,5 +1,5 @@
-omphalos (0.99.13-1) unstable; urgency=medium
+omphalos (0.99.14-1) unstable; urgency=medium
 
-  * Require notcurses 2.0.1+
+  * Require notcurses 2.4.4+
 
- -- Nick Black <dankamongmen@gmail.com>  Fri, 23 Oct 2020 15:53:13 -0400
+ -- Nick Black <dankamongmen@gmail.com>  Fri, 04 Oct 2021 05:53:13 -0400

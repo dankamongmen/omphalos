@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.14)
-project(omphalos VERSION 0.99.13
+project(omphalos VERSION 0.99.14
   DESCRIPTION "Network enumeration and domination"
   HOMEPAGE_URL "https://nick-black.com/dankwiki/index.php/Omphalos"
   LANGUAGES C)
