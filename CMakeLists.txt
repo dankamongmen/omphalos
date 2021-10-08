@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.14)
-project(omphalos VERSION 0.99.13
+project(omphalos VERSION 0.99.14
   DESCRIPTION "Network enumeration and domination"
   HOMEPAGE_URL "https://nick-black.com/dankwiki/index.php/Omphalos"
   LANGUAGES C)
@@ -36,7 +36,7 @@ pkg_check_modules(LIBREADLINE REQUIRED readline)
 pkg_check_modules(LIBUDEV REQUIRED libudev>=175)
 pkg_check_modules(LIBZ REQUIRED zlib>=1.2.11)
 if(${USE_NOTCURSES})
-  find_package(Notcurses 2.4.0 CONFIG)
+  find_package(Notcurses 2.4.4 CONFIG)
   set_package_properties(Notcurses PROPERTIES TYPE REQUIRED)
 endif()
 
