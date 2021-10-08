@@ -731,6 +731,9 @@ void iface_box(const interface *i, const iface_state *is, struct ncplane *n,
   effect_attrs(n, attrs);
   ncplane_set_styles(n, attrs);
   ncplane_set_fg_rgb(n, bcolor);
+  if(!active){
+    ncplane_set_channels(n, ncchannels_reverse(ncplane_channels(n)));
+  }
   ncplane_cursor_move_yx(n, 0, 1);
   nccell c = CELL_TRIVIAL_INITIALIZER;
   nccell_load(n, &c, "─");
