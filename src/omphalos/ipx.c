@@ -1,6 +1,5 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
-#include <linux/ipx.h>
 #include <omphalos/ipx.h>
 #include <omphalos/diag.h>
 #include <omphalos/util.h>
@@ -9,6 +8,8 @@
 #include <omphalos/interface.h>
 
 // Taken from the linux kernel's include/net/ipx.h
+#define IPX_NODE_LEN 6
+
 struct ipx_address {
 	__be32  net;
 	__u8    node[IPX_NODE_LEN]; 
