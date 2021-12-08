@@ -328,7 +328,7 @@ print_host_services(struct ncplane *nc, const interface *i, const l3obj *l,
       ++*line;
     }
   }
-  int cy, cx;
+  unsigned cy, cx;
   ncplane_cursor_yx(nc, &cy, &cx);
   if(n && n < cols - 1){
     ncplane_cursor_move_yx(nc, cy, cols - 1);
@@ -499,30 +499,30 @@ print_iface_host(const interface *i, const iface_state *is, struct ncplane *w,
     if(devname){
       // FIXME this doesn't properly account for multicolumn
       // characters in the devname,  including tabs
-      len = cols - PREFIXCOLUMNS * 2 - 5 - HWADDRSTRLEN(i->addrlen);
+      len = cols - NCPREFIXCOLUMNS * 2 - 5 - HWADDRSTRLEN(i->addrlen);
       if(!interface_up_p(i)){
-        len += PREFIXCOLUMNS * 2 + 1;
+        len += NCPREFIXCOLUMNS * 2 + 1;
       }
       ncplane_printf_yx(w, line, 0, "%lc%c %s %-*.*ls",
         selectchar, legend, hw, len, len, devname);
     }else{
-      len = cols - PREFIXCOLUMNS * 2 - 5;
+      len = cols - NCPREFIXCOLUMNS * 2 - 5;
       if(!interface_up_p(i)){
-        len += PREFIXCOLUMNS * 2 + 1;
+        len += NCPREFIXCOLUMNS * 2 + 1;
       }
       ncplane_printf_yx(w, line, 0, "%lc%c %-*.*s",
         selectchar, legend, len, len, hw);
     }
     if(interface_up_p(i)){
-      char dbuf[PREFIXCOLUMNS + 1];
+      char dbuf[NCPREFIXCOLUMNS + 1];
       if(get_srcpkts(l->l2) == 0 && (l->cat == RTN_MULTICAST || l->cat == RTN_BROADCAST)){
-        qprefix(get_dstpkts(l->l2), 1, dbuf,  1);
-        ncplane_printf(w, "%-*.*s%*s", PREFIXCOLUMNS + 1, PREFIXCOLUMNS + 1, "", PREFIXFMT(dbuf));
+        ncqprefix(get_dstpkts(l->l2), 1, dbuf,  1);
+        ncplane_printf(w, "%-*.*s%*s", NCPREFIXCOLUMNS + 1, NCPREFIXCOLUMNS + 1, "", NCPREFIXFMT(dbuf));
       }else{
-        char sbuf[PREFIXCOLUMNS + 1];
-        qprefix(get_srcpkts(l->l2), 1, sbuf,  1);
-        qprefix(get_dstpkts(l->l2), 1, dbuf,  1);
-        ncplane_printf(w, "%*s %*s",  PREFIXFMT(sbuf), PREFIXFMT(dbuf));
+        char sbuf[NCPREFIXCOLUMNS + 1];
+        ncqprefix(get_srcpkts(l->l2), 1, sbuf,  1);
+        ncqprefix(get_dstpkts(l->l2), 1, dbuf,  1);
+        ncplane_printf(w, "%*s %*s",  NCPREFIXFMT(sbuf), NCPREFIXFMT(dbuf));
       }
     }
     draw_right_vline(i, active, w);
@@ -565,7 +565,7 @@ print_iface_host(const interface *i, const iface_state *is, struct ncplane *w,
           ncplane_set_fg_rgb(w, arrgb);
           ncplane_set_styles(w, arsty);
         }
-        len = cols - PREFIXCOLUMNS * 2 - 7 - strlen(nw);
+        len = cols - NCPREFIXCOLUMNS * 2 - 7 - strlen(nw);
         wlen = len - wcswidth(name, wcslen(name));
         if(wlen < 0){
           wlen = 0;
@@ -579,16 +579,16 @@ print_iface_host(const interface *i, const iface_state *is, struct ncplane *w,
           ncplane_set_styles(w, al3sty);
         }
         {
-          char sbuf[PREFIXSTRLEN + 1];
-          char dbuf[PREFIXSTRLEN + 1];
+          char sbuf[NCPREFIXSTRLEN + 1];
+          char dbuf[NCPREFIXSTRLEN + 1];
           if(l3_get_srcpkt(l3->l3) == 0 && (l->cat == RTN_MULTICAST || l->cat == RTN_BROADCAST)){
-            qprefix(l3_get_dstpkt(l3->l3), 1, dbuf,  1);
-            ncplane_printf(w, "%-*.*s%*s", PREFIXCOLUMNS + 1, PREFIXCOLUMNS + 1,
-                "", PREFIXFMT(dbuf));
+            ncqprefix(l3_get_dstpkt(l3->l3), 1, dbuf,  1);
+            ncplane_printf(w, "%-*.*s%*s", NCPREFIXCOLUMNS + 1, NCPREFIXCOLUMNS + 1,
+                "", NCPREFIXFMT(dbuf));
           }else{
-            qprefix(l3_get_srcpkt(l3->l3), 1, sbuf,  1);
-            qprefix(l3_get_dstpkt(l3->l3), 1, dbuf,  1);
-            ncplane_printf(w, "%*s %*s", PREFIXFMT(sbuf), PREFIXFMT(dbuf));
+            ncqprefix(l3_get_srcpkt(l3->l3), 1, sbuf,  1);
+            ncqprefix(l3_get_dstpkt(l3->l3), 1, dbuf,  1);
+            ncplane_printf(w, "%*s %*s", NCPREFIXFMT(sbuf), NCPREFIXFMT(dbuf));
           }
         }
         draw_right_vline(i, active, w);
@@ -735,7 +735,7 @@ void iface_box(const interface *i, const iface_state *is, struct ncplane *n,
     ncplane_set_channels(n, ncchannels_reverse(ncplane_channels(n)));
   }
   ncplane_cursor_move_yx(n, 0, 1);
-  nccell c = CELL_TRIVIAL_INITIALIZER;
+  nccell c = NCCELL_TRIVIAL_INITIALIZER;
   nccell_load(n, &c, "─");
   nccell_set_fg_rgb(&c, bcolor);
   nccell_set_styles(&c, attrs);
@@ -810,7 +810,7 @@ void iface_box(const interface *i, const iface_state *is, struct ncplane *n,
       if(!interface_carrier_p(i)){
         ncplane_putstr(n, " (no carrier)");
       }else{
-        ncplane_printf(n, " (%sb %s)", qprefix(i->settings.ethtool.speed * (uint64_t)1000000lu, 1, buf,  1),
+        ncplane_printf(n, " (%sb %s)", ncqprefix(i->settings.ethtool.speed * (uint64_t)1000000lu, 1, buf,  1),
               duplexstr(i->settings.ethtool.duplex));
       }
     }else if(i->settings_valid == SETTINGS_VALID_WEXT){
@@ -819,11 +819,11 @@ void iface_box(const interface *i, const iface_state *is, struct ncplane *n,
       }else if(!interface_carrier_p(i)){
         ncplane_printf(n, " (%s, no carrier", modestr(i->settings.wext.mode));
       }else{
-        ncplane_printf(n, " (%sb %s", qprefix(i->settings.wext.bitrate, 1, buf,  1),
+        ncplane_printf(n, " (%sb %s", ncqprefix(i->settings.wext.bitrate, 1, buf,  1),
               modestr(i->settings.wext.mode));
       }
       if(i->settings.wext.freq >= MAX_WIRELESS_CHANNEL){
-        ncplane_printf(n, " %sHz)", qprefix(i->settings.wext.freq, 1, buf,  1));
+        ncplane_printf(n, " %sHz)", ncqprefix(i->settings.wext.freq, 1, buf,  1));
       }else if(i->settings.wext.freq){
         ncplane_printf(n, " ch %ju)", i->settings.wext.freq);
       }else{
@@ -835,11 +835,11 @@ void iface_box(const interface *i, const iface_state *is, struct ncplane *n,
       }else if(!interface_carrier_p(i)){
         ncplane_printf(n, " (%s, no carrier", modestr(i->settings.nl80211.mode));
       }else{
-        ncplane_printf(n, " (%sb %s", qprefix(i->settings.nl80211.bitrate, 1, buf,  1),
+        ncplane_printf(n, " (%sb %s", ncqprefix(i->settings.nl80211.bitrate, 1, buf,  1),
               modestr(i->settings.nl80211.mode));
       }
       if(i->settings.nl80211.freq >= MAX_WIRELESS_CHANNEL){
-        ncplane_printf(n, " %sHz)", qprefix(i->settings.nl80211.freq, 1, buf,  1));
+        ncplane_printf(n, " %sHz)", ncqprefix(i->settings.nl80211.freq, 1, buf,  1));
       }else if(i->settings.nl80211.freq){
         ncplane_printf(n, " ch %ju)", i->settings.nl80211.freq);
       }else{
@@ -894,9 +894,9 @@ void print_iface_state(const interface *i, const iface_state *is, struct ncplane
   ncplane_printf_yx(w, 1, 0, "%u node%s. Last %lus: %7sb/s (%sp)",
     is->nodes, is->nodes == 1 ? "" : "s",
     usecdomain / 1000000,
-    qprefix(timestat_val(&i->bps) * CHAR_BIT * 1000000 * 100 / usecdomain, 100, buf,  0),
-    qprefix(timestat_val(&i->fps), 1, buf2,  1));
-  ncplane_putstr_yx(w, 1, cols - PREFIXCOLUMNS * 2 - 1, "TotSrc  TotDst");
+    ncqprefix(timestat_val(&i->bps) * CHAR_BIT * 1000000 * 100 / usecdomain, 100, buf,  0),
+    ncqprefix(timestat_val(&i->fps), 1, buf2,  1));
+  ncplane_putstr_yx(w, 1, cols - NCPREFIXCOLUMNS * 2 - 1, "TotSrc  TotDst");
   draw_right_vline(i, active, w);
 }
 
@@ -995,10 +995,10 @@ void recompute_selection(iface_state *is, int oldsel, int oldrows, int newrows){
   update_panels();
   doupdate();*/
   const struct ncplane *n = nctablet_plane(is->tab);
-  if(newsel + aft <= ncplane_dim_y(n) - 2 - !!interface_up_p(is->iface)){
+  if(newsel + aft <= (int)ncplane_dim_y(n) - 2 - !!interface_up_p(is->iface)){
     newsel = ncplane_dim_y(n) - aft - 2 - !!interface_up_p(is->iface);
   }
-  if(newsel + (int)node_lines(is->expansion, is->selected) >= ncplane_dim_y(n) - 2){
+  if(newsel + node_lines(is->expansion, is->selected) >= ncplane_dim_y(n) - 2){
     newsel = ncplane_dim_y(n) - 2 - node_lines(is->expansion, is->selected);
   }
   /*wstatus_locked(stdscr, "newsel: %d bef: %d aft: %d oldsel: %d maxy: %d",

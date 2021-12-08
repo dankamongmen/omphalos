@@ -76,7 +76,7 @@ static int
 channel_details(struct ncplane *w){
   unsigned freqs, freqrows;
   const int row = 1;
-  int r, c, col,  z;
+  unsigned r, c, col,  z;
 
   ncplane_dim_yx(w, &r, &c);
   --r;

@@ -32,7 +32,8 @@ int update_network_details(struct ncplane *n){
 	const int col = START_COL;
 	const int row = 1;
 	procfs_state ps;
-	int r, c, z;
+	unsigned r, c;
+	int z;
 
   set_subdisplay_attr(n);
 	if(get_procfs_state(&ps)){

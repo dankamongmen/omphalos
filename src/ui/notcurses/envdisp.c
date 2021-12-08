@@ -10,7 +10,8 @@ static int
 env_details(struct ncplane *hw, int rows){
 	const int col = START_COL;
 	const int row = 1;
-	int z, srows, scols;
+	int z;
+	unsigned srows, scols;
 
 	//wattrset(hw, SUBDISPLAY_ATTR);
 	ncplane_dim_yx(notcurses_stdplane(NC), &srows, &scols);

@@ -75,7 +75,7 @@ int display_env_locked(struct ncplane *, struct panel_state *);
 int display_help_locked(struct ncplane *, struct panel_state *);
 int display_diags_locked(struct ncplane *, struct panel_state *);
 int display_details_locked(struct ncplane *, struct panel_state *);
-int new_display_panel(struct ncplane *, struct panel_state *,int,int,const wchar_t *);
+int new_display_panel(struct ncplane *, struct panel_state *,unsigned,unsigned,const wchar_t *);
 
 #ifdef __cplusplus
 }

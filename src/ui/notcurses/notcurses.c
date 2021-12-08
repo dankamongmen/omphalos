@@ -53,8 +53,8 @@ static struct panel_state environment = PANEL_STATE_INITIALIZER;
 
 struct ncreel *reel = NULL;
 
-static int rows = -1;
-static int cols = -1;
+static unsigned rows;
+static unsigned cols;
 static struct ncplane* stdn;
 static struct panel_state *active;
 
@@ -111,7 +111,7 @@ wstatus(struct ncplane *w, const char *fmt, ...){
 
 static void
 resize_screen_locked(void){
-  int dimy, dimx;
+  unsigned dimy, dimx;
   notcurses_refresh(NC, &dimy, &dimx);
   ncplane_resize_simple(ncreel_plane(reel), dimy - 1, dimx);
   ncreel_redraw(reel);
@@ -153,7 +153,7 @@ input_thread(void *unsafe_marsh){
   ncinput ni;
 
   active = NULL; // No subpanels initially
-  while((ch = notcurses_getc_blocking(nc, &ni)) != 'q' && ch != 'Q'){
+  while((ch = notcurses_get_blocking(nc, &ni)) != 'q' && ch != 'Q'){
   switch(ch){
     case NCKEY_HOME:
       lock_notcurses();

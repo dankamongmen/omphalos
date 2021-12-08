@@ -101,11 +101,12 @@ draw_subpanel(struct panel_state* ps, int cols, const wchar_t *hstr, const wchar
 // Create a panel at the bottom of the window, referred to as the "subdisplay".
 // Only one can currently be active at a time. Window decoration and placement
 // is managed here; only the rows needed for display ought be provided.
-int new_display_panel(struct ncplane *n, struct panel_state *ps, int rows, int cols, const wchar_t *hstr){
+int new_display_panel(struct ncplane *n, struct panel_state *ps,
+                      unsigned rows, unsigned cols, const wchar_t *hstr){
   const wchar_t crightstr[] = L"https://nick-black.com/dankwiki/index.php/Omphalos";
-  const int crightlen = wcslen(crightstr);
+  const size_t crightlen = wcslen(crightstr);
   struct ncplane *psw;
-  int x, y;
+  unsigned x, y;
 
   ncplane_dim_yx(n, &y, &x);
   if(cols == 0){
@@ -148,7 +149,7 @@ int new_display_panel(struct ncplane *n, struct panel_state *ps, int rows, int c
 static int
 iface_details(struct ncplane *hw, const interface *i, int rows){
   const int col = START_COL;
-  int scrcols, scrrows;
+  unsigned scrcols, scrrows;
   const int row = 1;
   int z;
   ncplane_set_fg_rgb(hw, 0xd0d0d0);
@@ -176,14 +177,14 @@ iface_details(struct ncplane *hw, const interface *i, int rows){
     --z;
   } /* intentional fallthrough */
   case 5:{
-    char b[PREFIXSTRLEN];
-    char fb[PREFIXSTRLEN];
+    char b[NCPREFIXSTRLEN];
+    char fb[NCPREFIXSTRLEN];
     char buf[U64STRLEN];
     ncplane_printf_yx(hw, row + z, col, "RXfd: %-4d flen: %-6u fnum: %-4s blen: %-5s bnum: %-5u rxr: %5sB",
                       i->rfd, i->rtpr.tp_frame_size,
-                      bprefix(i->rtpr.tp_frame_nr, 1, fb,  1),
-                      bprefix(i->rtpr.tp_block_size, 1, buf, 1),
-                      i->rtpr.tp_block_nr, bprefix(i->rs, 1, b, 1));
+                      ncbprefix(i->rtpr.tp_frame_nr, 1, fb,  1),
+                      ncbprefix(i->rtpr.tp_block_size, 1, buf, 1),
+                      i->rtpr.tp_block_nr, ncbprefix(i->rs, 1, b, 1));
     --z;
   } /* intentional fallthrough */
   case 4:{
@@ -192,16 +193,16 @@ iface_details(struct ncplane *hw, const interface *i, int rows){
     --z;
   } /* intentional fallthrough */
   case 3:{
-    char b[PREFIXSTRLEN];
-    char fb[PREFIXSTRLEN];
+    char b[NCPREFIXSTRLEN];
+    char fb[NCPREFIXSTRLEN];
     char buf[U64STRLEN];
 
     ncplane_printf_yx(hw, row + z, col, "TXfd: %-4d flen: %-6u fnum: %-4s blen: %-5s bnum: %-5u txr: %5sB",
                       i->fd, i->ttpr.tp_frame_size,
-                      bprefix(i->ttpr.tp_frame_nr, 1, fb,  1),
-                      bprefix(i->ttpr.tp_block_size, 1, buf, 1),
+                      ncbprefix(i->ttpr.tp_frame_nr, 1, fb,  1),
+                      ncbprefix(i->ttpr.tp_block_size, 1, buf, 1),
                       i->ttpr.tp_block_nr,
-                      bprefix(i->ts, 1, b, 1));
+                      ncbprefix(i->ts, 1, b, 1));
     --z;
   } /* intentional fallthrough */
   case 2:{
@@ -343,7 +344,7 @@ int packet_cb_locked(const interface *i, omphalos_packet *op, struct panel_state
 static int
 redraw_iface(struct nctablet *tablet, bool drawfromtop){
   const iface_state *is = nctablet_userptr(tablet);
-  int rows, cols;
+  unsigned rows, cols;
   struct ncplane *tn = nctablet_plane(tablet);
   ncplane_dim_yx(nctablet_plane(tablet), &rows, &cols);
   ncplane_set_base(tn, " ", 0, NCCHANNELS_INITIALIZER(0, 0, 0, 0, 0, 0));
@@ -356,7 +357,7 @@ redraw_iface(struct nctablet *tablet, bool drawfromtop){
   if(interface_up_p(is->iface)){
     print_iface_state(is->iface, is, tn, rows, cols, is == get_current_iface_state(reel));
   }
-  int lines = lines_for_interface(is);
+  unsigned lines = lines_for_interface(is);
   if(lines > rows){
     lines = rows;
   }
@@ -483,7 +484,7 @@ struct l3obj *host_callback_locked(const interface *i, struct l2host *l2,
 
 // to be called only while ncurses lock is held
 int draw_main_window(struct ncplane *w){
-  int rows, cols;
+  unsigned rows, cols;
   ncplane_dim_yx(w, &rows, &cols);
   if(setup_statusbar(cols)){
     goto err;
@@ -692,7 +693,7 @@ static const int DIAGROWS = 8; // FIXME
 
 int update_diags_locked(struct panel_state *ps){
   logent l[DIAGROWS];
-  int y, x, r;
+  unsigned y, x;
 
   ncplane_set_styles(ps->n, NCSTYLE_BOLD);
   ncplane_set_fg_rgb(ps->n, 0xd0d0d0);
@@ -701,7 +702,7 @@ int update_diags_locked(struct panel_state *ps){
   if(get_logs(y - 1, l)){
     return -1;
   }
-  for(r = 1 ; r < y - 1 ; ++r){
+  for(unsigned r = 1 ; r < y - 1 ; ++r){
     char tbuf[26]; // see ctime_r(3)
 
     if(l[r - 1].msg == NULL){
@@ -718,7 +719,7 @@ int update_diags_locked(struct panel_state *ps){
 }
 
 int display_diags_locked(struct ncplane *mainw, struct panel_state *ps){
-  int x, y;
+  unsigned x, y;
   ncplane_dim_yx(mainw, &y, &x);
   assert(y);
   memset(ps, 0, sizeof(*ps));
@@ -768,7 +769,7 @@ void use_next_node_locked(void){
   }
   delta = l2obj_lines(is->selected);
   const struct ncplane *n = nctablet_plane(is->tab);
-  if(is->selline + delta + l2obj_lines(l2obj_next(is->selected)) >= ncplane_dim_y(n) - 1){
+  if(is->selline + delta + l2obj_lines(l2obj_next(is->selected)) >= (int)ncplane_dim_y(n) - 1){
     delta = (ncplane_dim_y(n) - 1 - l2obj_lines(l2obj_next(is->selected)))
        - is->selline;
   }
@@ -805,14 +806,14 @@ void use_next_nodepage_locked(void){
   }
   delta = 0;
   const struct ncplane *n = nctablet_plane(is->tab);
-  while(l2obj_next(l2) && delta <= ncplane_dim_y(n)){
+  while(l2obj_next(l2) && delta <= (int)ncplane_dim_y(n)){
     delta += l2obj_lines(l2);
     l2 = l2obj_next(l2);
   }
   if(delta == 0){
     return;
   }
-  if(is->selline + delta + l2obj_lines(l2) >= ncplane_dim_y(n) - 1){
+  if(is->selline + delta + l2obj_lines(l2) >= (int)ncplane_dim_y(n) - 1){
     delta = (ncplane_dim_y(n) - 2 - l2obj_lines(l2)) - is->selline;
   }
   select_interface_node(is, l2, delta);
@@ -833,7 +834,7 @@ void use_prev_nodepage_locked(void){
   do{
     l2 = l2obj_prev(l2);
     delta -= l2obj_lines(l2);
-  }while(l2obj_prev(l2) && delta >= -ncplane_dim_y(nctablet_plane(is->tab)));
+  }while(l2obj_prev(l2) && delta >= -(int)ncplane_dim_y(nctablet_plane(is->tab)));
   if(is->selline + delta <= !!interface_up_p(is->iface)){
     delta = !!interface_up_p(is->iface) - is->selline;
   }
@@ -882,7 +883,7 @@ void use_last_node_locked(void){
     return;
   }
   const struct ncplane *n = nctablet_plane(is->tab);
-  if(is->selline + delta + l2obj_lines(l2) >= ncplane_dim_y(n) - 1){
+  if(is->selline + delta + l2obj_lines(l2) >= (int)ncplane_dim_y(n) - 1){
     delta = (ncplane_dim_y(n) - 2 - l2obj_lines(l2)) - is->selline;
   }
   select_interface_node(is, l2, delta);
