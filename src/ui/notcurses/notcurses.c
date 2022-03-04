@@ -154,166 +154,169 @@ input_thread(void *unsafe_marsh){
 
   active = NULL; // No subpanels initially
   while((ch = notcurses_get_blocking(nc, &ni)) != 'q' && ch != 'Q'){
-  switch(ch){
-    case NCKEY_HOME:
-      lock_notcurses();
-      if(selecting()){
-        use_first_node_locked();
-      }
-      unlock_notcurses();
-      break;
-    case NCKEY_END:
-      lock_notcurses();
-      if(selecting()){
-        use_last_node_locked();
-      }
-      unlock_notcurses();
-      break;
-    case NCKEY_PGUP:
-      lock_notcurses();
-      if(selecting()){
-        use_prev_nodepage_locked();
-      }
-      unlock_notcurses();
-      break;
-    case NCKEY_PGDOWN:
-      lock_notcurses();
-      if(selecting()){
-        use_next_nodepage_locked();
-      }
-      unlock_notcurses();
-      break;
-    case NCKEY_UP: case 'k':
-      lock_notcurses();
-      if(!selecting()){
-        ncreel_prev(reel);
-      }else{
-        use_prev_node_locked();
-      }
-      unlock_notcurses();
-      break;
-    case NCKEY_DOWN: case 'j':
-      lock_notcurses();
-      if(!selecting()){
-        ncreel_next(reel);
-      }else{
-        use_next_node_locked();
-      }
-      unlock_notcurses();
-      break;
-    case NCKEY_RESIZE:
-      lock_notcurses();{
-        resize_screen_locked();
-      }unlock_notcurses();
-      break;
-    case 9: // Tab FIXME
-      lock_notcurses();
-        toggle_focus();
-      unlock_notcurses();
-      break;
-    case 12: // Ctrl-L FIXME
-      lock_notcurses();{
-        notcurses_refresh(NC, &rows, &cols);
-      }unlock_notcurses();
-      break;
-    case '\r': case '\n': case NCKEY_ENTER:
-      lock_notcurses();{
-        select_iface_locked();
-      }unlock_notcurses();
-      break;
-    case NCKEY_ESC: case NCKEY_BACKSPACE:
-      lock_notcurses();{
-        deselect_iface_locked();
-      }unlock_notcurses();
-      break;
-    case 'l':
-      lock_notcurses();
-        toggle_panel(stdn, &diags, display_diags_locked);
-      unlock_notcurses();
-      break;
-    case 'D':
-      lock_notcurses();
-        resolve_selection(stdn);
-      unlock_notcurses();
-      break;
-    case 'r':
-      lock_notcurses();
-        reset_current_interface_stats(stdn);
-      unlock_notcurses();
-      break;
-    case 'P':
-      lock_notcurses();
-        toggle_subwindow_pinning();
-      unlock_notcurses();
-      break;
-    case 'p':
-      lock_notcurses();
-        toggle_promisc_locked(stdn);
-      unlock_notcurses();
-      break;
-    case 'd':
-      lock_notcurses();
-        down_interface_locked(stdn);
-      unlock_notcurses();
-      break;
-    case 's':
-      lock_notcurses();
-        sniff_interface_locked(stdn);
-      unlock_notcurses();
-      break;
-    case '+':
-    case NCKEY_RIGHT:
-      lock_notcurses();
-        expand_iface_locked();
-      unlock_notcurses();
-      break;
-    case '-':
-    case NCKEY_LEFT:
-      lock_notcurses();
-        collapse_iface_locked();
-      unlock_notcurses();
-      break;
-    case 'v':{
-      lock_notcurses();
-        toggle_panel(stdn, &details, display_details_locked);
-      unlock_notcurses();
-      break;
-    }case 'n':{
-      lock_notcurses();
-        toggle_panel(stdn, &network, display_network_locked);
-      unlock_notcurses();
-      break;
-    }case 'e':{
-      lock_notcurses();
-        toggle_panel(stdn, &environment, display_env_locked);
-      unlock_notcurses();
-      break;
-    }case 'w':{
-      lock_notcurses();
-        toggle_panel(stdn, &channels, display_channels_locked);
-      unlock_notcurses();
-      break;
-    }case 'b':{
-      lock_notcurses();
-        toggle_panel(stdn, &bridging, display_bridging_locked);
-      unlock_notcurses();
-      break;
-    }case 'h':{
-      lock_notcurses();
-        toggle_panel(stdn, &help, display_help_locked);
-      unlock_notcurses();
-      break;
-    }default:{
-      const char *hstr = !help.n ? " ('h' for help)" : "";
-      // wstatus() locks/unlocks, and calls screen_update()
-      if(isprint(ch)){
-        wstatus(stdn, "unknown command '%c'%s", ch, hstr);
-      }else{
-        wstatus(stdn, "unknown scancode %d%s", ch, hstr);
-      }
-      break;
+    if(ni.evtype == NCTYPE_RELEASE){
+      continue;
     }
-  }
+    switch(ch){
+      case NCKEY_HOME:
+        lock_notcurses();
+        if(selecting()){
+          use_first_node_locked();
+        }
+        unlock_notcurses();
+        break;
+      case NCKEY_END:
+        lock_notcurses();
+        if(selecting()){
+          use_last_node_locked();
+        }
+        unlock_notcurses();
+        break;
+      case NCKEY_PGUP:
+        lock_notcurses();
+        if(selecting()){
+          use_prev_nodepage_locked();
+        }
+        unlock_notcurses();
+        break;
+      case NCKEY_PGDOWN:
+        lock_notcurses();
+        if(selecting()){
+          use_next_nodepage_locked();
+        }
+        unlock_notcurses();
+        break;
+      case NCKEY_UP: case 'k':
+        lock_notcurses();
+        if(!selecting()){
+          ncreel_prev(reel);
+        }else{
+          use_prev_node_locked();
+        }
+        unlock_notcurses();
+        break;
+      case NCKEY_DOWN: case 'j':
+        lock_notcurses();
+        if(!selecting()){
+          ncreel_next(reel);
+        }else{
+          use_next_node_locked();
+        }
+        unlock_notcurses();
+        break;
+      case NCKEY_RESIZE:
+        lock_notcurses();{
+          resize_screen_locked();
+        }unlock_notcurses();
+        break;
+      case 9: // Tab FIXME
+        lock_notcurses();
+          toggle_focus();
+        unlock_notcurses();
+        break;
+      case 12: // Ctrl-L FIXME
+        lock_notcurses();{
+          notcurses_refresh(NC, &rows, &cols);
+        }unlock_notcurses();
+        break;
+      case '\r': case '\n': case NCKEY_ENTER:
+        lock_notcurses();{
+          select_iface_locked();
+        }unlock_notcurses();
+        break;
+      case NCKEY_ESC: case NCKEY_BACKSPACE:
+        lock_notcurses();{
+          deselect_iface_locked();
+        }unlock_notcurses();
+        break;
+      case 'l':
+        lock_notcurses();
+          toggle_panel(stdn, &diags, display_diags_locked);
+        unlock_notcurses();
+        break;
+      case 'D':
+        lock_notcurses();
+          resolve_selection(stdn);
+        unlock_notcurses();
+        break;
+      case 'r':
+        lock_notcurses();
+          reset_current_interface_stats(stdn);
+        unlock_notcurses();
+        break;
+      case 'P':
+        lock_notcurses();
+          toggle_subwindow_pinning();
+        unlock_notcurses();
+        break;
+      case 'p':
+        lock_notcurses();
+          toggle_promisc_locked(stdn);
+        unlock_notcurses();
+        break;
+      case 'd':
+        lock_notcurses();
+          down_interface_locked(stdn);
+        unlock_notcurses();
+        break;
+      case 's':
+        lock_notcurses();
+          sniff_interface_locked(stdn);
+        unlock_notcurses();
+        break;
+      case '+':
+      case NCKEY_RIGHT:
+        lock_notcurses();
+          expand_iface_locked();
+        unlock_notcurses();
+        break;
+      case '-':
+      case NCKEY_LEFT:
+        lock_notcurses();
+          collapse_iface_locked();
+        unlock_notcurses();
+        break;
+      case 'v':{
+        lock_notcurses();
+          toggle_panel(stdn, &details, display_details_locked);
+        unlock_notcurses();
+        break;
+      }case 'n':{
+        lock_notcurses();
+          toggle_panel(stdn, &network, display_network_locked);
+        unlock_notcurses();
+        break;
+      }case 'e':{
+        lock_notcurses();
+          toggle_panel(stdn, &environment, display_env_locked);
+        unlock_notcurses();
+        break;
+      }case 'w':{
+        lock_notcurses();
+          toggle_panel(stdn, &channels, display_channels_locked);
+        unlock_notcurses();
+        break;
+      }case 'b':{
+        lock_notcurses();
+          toggle_panel(stdn, &bridging, display_bridging_locked);
+        unlock_notcurses();
+        break;
+      }case 'h':{
+        lock_notcurses();
+          toggle_panel(stdn, &help, display_help_locked);
+        unlock_notcurses();
+        break;
+      }default:{
+        const char *hstr = !help.n ? " ('h' for help)" : "";
+        // wstatus() locks/unlocks, and calls screen_update()
+        if(isprint(ch)){
+          wstatus(stdn, "unknown command '%c'%s", ch, hstr);
+        }else{
+          wstatus(stdn, "unknown scancode %d%s", ch, hstr);
+        }
+        break;
+      }
+    }
   }
   wstatus(stdn, "%s", "shutting down");
   // we can't use raise() here, as that sends the signal only
