@@ -73,10 +73,10 @@ int popen_drain(const char *cmd){
 	}
 	if(!feof(fd)){
 		diagnostic("Error reading from '%s' (%s?)",cmd,strerror(errno));
-		fclose(fd);
+		pclose(fd);
 		return -1;
 	}
-	if(fclose(fd)){
+	if(pclose(fd)){
 		diagnostic("Error running '%s'",cmd);
 		return -1;
 	}
@@ -105,13 +105,13 @@ char *spopen_drain(const char *cmd){
 			}
 		}
 		if(!feof(fd)){
-		       if(o < s){
+		  if(o < s){
 				diagnostic("Error reading from '%s' (%s?)",cmd,strerror(errno));
-				fclose(fd);
+				pclose(fd);
 				free(buf);
 				return NULL;
-		       }
-		}else if(fclose(fd)){
+		  }
+		}else if(pclose(fd)){
 			diagnostic("Error running '%s'",cmd);
 			free(buf);
 			return NULL;
