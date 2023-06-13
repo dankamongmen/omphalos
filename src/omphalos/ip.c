@@ -27,7 +27,8 @@
 #define DEFAULT_IP6_TTL 64
 #define IPPROTO_DSR	48 // Dynamic Source Routing, RFC 4728
 #define IPPROTO_EIGRP	88 // Cisco EIGRP
-#define IPPROTO_VRRP	112
+#define IPPROTO_VRRP 112
+#define IPPROTO_L2TP 115
 
 typedef struct dsrhdr {
 	uint8_t nxthdr;
